@@ -237,10 +237,16 @@ def _temp() -> float:
 def _draw_toolbar():
     """Draw temp + status bar at y=0..11.  Caller holds draw_lock."""
     try:
-        draw.rectangle([(0,0),(128,11)], fill="#111111")
-        draw.text((1,0), f"{_temp_c:.0f}C", font=small_font, fill="#606060")
+        draw.rectangle([(0,0),(128,11)], fill="#0d0000")
+        # Temp left side
+        draw.text((1,1), f"{_temp_c:.0f}C", font=small_font, fill="#5a2020")
+        # Version tag right side
+        draw.text((100,1), f"v{VERSION}", font=small_font, fill="#3a0000")
+        # Status or brand centre
         if _status_text:
-            draw.text((28,0), _status_text[:18], font=small_font, fill=color.selected_text)
+            draw.text((22,1), _status_text[:14], font=small_font, fill=color.border)
+        else:
+            draw.text((34,1), "KTOx_Pi", font=small_font, fill="#4a0000")
         draw.line([(0,11),(128,11)], fill=color.border, width=1)
     except Exception:
         pass
@@ -404,11 +410,19 @@ def _truncate(text, max_w, font=None, ellipsis="…"):
 def Dialog(text, wait=True):
     with draw_lock:
         _draw_toolbar()
-        draw.rectangle([7,35,120,95],  fill="#ADADAD")
-        draw.rectangle([7,35,120,95],  outline=color.border, width=2)
-        _centered(text, 48, fill="#000000")
-        draw.rectangle([45,70,82,82],  fill=color.border)
-        _centered("OK", 71, fill=color.selected_text)
+        draw.rectangle([0,12,128,128],   fill=color.background)
+        draw.rectangle([4,16,124,112],   fill="#0d0606")
+        draw.rectangle([4,16,124,112],   outline=color.border, width=1)
+        # horizontal rule
+        draw.line([(4,100),(124,100)],   fill=color.border, width=1)
+        lines = text.splitlines()
+        y = 16 + max(4, (84 - len(lines)*14)//2)
+        for line in lines:
+            _centered(line, y, fill=color.text)
+            y += 14
+        # OK button
+        draw.rectangle([44,102,84,112],  fill=color.select)
+        _centered("OK", 103, fill=color.selected_text)
     if wait:
         time.sleep(0.25)
         getButton()
@@ -436,23 +450,29 @@ def Dialog_info(text, wait=True, timeout=None):
 def YNDialog(a="Are you sure?", y="Yes", n="No", b=""):
     with draw_lock:
         _draw_toolbar()
-        draw.rectangle([7,30,120,100], fill="#ADADAD")
-        draw.rectangle([7,30,120,100], outline=color.border, width=2)
-        _centered(a, 36, fill="#000000")
-        if b: _centered(b, 52, fill="#000000")
+        draw.rectangle([0,12,128,128],  fill=color.background)
+        draw.rectangle([4,16,124,118],  fill="#0d0606")
+        draw.rectangle([4,16,124,118],  outline=color.border, width=1)
+        _centered(a, 20, fill=color.selected_text)
+        if b: _centered(b, 36, fill=color.text)
+        draw.line([(4,52),(124,52)],    fill=color.border, width=1)
     time.sleep(0.25)
     answer = False
     while True:
         with draw_lock:
             _draw_toolbar()
-            yc = color.border if answer      else "#ADADAD"
-            nc = color.border if not answer  else "#ADADAD"
-            draw.rectangle([12,70,50,85],  fill=yc)
-            draw.rectangle([76,70,114,85], fill=nc)
-            _centered(y, 72,
-                      fill=color.selected_text if answer     else "#000000")
-            draw.text((84,72), n, font=text_font,
-                      fill=color.selected_text if not answer else "#000000")
+            # YES button
+            yc_bg = color.select  if answer      else "#1a0505"
+            nc_bg = color.select  if not answer  else "#1a0505"
+            yc_tx = color.selected_text if answer      else color.text
+            nc_tx = color.selected_text if not answer  else color.text
+            draw.rectangle([8,56,58,72],   fill=yc_bg, outline=color.border)
+            draw.rectangle([70,56,120,72], fill=nc_bg, outline=color.border)
+            _centered(y, 58, fill=yc_tx)
+            draw.text((76,58), n, font=text_font, fill=nc_tx)
+            # hint
+            draw.line([(4,80),(124,80)], fill="#2a0505", width=1)
+            _centered("LEFT=Yes  RIGHT=No", 84, font=small_font, fill="#4a2020")
         btn = getButton()
         if   btn in ("KEY_LEFT_PIN","KEY1_PIN"):    answer = True
         elif btn in ("KEY_RIGHT_PIN","KEY3_PIN"):   answer = False
@@ -485,21 +505,12 @@ def GetMenuString(inlist, duplicates=False):
             for i, raw in enumerate(window):
                 txt = raw if not duplicates else raw.split("#", 1)[1]
                 sel = (i == index - offset)
+                row_y = 14 + 14*i
                 if sel:
-                    draw.rectangle(
-                        [default.start_text[0]-5,
-                         default.start_text[1]+default.text_gap*i,
-                         122,
-                         default.start_text[1]+default.text_gap*i+12],
-                        fill=color.select
-                    )
+                    draw.rectangle([3, row_y, 124, row_y+12], fill=color.select)
                 fill = color.selected_text if sel else color.text
-                t = _truncate(txt, 112 - default.start_text[0])
-                draw.text(
-                    (default.start_text[0],
-                     default.start_text[1]+default.text_gap*i),
-                    t, font=text_font, fill=fill
-                )
+                t = _truncate(txt.strip(), 110)
+                draw.text((5, row_y+1), t, font=text_font, fill=fill)
 
         time.sleep(0.08)
         btn = getButton()
@@ -527,22 +538,13 @@ def RenderMenuWindowOnce(inlist, selected=0):
         color.DrawMenuBackground()
         color.DrawBorder()
         for i, txt in enumerate(window):
-            sel  = (i == idx-offset)
-            fill = color.selected_text if sel else color.text
+            sel   = (i == idx-offset)
+            row_y = 14 + 14*i
             if sel:
-                draw.rectangle(
-                    [default.start_text[0]-5,
-                     default.start_text[1]+default.text_gap*i,
-                     122,
-                     default.start_text[1]+default.text_gap*i+12],
-                    fill=color.select
-                )
-            t = _truncate(txt, 112 - default.start_text[0])
-            draw.text(
-                (default.start_text[0],
-                 default.start_text[1]+default.text_gap*i),
-                t, font=text_font, fill=fill
-            )
+                draw.rectangle([3, row_y, 124, row_y+12], fill=color.select)
+            fill = color.selected_text if sel else color.text
+            t = _truncate(txt.strip(), 110)
+            draw.text((5, row_y+1), t, font=text_font, fill=fill)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Payload engine ─────────────────────────────────────════════════════════════
@@ -1301,23 +1303,29 @@ class KTOxMenu:
                 _draw_toolbar()
                 color.DrawMenuBackground()
                 color.DrawBorder()
+                # menu title strip
+                _titles = {
+                    "home":"▐ KTOx_Pi ▌","net":"Network",
+                    "off":"Offensive","wifi":"WiFi Engine",
+                    "mitm":"MITM & Spoof","resp":"Responder",
+                    "purple":"Purple Team","sys":"System","pay":"Payloads",
+                }
+                _t = _titles.get(key, key.upper())
+                draw.rectangle([3,13,125,24], fill="#1a0000")
+                _centered(_t[:18], 13, font=small_font, fill=color.border)
+                draw.line([(3,24),(125,24)], fill=color.border, width=1)
+                _start_y = 26
                 for i, label in enumerate(window):
                     is_sel = (i == sel-offset)
+                    row_y  = _start_y + 13*i
                     if is_sel:
                         draw.rectangle(
-                            [default.start_text[0]-5,
-                             default.start_text[1]+default.text_gap*i,
-                             122,
-                             default.start_text[1]+default.text_gap*i+12],
+                            [3, row_y, 124, row_y+12],
                             fill=color.select
                         )
                     fill = color.selected_text if is_sel else color.text
-                    t = _truncate(label, 112-default.start_text[0])
-                    draw.text(
-                        (default.start_text[0],
-                         default.start_text[1]+default.text_gap*i),
-                        t, font=text_font, fill=fill
-                    )
+                    t = _truncate(label.strip(), 108)
+                    draw.text((6, row_y+1), t, font=text_font, fill=fill)
 
             time.sleep(0.08)
             btn = getButton(timeout=60)
@@ -1659,23 +1667,29 @@ finally:
                 _draw_toolbar()
                 color.DrawMenuBackground()
                 color.DrawBorder()
+                # menu title strip
+                _titles = {
+                    "home":"▐ KTOx_Pi ▌","net":"Network",
+                    "off":"Offensive","wifi":"WiFi Engine",
+                    "mitm":"MITM & Spoof","resp":"Responder",
+                    "purple":"Purple Team","sys":"System","pay":"Payloads",
+                }
+                _t = _titles.get(key, key.upper())
+                draw.rectangle([3,13,125,24], fill="#1a0000")
+                _centered(_t[:18], 13, font=small_font, fill=color.border)
+                draw.line([(3,24),(125,24)], fill=color.border, width=1)
+                _start_y = 26
                 for i, label in enumerate(window):
                     is_sel = (i == sel-offset)
+                    row_y  = _start_y + 13*i
                     if is_sel:
                         draw.rectangle(
-                            [default.start_text[0]-5,
-                             default.start_text[1]+default.text_gap*i,
-                             122,
-                             default.start_text[1]+default.text_gap*i+12],
+                            [3, row_y, 124, row_y+12],
                             fill=color.select
                         )
                     fill = color.selected_text if is_sel else color.text
-                    t = _truncate(label, 112-default.start_text[0])
-                    draw.text(
-                        (default.start_text[0],
-                         default.start_text[1]+default.text_gap*i),
-                        t, font=text_font, fill=fill
-                    )
+                    t = _truncate(label.strip(), 108)
+                    draw.text((6, row_y+1), t, font=text_font, fill=fill)
 
             time.sleep(0.08)
             btn = getButton(timeout=60)
