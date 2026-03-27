@@ -318,11 +318,12 @@ class LCD:
 		pix = np.zeros((self.width,self.height,2), dtype = np.uint8)
 		pix[...,[0]] = np.add(np.bitwise_and(img[...,[0]],0xF8),np.right_shift(img[...,[1]],5))
 		pix[...,[1]] = np.add(np.bitwise_and(np.left_shift(img[...,[1]],3),0xE0),np.right_shift(img[...,[2]],3))
-		pix = pix.flatten().tolist()
+		# Use bytes directly - avoids slow Python list conversion on Pi Zero
+		pix_bytes = pix.flatten().tobytes()
 		self.LCD_SetWindows(0, 0, self.width , self.height)
 		GPIO.output(LCD_Config.LCD_DC_PIN, GPIO.HIGH)
-		for i in range(0,len(pix),4096):
-			LCD_Config.SPI_Write_Byte(pix[i:i+4096])
+		for i in range(0,len(pix_bytes),4096):
+			LCD_Config.SPI_Write_Byte(pix_bytes[i:i+4096])
 		# Mirror the LCD frame for WebUI (throttled)
 		if _FRAME_MIRROR_ENABLED:
 			global _last_frame_save
