@@ -846,7 +846,7 @@
       if (fitAddon){
         try { fitAddon.fit(); } catch {}
       }
-      term.write('KTOx shell ready.\\r\\n');
+      term.write('KTOx shell ready.\r\n');
     }
     return term;
   }
@@ -1777,6 +1777,13 @@
   bindKeyboard();
   if (shellConnectBtn) shellConnectBtn.addEventListener('click', sendShellOpen);
   if (shellDisconnectBtn) shellDisconnectBtn.addEventListener('click', sendShellClose);
+  document.querySelectorAll('.shell-key-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-shell-key');
+      if (key) sendShellInput(key);
+      if (term) try { term.focus(); } catch {}
+    });
+  });
   if (logoutBtn) logoutBtn.addEventListener('click', logoutUser);
   window.addEventListener('resize', () => {
     if (shellOpen) sendShellResize();
