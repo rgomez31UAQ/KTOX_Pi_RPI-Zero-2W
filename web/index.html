@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>KTOx WebUI</title>
+  <title>KTOx_Pi — Network Control Suite</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -11,739 +11,1325 @@
   <link rel="stylesheet" href="./ui.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
-      --rj-bg-0: #05060a;
-      --rj-bg-1: #07090f;
-      --rj-bg-2: #0a0a0a;
-      --rj-surface: rgba(15, 23, 42, 0.42);
-      --rj-surface-strong: rgba(15, 23, 42, 0.62);
-      --rj-border: rgba(148, 163, 184, 0.2);
-      --rj-border-strong: rgba(148, 163, 184, 0.32);
-      --rj-text: #e2e8f0;
-      --rj-text-muted: #94a3b8;
-      --rj-accent: #8B0000;
-      --rj-accent-soft: rgba(139, 0, 0, 0.16);
-      --rj-danger: #f43f5e;
-      --rj-radius: 12px;
-      --rj-shadow: 0 12px 30px rgba(2, 6, 23, 0.35);
-      --rj-glow: 0 0 24px rgba(139, 0, 0, 0.18);
+      --red:        #8B0000;
+      --red-bright: #cc1a1a;
+      --red-glow:   #ff2020;
+      --red-dim:    #4a0000;
+      --red-soft:   rgba(139,0,0,0.15);
+      --bg:         #030303;
+      --bg-card:    #0a0505;
+      --bg-panel:   #0d0606;
+      --text:       #d4c4c4;
+      --text-dim:   #7a5555;
+      --text-bright:#f0e0e0;
+      --mono:       'Share Tech Mono', monospace;
+      --display:    'Orbitron', monospace;
+      --body:       'Rajdhani', sans-serif;
+      --border:     rgba(139,0,0,0.4);
+      --border-bright: rgba(204,26,26,0.7);
     }
     body {
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background: radial-gradient(1200px 800px at 50% -10%, var(--rj-bg-2) 0%, var(--rj-bg-1) 55%, var(--rj-bg-0) 100%);
-      color: var(--rj-text);
-      letter-spacing: 0.01em;
-    }
-    button, a {
-      transition: background-color .16s ease, color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .12s ease;
-    }
-    #sidebar {
-      background: linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.5));
-    }
-    #sidebar nav > button,
-    #sidebar nav > a {
-      border-radius: var(--rj-radius);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
-    }
-    #sidebar nav > button:hover,
-    #sidebar nav > a:hover {
-      border-color: var(--rj-border-strong);
-      box-shadow: var(--rj-shadow);
-    }
-    #deviceTab .terminal-wrap,
-    #settingsTab > div,
-    #lootTab > div {
-      box-shadow: var(--rj-shadow);
-    }
-    /* shared .device-shell base in device-shell.css */
-
-    /* Theme: Neon (default) */
-    .device-shell.theme-neon,
-    .device-shell[data-theme="neon"] {
-      box-shadow: 0 0 0 1px rgba(139,0,0,.3), 0 0 25px rgba(139,0,0,.12) inset, 0 0 40px rgba(139,0,0,.12);
-      background: linear-gradient(145deg, rgba(15,23,42,.65), rgba(15,23,42,.35));
-      border: 1px solid rgba(139,0,0,.25);
-      backdrop-filter: blur(8px);
-    }
-    .device-shell.theme-neon .rj-btn,
-    .device-shell[data-theme="neon"] .rj-btn {
-      box-shadow: 0 0 0 1px rgba(139,0,0,.25), 0 0 18px rgba(100,0,0,.18) inset;
-    }
-    .device-shell.theme-neon .rj-btn:active,
-    .device-shell.theme-neon .rj-btn.active,
-    .device-shell[data-theme="neon"] .rj-btn:active,
-    .device-shell[data-theme="neon"] .rj-btn.active {
-      filter: brightness(1.2);
-    }
-    .device-shell.theme-neon .screen-frame,
-    .device-shell[data-theme="neon"] .screen-frame {
-      border: 1px solid rgba(139,0,0,.3);
-      background: rgba(0,0,0,.8);
-      box-shadow: 0 0 40px rgba(139,0,0,0.2);
+      font-family: var(--body);
+      background: #030303 !important;
+      color: var(--text);
+      font-size: 16px;
+      overflow-x: hidden;
+      cursor: crosshair;
     }
 
-    /* Theme: Game Boy moved to device-shell.css */
-
-    /* Theme: Pager */
-    .device-shell.theme-pager,
-    .device-shell[data-theme="pager"] {
-      background: #c9c9c9;
-      border-radius: 18px;
-      border: 3px solid #9a9a9a;
-      box-shadow:
-        inset -6px -6px 10px rgba(0,0,0,.25),
-        inset 6px 6px 10px rgba(255,255,255,.25),
-        0 20px 40px rgba(0,0,0,.6);
-    }
-    .device-shell.theme-pager .pager-brand,
-    .device-shell[data-theme="pager"] .pager-brand { display: block; }
-    .device-shell.theme-pager .pager-speaker,
-    .device-shell[data-theme="pager"] .pager-speaker { display: flex; }
-    .device-shell.theme-pager .pager-clip,
-    .device-shell[data-theme="pager"] .pager-clip { display: block; }
-
-    .device-shell.theme-pager .screen-frame,
-    .device-shell[data-theme="pager"] .screen-frame {
-      background: #2b3a2f;
-      padding: 10px;
-      border-radius: 8px;
-      border: 3px solid #555;
-      box-shadow:
-        inset 0 0 12px rgba(0,0,0,.8),
-        0 0 6px rgba(0,255,120,.2);
-    }
-    .device-shell.theme-pager canvas,
-    .device-shell[data-theme="pager"] canvas {
-      image-rendering: pixelated;
-    }
-    .device-shell.theme-pager .rj-btn,
-    .device-shell[data-theme="pager"] .rj-btn {
-      width: 40px;
-      height: 40px;
-      background: #2a2a2a !important;
-      color: #9aff9a;
-      border-radius: 6px;
-      border: 2px solid #111;
-      box-shadow:
-        inset -3px -3px 6px rgba(255,255,255,.08),
-        inset 3px 3px 6px rgba(0,0,0,.6);
-    }
-    .device-shell.theme-pager .rj-btn:active,
-    .device-shell.theme-pager .rj-btn.active,
-    .device-shell[data-theme="pager"] .rj-btn:active,
-    .device-shell[data-theme="pager"] .rj-btn.active {
-      transform: translateY(2px);
-      box-shadow:
-        inset 3px 3px 6px rgba(255,255,255,.08),
-        inset -3px -3px 6px rgba(0,0,0,.6);
-    }
-    .device-shell.theme-pager .key-btn,
-    .device-shell[data-theme="pager"] .key-btn {
-      width: 95px;
-      height: 34px;
-      font-size: 12px;
-      letter-spacing: 1px;
-    }
-    .device-shell.theme-pager .pager-text,
-    .device-shell[data-theme="pager"] .pager-text {
-      color: #111 !important;
-    }
-    .device-shell.theme-pager .layout-default,
-    .device-shell[data-theme="pager"] .layout-default {
-      display: none;
-    }
-    .device-shell.theme-pager .layout-pager,
-    .device-shell[data-theme="pager"] .layout-pager {
-      display: block;
+    /* ── SCANLINE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
     }
 
-    .pager-brand {
-      display: none;
-      text-align: center;
-      font-weight: bold;
-      font-size: 13px;
-      color: #222;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
+    /* ── NOISE TEXTURE ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9998;
+      opacity: 0.4;
     }
-    .pager-speaker {
-      display: none;
-      gap: 4px;
-      justify-content: center;
-      margin-bottom: 10px;
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #080303; }
+    ::-webkit-scrollbar-thumb { background: var(--red); }
+
+    /* ── NAVIGATION ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 56px;
+      background: rgba(3,0,0,0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
     }
-    .pager-speaker span {
-      width: 6px;
-      height: 6px;
-      background: #444;
+
+    .nav-brand {
+      font-family: var(--display);
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--red-bright);
+      letter-spacing: 0.15em;
+      text-shadow: 0 0 20px rgba(204,26,26,0.6);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      text-decoration: none;
+      letter-spacing: 0.1em;
+      transition: color 0.2s, text-shadow 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--red-bright);
+      text-shadow: 0 0 12px rgba(204,26,26,0.7);
+    }
+
+    .nav-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+    }
+
+    .status-dot {
+      width: 6px; height: 6px;
       border-radius: 50%;
-      display: block;
-    }
-    .pager-clip {
-      display: none;
-      position: absolute;
-      right: -10px;
-      top: 40px;
-      width: 8px;
-      height: 90px;
-      background: #777;
-      border-radius: 4px;
-      box-shadow: inset 0 0 4px #000;
+      background: var(--red-bright);
+      box-shadow: 0 0 8px var(--red-bright);
+      animation: pulse 2s ease-in-out infinite;
     }
 
-    .theme-nav-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 9999px;
-      display: inline-flex;
+    @keyframes pulse {
+      0%,100% { opacity: 1; box-shadow: 0 0 8px var(--red-bright); }
+      50% { opacity: 0.4; box-shadow: 0 0 3px var(--red); }
+    }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(30,41,59,0.6);
-      border: 1px solid rgba(148,163,184,0.25);
-      transition: all 0.15s ease;
-    }
-    .theme-nav-btn:hover { background: rgba(51,65,85,0.8); }
-    .theme-label { min-width: 120px; text-align: center; }
-
-    @keyframes payloadPulse {
-      0%   { transform: scale(0.9); opacity: 0.4; }
-      50%  { transform: scale(1.4); opacity: 1; }
-      100% { transform: scale(0.9); opacity: 0.4; }
-    }
-    .payload-status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 9999px;
-      background: rgba(148,163,184,0.5);
-      opacity: 0.6;
-    }
-    .payload-status-dot.running {
-      background: #8B0000;
-      box-shadow: 0 0 8px rgba(139,0,0,0.6);
-      animation: payloadPulse 1.2s ease-in-out infinite;
-      opacity: 1;
-    }
-
-    .terminal-wrap {
-      background: transparent;
-      border: none;
-      border-radius: 0;
+      position: relative;
+      padding: 6rem 2rem 4rem;
       overflow: hidden;
     }
-    .terminal-divider {
-      border-right: 1px solid rgba(148, 163, 184, 0.2);
-    }
-    .terminal-body {
-      height: 320px;
-    }
-    .terminal-body .xterm-viewport,
-    .terminal-body .xterm-screen,
-    .terminal-body .xterm-scroll-area {
-      background: transparent !important;
-    }
-    .terminal-body .xterm-viewport {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
-    }
-    .terminal-body .xterm-viewport::-webkit-scrollbar {
-      width: 8px;
-    }
-    .terminal-body .xterm-viewport::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .terminal-body .xterm-viewport::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.25);
-      border-radius: 8px;
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 40%, rgba(100,0,0,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 50% 60%, rgba(50,0,0,0.3) 0%, transparent 70%),
+        #030303;
     }
 
-    #logoutBtn,
-    #shellConnect,
-    #shellDisconnect,
-    #payloadsRefresh,
-    #lootUp,
-    #discordWebhookSave,
-    #discordWebhookClear,
-    #lootPreviewClose,
-    #lootPreviewDownload {
-      border-radius: 10px !important;
-      border-color: var(--rj-border) !important;
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(139,0,0,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139,0,0,0.07) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
     }
 
-    #shellConnect,
-    #discordWebhookSave,
-    #lootPreviewClose {
-      box-shadow: var(--rj-glow);
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 900px;
     }
 
-    #status,
-    #shellStatus,
-    #payloadStatus,
-    #systemStatus,
-    #lootStatus,
-    #settingsStatus {
-      color: var(--rj-text-muted);
+    .hero-logo {
+      width: min(480px, 90vw);
+      height: auto;
+      border-radius: 12px;
+      box-shadow:
+        0 0 60px rgba(139,0,0,0.5),
+        0 0 120px rgba(100,0,0,0.3),
+        0 40px 80px rgba(0,0,0,0.8);
+      margin-bottom: 2.5rem;
+      animation: heroFadeIn 1s ease-out forwards, float 6s ease-in-out infinite 1s;
+      opacity: 0;
+      border: 1px solid rgba(139,0,0,0.4);
+    }
+
+    @keyframes heroFadeIn {
+      from { opacity: 0; transform: translateY(30px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      color: var(--red-bright);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.3s forwards;
+    }
+
+    .hero-title {
+      font-family: var(--display);
+      font-size: clamp(2.4rem, 8vw, 5rem);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.5s forwards;
+      text-shadow: 0 0 40px rgba(204,26,26,0.4);
+    }
+
+    .hero-title span {
+      color: var(--red-bright);
+      text-shadow: 0 0 30px rgba(204,26,26,0.8), 0 0 60px rgba(139,0,0,0.5);
+    }
+
+    .hero-subtitle {
+      font-family: var(--body);
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
       font-weight: 500;
-      letter-spacing: 0.015em;
-      transition: color .16s ease, text-shadow .16s ease;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.7s forwards;
     }
 
-    .status-tone-ok { color: #34d399 !important; text-shadow: 0 0 10px rgba(52,211,153,.28); }
-    .status-tone-warn { color: #fbbf24 !important; text-shadow: 0 0 10px rgba(251,191,36,.2); }
-    .status-tone-bad { color: #fb7185 !important; text-shadow: 0 0 10px rgba(244,63,94,.22); }
-
-    @keyframes rjPulseSoft {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.03); }
-    }
-    .payload-status-dot.running {
-      animation: payloadPulse 1.2s ease-in-out infinite, rjPulseSoft 1.8s ease-in-out infinite;
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      justify-content: center;
+      margin-bottom: 3rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.9s forwards;
     }
 
-    #sidebar nav > button,
-    #sidebar nav > a {
+    .badge {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      padding: 0.3rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-dim);
+      background: rgba(139,0,0,0.08);
+      letter-spacing: 0.08em;
+      transition: all 0.2s;
+    }
+
+    .badge:hover {
+      border-color: var(--red-bright);
+      color: var(--red-bright);
+      background: rgba(139,0,0,0.15);
+      box-shadow: 0 0 12px rgba(139,0,0,0.3);
+    }
+
+    .badge.accent {
+      border-color: var(--red-bright);
+      color: var(--red-bright);
+      background: rgba(139,0,0,0.12);
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.8s 1.1s forwards;
+    }
+
+    .btn {
+      font-family: var(--display);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      padding: 0.85rem 2rem;
+      border-radius: 3px;
+      text-decoration: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--red);
+      color: #fff;
+      border: 1px solid var(--red-bright);
+      box-shadow: 0 0 20px rgba(139,0,0,0.4);
+    }
+
+    .btn-primary:hover {
+      background: var(--red-bright);
+      box-shadow: 0 0 30px rgba(204,26,26,0.6);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      color: var(--red-bright);
+      border-color: var(--red-bright);
+      box-shadow: 0 0 15px rgba(139,0,0,0.2);
+      transform: translateY(-2px);
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 3rem;
+      justify-content: center;
+      margin-top: 4rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 1.3s forwards;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: var(--display);
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--red-bright);
+      text-shadow: 0 0 20px rgba(204,26,26,0.5);
+      display: block;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      margin-top: 0.4rem;
+      display: block;
+    }
+
+    /* ── TERMINAL TICKER ── */
+    .ticker {
+      width: 100%;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: rgba(139,0,0,0.05);
+      padding: 0.5rem 0;
+      margin-top: 5rem;
+    }
+
+    .ticker-inner {
+      display: flex;
+      white-space: nowrap;
+      animation: ticker 30s linear infinite;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--red-bright);
+      letter-spacing: 0.1em;
+    }
+
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      margin-bottom: 3rem;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      color: var(--red-bright);
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .section-title {
+      font-family: var(--display);
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 900;
+      color: var(--text-bright);
+      letter-spacing: 0.06em;
+      line-height: 1.1;
+    }
+
+    .section-title span { color: var(--red-bright); }
+
+    .section-desc {
+      margin-top: 0.75rem;
+      color: var(--text-dim);
+      font-size: 1rem;
+      font-weight: 400;
+      max-width: 600px;
+      line-height: 1.7;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0;
+    }
+
+    /* ── FEATURE GRID ── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      padding: 1.75rem;
+      transition: background 0.2s;
       position: relative;
       overflow: hidden;
     }
-    #sidebar nav > .nav-active::before {
+
+    .feature-card::before {
       content: '';
       position: absolute;
-      left: 0;
-      top: 8px;
-      bottom: 8px;
-      width: 3px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, #8B0000, #640000);
-      box-shadow: 0 0 12px rgba(139,0,0,.55);
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--red-dim), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
     }
 
-    #deviceTab .terminal-wrap,
-    #deviceShell,
-    #settingsTab > div,
-    #lootTab > div {
-      border-radius: 16px;
+    .feature-card:hover { background: var(--bg-panel); }
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      display: block;
     }
 
+    .feature-title {
+      font-family: var(--display);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--red-bright);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.6rem;
+    }
+
+    .feature-desc {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    /* ── TERMINAL BLOCK ── */
+    .terminal {
+      background: #060202;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1rem;
+      background: #0d0404;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot-red   { background: #8B0000; }
+    .dot-dim1  { background: #2a1010; }
+    .dot-dim2  { background: #1a0808; }
+
+    .terminal-title {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .terminal-body {
+      padding: 1.25rem 1.5rem;
+      line-height: 2;
+    }
+
+    .t-prompt { color: var(--red-bright); }
+    .t-cmd    { color: var(--text-bright); }
+    .t-out    { color: var(--text-dim); }
+    .t-green  { color: #2ecc71; }
+    .t-yellow { color: #f39c12; }
+    .t-comment { color: #4a2a2a; }
+
+    /* ── MENU TREE ── */
+    .menu-tree {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 2.1;
+      color: var(--text-dim);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.5rem 2rem;
+      overflow-x: auto;
+    }
+
+    .menu-root { color: var(--red-bright); font-weight: bold; }
+    .menu-key  { color: var(--text-bright); }
+    .menu-sep  { color: var(--red-dim); }
+    .menu-desc { color: var(--text-dim); }
+
+    /* ── PAYLOAD TABLE ── */
+    .payload-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .payload-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.25rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+
+    .payload-card:hover {
+      border-color: var(--red-bright);
+      box-shadow: 0 0 20px rgba(139,0,0,0.2);
+    }
+
+    .payload-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .payload-cat {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--red-bright);
+      letter-spacing: 0.1em;
+    }
+
+    .payload-count {
+      font-family: var(--display);
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--red-bright);
+      text-shadow: 0 0 15px rgba(204,26,26,0.4);
+    }
+
+    .payload-items {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    /* ── HARDWARE TABLE ── */
+    .hw-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+    }
+
+    .hw-table th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--red-bright);
+      letter-spacing: 0.1em;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+    }
+
+    .hw-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid rgba(139,0,0,0.1);
+      color: var(--text-dim);
+      vertical-align: top;
+    }
+
+    .hw-table tr:last-child td { border-bottom: none; }
+    .hw-table tr:hover td { background: rgba(139,0,0,0.05); }
+
+    .hw-table .name { color: var(--text-bright); font-weight: 500; }
+    .hw-table .cost { color: var(--red-bright); text-align: right; }
+
+    .compat-ok   { color: #2ecc71; }
+    .compat-warn { color: #f39c12; }
+    .compat-no   { color: #8B0000; }
+
+    /* ── INSTALL STEPS ── */
+    .install-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .install-step {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    .step-num {
+      width: 48px; height: 48px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--display);
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--red-bright);
+      background: var(--bg-card);
+      flex-shrink: 0;
+    }
+
+    .step-body h4 {
+      font-family: var(--display);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: 0.08em;
+      margin-bottom: 0.3rem;
+    }
+
+    .step-body p {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* ── WEBUI FEATURES ── */
+    .webui-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .webui-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.25rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      transition: border-color 0.2s;
+    }
+
+    .webui-item:hover { border-color: var(--red-bright); }
+
+    .webui-icon {
+      font-size: 1.3rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .webui-text h4 {
+      font-family: var(--display);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--red-bright);
+      letter-spacing: 0.08em;
+      margin-bottom: 0.3rem;
+    }
+
+    .webui-text p {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* ── MODULE TABLE ── */
+    .module-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .module-row {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 0;
+      border-bottom: 1px solid rgba(139,0,0,0.12);
+      transition: background 0.15s;
+    }
+
+    .module-row:last-child { border-bottom: none; }
+    .module-row:hover { background: rgba(139,0,0,0.06); }
+
+    .module-name {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--red-bright);
+      padding: 1rem 1.25rem;
+      border-right: 1px solid rgba(139,0,0,0.12);
+      display: flex;
+      align-items: center;
+    }
+
+    .module-desc {
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      padding: 1rem 1.25rem;
+      line-height: 1.5;
+      display: flex;
+      align-items: center;
+    }
+
+    /* ── CREDITS ── */
+    #credits {
+      padding: 6rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .credits-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(80,0,0,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .credits-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .credits-note {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--red-bright);
+      border-radius: 0 4px 4px 0;
+      padding: 1.75rem 2rem;
+      margin-bottom: 2.5rem;
+      font-size: 1rem;
+      color: var(--text-dim);
+      line-height: 1.8;
+    }
+
+    .credits-note strong { color: var(--text-bright); }
+
+    .credits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .credit-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.25rem;
+      text-align: center;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .credit-card:hover {
+      border-color: var(--red-bright);
+      box-shadow: 0 0 20px rgba(139,0,0,0.2);
+    }
+
+    .credit-role {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--red-bright);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .credit-handle {
+      font-family: var(--display);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+
+    .credit-handle a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .credit-handle a:hover { color: var(--red-bright); }
+
+    .raspyjack-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .rj-logo-wrap {
+      flex-shrink: 0;
+    }
+
+    .rj-logo {
+      width: 140px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 0 30px rgba(139,0,0,0.3);
+    }
+
+    .rj-info h3 {
+      font-family: var(--display);
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--text-bright);
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+
+    .rj-info h3 a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .rj-info h3 a:hover { color: var(--red-bright); }
+
+    .rj-info p {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+      max-width: 500px;
+    }
+
+    .rj-info .rj-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--red-bright);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      transition: text-shadow 0.2s;
+    }
+
+    .rj-link:hover {
+      text-shadow: 0 0 10px rgba(204,26,26,0.7);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+
+    footer a { color: var(--red-bright); text-decoration: none; }
+    footer .footer-brand {
+      font-family: var(--display);
+      font-size: 0.9rem;
+      color: var(--red-bright);
+      font-weight: 700;
+      display: block;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 15px rgba(204,26,26,0.4);
+    }
+
+    /* ── INTERACTIVE TERMINAL ── */
+    .interactive-terminal {
+      background: #060202;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      font-family: var(--mono);
+    }
+
+    .int-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1rem;
+      background: #0d0404;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .int-title {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      margin: 0 auto;
+    }
+
+    .int-body {
+      padding: 1rem 1.25rem;
+      height: 260px;
+      overflow-y: auto;
+      line-height: 1.8;
+      font-size: 0.78rem;
+    }
+
+    .int-input-row {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid rgba(139,0,0,0.2);
+      gap: 0.5rem;
+    }
+
+    .int-prompt-label {
+      color: var(--red-bright);
+      flex-shrink: 0;
+      font-size: 0.78rem;
+    }
+
+    .int-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-bright);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      caret-color: var(--red-bright);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ── RESPONSIVE ── */
     @media (max-width: 768px) {
-      main {
-        padding-left: 0.75rem !important;
-        padding-right: 0.75rem !important;
-      }
-      #deviceTab .terminal-body {
-        height: 250px;
-      }
-      #deviceShell {
-        transform: scale(.96);
-        transform-origin: top center;
-      }
+      .nav-links { display: none; }
+      .module-row { grid-template-columns: 1fr; }
+      .module-name { border-right: none; border-bottom: 1px solid rgba(139,0,0,0.12); }
+      .hero-stats { gap: 1.5rem; }
+      .install-step { grid-template-columns: 40px 1fr; }
+      .raspyjack-banner { flex-direction: column; align-items: flex-start; }
     }
+
+    /* ── GLOW PULSE ON LOGO ── */
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 0 60px rgba(139,0,0,0.5), 0 0 120px rgba(100,0,0,0.3); }
+      50%      { box-shadow: 0 0 80px rgba(180,0,0,0.7), 0 0 160px rgba(139,0,0,0.4); }
+    }
+
+    .hero-logo { animation: heroFadeIn 1s ease-out forwards, float 6s ease-in-out infinite 1s, glowPulse 4s ease-in-out infinite 1s; }
+
+    /* ── FORCE DARK EVERYWHERE ── */
+    html, body { background: #030303 !important; color: #d4c4c4 !important; }
+    .module-row { background: #0a0505 !important; }
+    .module-row:hover { background: rgba(139,0,0,0.06) !important; }
+    .module-name { background: #0a0505 !important; }
+    .module-desc { background: #0a0505 !important; }
+    .hw-table { background: #0a0505 !important; }
+    .hw-table tr { background: #0a0505 !important; }
+    .hw-table tr:hover td { background: rgba(139,0,0,0.08) !important; }
+    .hw-table td, .hw-table th { background: transparent !important; }
+    section { background: #030303 !important; }
+    #hero { background: #030303 !important; }
+    #credits { background: #030303 !important; }
+    footer { background: #030303 !important; }
   </style>
 </head>
 <body class="min-h-screen text-slate-200">
-  <div class="min-h-screen md:flex">
-    <div id="sidebarBackdrop" class="hidden fixed inset-0 z-30 bg-black/60"></div>
-    <aside id="sidebar" class="fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-40 w-64 -translate-x-full md:translate-x-0 transform transition bg-slate-950/60 border-r border-slate-800/70 backdrop-blur flex flex-col">
-      <div class="p-4 border-b border-slate-800/70">
-        <div class="flex items-center gap-3 select-none">
-          <img src="./ktox.png" alt="KTOx" class="h-10 drop-shadow-[0_0_16px_rgba(139,0,0,0.35)]"/>
-          <div>
-            <div class="text-lg font-black tracking-wide">KTOx <span class="text-rose-400">WebUI</span></div>
-            <div class="text-[11px] text-slate-400">Web Interface</div>
-          </div>
+  <div class="min-h-screen flex flex-col relative">
+    <div class="absolute inset-0 grid-pattern opacity-30 pointer-events-none"></div>
+    <!-- Header -->
+    <header class="flex items-center justify-between px-4 py-2 border-b border-slate-800/70 bg-slate-950/60 backdrop-blur scanlines relative overflow-hidden">
+      <div class="flex items-center gap-3 relative z-10">
+        <img src="./ktox.png" alt="KTOx" class="h-8 drop-shadow-[0_0_12px_rgba(139,0,0,0.45)]"/>
+        <div>
+          <div class="text-sm font-black tracking-wide text-glow">KTOx WebUI</div>
+          <div class="text-[10px] text-slate-400">Web Interface</div>
         </div>
       </div>
+      <!-- Toolbar center -->
+      <div class="flex items-center gap-1.5 relative z-10">
+        <button id="wizardBtn" class="ide-toolbar-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Wizard</button>
+        <button id="templatesBtn" class="ide-toolbar-btn"><i class="fa-solid fa-layer-group"></i> Templates</button>
+        <div class="ide-toolbar-sep"></div>
+        <button id="gpioToggleBtn" class="ide-toolbar-btn"><i class="fa-solid fa-microchip"></i> GPIO</button>
+      </div>
+      <!-- Right -->
+      <div class="flex items-center gap-3 text-xs relative z-10">
+        <div id="ideStatus" class="text-slate-400">Ready</div>
+        <button id="logoutBtn" type="button" class="ide-toolbar-btn ide-toolbar-btn--danger">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+        <a href="./index.html" class="ide-toolbar-btn">
+          <i class="fa-solid fa-arrow-left"></i> Back to WebUI
+        </a>
+      </div>
+    </header>
 
-      <nav class="p-3 space-y-2 flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        <button id="navDevice" type="button" class="w-full px-3 py-2 rounded-xl text-left text-sm font-semibold border border-red-400/30 bg-red-800/10 text-red-400 shadow-[0_0_16px_rgba(16,185,129,0.15)]"><i class="fa-solid fa-gamepad mr-2"></i>Device</button>
-        <button id="navSystem" type="button" class="w-full px-3 py-2 rounded-xl text-left text-sm font-semibold border border-slate-400/20 bg-slate-800/40 text-slate-300 hover:text-white hover:bg-slate-700/50 transition"><i class="fa-solid fa-microchip mr-2"></i>System</button>
-        <div id="systemDropdown" class="hidden rounded-xl border border-slate-800/80 bg-slate-950/40 p-2 space-y-2">
-          <div class="flex items-center justify-between">
-            <div class="text-[11px] font-semibold text-red-400">System Monitor</div>
-            <div id="systemStatus" class="text-[10px] text-slate-400">Ready</div>
-          </div>
-
-          <div class="rounded-lg border border-slate-800/80 bg-slate-900/40 p-2">
-            <div class="text-[10px] text-slate-400 mb-1">CPU</div>
-            <div class="flex items-center justify-between">
-              <div id="sysCpuValue" class="text-sm font-semibold text-slate-100">0%</div>
-              <div id="sysTempValue" class="text-[10px] text-slate-400">--.- C</div>
-            </div>
-            <div class="mt-1 h-1.5 rounded bg-slate-800 overflow-hidden">
-              <div id="sysCpuBar" class="h-1.5 bg-red-800/80" style="width: 0%"></div>
-            </div>
-          </div>
-
-          <div class="rounded-lg border border-slate-800/80 bg-slate-900/40 p-2">
-            <div class="text-[10px] text-slate-400 mb-1">Memory</div>
-            <div id="sysMemValue" class="text-sm font-semibold text-slate-100">0%</div>
-            <div id="sysMemMeta" class="text-[10px] text-slate-400">0 / 0</div>
-            <div class="mt-1 h-1.5 rounded bg-slate-800 overflow-hidden">
-              <div id="sysMemBar" class="h-1.5 bg-cyan-500/80" style="width: 0%"></div>
-            </div>
-          </div>
-
-          <div class="rounded-lg border border-slate-800/80 bg-slate-900/40 p-2">
-            <div class="text-[10px] text-slate-400 mb-1">Disk (/)</div>
-            <div id="sysDiskValue" class="text-sm font-semibold text-slate-100">0%</div>
-            <div id="sysDiskMeta" class="text-[10px] text-slate-400">0 / 0</div>
-            <div class="mt-1 h-1.5 rounded bg-slate-800 overflow-hidden">
-              <div id="sysDiskBar" class="h-1.5 bg-fuchsia-500/80" style="width: 0%"></div>
-            </div>
-          </div>
-
-          <div class="rounded-lg border border-slate-800/80 bg-slate-900/40 p-2 text-[10px] text-slate-300 space-y-1">
-            <div>Uptime: <span id="sysUptime">-</span></div>
-            <div>Load: <span id="sysLoad">-</span></div>
-            <div>Payload: <span id="sysPayload">none</span></div>
-          </div>
-
-          <div class="rounded-lg border border-slate-800/80 bg-slate-900/40 p-2">
-            <div class="text-[10px] text-slate-400 mb-1">Interfaces</div>
-            <div id="sysInterfaces" class="text-[10px] text-slate-300 space-y-1">
-              <div class="text-slate-500">No data yet</div>
-            </div>
+    <!-- Main layout -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden min-w-0 w-full">
+      <!-- Left: file tree -->
+      <section id="leftPanel" class="md:w-1/4 border-r border-slate-800/70 bg-slate-950/50 backdrop-blur flex flex-col min-h-[260px] relative" style="min-width: 200px; max-width: 50%;">
+        <!-- Resize handle -->
+        <div id="resizeHandle" class="hidden md:block absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-red-800/30 transition-colors z-10" style="touch-action: none;"></div>
+        <div class="px-3 py-2 border-b border-slate-800/70 flex items-center justify-between">
+          <div class="text-xs font-semibold text-red-400">Payloads</div>
+          <div class="flex items-center gap-1 text-[11px] text-slate-400">
+            <button id="refreshTree" class="ide-toolbar-btn">
+              <i class="fa-solid fa-rotate-right"></i> Refresh
+            </button>
           </div>
         </div>
-        <button id="navLoot" type="button" class="w-full px-3 py-2 rounded-xl text-left text-sm font-semibold border border-slate-400/20 bg-slate-800/40 text-slate-300 hover:text-white hover:bg-slate-700/50 transition"><i class="fa-solid fa-vault mr-2"></i>Loot</button>
-        <button id="navSettings" type="button" class="w-full px-3 py-2 rounded-xl text-left text-sm font-semibold border border-slate-400/20 bg-slate-800/40 text-slate-300 hover:text-white hover:bg-slate-700/50 transition"><i class="fa-solid fa-sliders mr-2"></i>Settings</button>
-        <a id="navPayloadStudio" href="./ide.html" class="w-full px-3 py-2 rounded-xl text-left text-sm font-semibold border border-slate-400/20 bg-slate-800/40 text-slate-300 hover:text-white hover:bg-slate-700/50 transition block"><i class="fa-solid fa-code mr-2"></i>Payload Studio</a>
+        <div class="px-3 py-2 flex items-center gap-2 text-[11px] border-b border-slate-800/70">
+          <button id="newFileBtn" class="ide-toolbar-btn">
+            <i class="fa-solid fa-file-circle-plus"></i> File
+          </button>
+          <button id="newFolderBtn" class="ide-toolbar-btn">
+            <i class="fa-solid fa-folder-plus"></i> Folder
+          </button>
+        </div>
+        <div id="treeContainer" class="flex-1 overflow-auto px-2 py-2 text-xs">
+          <!-- tree populated by ide.js -->
+        </div>
+      </section>
 
-        <div class="pt-2 border-t border-slate-800/70">
-          <div class="flex items-center justify-between px-3 pb-2">
-            <div class="text-xs font-semibold text-red-400">Payloads</div>
-            <div class="flex items-center gap-2">
-              <div class="flex items-center gap-1">
-                <span id="payloadStatusDot" class="payload-status-dot" aria-hidden="true"></span>
-                <div id="payloadStatus" class="text-[10px] text-slate-400">Ready</div>
+      <!-- Center: editor -->
+      <section class="flex-1 flex flex-col min-h-[260px] overflow-hidden min-w-0">
+        <div class="px-4 py-2 border-b border-slate-800/70 bg-slate-950/40 flex items-center justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <div id="currentPath" class="text-xs text-slate-400 truncate">No file selected</div>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span id="dirtyFlag" class="text-amber-400 hidden">● Unsaved</span>
+            <span id="payloadRunState" class="text-slate-400">Idle</span>
+            <button id="saveBtn" class="ide-toolbar-btn ide-toolbar-btn--success disabled:opacity-40 disabled:cursor-not-allowed">
+              <i class="fa-solid fa-floppy-disk text-[10px]"></i> Save
+            </button>
+            <button id="runBtn" class="ide-toolbar-btn ide-toolbar-btn--success disabled:opacity-40 disabled:cursor-not-allowed">
+              <i class="fa-solid fa-play text-[10px]"></i> Run
+            </button>
+            <button id="stopBtn" class="ide-toolbar-btn ide-toolbar-btn--danger disabled:opacity-40 disabled:cursor-not-allowed">
+              <i class="fa-solid fa-stop text-[10px]"></i> Stop
+            </button>
+          </div>
+        </div>
+        <div class="editor-body bg-transparent h-[800px] border-r border-slate-800/70">
+          <textarea id="editor" class="w-full h-full"></textarea>
+        </div>
+      </section>
+
+      <!-- Right: handheld preview -->
+      <section class="flex-1 flex flex-col min-w-0 border-l border-slate-800/70 bg-transparent items-center justify-start py-4 px-3 min-h-[260px]">
+        <div class="w-full flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="text-xs font-semibold text-red-400">Handheld Preview</div>
+            <button id="restartUiBtn" type="button" class="ide-toolbar-btn ide-toolbar-btn--success">
+              <i class="fa-solid fa-rotate"></i> Restart UI
+            </button>
+          </div>
+          <div id="wsStatus" class="text-[11px] text-slate-400">Connecting…</div>
+        </div>
+        <div id="deviceShell" class="device-shell theme-gameboy rounded-3xl p-4 w-fit mx-auto">
+          <div class="layout-gameboy">
+            <div class="screen-frame">
+              <canvas id="screen-gb" width="128" height="128" class="w-[240px] md:w-[260px] aspect-square"></canvas>
+            </div>
+            <div class="flex justify-between mb-4">
+              <div class="grid grid-cols-3 grid-rows-3 gap-2">
+                <div></div>
+                <button class="rj-btn" data-btn="UP">▲</button>
+                <div></div>
+                <button class="rj-btn" data-btn="LEFT">◄</button>
+                <button class="rj-btn" data-btn="OK" aria-label="OK"></button>
+                <button class="rj-btn" data-btn="RIGHT">►</button>
+                <div></div>
+                <button class="rj-btn" data-btn="DOWN">▼</button>
+                <div></div>
               </div>
-              <button id="payloadsRefresh" type="button" class="px-2 py-1 text-[10px] rounded-md bg-slate-800/70 border border-slate-600/40 text-slate-200 hover:bg-slate-700/70 transition">Refresh</button>
-            </div>
-          </div>
-          <div id="payloadSidebar" class="space-y-2 px-2 pb-2">
-            <!-- payload categories injected by app.js -->
-          </div>
-        </div>
-      </nav>
-    </aside>
-
-    <main class="flex-1 px-4 py-6 md:px-8">
-      <div class="flex items-center justify-between mb-4 md:mb-6 px-3 py-2 border border-slate-800/70 bg-slate-950/45 backdrop-blur rounded-xl">
-        <div class="flex items-center gap-2 text-[11px] text-slate-300">
-          <i class="fa-solid fa-terminal text-red-400"></i>
-          <span class="tracking-wide">WEBUI CONTROL DECK</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <button id="menuToggle" type="button" class="md:hidden px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-600/40 text-slate-200"><i class="fa-solid fa-bars"></i></button>
-          <button id="logoutBtn" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-600/40 text-slate-200 hover:bg-slate-700/80 transition"><i class="fa-solid fa-right-from-bracket mr-1"></i>Logout</button>
-        </div>
-      </div>
-
-      <!-- Device card -->
-      <div id="deviceTab" class="block">
-        <div class="flex flex-col md:flex-row md:items-start md:gap-6">
-          <div class="md:order-1 order-2 flex-1 min-w-0">
-            <div class="terminal-wrap terminal-divider md:pr-6">
-              <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800/70">
-                <div class="text-sm font-semibold text-red-400">Terminal</div>
-                <div class="flex items-center gap-2">
-                  <div id="shellStatus" class="text-[11px] text-slate-400">Disconnected</div>
-                  <button id="shellConnect" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 transition">Open</button>
-                  <button id="shellDisconnect" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-600/40 text-slate-200 hover:bg-slate-700/80 transition">Close</button>
-                </div>
+              <div class="flex flex-col gap-2 side-buttons">
+                <button class="rj-btn key-btn" data-btn="KEY1">KEY1</button>
+                <button class="rj-btn key-btn" data-btn="KEY2">KEY2</button>
+                <button class="rj-btn key-btn" data-btn="KEY3">KEY3</button>
               </div>
-              <div id="terminal" class="terminal-body"></div>
             </div>
-          </div>
-
-          <div class="md:order-2 order-1 flex justify-center md:justify-end md:pl-6">
-            <div id="deviceShell" data-theme="neon" class="device-shell theme-neon rounded-3xl p-4 md:p-5 w-fit mx-auto md:mx-0">
-      <div class="pager-clip" aria-hidden="true"></div>
-      <div class="pager-brand">KTOx_Pi</div>
-      <div class="pager-speaker" aria-hidden="true">
-        <span></span><span></span><span></span><span></span><span></span>
-      </div>
-      <!-- Default layout (Neon / Pager) -->
-      <div class="layout-default grid grid-cols-[140px_140px] md:grid-cols-[120px_auto_120px] gap-3 md:gap-4 justify-items-center items-center">
-        <!-- Left pad -->
-        <div class="order-2 md:order-1 flex md:block justify-center justify-self-start">
-          <div class="grid grid-cols-3 grid-rows-3 gap-1.5 w-[120px]">
-            <div></div>
-            <button class="rj-btn dpad-btn rounded-xl bg-slate-800/70 hover:bg-slate-700/70 w-10 h-10 flex items-center justify-center backdrop-blur ring-1 ring-white/10 hover:ring-red-400/30 transition" data-btn="UP">▲</button>
-            <div></div>
-            <button class="rj-btn dpad-btn rounded-xl bg-slate-800/70 hover:bg-slate-700/70 w-10 h-10 flex items-center justify-center backdrop-blur ring-1 ring-white/10 hover:ring-red-400/30 transition" data-btn="LEFT">◄</button>
-            <button class="rj-btn ok-btn rounded-xl bg-red-900/80 hover:bg-red-800/80 w-10 h-10 flex items-center justify-center ring-1 ring-red-300/40 transition" data-btn="OK" aria-label="OK"></button>
-            <button class="rj-btn dpad-btn rounded-xl bg-slate-800/70 hover:bg-slate-700/70 w-10 h-10 flex items-center justify-center backdrop-blur ring-1 ring-white/10 hover:ring-red-400/30 transition" data-btn="RIGHT">►</button>
-            <div></div>
-            <button class="rj-btn dpad-btn rounded-xl bg-slate-800/70 hover:bg-slate-700/70 w-10 h-10 flex items-center justify-center backdrop-blur ring-1 ring-white/10 hover:ring-red-400/30 transition" data-btn="DOWN">▼</button>
-            <div></div>
+            <div class="text-center text-xs text-gray-300">OK = Enter · KEY3 = Esc</div>
+            <div class="status-text text-center text-[11px] text-gray-500 mt-1">Connected</div>
           </div>
         </div>
-
-        <!-- Screen -->
-        <div class="order-1 md:order-2 col-span-2 md:col-span-1">
-          <div class="screen-frame rounded-2xl p-2">
-            <div class="flex items-center justify-center">
-              <canvas id="screen" width="128" height="128" class="w-[240px] md:w-[300px] aspect-square"></canvas>
-            </div>
-          </div>
-          <div class="pager-text mt-3 text-center text-xs text-slate-400">OK = Enter · KEY3 = Esc</div>
-          <div id="status" class="status-text pager-text mt-1 text-center text-[11px] text-slate-500">Connecting…</div>
-        </div>
-
-        <!-- Right buttons -->
-        <div class="order-3 md:order-3 flex flex-col items-center gap-2 md:items-stretch justify-self-end">
-          <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-24 ring-1 ring-white/10 transition" data-btn="KEY1">KEY1</button>
-          <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-24 ring-1 ring-white/10 transition" data-btn="KEY2">KEY2</button>
-          <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-24 ring-1 ring-white/10 transition" data-btn="KEY3">KEY3</button>
-        </div>
-      </div>
-
-      <!-- Game Boy layout -->
-      <div class="layout-gameboy hidden">
-        <div class="screen-frame">
-          <canvas id="screen-gb" width="128" height="128" class="w-[240px] md:w-[300px] aspect-square"></canvas>
-        </div>
-        <div class="flex justify-between mb-4">
-          <div class="grid grid-cols-3 grid-rows-3 gap-2">
-            <div></div>
-            <button class="rj-btn" data-btn="UP">▲</button>
-            <div></div>
-            <button class="rj-btn" data-btn="LEFT">◄</button>
-            <button class="rj-btn" data-btn="OK" aria-label="OK"></button>
-            <button class="rj-btn" data-btn="RIGHT">►</button>
-            <div></div>
-            <button class="rj-btn" data-btn="DOWN">▼</button>
-            <div></div>
-          </div>
-          <div class="flex flex-col gap-2 side-buttons">
-            <button class="rj-btn key-btn" data-btn="KEY1">KEY1</button>
-            <button class="rj-btn key-btn" data-btn="KEY2">KEY2</button>
-            <button class="rj-btn key-btn" data-btn="KEY3">KEY3</button>
-          </div>
-        </div>
-        <div class="text-center text-xs text-gray-300">OK = Enter · KEY3 = Esc</div>
-        <div class="status-text text-center text-[11px] text-gray-500 mt-1">Connecting…</div>
-      </div>
-
-      <!-- Pager layout -->
-      <div class="layout-pager hidden">
-        <div class="screen-frame">
-          <canvas id="screen-pager" width="128" height="128" class="w-[240px] md:w-[300px] aspect-square"></canvas>
-        </div>
-        <div class="flex justify-between mb-4 mt-4">
-          <div class="grid grid-cols-3 grid-rows-3 gap-2">
-            <div></div>
-            <button class="rj-btn" data-btn="UP">▲</button>
-            <div></div>
-            <button class="rj-btn" data-btn="LEFT">◄</button>
-            <button class="rj-btn" data-btn="OK" aria-label="OK"></button>
-            <button class="rj-btn" data-btn="RIGHT">►</button>
-            <div></div>
-            <button class="rj-btn" data-btn="DOWN">▼</button>
-            <div></div>
-          </div>
-          <div class="flex flex-col gap-2 side-buttons">
-            <button class="rj-btn key-btn" data-btn="KEY1">KEY1</button>
-            <button class="rj-btn key-btn" data-btn="KEY2">KEY2</button>
-            <button class="rj-btn key-btn" data-btn="KEY3">KEY3</button>
-          </div>
-        </div>
-        <div class="pager-text text-center text-[11px] mt-4">OK = Enter · KEY3 = Esc</div>
-        <div class="status-text pager-text text-center text-[10px] mt-1">Connecting…</div>
-          </div>
-        </div>
-      </div>
-      </div>
-
-      <!-- Settings -->
-      <div id="settingsTab" class="hidden">
-        <div class="rounded-3xl border border-slate-700/60 bg-slate-900/40 backdrop-blur p-4 md:p-5 max-w-3xl mx-auto shadow-[0_0_30px_rgba(15,23,42,0.35)] space-y-4">
-          <div class="flex items-center justify-between">
-            <div class="text-sm font-semibold text-red-400">Settings</div>
-            <div class="text-[11px] text-slate-400">Current theme: <span id="themeName">Neon</span></div>
-          </div>
-
-          <div class="rounded-xl border border-slate-800/70 bg-slate-950/40 p-3">
-            <div class="text-xs font-semibold text-slate-200 mb-2">Themes</div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <button type="button" data-theme="neon" class="px-3 py-2 rounded-lg text-left text-xs font-semibold border border-slate-500/20 bg-slate-900/40 text-slate-300 hover:bg-slate-800/60 transition">Neon</button>
-              <button type="button" data-theme="gameboy" class="px-3 py-2 rounded-lg text-left text-xs font-semibold border border-slate-500/20 bg-slate-900/40 text-slate-300 hover:bg-slate-800/60 transition">Game Boy</button>
-              <button type="button" data-theme="pager" class="px-3 py-2 rounded-lg text-left text-xs font-semibold border border-slate-500/20 bg-slate-900/40 text-slate-300 hover:bg-slate-800/60 transition">Pager</button>
-            </div>
-          </div>
-
-          <div class="rounded-xl border border-slate-800/70 bg-slate-950/40 p-3">
-            <div class="text-xs font-semibold text-slate-200 mb-2">Discord Webhook</div>
-            <label for="discordWebhookInput" class="block text-[11px] text-slate-400 mb-1">Webhook URL</label>
-            <input id="discordWebhookInput" type="password" autocomplete="off" placeholder="https://discord.com/api/webhooks/..." class="w-full px-3 py-2 rounded-lg bg-slate-900/70 border border-slate-700/60 text-slate-100 text-xs focus:outline-none focus:ring-1 focus:ring-red-400/50">
-            <div class="mt-2 flex items-center gap-2">
-              <button id="discordWebhookSave" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 transition">Save</button>
-              <button id="discordWebhookClear" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-600/40 text-slate-200 hover:bg-slate-700/80 transition">Clear</button>
-              <div id="settingsStatus" class="text-[11px] text-slate-400">Ready</div>
-            </div>
-          </div>
-
-          <div class="rounded-xl border border-slate-800/70 bg-slate-950/40 p-3">
-            <div class="flex items-center justify-between mb-2">
-              <div class="text-xs font-semibold text-slate-200">Tailscale</div>
-              <div id="tailscaleSettingsStatus" class="text-[11px] text-slate-400">Not installed</div>
-            </div>
-            <p class="text-[11px] text-slate-400 mb-2">
-              One-time setup with a Tailscale auth key. After install, use the Tailscale payload on the device to toggle the tunnel.
-            </p>
-            <div class="flex flex-wrap gap-2">
-              <button id="tailscaleInstallBtn" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 transition">
-                Install Tailscale
-              </button>
-              <button id="tailscaleReauthBtn" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-600/40 text-slate-200 hover:bg-slate-700/80 transition hidden">
-                Re-authenticate with new key
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Loot browser -->
-      <div id="lootTab" class="hidden">
-        <div class="rounded-3xl border border-slate-700/60 bg-slate-900/40 backdrop-blur p-4 md:p-5 max-w-3xl mx-auto shadow-[0_0_30px_rgba(15,23,42,0.35)]">
-          <div class="flex items-center justify-between mb-3">
-            <div class="text-sm font-semibold text-red-400">Loot Vault</div>
-            <div id="lootStatus" class="text-[11px] text-slate-400">Ready</div>
-          </div>
-          <div class="flex items-center gap-2 mb-3">
-            <button id="lootUp" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-slate-800/70 border border-slate-600/40 text-slate-200 hover:bg-slate-700/70 transition">Up</button>
-            <div id="lootPath" class="text-xs text-slate-400 truncate">/</div>
-          </div>
-          <div id="lootList" class="divide-y divide-slate-800/80 border border-slate-800/70 rounded-xl overflow-hidden bg-slate-950/40">
-            <!-- items injected by app.js -->
-          </div>
-          <div class="mt-3 text-[11px] text-slate-500">Tip: click folders to navigate, click files to preview or download.</div>
-        </div>
-      </div>
-
+      </section>
     </main>
   </div>
 
-  <!-- Loot preview modal -->
-  <div id="lootPreview" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
-      <div class="max-w-4xl mx-auto mt-10 md:mt-16 px-4">
-        <div class="rounded-2xl border border-slate-700/60 bg-slate-950/90 shadow-[0_0_40px_rgba(15,23,42,0.65)] overflow-hidden">
-          <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800/70">
-            <div class="text-sm font-semibold text-red-400 truncate" id="lootPreviewTitle">Preview</div>
-            <div class="flex items-center gap-2">
-              <a id="lootPreviewDownload" href="#" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/40 text-slate-200 hover:bg-slate-700/80 transition">Download</a>
-              <button id="lootPreviewClose" type="button" class="text-xs px-3 py-1.5 rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 transition">Close</button>
-            </div>
-          </div>
-          <div class="px-4 py-3">
-            <div id="lootPreviewMeta" class="text-[11px] text-slate-400 mb-2"></div>
-            <pre id="lootPreviewBody" class="text-xs text-slate-100 whitespace-pre-wrap max-h-[60vh] overflow-auto"></pre>
-          </div>
-        </div>
-      </div>
-  </div>
-
-  <!-- Nmap visualization modal -->
-  <div id="nmapVizModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
-    <div class="max-w-6xl mx-auto mt-6 md:mt-10 px-4 pb-6">
-      <div class="rounded-2xl border border-slate-700/60 bg-slate-950/95 shadow-[0_0_40px_rgba(15,23,42,0.7)] overflow-hidden">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800/70 gap-3">
-          <div class="min-w-0">
-            <div id="nmapVizTitle" class="text-sm font-semibold text-red-400 truncate">Nmap Visualization</div>
-            <div id="nmapVizMeta" class="text-[11px] text-slate-400 mt-1"></div>
-          </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <a id="nmapVizDownloadXml" href="#" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/40 text-slate-200 hover:bg-slate-700/80 transition">XML</a>
-            <a id="nmapVizDownloadJson" href="#" download="nmap.json" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/40 text-slate-200 hover:bg-slate-700/80 transition">JSON</a>
-            <button id="nmapVizClose" type="button" class="text-xs px-3 py-1.5 rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 transition">Close</button>
-          </div>
-        </div>
-        <div class="px-4 py-3 border-b border-slate-800/70 flex flex-wrap items-center justify-between gap-3">
-          <div id="nmapVizStatus" class="text-[11px] text-slate-400">Ready</div>
-          <label class="inline-flex items-center gap-2 text-[11px] text-slate-300 select-none">
-            <input id="nmapVizFilterVuln" type="checkbox" class="rounded border-slate-600 bg-slate-900/80 text-red-500 focus:ring-red-400 focus:ring-offset-0">
-            <span>Show vulnerable hosts only</span>
-          </label>
-        </div>
-        <div class="px-4 py-4 max-h-[76vh] overflow-auto">
-          <div id="nmapVizError" class="hidden mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200"></div>
-          <div id="nmapVizBody" class="space-y-4"></div>
-        </div>
-      </div>
+  <!-- Tree context menu -->
+  <div id="treeContextMenu" class="hidden fixed z-50" style="left:0;top:0;">
+    <div id="treeContextMenuPanel" class="rounded-xl border border-slate-700/70 bg-slate-950/95 shadow-[0_0_20px_rgba(15,23,42,0.7)] py-1 text-xs text-slate-100 min-w-[130px]">
+      <button id="ctxRename" class="w-full px-3 py-1.5 text-left hover:bg-slate-800/80">Rename</button>
+      <button id="ctxDelete" class="w-full px-3 py-1.5 text-left text-rose-300 hover:bg-rose-900/50">Delete</button>
     </div>
   </div>
 
-  <!-- Tailscale setup modal -->
-  <div id="tailscaleModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
-    <div class="max-w-md mx-auto mt-16 md:mt-20 px-4">
+  <!-- Create file/folder modal -->
+  <div id="entryModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
+    <div class="max-w-sm mx-auto mt-24 px-4">
       <div class="rounded-2xl border border-slate-700/60 bg-slate-950/95 shadow-[0_0_30px_rgba(15,23,42,0.75)] overflow-hidden">
         <div class="px-4 py-3 border-b border-slate-800/70 flex items-center justify-between">
-          <div class="text-sm font-semibold text-red-400">Install Tailscale</div>
-          <button id="tailscaleModalClose" type="button" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded-md bg-slate-900/60 border border-slate-700/60">✕</button>
-        </div>
-        <div class="px-4 py-3 space-y-3 text-xs">
-          <p class="text-slate-400">
-            1. Open
-            <a href="https://login.tailscale.com/admin/settings/authkeys" target="_blank" rel="noopener noreferrer" class="text-red-400 hover:text-emerald-200 underline">
-              https://login.tailscale.com/admin/settings/authkeys
-            </a>
-            and create a one-time auth key.
-          </p>
-          <p class="text-slate-400">
-            2. Paste the auth key below. It will be stored securely on the device and used to install and bring Tailscale online.
-          </p>
-          <div>
-            <label for="tailscaleKeyInput" class="block text-[11px] text-slate-400 mb-1">Tailscale auth key</label>
-            <input id="tailscaleKeyInput" type="password" autocomplete="off" class="w-full rounded-lg bg-slate-900/80 border border-slate-700/70 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400" placeholder="tskey-...">
-          </div>
-          <div id="tailscaleModalError" class="hidden text-[11px] text-rose-300"></div>
-          <div id="tailscaleModalStatus" class="text-[11px] text-slate-400"></div>
-        </div>
-        <div class="px-4 py-3 border-t border-slate-800/70 flex justify-end gap-2">
-          <button id="tailscaleModalCancel" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/60 text-slate-200 hover:bg-slate-700/80 text-xs">Cancel</button>
-          <button id="tailscaleModalSave" type="button" class="px-3 py-1.5 rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 text-xs">Save</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Auth token modal -->
-  <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
-    <div class="max-w-md mx-auto mt-16 md:mt-20 px-4">
-      <div class="rounded-2xl border border-slate-700/60 bg-slate-950/95 shadow-[0_0_30px_rgba(15,23,42,0.75)] overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-800/70 flex items-center justify-between">
-          <div id="authModalTitle" class="text-sm font-semibold text-red-400">Authentication Required</div>
-          <button id="authModalClose" type="button" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded-md bg-slate-900/60 border border-slate-700/60">✕</button>
+          <div id="entryModalTitle" class="text-sm font-semibold text-red-400">New Entry</div>
+          <button id="entryModalClose" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded-md bg-slate-900/60 border border-slate-700/60">✕</button>
         </div>
         <div class="px-4 py-3 space-y-2 text-xs">
-          <div id="authModalMessage" class="text-slate-400">Enter your WebUI token to continue.</div>
-          <div id="authModalRules" class="hidden rounded-lg border border-slate-800/70 bg-slate-900/30 p-2">
-            <div class="text-[11px] font-semibold text-slate-200 mb-1">Rules</div>
-            <ul class="text-[11px] text-slate-400 space-y-1">
-              <li>Username must be 3-32 characters</li>
-              <li>Password must be at least 8 characters</li>
-              <li>Passwords must match</li>
-            </ul>
+          <div id="entryModalDesc" class="text-slate-400">
+            Create under: <span id="entryModalFolder" class="text-slate-200 font-mono">payloads/</span>
           </div>
-          <input id="authModalUsername" type="text" autocomplete="username" class="w-full rounded-lg bg-slate-900/80 border border-slate-700/70 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400" placeholder="Username">
-          <input id="authModalPassword" type="password" autocomplete="current-password" class="w-full rounded-lg bg-slate-900/80 border border-slate-700/70 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400" placeholder="Password">
-          <input id="authModalPasswordConfirm" type="password" autocomplete="new-password" class="hidden w-full rounded-lg bg-slate-900/80 border border-slate-700/70 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400" placeholder="Confirm password">
-          <input id="authModalToken" type="password" autocomplete="off" class="hidden w-full rounded-lg bg-slate-900/80 border border-slate-700/70 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400" placeholder="Recovery token">
-          <div id="authModalError" class="hidden text-[11px] text-rose-300"></div>
-          <button id="authModalToggleRecovery" type="button" class="text-[11px] text-cyan-300 hover:text-cyan-200">Use recovery token instead</button>
+          <input id="entryModalName" type="text" class="w-full rounded-lg bg-slate-900/80 border border-slate-700/70 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400" placeholder="Name (e.g. my_payload.py)">
         </div>
         <div class="px-4 py-3 border-t border-slate-800/70 flex justify-end gap-2">
-          <button id="authModalCancel" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/60 text-slate-200 hover:bg-slate-700/80 text-xs">Cancel</button>
-          <button id="authModalConfirm" type="button" class="px-3 py-1.5 rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 text-xs">Continue</button>
+          <button id="entryModalCancel" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/60 text-slate-200 hover:bg-slate-700/80 text-xs">Cancel</button>
+          <button id="entryModalConfirm" class="px-3 py-1.5 rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 text-xs">Create</button>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.min.js"></script>
+  <!-- Rename modal -->
+  <div id="renameModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
+    <div class="max-w-sm mx-auto mt-24 px-4">
+      <div class="rounded-2xl border border-slate-700/60 bg-slate-950/95 shadow-[0_0_30px_rgba(15,23,42,0.75)] overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-800/70 flex items-center justify-between">
+          <div class="text-sm font-semibold text-red-400">Rename</div>
+          <button id="renameModalClose" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded-md bg-slate-900/60 border border-slate-700/60">✕</button>
+        </div>
+        <div class="px-4 py-3 space-y-2 text-xs">
+          <div class="text-slate-400">
+            Current: <span id="renameModalPath" class="text-slate-200 font-mono break-all"></span>
+          </div>
+          <input id="renameModalName" type="text" class="w-full rounded-lg bg-slate-900/80 border border-slate-700/70 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400" placeholder="New name">
+        </div>
+        <div class="px-4 py-3 border-t border-slate-800/70 flex justify-end gap-2">
+          <button id="renameModalCancel" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/60 text-slate-200 hover:bg-slate-700/80 text-xs">Cancel</button>
+          <button id="renameModalConfirm" class="px-3 py-1.5 rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 text-xs">Rename</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete confirmation modal -->
+  <div id="deleteModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
+    <div class="max-w-sm mx-auto mt-24 px-4">
+      <div class="rounded-2xl border border-slate-700/60 bg-slate-950/95 shadow-[0_0_30px_rgba(15,23,42,0.75)] overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-800/70 flex items-center justify-between">
+          <div class="text-sm font-semibold text-rose-300">Delete</div>
+          <button id="deleteModalClose" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded-md bg-slate-900/60 border border-slate-700/60">✕</button>
+        </div>
+        <div class="px-4 py-3 space-y-2 text-xs">
+          <div class="text-slate-400">
+            Delete <span id="deleteModalPath" class="text-slate-200 font-mono break-all"></span>?
+          </div>
+          <div class="text-rose-300/80 text-[11px] mt-2">This cannot be undone.</div>
+        </div>
+        <div class="px-4 py-3 border-t border-slate-800/70 flex justify-end gap-2">
+          <button id="deleteModalCancel" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/60 text-slate-200 hover:bg-slate-700/80 text-xs">Cancel</button>
+          <button id="deleteModalConfirm" class="px-3 py-1.5 rounded-lg bg-rose-600/80 border border-rose-300/30 text-white hover:bg-rose-500/80 text-xs">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unsaved changes modal -->
+  <div id="unsavedModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
+    <div class="max-w-sm mx-auto mt-24 px-4">
+      <div class="rounded-2xl border border-slate-700/60 bg-slate-950/95 shadow-[0_0_30px_rgba(15,23,42,0.75)] overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-800/70 flex items-center justify-between">
+          <div class="text-sm font-semibold text-amber-300">Unsaved Changes</div>
+          <button id="unsavedModalClose" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded-md bg-slate-900/60 border border-slate-700/60">✕</button>
+        </div>
+        <div class="px-4 py-3 space-y-2 text-xs">
+          <div class="text-slate-300">
+            You have unsaved changes. Discard and open another file?
+          </div>
+        </div>
+        <div class="px-4 py-3 border-t border-slate-800/70 flex justify-end gap-2">
+          <button id="unsavedModalCancel" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/60 text-slate-200 hover:bg-slate-700/80 text-xs">Stay</button>
+          <button id="unsavedModalConfirm" class="px-3 py-1.5 rounded-lg bg-amber-600/80 border border-amber-300/30 text-white hover:bg-amber-500/80 text-xs">Discard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save before run modal -->
+  <div id="saveBeforeRunModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
+    <div class="max-w-sm mx-auto mt-24 px-4">
+      <div class="rounded-2xl border border-slate-700/60 bg-slate-950/95 shadow-[0_0_30px_rgba(15,23,42,0.75)] overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-800/70 flex items-center justify-between">
+          <div class="text-sm font-semibold text-red-400">Unsaved Changes</div>
+          <button id="saveBeforeRunModalClose" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded-md bg-slate-900/60 border border-slate-700/60">✕</button>
+        </div>
+        <div class="px-4 py-3 space-y-2 text-xs">
+          <div class="text-slate-300">
+            Save changes before running?
+          </div>
+          <div class="text-slate-400 text-[11px]">
+            Your current file has modifications that are not saved yet.
+          </div>
+        </div>
+        <div class="px-4 py-3 border-t border-slate-800/70 flex justify-end gap-2">
+          <button id="saveBeforeRunModalCancel" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/60 text-slate-200 hover:bg-slate-700/80 text-xs">Cancel</button>
+          <button id="saveBeforeRunModalConfirm" class="px-3 py-1.5 rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 text-xs">Save & Run</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notice modal -->
+  <div id="noticeModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
+    <div class="max-w-sm mx-auto mt-24 px-4">
+      <div class="rounded-2xl border border-slate-700/60 bg-slate-950/95 shadow-[0_0_30px_rgba(15,23,42,0.75)] overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-800/70 flex items-center justify-between">
+          <div id="noticeModalTitle" class="text-sm font-semibold text-rose-300">Notice</div>
+          <button id="noticeModalClose" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded-md bg-slate-900/60 border border-slate-700/60">✕</button>
+        </div>
+        <div class="px-4 py-3 space-y-2 text-xs">
+          <div id="noticeModalMessage" class="text-slate-300">
+            Something went wrong.
+          </div>
+        </div>
+        <div class="px-4 py-3 border-t border-slate-800/70 flex justify-end gap-2">
+          <button id="noticeModalConfirm" class="px-3 py-1.5 rounded-lg bg-rose-600/80 border border-rose-300/30 text-white hover:bg-rose-500/80 text-xs">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restart UI confirmation modal -->
+  <div id="restartUiModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
+    <div class="max-w-sm mx-auto mt-16 md:mt-20 px-4">
+      <div class="rounded-2xl border border-slate-700/60 bg-slate-950/95 shadow-[0_0_30px_rgba(15,23,42,0.75)] overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-800/70 flex items-center justify-between">
+          <div class="text-sm font-semibold text-red-400">Restart KTOx UI</div>
+          <button id="restartUiModalClose" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded-md bg-slate-900/60 border border-slate-700/60">✕</button>
+        </div>
+        <div class="px-4 py-3 space-y-2 text-xs">
+          <div class="text-slate-300">
+            Restart KTOx UI now?
+          </div>
+          <div class="text-slate-400 text-[11px]">
+            This restarts the on-device UI process and may briefly interrupt screen updates.
+          </div>
+          <div id="restartUiModalError" class="hidden text-[11px] text-rose-300"></div>
+        </div>
+        <div class="px-4 py-3 border-t border-slate-800/70 flex justify-end gap-2">
+          <button id="restartUiModalCancel" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600/60 text-slate-200 hover:bg-slate-700/80 text-xs">Cancel</button>
+          <button id="restartUiModalConfirm" class="px-3 py-1.5 rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 text-xs">Restart UI</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
   <script src="./shared.js"></script>
   <script src="./app.js"></script>
 </body>
