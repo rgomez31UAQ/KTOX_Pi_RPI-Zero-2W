@@ -158,36 +158,78 @@ def backup_loot():
 
 def do_git_pull():
     """
-    Pull latest from GitHub.
-    If /root/KTOx is a git repo: git pull.
-    If not: git init + set remote + fetch + reset.
+    Clone the latest repo to a temp dir, then copy files into KTOX_DIR
+    exactly as install.sh does — preserving the installed file layout.
+    A direct git reset --hard would overwrite the flat install structure
+    with the raw repo layout, breaking the services.
     """
-    git_dir = Path(KTOX_DIR + "/.git")
+    import tempfile, shutil as _shutil
 
-    if not git_dir.exists():
-        # Not a git repo yet — initialise
-        _run(["git", "-C", KTOX_DIR, "init", "-q"])
-        _run(["git", "-C", KTOX_DIR, "remote", "add", "origin", REPO_URL])
+    tmp = f"/tmp/ktox_update_{int(time.time())}"
 
-    # Make sure remote URL is correct
-    _run(["git", "-C", KTOX_DIR, "remote",
-          "set-url", "origin", REPO_URL])
+    try:
+        rc, out = _run(
+            ["git", "clone", "--depth=1", "-b", BRANCH, REPO_URL, tmp],
+            timeout=150,
+        )
+        if rc != 0:
+            return False, f"Clone failed: {out[:60]}"
 
-    # Fetch
-    rc, out = _run(["git", "-C", KTOX_DIR, "fetch", "--depth=1",
-                    "origin", BRANCH], timeout=120)
-    if rc != 0:
-        return False, f"Fetch failed: {out[:60]}"
+        src = Path(tmp)
+        dst = Path(KTOX_DIR)
 
-    # Hard reset to remote
-    rc, out = _run(["git", "-C", KTOX_DIR, "reset",
-                    "--hard", f"origin/{BRANCH}"])
-    if rc != 0:
-        return False, f"Reset failed: {out[:60]}"
+        # Files from ktox_pi/ subdirectory → flat into KTOX_DIR
+        for fname in [
+            "ktox_device.py", "LCD_1in44.py", "LCD_Config.py",
+            "rj_input.py", "ktox_lcd.py", "ktox_payload_runner.py",
+        ]:
+            s = src / "ktox_pi" / fname
+            if s.exists():
+                _shutil.copy2(s, dst / fname)
 
-    # Confirm commit hash
-    _, commit = _run(["git", "-C", KTOX_DIR, "rev-parse", "--short", "HEAD"])
-    return True, f"HEAD: {commit.strip()}"
+        # Files from repo root → flat into KTOX_DIR
+        root_files = [
+            "device_server.py", "web_server.py", "nmap_parser.py",
+            "scan.py", "spoof.py", "requirements.txt",
+            "ktox.py", "ktox_mitm.py", "ktox_advanced.py",
+            "ktox_extended.py", "ktox_defense.py", "ktox_stealth.py",
+            "ktox_netattack.py", "ktox_wifi.py", "ktox_dashboard.py",
+            "ktox_repl.py", "ktox_config.py",
+        ]
+        for fname in root_files:
+            s = src / fname
+            if s.exists():
+                _shutil.copy2(s, dst / fname)
+
+        # Directories — replace in-place (keep loot/ and credentials untouched)
+        for dname in ["web", "payloads", "wifi", "Responder", "DNSSpoof", "assets"]:
+            s = src / dname
+            d = dst / dname
+            if s.exists():
+                if d.exists():
+                    _shutil.rmtree(d)
+                _shutil.copytree(s, d)
+
+        # img/logo.bmp
+        s = src / "img" / "logo.bmp"
+        if s.exists():
+            (dst / "img").mkdir(exist_ok=True)
+            _shutil.copy2(s, dst / "img" / "logo.bmp")
+
+        # Record the upstream commit hash for version tracking
+        _, commit = _run(["git", "-C", tmp, "rev-parse", "--short", "HEAD"])
+        commit = commit.strip()
+        try:
+            (dst / ".ktox_version").write_text(commit + "\n")
+        except Exception:
+            pass
+
+        return True, f"HEAD: {commit}"
+
+    except Exception as e:
+        return False, str(e)[:60]
+    finally:
+        _shutil.rmtree(tmp, ignore_errors=True)
 
 
 def install_deps():
@@ -214,9 +256,15 @@ def restart_services():
 
 
 def get_current_version():
-    """Get installed commit hash."""
-    rc, out = _run(["git", "-C", KTOX_DIR, "rev-parse", "--short", "HEAD"])
-    return out.strip() if rc == 0 else "unknown"
+    """Get installed commit hash from version file written by auto_update."""
+    vfile = Path(KTOX_DIR + "/.ktox_version")
+    try:
+        v = vfile.read_text().strip()
+        if v:
+            return v
+    except Exception:
+        pass
+    return "unknown"
 
 
 def get_remote_version():
