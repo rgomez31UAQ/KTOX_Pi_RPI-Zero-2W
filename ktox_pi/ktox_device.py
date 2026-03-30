@@ -884,7 +884,7 @@ def _pick_host():
 
     items = []
     for h in hosts:
-        ip = h.get("ip", h[0] if len(h)>0 else "?") if isinstance(h,dict) else h[0]
+        ip = h.get("ip", "?") if isinstance(h, dict) else (h[0] if len(h) > 0 else "?")
         items.append(ip.strip())
 
     WINDOW = 6
@@ -1579,8 +1579,8 @@ class KTOxMenu:
         # Build display lines
         lines = []
         for h in hosts:
-            ip  = h.get("ip",  h[0] if len(h)>0 else "?") if isinstance(h,dict) else h[0]
-            mac = h.get("mac", h[1] if len(h)>1 else "")  if isinstance(h,dict) else (h[1] if len(h)>1 else "")
+            ip  = h.get("ip",  "?") if isinstance(h, dict) else (h[0] if len(h) > 0 else "?")
+            mac = h.get("mac", "")   if isinstance(h, dict) else (h[1] if len(h) > 1 else "")
             lines.append(f"{ip}  {mac[:8]}".strip())
         if not lines:
             Dialog_info("No hosts found.", wait=True)
