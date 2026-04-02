@@ -58,8 +58,9 @@ FONT_BIG_SIZE = 11
 NAVARRO_PATHS = [
     "/root/KTOx/Navarro/navarro.py",
     "/home/ktox/Navarro/navarro.py",
+    "/root/Navarro/navarro.py",
 ]
-NAVARRO_PATH = next((p for p in NAVARRO_PATHS if os.path.exists(p)), NAVARRO_PATHS[0])
+NAVARRO_PATH = next((p for p in NAVARRO_PATHS if os.path.exists(p)), None)
 LOOT_BASE = "/root/KTOx/loot/OSINT"
 os.makedirs(LOOT_BASE, exist_ok=True)
 APP_RUNNING = True
@@ -294,67 +295,169 @@ def _extract_platform_from_line(line: str) -> str | None:
     return None
 
 
-def run_navarro(username: str) -> tuple[list[str], str]:
+def _detect_export_flag(navarro_path: str) -> str:
+    """Ask Navarro for --help and pick the right export flag."""
+    try:
+        out = subprocess.run(
+            ["python3", navarro_path, "--help"],
+            capture_output=True, text=True, timeout=8
+        ).stdout + subprocess.run(
+            ["python3", navarro_path, "--help"],
+            capture_output=True, text=True, timeout=8
+        ).stderr
+        for flag in ("--output", "--export", "-o"):
+            if flag in out:
+                return flag
+    except Exception:
+        pass
+    return "--output"   # best guess if --help fails
+
+
+def _parse_json_results(json_path: str) -> list:
+    """Try several known Navarro JSON shapes and return [(platform, url), ...]."""
+    try:
+        with open(json_path, "r", encoding="utf-8") as jf:
+            data = json.load(jf)
+    except Exception:
+        return []
+
+    items = []
+
+    # Shape 1: {"username": {"found_profiles": {"Site": "url", ...}}}
+    if isinstance(data, dict):
+        for root_val in data.values():
+            if isinstance(root_val, dict):
+                for key in ("found_profiles", "found", "results"):
+                    bucket = root_val.get(key)
+                    if isinstance(bucket, dict):
+                        for k, v in bucket.items():
+                            if isinstance(v, str) and v.startswith("http"):
+                                items.append((k, v))
+                    elif isinstance(bucket, list):
+                        for entry in bucket:
+                            if isinstance(entry, dict):
+                                url = entry.get("url") or entry.get("link") or ""
+                                plat = entry.get("site") or entry.get("platform") or entry.get("name") or url
+                                if url.startswith("http"):
+                                    items.append((str(plat), str(url)))
+                if items:
+                    return items
+        # Shape 2: flat dict {"Site": "url", ...} at root
+        for k, v in data.items():
+            if isinstance(v, str) and v.startswith("http"):
+                items.append((k, v))
+        if items:
+            return items
+
+    # Shape 3: list of dicts [{"site":..., "url":...}, ...]
+    if isinstance(data, list):
+        for entry in data:
+            if isinstance(entry, dict):
+                url = entry.get("url") or entry.get("link") or ""
+                plat = entry.get("site") or entry.get("platform") or entry.get("name") or url
+                if url.startswith("http"):
+                    items.append((str(plat), str(url)))
+
+    return items
+
+
+def _parse_stdout_results(log_path: str) -> list:
+    """Fallback: extract any http URLs from the captured log."""
+    items = []
+    seen = set()
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                for url in _URL_RE.findall(line):
+                    url = url.rstrip(".,;)")
+                    if url not in seen:
+                        seen.add(url)
+                        try:
+                            host = urlparse(url).netloc or url
+                        except Exception:
+                            host = url
+                        items.append((host, url))
+    except Exception:
+        pass
+    return items
+
+
+def run_navarro(username: str) -> tuple:
+    if NAVARRO_PATH is None:
+        draw_center(["Navarro not found!", "Install at:", "/root/KTOx/Navarro/", "K3 Back"], small=True)
+        time.sleep(4)
+        return [], ""
+
     ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     run_dir = os.path.join(LOOT_BASE, f"navarro_{username}_{ts}")
     os.makedirs(run_dir, exist_ok=True)
     json_path = os.path.join(run_dir, "results.json")
-    log_path = os.path.join(run_dir, "log.txt")
-    cmd = ["python3", "-u", NAVARRO_PATH, username, "--export", json_path]
+    log_path  = os.path.join(run_dir, "log.txt")
 
-    start_t = time.time()
-    # Simplified UI: no platform/percent parsing
+    export_flag = _detect_export_flag(NAVARRO_PATH)
+    cmd = ["python3", "-u", NAVARRO_PATH, username, export_flag, json_path]
+
     bounce_pos = 2
     bounce_dir = 4
-    last_platform: str | None = None
+
     with open(log_path, "w", encoding="utf-8") as logf:
         try:
             env = os.environ.copy()
             env["PYTHONUNBUFFERED"] = "1"
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, env=env)
+            proc = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, bufsize=1, env=env
+            )
         except Exception as exc:
             logf.write(f"Failed to spawn navarro: {exc}\n")
             return [], run_dir
+
         try:
-            # make stdout non-blocking
+            # Make fd non-blocking
             if proc.stdout is not None:
                 fd = proc.stdout.fileno()
-                fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-                fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+                fcntl.fcntl(fd, fcntl.F_SETFL,
+                            fcntl.fcntl(fd, fcntl.F_GETFL) | os.O_NONBLOCK)
             buf = ""
-            while True:
-                if not APP_RUNNING:
-                    try:
-                        proc.terminate()
-                    except Exception:
-                        pass
-                    break
-                if proc.poll() is not None:
-                    break
-                # drain any available output (non-blocking)
-                chunk = ""
+
+            def _drain():
+                """Read all currently available bytes from the non-blocking fd."""
+                nonlocal buf
                 try:
                     if proc.stdout is not None:
-                        chunk = proc.stdout.read() or ""
+                        # read(n) with size is safe on non-blocking fd
+                        chunk = proc.stdout.read(4096) or ""
+                        if chunk:
+                            buf += chunk
                 except Exception:
-                    chunk = ""
-                if chunk:
-                    buf += chunk
-                    while True:
-                        nl = buf.find('\n')
-                        if nl == -1:
-                            break
-                        line = buf[:nl + 1]
-                        buf = buf[nl + 1:]
-                        logf.write(line)
-                        last_line = line.strip()
-                        # Ignore platform/percent; keep logging only
-                # update bouncing bar position
+                    pass
+                # Flush complete lines to log
+                while True:
+                    nl = buf.find('\n')
+                    if nl == -1:
+                        break
+                    logf.write(buf[:nl + 1])
+                    buf = buf[nl + 1:]
+
+            while True:
+                if not APP_RUNNING:
+                    proc.terminate()
+                    break
+
+                _drain()
+
+                if proc.poll() is not None:
+                    # Process finished — drain any remaining buffered output
+                    _drain()
+                    _drain()   # second pass catches anything left in OS buffer
+                    break
+
+                # Animate bouncing bar
                 bounce_pos += bounce_dir
-                if bounce_pos >= (WIDTH - 2 - 24) or bounce_pos <= 2:
+                if bounce_pos >= (WIDTH - 26) or bounce_pos <= 2:
                     bounce_dir *= -1
                 draw_running(username, bounce_pos)
-                # Allow stop
+
                 if get_button(PINS, GPIO) == "KEY3":
                     try:
                         proc.terminate()
@@ -363,27 +466,21 @@ def run_navarro(username: str) -> tuple[list[str], str]:
                     except Exception:
                         pass
                     break
+
                 time.sleep(0.05)
         finally:
             try:
-                proc.wait(timeout=2)
+                proc.wait(timeout=3)
             except Exception:
                 pass
+        # Flush any remaining partial line
+        if buf:
+            logf.write(buf)
 
-    # Parse JSON for found_profiles
-    items: list[tuple[str, str]] = []  # (platform, url)
-    try:
-        with open(json_path, "r", encoding="utf-8") as jf:
-            data = json.load(jf)
-        # Data structure: { "username": { "found_profiles": {Site: URL, ...}, ... } }
-        # Pull the first (only) root key
-        if isinstance(data, dict) and data:
-            root = next(iter(data.values()))
-            found = root.get("found_profiles") or {}
-            for platform, url in found.items():
-                items.append((platform, url))
-    except Exception:
-        pass
+    # Try JSON first, fall back to stdout URL scraping
+    items = _parse_json_results(json_path)
+    if not items:
+        items = _parse_stdout_results(log_path)
 
     return items, run_dir
 
@@ -468,11 +565,15 @@ def main():
         elif btn == "OK" and cursor == 0:
             username = keyboard_input(username)
         elif btn == "KEY1" and username and not in_detail and not results:
+            if NAVARRO_PATH is None:
+                draw_center(["Navarro not found!", "Install at:", "/root/KTOx/Navarro/", "K3 Back"], small=True)
+                wait_release(btn)
+                continue
             draw_center(["Starting…"], small=True)
             results, run_dir = run_navarro(username.strip())
             page = 1
             if not results:
-                draw_center(["No results", "(saved log)", "K3 Back"], small=True)
+                draw_center(["No results found", "(log saved)", "K3 Back"], small=True)
                 wait_release(btn)
             else:
                 cursor = 1
