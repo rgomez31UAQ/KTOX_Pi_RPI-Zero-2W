@@ -63,11 +63,30 @@ def cleanup():
     subprocess.run(["brctl", "delbr", "br0"], stdout=subprocess.DEVNULL)
     subprocess.run(["ip", "link", "set", "eth0", "down"], stdout=subprocess.DEVNULL)
     subprocess.run(["ip", "link", "set", "eth1", "down"], stdout=subprocess.DEVNULL)
-    try:
-        logo = Image.open("/root/KTOx/img/logo.bmp").convert("RGB").resize((128, 128))
-        lcd.LCD_ShowImage(logo, 0, 0)
-    except Exception:
-        lcd.LCD_Clear()
+    # Try multiple logo path candidates
+    _base = os.path.normpath(os.path.join(os.path.abspath(__file__), "..", "..", ".."))
+    _logo_paths = [
+        os.path.join(_base, "img", "logo.bmp"),
+        "/root/KTOx/img/logo.bmp",
+    ]
+    _shown = False
+    for _p in _logo_paths:
+        try:
+            logo = Image.open(_p).convert("RGB").resize((128, 128))
+            lcd.LCD_ShowImage(logo, 0, 0)
+            _shown = True
+            break
+        except Exception:
+            continue
+    if not _shown:
+        try:
+            _img = Image.new("RGB", (128, 128), "black")
+            _d = ImageDraw.Draw(_img)
+            _d.text((34, 55), "KTOx", font=font, fill="#00FF00")
+            lcd.LCD_ShowImage(_img, 0, 0)
+        except Exception:
+            pass
+    time.sleep(2)
     GPIO.cleanup()
 
 def check_dependencies():
