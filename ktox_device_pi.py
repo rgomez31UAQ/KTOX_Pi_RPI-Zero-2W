@@ -918,6 +918,7 @@ def enter_stealth():
     to /dev/shm/ktox_stealth.json).
     """
     ktox_state["stealth"] = True
+    screen_lock.set()          # freeze _display_loop so it stops overwriting the LCD
     custom_decoy = ktox_state.get("stealth_image")
 
     def _show_custom():
@@ -971,6 +972,7 @@ def enter_stealth():
         time.sleep(0.2)
 
     ktox_state["stealth"] = False
+    screen_lock.clear()        # unfreeze display loop, hand LCD back to menu
     Dialog_info("Stealth off", wait=False, timeout=1.5)
 
 # ═══════════════════════════════════════════════════════════════════════════════
