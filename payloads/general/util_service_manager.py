@@ -28,6 +28,7 @@ import os
 import time
 import signal
 import subprocess
+import json
 import threading
 from collections import deque
 # Ensure KTOx root on sys.path

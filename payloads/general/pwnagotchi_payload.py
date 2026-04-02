@@ -65,8 +65,8 @@ def log(message):
 class PwnagotchiUI:
     def __init__(self, lcd_display):
         self.lcd = lcd_display
-        self.width = self.lcd.width
-        self.height = self.lcd.height
+        self.width = 128
+        self.height = 128
         self.image = Image.new("RGB", (self.width, self.height), "BLACK")
         self.draw = ImageDraw.Draw(self.image)
         

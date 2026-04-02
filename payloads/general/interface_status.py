@@ -19,6 +19,7 @@ from PIL import Image, ImageDraw, ImageFont  # type: ignore
 
 # Shared input helper (WebUI virtual + GPIO)
 from payloads._input_helper import get_button
+import subprocess
 
 WIDTH, HEIGHT = 128, 128
 KEY3 = 16

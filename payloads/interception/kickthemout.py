@@ -20,6 +20,7 @@ if os.path.isdir(KTOX_ROOT) and KTOX_ROOT not in sys.path:
 import LCD_Config
 import LCD_1in44
 import RPi.GPIO as GPIO
+import subprocess
 
 # --- APPLICATION-SPECIFIC IMPORTS ---
 # These can be in a try-except block to handle missing dependencies gracefully.

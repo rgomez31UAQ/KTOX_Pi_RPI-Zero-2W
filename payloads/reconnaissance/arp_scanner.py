@@ -23,6 +23,7 @@ import time
 import signal
 import subprocess
 import threading
+import json
 
 # Ensure KTOx root is on sys.path (exec_payload sets cwd=/root/KTOx)
 sys.path.append(os.path.abspath(os.path.join(__file__, '..', '..')))

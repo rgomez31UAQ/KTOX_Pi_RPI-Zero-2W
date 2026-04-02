@@ -35,7 +35,14 @@ import RPi.GPIO as GPIO
 import LCD_1in44, LCD_Config
 from PIL import Image, ImageDraw, ImageFont
 
-INTERFACE = "wlan0"
+def _default_wifi_iface():
+    """Prefer wlan1 (external USB adapter) over wlan0 (onboard)."""
+    for iface in ['wlan1', 'wlan0']:
+        if os.path.exists(f'/sys/class/net/{iface}'):
+            return iface
+    return 'wlan0'
+
+INTERFACE = _default_wifi_iface()
 MALICIOUS_IP = "192.168.1.100"
 running = True
 attack_thread = None
