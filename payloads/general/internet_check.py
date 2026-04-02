@@ -28,6 +28,7 @@ import os
 import time
 import signal
 import subprocess
+import json
 # Ensure KTOx root on path for local LCD modules (prefer installed path)
 if os.path.isdir('/root/KTOx') and '/root/KTOx' not in sys.path:
     sys.path.insert(0, '/root/KTOx')

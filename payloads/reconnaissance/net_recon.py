@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw, ImageFont
 sys.path.insert(0, "/root/KTOx")
 import LCD_Config
 import LCD_1in44
+import json
 
 # ── Config ────────────────────────────────────────────────────────────────────
 

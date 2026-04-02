@@ -28,6 +28,7 @@ import time
 import signal
 import subprocess
 import threading
+import json
 
 # ----------------------------
 # KTOx PATH and ROOT check

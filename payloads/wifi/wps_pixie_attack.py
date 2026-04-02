@@ -6,6 +6,7 @@ import signal
 import subprocess
 import re
 import threading
+import json
 
 # ----------------------------
 # KTOx PATH and ROOT check
