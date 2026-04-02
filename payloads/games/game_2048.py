@@ -90,7 +90,8 @@ def draw_board(lcd, board, score):
                     x0b, y0b, x1b, y1b = d.textbbox((0, 0), txt, font=font)
                     w, h = x1b - x0b, y1b - y0b
                 else:
-                    w, h = font.getsize(txt)
+                    _b = d.textbbox((0, 0), txt, font=font)
+                    w, h = _b[2] - _b[0], _b[3] - _b[1]
                 d.text((x0 + (cell - w) // 2, y0 + (cell - h) // 2), txt, font=font, fill=text_color)
 
     lcd.LCD_ShowImage(img, 0, 0)
