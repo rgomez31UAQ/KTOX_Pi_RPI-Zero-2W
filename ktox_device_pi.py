@@ -936,44 +936,48 @@ def enter_stealth():
     held_since  = None
     STEALTH_CMD = "/dev/shm/ktox_stealth.json"
 
-    while ktox_state["stealth"]:
-        # ── Render decoy display (every frame ~5 fps) ─────────────────────────
-        if HAS_HW and LCD:
-            if custom_decoy:
-                _show_custom()
-            else:
-                img = _draw_stealth_clock(time.time())
-                with draw_lock:
-                    LCD.LCD_ShowImage(img, 0, 0)
-
-        # ── WebUI toggle ──────────────────────────────────────────────────────
-        try:
-            if os.path.isfile(STEALTH_CMD):
-                data = json.loads(Path(STEALTH_CMD).read_text())
-                os.remove(STEALTH_CMD)
-                if not data.get("stealth", True):
-                    break
-        except Exception:
-            pass
-
-        # ── Physical button combo: KEY1 + KEY3 held 3 s ───────────────────────
-        if HAS_HW:
-            try:
-                k1 = GPIO.input(PINS["KEY1_PIN"]) == 0
-                k3 = GPIO.input(PINS["KEY3_PIN"]) == 0
-                if k1 and k3:
-                    if held_since is None: held_since = time.time()
-                    elif time.time() - held_since >= 3.0: break
+    try:
+        while ktox_state["stealth"]:
+            # ── Render decoy display (every frame ~5 fps) ─────────────────────────
+            if HAS_HW and LCD:
+                if custom_decoy:
+                    _show_custom()
                 else:
-                    held_since = None
+                    try:
+                        img = _draw_stealth_clock(time.time())
+                        with draw_lock:
+                            LCD.LCD_ShowImage(img, 0, 0)
+                    except Exception:
+                        pass  # never let drawing crash kill stealth mode
+
+            # ── WebUI toggle ──────────────────────────────────────────────────────
+            try:
+                if os.path.isfile(STEALTH_CMD):
+                    data = json.loads(Path(STEALTH_CMD).read_text())
+                    os.remove(STEALTH_CMD)
+                    if not data.get("stealth", True):
+                        break
             except Exception:
                 pass
 
-        time.sleep(0.2)
+            # ── Physical button combo: KEY1 + KEY3 held 3 s ───────────────────────
+            if HAS_HW:
+                try:
+                    k1 = GPIO.input(PINS["KEY1_PIN"]) == 0
+                    k3 = GPIO.input(PINS["KEY3_PIN"]) == 0
+                    if k1 and k3:
+                        if held_since is None: held_since = time.time()
+                        elif time.time() - held_since >= 3.0: break
+                    else:
+                        held_since = None
+                except Exception:
+                    pass
 
-    ktox_state["stealth"] = False
-    screen_lock.clear()        # unfreeze display loop, hand LCD back to menu
-    Dialog_info("Stealth off", wait=False, timeout=1.5)
+            time.sleep(0.2)
+    finally:
+        ktox_state["stealth"] = False
+        screen_lock.clear()        # unfreeze display loop, hand LCD back to menu
+        Dialog_info("Stealth off", wait=False, timeout=1.5)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Attack helpers ─────────────────────────────────────────────────────────────
