@@ -48,13 +48,16 @@ if HAS_HW:
     LCD = LCD_1in44.LCD()
     LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
 
-try:
-    FONT_SM = ImageFont.truetype(
-        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 8)
-    FONT_MD = ImageFont.truetype(
-        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 9)
-except Exception:
-    FONT_SM = FONT_MD = ImageFont.load_default()
+if HAS_HW:
+    try:
+        FONT_SM = ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 8)
+        FONT_MD = ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 9)
+    except Exception:
+        FONT_SM = FONT_MD = ImageFont.load_default()
+else:
+    FONT_SM = FONT_MD = None
 
 RED       = "#8B0000"
 RED_BRITE = "#cc1a1a"
@@ -195,6 +198,8 @@ def do_git_pull():
             "ktox_extended.py", "ktox_defense.py", "ktox_stealth.py",
             "ktox_netattack.py", "ktox_wifi.py", "ktox_dashboard.py",
             "ktox_repl.py", "ktox_config.py",
+            "ktox_device_pi.py",   # Pi-specific device/menu script
+            "payload_compat.py",
         ]
         for fname in root_files:
             s = src / fname
