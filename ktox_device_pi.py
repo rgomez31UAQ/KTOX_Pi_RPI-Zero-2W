@@ -21,7 +21,7 @@
 #   KEY2                 home
 #   KEY3                 stop attack / exit payload
 
-import os, sys, time, json, threading, subprocess, signal, socket, ipaddress
+import os, sys, time, json, threading, subprocess, signal, socket, ipaddress, math
 from datetime import datetime
 from functools import partial
 from pathlib import Path
@@ -760,79 +760,152 @@ def loot_count():
 # ── Stealth mode ───────────────────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _draw_stealth_clock(now):
+# ── Stealth clock: cached fonts (loaded once) ─────────────────────────────────
+_STEALTH_FONTS = {}
+
+def _stealth_fonts():
+    global _STEALTH_FONTS
+    if _STEALTH_FONTS:
+        return _STEALTH_FONTS
+    candidates = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    ]
+    def _load(size, bold=False):
+        for p in candidates:
+            if bold and "Bold" not in p:
+                continue
+            if os.path.exists(p):
+                try:
+                    return ImageFont.truetype(p, size)
+                except Exception:
+                    pass
+        return ImageFont.load_default()
+
+    _STEALTH_FONTS = {
+        "big":  _load(34, bold=True),
+        "sec":  _load(20, bold=True),
+        "med":  _load(13),
+        "sml":  _load(10),
+    }
+    return _STEALTH_FONTS
+
+
+def _draw_stealth_clock(ts):
     """
-    Render a 128×128 decoy image that looks like a consumer clock gadget.
-    Dark blue background, large digital time, date line, fake Wi-Fi/battery icons.
+    Render a 128×128 decoy consumer clock display.
+    ts  — float from time.time(), used for sub-second smooth animation.
     Returns a PIL Image.
+
+    Animations (all driven by ts):
+      · Smooth seconds progress bar (fractional position, 5 fps feel)
+      · Pulsing digit glow  (sine wave, period ~4 s)
+      · Blinking colon      (1 Hz)
     """
-    img  = Image.new("RGB", (128, 128), (10, 10, 40))       # dark navy background
+    now   = datetime.fromtimestamp(ts)
+    frac  = ts - int(ts)               # 0.0–1.0 within the current second
+    fonts = _stealth_fonts()
+
+    # ── Pulsing glow: sine wave 0.0–1.0, period ~4 s ─────────────────────────
+    pulse = (math.sin(ts * math.pi / 2) + 1) / 2   # 0.0 → 1.0
+
+    # Base digit colour interpolates between dim blue-white and bright white
+    r = int(160 + 60 * pulse)
+    g = int(185 + 60 * pulse)
+    b = 255
+    clr_digits = (min(r, 255), min(g, 255), b)
+
+    # Background
+    img  = Image.new("RGB", (128, 128), (8, 10, 36))
     draw = ImageDraw.Draw(img)
 
-    # ── Try to load a font; fall back to default ──────────────────────────────
+    # ── Status bar ────────────────────────────────────────────────────────────
+    # Wi-Fi signal bars (3 bars, increasing height)
+    bar_cols = [(40, 80, 160), (60, 120, 210), (80, 160, 255)]
+    for i, col in enumerate(bar_cols):
+        bh = 4 + i * 3
+        bx = 4 + i * 5
+        draw.rectangle([bx, 13 - bh, bx + 3, 13], fill=col)
+
+    # Battery
+    draw.rectangle([108, 4, 122, 12], outline=(130, 130, 160), width=1)
+    draw.rectangle([122, 6, 124, 10], fill=(130, 130, 160))
+    draw.rectangle([109, 5, 120, 11], fill=(50, 200, 80))   # ~80 % charge
+
+    # "HOME" label centred
+    draw.text((46, 3), "HOME", font=fonts["sml"], fill=(100, 120, 180))
+
+    # Separator
+    draw.line([(0, 17), (128, 17)], fill=(30, 45, 100), width=1)
+
+    # ── HH : MM  (large, centred) ────────────────────────────────────────────
+    hh   = now.strftime("%H")
+    mm   = now.strftime("%M")
+    colon = ":" if frac < 0.5 else " "   # blink at 1 Hz (half-second on/off)
+
+    # Measure parts separately so colon can be dimmer
     try:
-        font_big  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 32)
-        font_med  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
-        font_sml  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
-    except Exception:
-        font_big  = ImageFont.load_default()
-        font_med  = font_big
-        font_sml  = font_big
-
-    # ── Horizontal rule top ───────────────────────────────────────────────────
-    draw.line([(0, 18), (128, 18)], fill=(40, 60, 120), width=1)
-
-    # ── Fake status bar: Wi-Fi icon + battery ─────────────────────────────────
-    # Wi-Fi arcs (simple rectangles to suggest signal bars)
-    for i, (x, h, c) in enumerate([(4, 6, (80,180,255)), (8, 9, (80,180,255)), (12, 12, (80,180,255))]):
-        draw.rectangle([x, 6-h//2, x+3, 6+h//2], fill=c)
-    # Battery outline
-    draw.rectangle([108, 4, 122, 12], outline=(160,160,160), width=1)
-    draw.rectangle([122, 6,  124, 10], fill=(160,160,160))   # terminal nub
-    draw.rectangle([109, 5,  119, 11], fill=(60, 200, 80))   # charge level
-
-    # ── Header label ─────────────────────────────────────────────────────────
-    draw.text((44, 4), "HOME", font=font_sml, fill=(120, 140, 200))
-
-    # ── Large time HH:MM ──────────────────────────────────────────────────────
-    hhmm = now.strftime("%H:%M")
-    # Blink the colon every other second
-    if now.second % 2 == 0:
-        hhmm = now.strftime("%H:%M")
-    else:
-        hhmm = now.strftime("%H %M")
-
-    # Center horizontally
-    try:
-        bbox = draw.textbbox((0, 0), hhmm, font=font_big)
-        tw = bbox[2] - bbox[0]
+        def _tw(txt, f): b = draw.textbbox((0,0), txt, font=f); return b[2]-b[0]
+        w_hh    = _tw(hh,    fonts["big"])
+        w_colon = _tw(":",   fonts["big"])
+        w_mm    = _tw(mm,    fonts["big"])
     except AttributeError:
-        tw = len(hhmm) * 18
-    x_time = (128 - tw) // 2
-    draw.text((x_time, 26), hhmm, font=font_big, fill=(220, 235, 255))
+        w_hh = w_mm = 38; w_colon = 14
 
-    # ── Seconds bar ──────────────────────────────────────────────────────────
-    sec_w = int((now.second / 59) * 108)
-    draw.rectangle([(10, 65), (118, 68)], fill=(30, 40, 80))
-    draw.rectangle([(10, 65), (10 + sec_w, 68)], fill=(60, 120, 220))
+    total_w = w_hh + w_colon + w_mm
+    x0 = (128 - total_w) // 2
+    y_time = 22
+
+    draw.text((x0,            y_time), hh,     font=fonts["big"], fill=clr_digits)
+    draw.text((x0 + w_hh,     y_time), colon,  font=fonts["big"],
+              fill=(int(clr_digits[0]*0.5), int(clr_digits[1]*0.5), int(b*0.6)))
+    draw.text((x0 + w_hh + w_colon, y_time), mm, font=fonts["big"], fill=clr_digits)
+
+    # ── Seconds  (smaller, right-aligned) ────────────────────────────────────
+    ss_str = now.strftime("%S")
+    try:
+        w_ss = _tw(ss_str, fonts["sec"])
+    except Exception:
+        w_ss = 22
+    draw.text((128 - w_ss - 4, 34), ss_str, font=fonts["sec"],
+              fill=(60, 90, int(140 + 80 * pulse)))
+
+    # ── Smooth seconds progress bar ───────────────────────────────────────────
+    BAR_X, BAR_Y, BAR_W, BAR_H = 8, 63, 112, 4
+    elapsed = now.second + frac             # 0.0 – 60.0
+    filled  = int(BAR_W * elapsed / 60.0)
+    # Track background
+    draw.rectangle([BAR_X, BAR_Y, BAR_X + BAR_W, BAR_Y + BAR_H],
+                   fill=(20, 28, 68))
+    # Fill
+    if filled > 0:
+        draw.rectangle([BAR_X, BAR_Y, BAR_X + filled, BAR_Y + BAR_H],
+                       fill=(50, 110, int(200 + 50 * pulse)))
+    # Glowing tip
+    if 2 <= filled <= BAR_W - 2:
+        draw.rectangle([BAR_X + filled - 1, BAR_Y - 1,
+                        BAR_X + filled + 1, BAR_Y + BAR_H + 1],
+                       fill=(140, 190, 255))
 
     # ── Date line ────────────────────────────────────────────────────────────
-    date_str = now.strftime("%a, %d %b %Y")
+    date_str = now.strftime("%a  %d %b  %Y")
     try:
-        bbox2 = draw.textbbox((0, 0), date_str, font=font_med)
-        dw = bbox2[2] - bbox2[0]
-    except AttributeError:
-        dw = len(date_str) * 8
-    draw.text(((128 - dw) // 2, 74), date_str, font=font_med, fill=(100, 130, 180))
+        dw = _tw(date_str, fonts["med"])
+    except Exception:
+        dw = len(date_str) * 7
+    draw.text(((128 - dw) // 2, 72), date_str,
+              font=fonts["med"], fill=(85, 110, 170))
 
-    # ── Horizontal rule bottom ────────────────────────────────────────────────
-    draw.line([(0, 94), (128, 94)], fill=(40, 60, 120), width=1)
+    # Separator
+    draw.line([(0, 90), (128, 90)], fill=(30, 45, 100), width=1)
 
-    # ── Fake indoor temperature / humidity row ───────────────────────────────
-    draw.text((6,  98), "In", font=font_sml, fill=(80, 100, 150))
-    draw.text((6,  108), "21°C  48%", font=font_sml, fill=(160, 180, 220))
-    draw.text((72, 98), "Out", font=font_sml, fill=(80, 100, 150))
-    draw.text((72, 108), "17°C  62%", font=font_sml, fill=(160, 180, 220))
+    # ── Indoor / outdoor row ─────────────────────────────────────────────────
+    draw.text((6,  93),  "Indoor",  font=fonts["sml"], fill=(70, 90, 140))
+    draw.text((6,  104), "21°C  48%", font=fonts["sml"], fill=(140, 165, 215))
+    draw.text((72, 93),  "Outdoor", font=fonts["sml"], fill=(70, 90, 140))
+    draw.text((72, 104), "17°C  62%", font=fonts["sml"], fill=(140, 165, 215))
 
     return img
 
@@ -860,21 +933,17 @@ def enter_stealth():
         return False
 
     held_since  = None
-    last_second = -1
     STEALTH_CMD = "/dev/shm/ktox_stealth.json"
 
     while ktox_state["stealth"]:
-        # ── Render decoy display ──────────────────────────────────────────────
+        # ── Render decoy display (every frame ~5 fps) ─────────────────────────
         if HAS_HW and LCD:
             if custom_decoy:
                 _show_custom()
             else:
-                now = datetime.now()
-                if now.second != last_second:          # only redraw each second
-                    last_second = now.second
-                    img = _draw_stealth_clock(now)
-                    with draw_lock:
-                        LCD.LCD_ShowImage(img, 0, 0)
+                img = _draw_stealth_clock(time.time())
+                with draw_lock:
+                    LCD.LCD_ShowImage(img, 0, 0)
 
         # ── WebUI toggle ──────────────────────────────────────────────────────
         try:
