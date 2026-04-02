@@ -2809,6 +2809,7 @@ if __name__ == "__main__":
     const compatDiffFull     = document.getElementById('compatDiffFull');
     const compatApplyBtn     = document.getElementById('compatApplyBtn');
     const compatSaveCopyBtn  = document.getElementById('compatSaveCopyBtn');
+    const compatDownloadBtn  = document.getElementById('compatDownloadBtn');
 
     if (!compatBtn || !compatModal) return;
 
@@ -2837,6 +2838,7 @@ if __name__ == "__main__":
       compatDiffWrap.classList.add('hidden');
       compatApplyBtn.classList.add('hidden');
       compatSaveCopyBtn.classList.add('hidden');
+      compatDownloadBtn.classList.add('hidden');
       compatPreviewStatus.textContent = '';
     }
 
@@ -2972,6 +2974,7 @@ if __name__ == "__main__":
         compatDiffWrap.classList.remove('hidden');
         compatApplyBtn.classList.remove('hidden');
         compatSaveCopyBtn.classList.remove('hidden');
+        compatDownloadBtn.classList.remove('hidden');
         renderDiff(data.diff, data.original, data.converted);
 
         if (opts.apply) {
@@ -3005,6 +3008,24 @@ if __name__ == "__main__":
     compatPreviewBtn.addEventListener('click', () => runPreview());
     compatApplyBtn.addEventListener('click',   () => runPreview({ apply: true }));
     compatSaveCopyBtn.addEventListener('click',() => runPreview({ save_copy: true }));
+
+    compatDownloadBtn.addEventListener('click', () => {
+      if (!lastConverted || !lastConverted.converted) return;
+      const filePath = currentPathEl ? currentPathEl.textContent.trim() : 'payload.py';
+      const baseName = filePath.split('/').pop().replace(/\.py$/, '');
+      const suffix   = selectedTarget === 'raspyjack' ? '.rj.py' : '.ktox.py';
+      const fileName = baseName + suffix;
+      const blob = new Blob([lastConverted.converted], { type: 'text/x-python' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      compatPreviewStatus.textContent = `Downloaded ${fileName}`;
+    });
 
     compatDiffFull.addEventListener('change', () => {
       showFull = compatDiffFull.checked;
