@@ -21,7 +21,7 @@
 #   KEY2                 home
 #   KEY3                 stop attack / exit payload
 
-import os, sys, time, json, threading, subprocess, signal, socket, ipaddress
+import os, sys, time, json, threading, subprocess, signal, socket, ipaddress, math
 from datetime import datetime
 from functools import partial
 from pathlib import Path
@@ -760,54 +760,205 @@ def loot_count():
 # ── Stealth mode ───────────────────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# ── Stealth clock: cached fonts (loaded once) ─────────────────────────────────
+_STEALTH_FONTS = {}
+
+def _stealth_fonts():
+    global _STEALTH_FONTS
+    if _STEALTH_FONTS:
+        return _STEALTH_FONTS
+    candidates = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    ]
+    def _load(size, bold=False):
+        for p in candidates:
+            if bold and "Bold" not in p:
+                continue
+            if os.path.exists(p):
+                try:
+                    return ImageFont.truetype(p, size)
+                except Exception:
+                    pass
+        return ImageFont.load_default()
+
+    _STEALTH_FONTS = {
+        "big":  _load(34, bold=True),
+        "sec":  _load(20, bold=True),
+        "med":  _load(13),
+        "sml":  _load(10),
+    }
+    return _STEALTH_FONTS
+
+
+def _stealth_clock_fallback(ts):
+    """
+    Animated decoy lock-screen clock drawn into the GLOBAL image/draw objects.
+    Uses large TrueType fonts from _stealth_fonts() with sine-wave glow,
+    blinking colon, smooth progress bar — all into global image/draw so
+    LCD_ShowImage(image, 0, 0) is guaranteed to work.
+    Must be called while holding draw_lock.
+    """
+    now  = datetime.fromtimestamp(ts)
+    frac = ts - int(ts)
+    sf   = _stealth_fonts()   # {"big":34px, "sec":20px, "med":13px, "sml":10px}
+
+    # ── Pulsing glow: 0.0‥1.0, period ~3 s ───────────────────────────────────
+    pulse = 0.5 + 0.5 * math.sin(ts * (2 * math.pi / 3.0))  # 0..1 smooth
+    # Blinking colon: on for even seconds
+    colon = ":" if (int(ts) % 2 == 0) else " "
+
+    # ── Background gradient emulation (two-rect approach) ─────────────────────
+    draw.rectangle([0,  0, 127, 63],  fill=(5,  7, 22))   # top half
+    draw.rectangle([0, 64, 127, 127], fill=(8, 11, 30))   # bottom half
+
+    # ── STATUS BAR (row 0–12) ─────────────────────────────────────────────────
+    # Network label left
+    try:
+        draw.text((3, 2), "KTOX", font=sf["sml"], fill=(60, 80, 140))
+    except Exception:
+        pass
+    # WiFi bars (3 bars, top-right area, x=88..105)
+    bar_x = 88
+    for i, h in enumerate((3, 5, 7)):
+        bx = bar_x + i * 6
+        by = 10 - h
+        draw.rectangle([bx, by, bx + 3, 10], fill=(50, 120, 220))
+    # Battery outline (x=108..122, y=3..9)
+    draw.rectangle([108, 3, 120, 9], outline=(80, 100, 160), fill=(0, 0, 0))
+    draw.rectangle([121, 5, 122, 7], fill=(80, 100, 160))   # nub
+    draw.rectangle([109, 4, 117, 8], fill=(60, 190, 80))    # 75% fill
+    # Status separator
+    draw.line([(0, 13), (128, 13)], fill=(22, 32, 80), width=1)
+
+    # ── TIME  HH:MM  (rows 18–54, centered, large font) ──────────────────────
+    t_str = now.strftime("%H") + colon + now.strftime("%M")
+    # Glow colour: blue-white pulsing
+    r = int(140 + 90 * pulse)
+    g = int(175 + 55 * pulse)
+    b = 255
+    glow_col = (r, g, b)
+    # Shadow pass (offset 1px, darker) for depth
+    shadow = (max(0, r - 80), max(0, g - 80), 80)
+    try:
+        bbox = draw.textbbox((0, 0), t_str, font=sf["big"])
+        tw = bbox[2] - bbox[0]
+        tx = (128 - tw) // 2
+        draw.text((tx + 1, 19), t_str, font=sf["big"], fill=shadow)
+        draw.text((tx,     18), t_str, font=sf["big"], fill=glow_col)
+    except Exception:
+        # Fallback: use menu font at known position
+        draw.text((8, 18), t_str, font=small_font, fill=glow_col)
+
+    # ── SECONDS  SS  (rows 56–76, centred, medium font) ──────────────────────
+    sec_str = now.strftime("%S")
+    sec_col = (int(60 + 60 * pulse), int(110 + 60 * pulse), 210)
+    try:
+        bbox2 = draw.textbbox((0, 0), sec_str, font=sf["sec"])
+        sw = bbox2[2] - bbox2[0]
+        sx = (128 - sw) // 2
+        draw.text((sx, 56), sec_str, font=sf["sec"], fill=sec_col)
+    except Exception:
+        draw.text((56, 56), sec_str, font=small_font, fill=sec_col)
+
+    # ── SECONDS PROGRESS BAR (row 80–83) ─────────────────────────────────────
+    BAR_X, BAR_Y, BAR_W, BAR_H = 6, 80, 116, 4
+    elapsed = now.second + frac
+    filled  = int(BAR_W * elapsed / 60.0)
+    # Track (dark)
+    draw.rectangle([BAR_X, BAR_Y, BAR_X + BAR_W, BAR_Y + BAR_H - 1],
+                   fill=(18, 24, 60))
+    # Filled portion
+    if filled > 0:
+        bar_col = (int(40 + 40 * pulse), int(100 + 60 * pulse), 220)
+        draw.rectangle([BAR_X, BAR_Y, BAR_X + filled, BAR_Y + BAR_H - 1],
+                       fill=bar_col)
+    # Glowing tip
+    if 0 < filled < BAR_W:
+        tip_x = BAR_X + filled
+        draw.rectangle([tip_x - 1, BAR_Y - 1, tip_x + 1, BAR_Y + BAR_H],
+                       fill=(200, 230, 255))
+
+    # ── DATE LINE (row 88–100) ────────────────────────────────────────────────
+    date_str = now.strftime("%A  %d %b %Y")
+    date_col = (75, 100, 165)
+    try:
+        bbox3 = draw.textbbox((0, 0), date_str, font=sf["med"])
+        dw = bbox3[2] - bbox3[0]
+        dx = (128 - dw) // 2
+        draw.text((dx, 88), date_str, font=sf["med"], fill=date_col)
+    except Exception:
+        draw.text((4, 88), date_str, font=small_font, fill=date_col)
+
+    # ── BOTTOM DIVIDER + NOTIFICATION STUB (row 104–127) ─────────────────────
+    draw.line([(0, 104), (128, 104)], fill=(22, 32, 80), width=1)
+    notif_col = (55, 75, 130)
+    try:
+        draw.text((4, 107), "No new notifications", font=sf["sml"], fill=notif_col)
+        draw.text((4, 118), now.strftime("Updated %H:%M"), font=sf["sml"],
+                  fill=(40, 55, 100))
+    except Exception:
+        pass
+
+    return image   # global image — caller passes to LCD_ShowImage(image, 0, 0)
+
+
 def enter_stealth():
     """
-    Blank LCD (or show decoy image). Device keeps running everything.
-    Exit: KEY1 + KEY3 held 3 s, or WebUI toggle (write {"stealth":false}
-    to /dev/shm/ktox_stealth.json).
+    Lock the LCD with a decoy clock screen.
+    Exit: hold KEY1 + KEY3 for 3 s, or WebUI toggle
+    (write {"stealth":false} to /dev/shm/ktox_stealth.json).
     """
     ktox_state["stealth"] = True
-    decoy = ktox_state.get("stealth_image")
-    if HAS_HW and LCD:
-        if decoy and os.path.exists(str(decoy)):
-            try:
-                img = Image.open(decoy).resize((128,128)).convert("RGB")
-                with draw_lock:
-                    LCD.LCD_ShowImage(img, 0, 0)
-            except Exception:
-                with draw_lock: LCD.LCD_Clear()
-        else:
-            with draw_lock: LCD.LCD_Clear()
+    screen_lock.set()   # freeze _display_loop and _stats_loop
 
-    held_since = None
+    held_since  = None
     STEALTH_CMD = "/dev/shm/ktox_stealth.json"
 
-    while ktox_state["stealth"]:
-        # WebUI toggle
-        try:
-            if os.path.isfile(STEALTH_CMD):
-                data = json.loads(Path(STEALTH_CMD).read_text())
-                os.remove(STEALTH_CMD)
-                if not data.get("stealth", True):
-                    break
-        except Exception:
-            pass
-        # Physical button combo
-        if HAS_HW:
+    try:
+        while True:
+            # ── Draw clock ────────────────────────────────────────────────────
+            if HAS_HW and LCD and image:
+                _ts = time.time()
+                with draw_lock:
+                    try:
+                        _stealth_clock_fallback(_ts)   # draws into global image
+                        LCD.LCD_ShowImage(image, 0, 0)
+                    except Exception as _e:
+                        print(f"[STEALTH] {_e!r}", flush=True)
+
+            # ── WebUI toggle ──────────────────────────────────────────────────
             try:
-                k1 = GPIO.input(PINS["KEY1_PIN"]) == 0
-                k3 = GPIO.input(PINS["KEY3_PIN"]) == 0
-                if k1 and k3:
-                    if held_since is None: held_since = time.time()
-                    elif time.time() - held_since >= 3.0: break
-                else:
-                    held_since = None
+                if os.path.isfile(STEALTH_CMD):
+                    data = json.loads(Path(STEALTH_CMD).read_text())
+                    os.remove(STEALTH_CMD)
+                    if not data.get("stealth", True):
+                        break
             except Exception:
                 pass
-        time.sleep(0.2)
 
-    ktox_state["stealth"] = False
-    Dialog_info("Stealth off", wait=False, timeout=1.5)
+            # ── KEY1 + KEY3 held 3 s ──────────────────────────────────────────
+            if HAS_HW:
+                try:
+                    k1 = GPIO.input(PINS["KEY1_PIN"]) == 0
+                    k3 = GPIO.input(PINS["KEY3_PIN"]) == 0
+                    if k1 and k3:
+                        if held_since is None:
+                            held_since = time.time()
+                        elif time.time() - held_since >= 3.0:
+                            break
+                    else:
+                        held_since = None
+                except Exception:
+                    pass
+
+            time.sleep(0.2)
+    finally:
+        ktox_state["stealth"] = False
+        screen_lock.clear()
+        Dialog_info("Stealth off", wait=False, timeout=1.5)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Attack helpers ─────────────────────────────────────────────────────────────
