@@ -81,6 +81,7 @@
   const nmapVizDownloadJson = document.getElementById('nmapVizDownloadJson');
   const nmapVizFilterVuln = document.getElementById('nmapVizFilterVuln');
   const payloadSidebar = document.getElementById('payloadSidebar');
+  const payloadsMobileList = document.getElementById('payloadsMobileList');
   const payloadStatus = document.getElementById('payloadStatus');
   const payloadStatusDot = document.getElementById('payloadStatusDot');
   const payloadsRefresh = document.getElementById('payloadsRefresh');
@@ -660,10 +661,16 @@
     if (deviceTab) deviceTab.classList.toggle('hidden', !isDevice);
     if (settingsTab) settingsTab.classList.toggle('hidden', tab !== 'settings');
     if (lootTab) lootTab.classList.toggle('hidden', tab !== 'loot');
+    const payloadsTabEl = document.getElementById('payloadsTab');
+    if (payloadsTabEl) payloadsTabEl.classList.toggle('hidden', tab !== 'payloads');
     setNavActive(navDevice, isDevice);
     setNavActive(navLoot, tab === 'loot');
     setNavActive(navSettings, tab === 'settings');
     setSidebarOpen(false);
+    // Sync mobile bottom nav active state
+    document.querySelectorAll('[data-mobnav]').forEach(btn => {
+      btn.classList.toggle('mob-nav-active', btn.dataset.mobnav === tab);
+    });
   }
 
   function setSystemOpen(open){
@@ -1606,18 +1613,22 @@
       setPayloadStatus('Ready');
     }catch(e){
       setPayloadStatus('Failed to load');
-      if (payloadSidebar) payloadSidebar.innerHTML = '<div class="text-xs text-slate-500 px-2">No payloads available.</div>';
+      const noPayloadsHtml = '<div class="text-xs text-slate-500 px-2">No payloads available.</div>';
+      if (payloadSidebar) payloadSidebar.innerHTML = noPayloadsHtml;
+      if (payloadsMobileList) payloadsMobileList.innerHTML = noPayloadsHtml;
     }
   }
 
   function renderPayloadSidebar(){
-    if (!payloadSidebar) return;
+    if (!payloadSidebar && !payloadsMobileList) return;
     const cats = payloadState.categories || [];
     if (!cats.length){
-      payloadSidebar.innerHTML = '<div class="text-xs text-slate-500 px-2">No categories.</div>';
+      const emptyHtml = '<div class="text-xs text-slate-500 px-2">No categories.</div>';
+      if (payloadSidebar) payloadSidebar.innerHTML = emptyHtml;
+      if (payloadsMobileList) payloadsMobileList.innerHTML = emptyHtml;
       return;
     }
-    payloadSidebar.innerHTML = cats.map(cat => {
+    const rendered = cats.map(cat => {
       const catId = String(cat?.id || '');
       const catIdEncoded = encodeData(catId);
       const catLabel = escapeHtml(String(cat?.label || catId || 'Category'));
@@ -1656,6 +1667,8 @@
         </div>
       `;
     }).join('');
+    if (payloadSidebar) payloadSidebar.innerHTML = rendered;
+    if (payloadsMobileList) payloadsMobileList.innerHTML = rendered;
   }
 
   async function startPayload(path){
@@ -1863,6 +1876,40 @@
       setPayloadStatus('Stopping...');
       tapInput('KEY3');
     }
+  });
+  if (payloadsMobileList) payloadsMobileList.addEventListener('click', (e) => {
+    const catBtn = e.target.closest('[data-cat]');
+    if (catBtn){
+      const id = decodeURIComponent(catBtn.getAttribute('data-cat') || '');
+      if (id){ payloadState.open[id] = !payloadState.open[id]; renderPayloadSidebar(); }
+      return;
+    }
+    const startBtn = e.target.closest('[data-start]');
+    if (startBtn){
+      const path = decodeURIComponent(startBtn.getAttribute('data-start') || '');
+      if (path) startPayload(path);
+      return;
+    }
+    const stopBtn = e.target.closest('[data-stop]');
+    if (stopBtn){ setPayloadStatus('Stopping...'); tapInput('KEY3'); }
+  });
+  const payloadsMobRefresh = document.getElementById('payloadsMobRefresh');
+  if (payloadsMobRefresh) payloadsMobRefresh.addEventListener('click', () => loadPayloads());
+  // ── Mobile bottom nav ──────────────────────────────────────────────────────
+  document.querySelectorAll('[data-mobnav]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.mobnav;
+      if (tab === 'loot'){
+        setActiveTab('loot');
+        if (lootList && !lootList.dataset.loaded){ loadLoot(''); lootList.dataset.loaded = '1'; }
+      } else if (tab === 'settings'){
+        setActiveTab('settings');
+        loadDiscordWebhook();
+        loadTailscaleSettings();
+      } else {
+        setActiveTab(tab);
+      }
+    });
   });
   if (payloadsRefresh) payloadsRefresh.addEventListener('click', () => loadPayloads());
   if (discordWebhookSave) discordWebhookSave.addEventListener('click', () => {

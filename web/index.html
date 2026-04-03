@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#05060a">
   <title>KTOx WebUI</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css">
@@ -641,6 +644,15 @@
         </div>
       </div>
 
+      <!-- Payloads (mobile full-screen tab) -->
+      <div id="payloadsTab" class="hidden">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <div class="text-sm font-semibold text-red-400"><i class="fa-solid fa-bolt mr-2"></i>Payloads</div>
+          <button id="payloadsMobRefresh" type="button" class="px-2 py-1 text-[10px] rounded-md bg-slate-800/70 border border-slate-600/40 text-slate-200 hover:bg-slate-700/70 transition"><i class="fa-solid fa-rotate-right mr-1"></i>Refresh</button>
+        </div>
+        <div id="payloadsMobileList" class="space-y-2"></div>
+      </div>
+
       <!-- Loot browser -->
       <div id="lootTab" class="hidden">
         <div class="rounded-3xl border border-slate-700/60 bg-slate-900/40 backdrop-blur p-4 md:p-5 max-w-3xl mx-auto shadow-[0_0_30px_rgba(15,23,42,0.35)]">
@@ -777,6 +789,26 @@
       </div>
     </div>
   </div>
+
+  <!-- Mobile bottom navigation (hidden on desktop via CSS) -->
+  <nav id="mobileNav" aria-label="Mobile navigation">
+    <button class="mob-nav-btn mob-nav-active" data-mobnav="device" aria-label="Device">
+      <i class="fa-solid fa-gamepad"></i>
+      <span>Device</span>
+    </button>
+    <button class="mob-nav-btn" data-mobnav="payloads" aria-label="Payloads">
+      <i class="fa-solid fa-bolt"></i>
+      <span>Payloads</span>
+    </button>
+    <button class="mob-nav-btn" data-mobnav="loot" aria-label="Loot">
+      <i class="fa-solid fa-vault"></i>
+      <span>Loot</span>
+    </button>
+    <button class="mob-nav-btn" data-mobnav="settings" aria-label="Settings">
+      <i class="fa-solid fa-sliders"></i>
+      <span>Settings</span>
+    </button>
+  </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.min.js"></script>

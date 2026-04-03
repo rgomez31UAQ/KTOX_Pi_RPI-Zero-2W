@@ -611,3 +611,138 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
     padding-bottom: 4px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE BOTTOM NAV  (≤768px)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Hidden on desktop */
+#mobileNav { display: none; }
+
+@media (max-width: 768px) {
+  /* ── Replace hamburger drawer with bottom nav ────────────────── */
+  #sidebar,
+  #sidebarBackdrop,
+  #menuToggle {
+    display: none !important;
+  }
+
+  /* ── Bottom nav bar ──────────────────────────────────────────── */
+  #mobileNav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(5, 6, 10, 0.97);
+    border-top: 1px solid rgba(139, 0, 0, 0.22);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .mob-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 10px 4px 8px;
+    background: none;
+    border: none;
+    color: #475569;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: color 0.15s ease;
+    position: relative;
+  }
+
+  .mob-nav-btn i {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .mob-nav-btn.mob-nav-active {
+    color: #ef4444;
+  }
+
+  .mob-nav-btn.mob-nav-active i {
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.55));
+  }
+
+  /* Red indicator dot above active button */
+  .mob-nav-btn.mob-nav-active::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  }
+
+  .mob-nav-btn:active {
+    color: #f87171;
+    opacity: 0.75;
+  }
+
+  /* ── Push content above the nav bar ─────────────────────────── */
+  body {
+    padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* ── Full-width layout since sidebar is gone ─────────────────── */
+  .min-h-screen.md\:flex {
+    display: block !important;
+  }
+
+  main {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* ── Device tab: terminal full-width, device shell below ─────── */
+  #deviceTab > .flex {
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+
+  #deviceTab .terminal-divider {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    padding-right: 0 !important;
+    margin-bottom: 1rem;
+  }
+
+  /* Terminal taller on mobile (no device shell competing for space) */
+  .terminal-body {
+    height: min(52vh, 340px) !important;
+  }
+
+  /* Device shell: full-width centered */
+  #deviceTab .md\:order-2 {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ── Mobile payloads tab ─────────────────────────────────────── */
+  #payloadsTab {
+    padding-bottom: 1rem;
+  }
+
+  /* ── Header: hide desktop title bar clutter on phone ─────────── */
+  main > .flex.items-center.justify-between .flex.items-center.gap-2 .tracking-wide {
+    display: none;
+  }
+}
