@@ -882,7 +882,7 @@ def _stealth_clock_fallback(ts):
                        fill=(200, 230, 255))
 
     # ── DATE LINE (row 88–100) ────────────────────────────────────────────────
-    date_str = now.strftime("%A  %d %b %Y")
+    date_str = now.strftime("%a %d %b %Y")
     date_col = (75, 100, 165)
     try:
         bbox3 = draw.textbbox((0, 0), date_str, font=sf["med"])
