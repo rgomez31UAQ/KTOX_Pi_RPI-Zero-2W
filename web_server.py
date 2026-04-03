@@ -945,6 +945,7 @@ class KTOxHandler(SimpleHTTPRequestHandler):
             or parsed.path.startswith("/api/system/")
             or parsed.path.startswith("/api/settings/")
             or parsed.path.startswith("/api/auth/")
+            or parsed.path.startswith("/api/stealth/")
         ):
             query = parse_qs(parsed.query or "")
             if parsed.path == "/api/auth/bootstrap-status":
@@ -956,6 +957,15 @@ class KTOxHandler(SimpleHTTPRequestHandler):
 
             if not _auth_ok(self, query):
                 _json_response(self, {"error": "unauthorized"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            if parsed.path == "/api/stealth/status":
+                state_path = Path("/dev/shm/ktox_device_stealth.txt")
+                try:
+                    active = state_path.exists() and state_path.read_text().strip() == "1"
+                except Exception:
+                    active = False
+                _json_response(self, {"active": active})
                 return
 
             if parsed.path == "/api/payloads/list":
@@ -1012,6 +1022,30 @@ class KTOxHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/auth/ws-ticket":
             query = parse_qs(parsed.query or "")
             self._handle_auth_ws_ticket(query)
+            return
+
+        if parsed.path == "/api/stealth/status":
+            query = parse_qs(parsed.query or "")
+            if not _auth_ok(self, query):
+                _json_response(self, {"error": "unauthorized"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            state_path = Path("/dev/shm/ktox_device_stealth.txt")
+            active = state_path.exists() and state_path.read_text().strip() == "1"
+            _json_response(self, {"active": active})
+            return
+
+        if parsed.path == "/api/stealth/exit":
+            query = parse_qs(parsed.query or "")
+            if not _auth_ok(self, query):
+                _json_response(self, {"error": "unauthorized"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+            try:
+                Path("/dev/shm/ktox_stealth.json").write_text(
+                    json.dumps({"stealth": False})
+                )
+                _json_response(self, {"ok": True})
+            except Exception as e:
+                _json_response(self, {"error": str(e)}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
             return
 
         if parsed.path == "/api/system/restart-ui":

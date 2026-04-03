@@ -1034,7 +1034,13 @@ def enter_stealth():
     screen_lock.set()   # freeze _display_loop and _stats_loop
 
     held_since  = None
-    STEALTH_CMD = "/dev/shm/ktox_stealth.json"
+    STEALTH_CMD  = "/dev/shm/ktox_stealth.json"
+    STATE_FILE   = "/dev/shm/ktox_device_stealth.txt"
+    # Signal WebUI that stealth is active
+    try:
+        open(STATE_FILE, "w").write("1")
+    except Exception:
+        pass
     # Clear any stale WebUI exit command from before stealth started
     try:
         os.remove(STEALTH_CMD)
@@ -1082,6 +1088,10 @@ def enter_stealth():
     finally:
         ktox_state["stealth"] = False
         screen_lock.clear()
+        try:
+            open(STATE_FILE, "w").write("0")
+        except Exception:
+            pass
         Dialog_info("Stealth off", wait=False, timeout=1.5)
 
 # ═══════════════════════════════════════════════════════════════════════════════
