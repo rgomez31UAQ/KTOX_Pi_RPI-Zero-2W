@@ -910,6 +910,69 @@ def _draw_stealth_clock(ts):
     return img
 
 
+def _stealth_clock_fallback(ts):
+    """
+    Emergency fallback: draw a simple clock directly into the GLOBAL image/draw
+    objects — the same objects _display_loop shows, so LCD_ShowImage(image) is
+    guaranteed to work.  Called when _draw_stealth_clock() throws.
+    Must be called while holding draw_lock.
+    """
+    now = datetime.fromtimestamp(ts)
+    frac = ts - int(ts)
+
+    # Dark navy background
+    draw.rectangle([0, 0, 127, 127], fill=(8, 10, 36))
+
+    # Status bar line
+    draw.line([(0, 16), (128, 16)], fill=(30, 45, 100), width=1)
+
+    # HOME label
+    try:
+        draw.text((40, 3), "HOME", font=small_font, fill=(100, 120, 180))
+    except Exception:
+        pass
+
+    # Large time HH:MM
+    t_str = now.strftime("%H:%M" if frac >= 0.5 else "%H %M")
+    try:
+        draw.text((8, 28), t_str, font=text_font, fill=(160, 200, 255))
+    except Exception:
+        pass
+
+    # Seconds
+    try:
+        draw.text((90, 52), now.strftime("%S"), font=small_font, fill=(60, 90, 180))
+    except Exception:
+        pass
+
+    # Seconds progress bar
+    BAR_X, BAR_Y, BAR_W, BAR_H = 8, 65, 112, 3
+    elapsed = now.second + frac
+    filled = int(BAR_W * elapsed / 60.0)
+    draw.rectangle([BAR_X, BAR_Y, BAR_X + BAR_W, BAR_Y + BAR_H], fill=(20, 28, 68))
+    if filled > 0:
+        draw.rectangle([BAR_X, BAR_Y, BAR_X + filled, BAR_Y + BAR_H], fill=(50, 110, 200))
+
+    # Date
+    try:
+        draw.text((8, 74), now.strftime("%a %d %b %Y"), font=small_font,
+                  fill=(85, 110, 170))
+    except Exception:
+        pass
+
+    # Separator + weather stub
+    draw.line([(0, 88), (128, 88)], fill=(30, 45, 100), width=1)
+    try:
+        draw.text((6,  92), "Indoor",     font=small_font, fill=(70, 90, 140))
+        draw.text((6,  103), "21\xb0C  48%", font=small_font, fill=(140, 165, 215))
+        draw.text((72, 92), "Outdoor",    font=small_font, fill=(70, 90, 140))
+        draw.text((72, 103), "17\xb0C  62%", font=small_font, fill=(140, 165, 215))
+    except Exception:
+        pass
+
+    return image   # return global image so caller can pass it to LCD_ShowImage
+
+
 def enter_stealth():
     """
     Lock the LCD with a convincing decoy clock screen.
@@ -943,12 +1006,25 @@ def enter_stealth():
                 if custom_decoy:
                     _show_custom()
                 else:
+                    _ts = time.time()
+                    # Try the animated clock first
+                    _clock_img = None
                     try:
-                        img = _draw_stealth_clock(time.time())
-                        with draw_lock:
-                            LCD.LCD_ShowImage(img, 0, 0)
-                    except Exception:
-                        pass  # never let drawing crash kill stealth mode
+                        _clock_img = _draw_stealth_clock(_ts)
+                    except Exception as _ce:
+                        print(f"[STEALTH] clock draw error: {_ce!r}", flush=True)
+
+                    with draw_lock:
+                        try:
+                            if _clock_img is not None:
+                                # Use the fancy new-image clock
+                                LCD.LCD_ShowImage(_clock_img, 0, 0)
+                            else:
+                                # Fallback: draw into global image (always works)
+                                _fb = _stealth_clock_fallback(_ts)
+                                LCD.LCD_ShowImage(_fb, 0, 0)
+                        except Exception as _se:
+                            print(f"[STEALTH] LCD show error: {_se!r}", flush=True)
 
             # ── WebUI toggle ──────────────────────────────────────────────────────
             try:
