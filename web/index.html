@@ -827,10 +827,44 @@
     </button>
   </nav>
 
+  <!-- Stealth exit banner — fixed top bar, always reachable -->
+  <div id="stealthBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#7f1d1d;border-bottom:2px solid #ef4444;padding:10px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;">
+    <span style="color:#fca5a5;font-size:13px;font-weight:600;letter-spacing:.04em;">&#128274; STEALTH MODE ACTIVE</span>
+    <button onclick="exitStealthHttp()" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.05em;">EXIT STEALTH</button>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.min.js"></script>
   <script src="./shared.js"></script>
   <script src="./app.js"></script>
+  <script>
+    // Stealth banner — polls stealth state and provides HTTP-based exit
+    (function(){
+      var banner = document.getElementById('stealthBanner');
+      var POLL_MS = 2000;
+      var pollTimer = null;
+
+      function showBanner(){ if(banner) banner.style.display='flex'; }
+      function hideBanner(){ if(banner) banner.style.display='none'; }
+
+      window.exitStealthHttp = function(){
+        fetch('/api/stealth/exit', {method:'POST', credentials:'include'})
+          .then(function(r){ if(r.ok) hideBanner(); })
+          .catch(function(){});
+      };
+
+      function pollStealth(){
+        fetch('/api/stealth/status', {credentials:'include'})
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(d){
+            if(d && d.active) showBanner(); else hideBanner();
+          })
+          .catch(hideBanner);
+        pollTimer = setTimeout(pollStealth, POLL_MS);
+      }
+      pollStealth();
+    })();
+  </script>
 </body>
 </html>
 
