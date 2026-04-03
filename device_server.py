@@ -488,6 +488,15 @@ async def handle_client(ws):
                     send_input_event(btn, state)
                 continue
 
+            if data.get("type") == "stealth_exit":
+                try:
+                    Path("/dev/shm/ktox_stealth.json").write_text(
+                        json.dumps({"stealth": False})
+                    )
+                except Exception:
+                    pass
+                continue
+
             if data.get("type") == "shell_open":
                 if shell:
                     shell.close()

@@ -916,6 +916,11 @@ def enter_stealth():
 
     held_since  = None
     STEALTH_CMD = "/dev/shm/ktox_stealth.json"
+    # Clear any stale WebUI exit command from before stealth started
+    try:
+        os.remove(STEALTH_CMD)
+    except Exception:
+        pass
 
     try:
         while True:

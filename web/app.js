@@ -657,13 +657,16 @@
 
   function setActiveTab(tab){
     activeTab = tab;
-    const isDevice = tab === 'device';
-    if (deviceTab) deviceTab.classList.toggle('hidden', !isDevice);
+    const isDevice = tab === 'device' || tab === 'terminal';
+    if (deviceTab) {
+      deviceTab.classList.toggle('hidden', !isDevice);
+      deviceTab.classList.toggle('terminal-mode', tab === 'terminal');
+    }
     if (settingsTab) settingsTab.classList.toggle('hidden', tab !== 'settings');
     if (lootTab) lootTab.classList.toggle('hidden', tab !== 'loot');
     const payloadsTabEl = document.getElementById('payloadsTab');
     if (payloadsTabEl) payloadsTabEl.classList.toggle('hidden', tab !== 'payloads');
-    setNavActive(navDevice, isDevice);
+    setNavActive(navDevice, tab === 'device');
     setNavActive(navLoot, tab === 'loot');
     setNavActive(navSettings, tab === 'settings');
     setSidebarOpen(false);
@@ -671,6 +674,10 @@
     document.querySelectorAll('[data-mobnav]').forEach(btn => {
       btn.classList.toggle('mob-nav-active', btn.dataset.mobnav === tab);
     });
+    // Refit terminal when switching to terminal tab
+    if (tab === 'terminal' && fitAddon) {
+      requestAnimationFrame(() => { try { fitAddon.fit(); } catch{} });
+    }
   }
 
   function setSystemOpen(open){
@@ -1723,6 +1730,12 @@
     sendInput(button, 'press');
     setTimeout(() => sendInput(button, 'release'), 120);
   }
+
+  function exitStealth(){
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    try { ws.send(JSON.stringify({ type: 'stealth_exit' })); } catch{}
+  }
+  window.exitStealth = exitStealth;
 
   // Mouse/touch buttons
   function bindButtons(){

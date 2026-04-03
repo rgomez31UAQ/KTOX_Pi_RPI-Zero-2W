@@ -363,6 +363,18 @@
         transform: scale(.96);
         transform-origin: top center;
       }
+      /* Terminal tab mode: hide device shell, expand terminal full-height */
+      #deviceTab.terminal-mode .device-shell-col {
+        display: none !important;
+      }
+      #deviceTab.terminal-mode .terminal-col {
+        order: 1 !important;
+        width: 100% !important;
+        padding-right: 0 !important;
+      }
+      #deviceTab.terminal-mode .terminal-body {
+        height: calc(100dvh - 180px) !important;
+      }
     }
   </style>
 </head>
@@ -468,7 +480,7 @@
       <!-- Device card -->
       <div id="deviceTab" class="block">
         <div class="flex flex-col md:flex-row md:items-start md:gap-6">
-          <div class="md:order-1 order-2 flex-1 min-w-0">
+          <div class="terminal-col md:order-1 order-2 flex-1 min-w-0">
             <div class="terminal-wrap terminal-divider md:pr-6">
               <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800/70">
                 <div class="text-sm font-semibold text-red-400">Terminal</div>
@@ -495,7 +507,7 @@
             </div>
           </div>
 
-          <div class="md:order-2 order-1 flex justify-center md:justify-end md:pl-6">
+          <div class="device-shell-col md:order-2 order-1 flex justify-center md:justify-end md:pl-6">
             <div id="deviceShell" data-theme="neon" class="device-shell theme-neon rounded-3xl p-4 md:p-5 w-full md:w-fit mx-auto md:mx-0">
       <div class="pager-clip" aria-hidden="true"></div>
       <div class="pager-brand">KTOx_Pi</div>
@@ -535,6 +547,7 @@
           <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-full md:w-24 ring-1 ring-white/10 transition" data-btn="KEY1">KEY1</button>
           <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-full md:w-24 ring-1 ring-white/10 transition" data-btn="KEY2">KEY2</button>
           <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-full md:w-24 ring-1 ring-white/10 transition" data-btn="KEY3">KEY3</button>
+          <button onclick="exitStealth()" class="rounded-xl bg-red-900/70 hover:bg-red-700/90 px-3 py-2 w-full md:w-24 ring-1 ring-red-500/30 text-red-300 hover:text-white text-xs font-bold transition" title="Exit stealth mode">EXIT<br>STEALTH</button>
         </div>
       </div>
 
@@ -795,6 +808,10 @@
     <button class="mob-nav-btn mob-nav-active" data-mobnav="device" aria-label="Device">
       <i class="fa-solid fa-gamepad"></i>
       <span>Device</span>
+    </button>
+    <button class="mob-nav-btn" data-mobnav="terminal" aria-label="Terminal">
+      <i class="fa-solid fa-terminal"></i>
+      <span>Terminal</span>
     </button>
     <button class="mob-nav-btn" data-mobnav="payloads" aria-label="Payloads">
       <i class="fa-solid fa-bolt"></i>
