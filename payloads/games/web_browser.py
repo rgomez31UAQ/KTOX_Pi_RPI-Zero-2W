@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – Reliable Tiny Web Browser (2026 Edition)
-=======================================================
-Improved for reliability on constrained LCD device:
-- Trafilatura + BeautifulSoup for clean content extraction
-- Retries with backoff
-- Title extraction
-- Better error handling & fallbacks
+KTOx Payload – Reliable Tiny Web Browser (Lightweight Fixed Version)
+===================================================================
+- Uses only system-friendly dependencies (beautifulsoup4 + lxml via apt)
+- Strong URL normalization to fix "no host given" error
+- Better error handling and fallbacks
+- Clean text extraction with title support
 """
 
 import os
 import sys
 import re
 import time
-import html
 import threading
 import textwrap
 import urllib.request
@@ -32,29 +30,28 @@ try:
     HAS_HW = True
 except ImportError:
     HAS_HW = False
+    print("No hardware support detected.")
 
-# Optional but strongly recommended dependencies
 try:
     from bs4 import BeautifulSoup
-    import trafilatura
-    HAS_PARSERS = True
+    HAS_BS4 = True
 except ImportError:
-    HAS_PARSERS = False
-    print("Warning: Install beautifulsoup4 lxml trafilatura for best experience")
+    HAS_BS4 = False
+    print("Warning: BeautifulSoup4 not available — very basic parsing only.")
 
 # ── Constants ────────────────────────────────────────────────────────────────
 W, H = 128, 128
 WEBUI_URL_FILE = "/dev/shm/ktox_browser_url.txt"
 MAX_HISTORY = 15
 CHAR_SET = "abcdefghijklmnopqrstuvwxyz0123456789./:_-?=&#@%+"
-MAX_CONTENT_SIZE = 512 * 1024  # 512 KB cap
+MAX_CONTENT_SIZE = 512 * 1024
 
 PINS = {
     "UP": 6, "DOWN": 19, "LEFT": 5, "RIGHT": 26, "OK": 13,
     "KEY1": 21, "KEY2": 20, "KEY3": 16,
 }
 
-# ── Hardware & Globals ───────────────────────────────────────────────────────
+# ── Globals ──────────────────────────────────────────────────────────────────
 LCD = None
 _image = None
 _draw = None
@@ -65,15 +62,15 @@ _font_hd = None
 RUNNING = True
 _ui_lock = threading.Lock()
 
-_page_lines   = ["Welcome to KTOx Browser", "", "KEY1 = Enter URL", "WebUI ready"]
+_page_lines   = ["Welcome to KTOx Browser", "", "Press KEY1 for URL"]
 _page_links   = []
 _link_idx     = 0
 _scroll       = 0
 _current_url  = ""
 _history      = []
-_status_msg   = ""
+_status_msg   = "ready"
 _fetching     = False
-_page_title   = ""   # New: extracted page title
+_page_title   = ""
 
 _LINES_PER_PAGE = 9
 
@@ -112,97 +109,75 @@ def _init_hw():
     _font_hd = _load(12)
 
 
-# ── Reliable Fetch with Retries ──────────────────────────────────────────────
+# ── Robust Fetch with Strong URL Fix ─────────────────────────────────────────
 def _robust_fetch(url, retries=3):
-    """Fetch with retries, backoff, and modern headers."""
+    url = (url or "").strip()
+    if not url:
+        url = "https://example.com"
+
+    # Fix "no host given" — force proper scheme
+    if not re.match(r'^https?://', url, re.IGNORECASE):
+        if url.startswith('www.'):
+            url = "https://" + url
+        else:
+            url = "https://" + url
+
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; KTOxBrowser/1.2; RaspberryPi TinyLCD)",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
+        "User-Agent": "Mozilla/5.0 (compatible; KTOxBrowser/1.4; RaspberryPi)",
+        "Accept": "text/html,application/xhtml+xml,*/*",
     }
 
     for attempt in range(retries):
         try:
             req = Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=12) as resp:
+            with urllib.request.urlopen(req, timeout=15) as resp:
                 raw = resp.read(MAX_CONTENT_SIZE)
                 content_type = resp.headers.get("Content-Type", "").lower()
                 charset = "utf-8"
-                m = re.search(r'charset=([^\s;]+)', content_type)
+                m = re.search(r'charset=([^\s;"]+)', content_type)
                 if m:
                     charset = m.group(1).strip('"\'')
                 return raw.decode(charset, errors="replace")
-        except urllib.error.HTTPError as e:
-            if e.code in (403, 429) and attempt < retries - 1:
-                time.sleep(1.5 * (attempt + 1))  # backoff
-                continue
-            raise
-        except (urllib.error.URLError, TimeoutError) as e:
-            if attempt < retries - 1:
-                time.sleep(0.8 * (attempt + 1))
-                continue
-            raise
-    raise Exception("Failed after retries")
+        except Exception as e:
+            if attempt == retries - 1:
+                raise
+            time.sleep(1.2 * (attempt + 1))
 
 
-# ── Content Extraction (Reliable Reader Mode) ────────────────────────────────
+# ── Content Extraction (Lightweight + BS4) ───────────────────────────────────
 def _extract_content(raw_html, base_url):
     global _page_title
-    if not HAS_PARSERS or not raw_html.strip():
-        return _html_to_text_fallback(raw_html), []
+    if not raw_html or not HAS_BS4:
+        return _simple_wrap(raw_html or "No content"), []
 
     try:
-        # Trafilatura for main article content (best for reliability)
-        text = trafilatura.extract(raw_html, include_links=False, include_comments=False,
-                                   include_tables=True, no_fallback=False)
-        
-        # Extract title
         soup = BeautifulSoup(raw_html, 'lxml')
-        title_tag = soup.find('title')
-        _page_title = title_tag.get_text(strip=True)[:30] if title_tag else ""
 
-        # Extract links
+        # Title
+        title_tag = soup.find('title')
+        _page_title = (title_tag.get_text(strip=True) if title_tag else "")[:32]
+
+        # Remove junk
+        for tag in soup(["script", "style", "nav", "header", "footer", "aside"]):
+            tag.decompose()
+
+        text = soup.get_text(separator="\n")
+        lines = _simple_wrap(text)
+
+        # Links
         links = []
         for a in soup.find_all('a', href=True):
             txt = a.get_text(strip=True)
-            if txt and len(txt) > 1:
+            if txt and len(txt) > 2:
                 href = urllib.parse.urljoin(base_url, a['href'])
                 links.append((txt[:22], href))
 
-        if not text or len(text) < 50:
-            # Fallback if trafilatura returns almost nothing
-            text = soup.get_text(separator="\n")
-        
-        lines = _wrap_text(text)
         return lines, links
-
     except Exception:
-        # Ultimate fallback
-        return _html_to_text_fallback(raw_html), _extract_links_fallback(raw_html, base_url)
+        return _simple_wrap(raw_html), []
 
 
-def _html_to_text_fallback(raw_html, width=20):
-    soup = BeautifulSoup(raw_html, 'lxml')
-    for tag in soup(["script", "style", "nav", "header", "footer"]):
-        tag.decompose()
-    text = soup.get_text(separator="\n")
-    return _wrap_text(text, width)
-
-
-def _extract_links_fallback(raw_html, base_url):
-    links = []
-    for href, text in re.findall(r'<a\s[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', raw_html, re.I | re.DOTALL):
-        text = re.sub(r'<[^>]+>', '', text).strip()
-        if text:
-            try:
-                href = urllib.parse.urljoin(base_url, href)
-            except Exception:
-                pass
-            links.append((text[:22], href))
-    return links
-
-
-def _wrap_text(text, width=20):
+def _simple_wrap(text, width=20):
     lines = []
     for line in text.splitlines():
         line = re.sub(r'\s+', ' ', line).strip()
@@ -222,23 +197,19 @@ def _fetch(url):
     with _ui_lock:
         _fetching = True
         _status_msg = "loading..."
-        _page_lines = ["Loading page...", url[:20]]
+        _page_lines = ["Connecting...", (url or "")[:25]]
         _page_links = []
         _scroll = 0
         _link_idx = 0
         _page_title = ""
 
     try:
-        if not re.match(r'^https?://', url, re.IGNORECASE):
-            url = "http://" + url
-
-        raw = _robust_fetch(url)
-        lines, links = _extract_content(raw, url)
+        raw_html = _robust_fetch(url)
+        lines, links = _extract_content(raw_html, url)
 
         if not lines:
             lines = ["(no readable content)"]
 
-        # Add links section
         if links:
             lines += ["", "── Links ──"]
             for i, (txt, _) in enumerate(links):
@@ -253,21 +224,27 @@ def _fetch(url):
             _current_url = url
 
     except Exception as e:
-        err = str(e)[:25]
+        err = str(e)[:30]
+        if "no host" in err.lower() or "empty" in err.lower():
+            err = "Invalid URL"
         with _ui_lock:
-            _page_lines = ["Error loading page", err]
-            _status_msg = "Failed"
+            _page_lines = ["Load failed", err]
+            _status_msg = "Error"
     finally:
         with _ui_lock:
             _fetching = False
 
 
 def navigate(url):
-    global _history
+    global _history, _current_url
+    url = (url or "").strip()
+    if not url:
+        return
     if _current_url and _current_url != url:
         _history.append(_current_url)
         if len(_history) > MAX_HISTORY:
             _history.pop(0)
+    _current_url = url
     threading.Thread(target=_fetch, args=(url,), daemon=True).start()
 
 
@@ -277,19 +254,17 @@ def go_back():
         navigate(url)
 
 
-# ── Drawing ──────────────────────────────────────────────────────────────────
+# ── Drawing Functions (unchanged core) ───────────────────────────────────────
 def _draw_browser():
     _draw.rectangle([(0, 0), (W, H)], fill="black")
-
-    # Header
     _draw.rectangle([(0, 0), (W, 17)], fill=(0, 40, 90))
+
     title = (_page_title or _current_url or "KTOx Browser")[-20:]
     _draw.text((2, 2), title, font=_font_sm, fill="cyan")
 
     st = _status_msg[:12]
     _draw.text((W - len(st)*6 - 3, 2), st, font=_font_sm, fill=(180, 180, 180))
 
-    # Content
     y = 20
     with _ui_lock:
         lines = _page_lines[:]
@@ -297,10 +272,7 @@ def _draw_browser():
         fetching = _fetching
 
     if fetching:
-        for i in range(3):
-            dots = "." * ((int(time.time() * 3) % 4))
-            _draw.text((10, 45), f"Fetching{dots}", font=_font_md, fill="yellow")
-            break  # simple animated feel
+        _draw.text((10, 45), "Fetching...", font=_font_md, fill="yellow")
     else:
         for i in range(_LINES_PER_PAGE):
             idx = scroll + i
@@ -320,9 +292,8 @@ def _draw_browser():
         _draw.rectangle([(125, 18), (127, H-1)], fill=(40, 40, 40))
         _draw.rectangle([(125, bar_y), (127, min(bar_y + bar_h, H-1))], fill=(0, 160, 255))
 
-    # Footer
     _draw.rectangle([(0, H-11), (W, H)], fill=(25, 25, 25))
-    _draw.text((2, H-10), "K1=URL  K2=Link  K3=Exit", font=_font_sm, fill=(140, 140, 140))
+    _draw.text((2, H-10), "K1=URL K2=Link K3=Exit", font=_font_sm, fill=(140, 140, 140))
 
 
 def _draw_url_input(input_text, char_idx):
@@ -357,7 +328,7 @@ def _push():
         LCD.LCD_ShowImage(_image, 0, 0)
 
 
-# ── URL Input Screen (unchanged logic, minor polish) ────────────────────────
+# ── URL Input Screen ─────────────────────────────────────────────────────────
 def _url_input_screen(initial=""):
     input_text = initial
     char_idx = 0
@@ -379,7 +350,8 @@ def _url_input_screen(initial=""):
         if btn == "KEY3":
             return ""
         if btn == "KEY2":
-            return input_text.strip()
+            cleaned = input_text.strip()
+            return cleaned if cleaned else ""
         if btn == "OK":
             input_text += CHAR_SET[char_idx]
         elif btn == "LEFT":
@@ -413,13 +385,13 @@ def _webui_watcher():
         time.sleep(0.7)
 
 
-# ── Main Loop ────────────────────────────────────────────────────────────────
+# ── Main ─────────────────────────────────────────────────────────────────────
 def main():
     global RUNNING, _scroll, _link_idx
 
     _init_hw()
     if not HAS_HW:
-        print("No hardware detected — exiting.")
+        print("No hardware — exiting.")
         return
 
     try:
@@ -429,6 +401,10 @@ def main():
 
     watcher = threading.Thread(target=_webui_watcher, daemon=True)
     watcher.start()
+
+    # Safe default start
+    if not _current_url:
+        navigate("https://example.com")
 
     _draw_browser()
     _push()
