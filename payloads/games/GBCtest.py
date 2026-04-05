@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-KTOx GBC Emulator Launcher – Full Manual Build
+KTOx GBC Emulator – Full Single-Script Build
 ================================================
 - Works on Raspberry Pi Zero 2 W
-- Uses SameBoy SDL emulator
-- Manual ROM launch, no auto-boot
-- GPIO buttons, save/load, artwork preview
+- Manual ROM launch, no auto-boot, no HUD
+- GPIO buttons for D-pad, A/B, Start/Select
+- Save/load states via extra buttons
+- ROM artwork preview
 - Optimized for SPI / framebuffer LCD
 """
 
@@ -13,6 +14,7 @@ import os
 import subprocess
 import time
 import RPi.GPIO as GPIO
+import threading
 
 # -----------------------------
 # CONFIG
@@ -21,7 +23,7 @@ ROM_DIR = "/home/pi/ktox/roms"
 ART_DIR = "/home/pi/ktox/art"
 EMULATOR = "/home/pi/SameBoy/build/bin/sameboy"
 
-# GPIO button mapping (BCM mode)
+# GPIO button mapping (BCM)
 BUTTONS = {
     5: "Up",
     6: "Down",
@@ -35,7 +37,7 @@ BUTTONS = {
     24: "F3"       # LOAD STATE
 }
 
-# Framebuffer settings
+# Framebuffer / SDL environment
 ENV = os.environ.copy()
 ENV["SDL_VIDEODRIVER"] = "fbcon"
 ENV["SDL_FBDEV"] = "/dev/fb1"
@@ -57,8 +59,7 @@ def press(key):
 def release(key):
     subprocess.run(["xdotool", "keyup", key])
 
-def start_input_listener():
-    # Run in separate process
+def input_listener():
     while True:
         for pin, key in BUTTONS.items():
             val = GPIO.input(pin)
@@ -112,12 +113,12 @@ def menu(roms):
 # LAUNCH ROM
 # -----------------------------
 def launch(rom):
-    # Start GPIO input listener in background
-    input_proc = subprocess.Popen(["python3", "/home/pi/ktox/input.py"])
-    try:
-        subprocess.run([EMULATOR, os.path.join(ROM_DIR, rom)], env=ENV)
-    finally:
-        input_proc.terminate()
+    # Start GPIO listener thread
+    listener_thread = threading.Thread(target=input_listener, daemon=True)
+    listener_thread.start()
+
+    # Launch emulator
+    subprocess.run([EMULATOR, os.path.join(ROM_DIR, rom)], env=ENV)
 
 # -----------------------------
 # MAIN LOOP
