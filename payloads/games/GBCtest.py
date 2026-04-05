@@ -1,139 +1,104 @@
 #!/usr/bin/env python3
-"""
-KTOx GBC Emulator – Full Single-Script Build
-================================================
-- Works on Raspberry Pi Zero 2 W
-- Manual ROM launch, no auto-boot, no HUD
-- GPIO buttons for D-pad, A/B, Start/Select
-- Save/load states via extra buttons
-- ROM artwork preview
-- Optimized for SPI / framebuffer LCD
-"""
-
 import os
 import subprocess
 import time
 import RPi.GPIO as GPIO
 import threading
+from evdev import UInput, ecodes as e
 
-# -----------------------------
-# CONFIG
-# -----------------------------
+# --- CONFIG ---
 ROM_DIR = "/home/pi/ktox/roms"
-ART_DIR = "/home/pi/ktox/art"
-EMULATOR = "/home/pi/SameBoy/build/bin/sameboy"
+EMULATOR = "/home/pi/SameBoy/build/bin/sameboy" # Ensure this path is correct
 
-# GPIO button mapping (BCM)
+# GPIO button mapping (BCM) - Matches KTOx standard pins
 BUTTONS = {
-    5: "Up",
-    6: "Down",
-    16: "Left",
-    26: "Right",
-    12: "z",       # A
-    13: "x",       # B
-    20: "Return",  # Start
-    21: "Shift_L", # Select
-    23: "F2",      # SAVE STATE
-    24: "F3"       # LOAD STATE
+    5: e.KEY_UP,
+    6: e.KEY_DOWN,
+    16: e.KEY_LEFT,
+    26: e.KEY_RIGHT,
+    12: e.KEY_Z,          # A
+    13: e.KEY_X,          # B
+    20: e.KEY_ENTER,      # Start
+    21: e.KEY_LEFTSHIFT,  # Select
+    23: e.KEY_F2,         # Save
+    24: e.KEY_F3          # Load
 }
 
-# Framebuffer / SDL environment
+# Environment for the 1.44" SPI Screen
 ENV = os.environ.copy()
 ENV["SDL_VIDEODRIVER"] = "fbcon"
-ENV["SDL_FBDEV"] = "/dev/fb1"
-ENV["SDL_RENDER_DRIVER"] = "software"
-ENV["SDL_FBACCEL"] = "0"
+ENV["SDL_FBDEV"] = "/dev/fb1" 
 
-# -----------------------------
-# GPIO SETUP
-# -----------------------------
-GPIO.setmode(GPIO.BCM)
-for pin in BUTTONS:
-    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+# Initialize Virtual Keyboard
+try:
+    ui = UInput()
+except:
+    print("Error: Run with sudo or check uinput permissions.")
+    exit()
 
-state = {pin: 1 for pin in BUTTONS}
-
-def press(key):
-    subprocess.run(["xdotool", "keydown", key])
-
-def release(key):
-    subprocess.run(["xdotool", "keyup", key])
-
+# --- INPUT LOGIC ---
 def input_listener():
+    GPIO.setmode(GPIO.BCM)
+    for pin in BUTTONS:
+        GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    
+    last_states = {pin: 1 for pin in BUTTONS}
+    
     while True:
-        for pin, key in BUTTONS.items():
+        for pin, key_code in BUTTONS.items():
             val = GPIO.input(pin)
-            if val == 0 and state[pin] == 1:
-                press(key)
-                state[pin] = 0
-            elif val == 1 and state[pin] == 0:
-                release(key)
-                state[pin] = 1
+            if val != last_states[pin]:
+                # 1 = Press (GPIO 0), 0 = Release (GPIO 1)
+                ui.write(e.EV_KEY, key_code, 1 if val == 0 else 0)
+                ui.syn()
+                last_states[pin] = val
         time.sleep(0.01)
 
-# -----------------------------
-# BANNER
-# -----------------------------
+# --- UI & LAUNCHER ---
 def banner():
-    print("\033[95m")
-    print("╔══════════════════════════════╗")
-    print("║      KTOX // GBC CORE        ║")
-    print("║   [NO TRACE] [NO SIGNAL]     ║")
-    print("║     READY TO EXECUTE         ║")
-    print("╚══════════════════════════════╝")
+    print("\033[91m") # DarkSec Red
+    print("┌──────────────────────────────┐")
+    print("│      KTOX // GBC CORE        │")
+    print("│      SYSTEM: DARKSEC         │")
+    print("└──────────────────────────────┘")
     print("\033[0m")
 
-# -----------------------------
-# ROM / ART FUNCTIONS
-# -----------------------------
-def list_roms():
-    roms = [f for f in os.listdir(ROM_DIR) if f.endswith((".gb", ".gbc"))]
-    return roms
+def get_roms():
+    if not os.path.exists(ROM_DIR):
+        os.makedirs(ROM_DIR)
+    return [f for f in os.listdir(ROM_DIR) if f.endswith((".gb", ".gbc"))]
 
-def show_art(rom):
-    name = os.path.splitext(rom)[0]
-    art_path = os.path.join(ART_DIR, f"{name}.png")
-    if os.path.exists(art_path):
-        subprocess.run(["fbi", "-T", "1", "-d", "/dev/fb1", "--noverbose", art_path])
-
-def menu(roms):
-    for i, r in enumerate(roms):
-        print(f"\033[92m[{i}]\033[0m {r}")
-    try:
-        choice = int(input("\nSelect ROM: "))
-        if 0 <= choice < len(roms):
-            show_art(roms[choice])
-            time.sleep(1)
-            return roms[choice]
-    except:
-        pass
-    return None
-
-# -----------------------------
-# LAUNCH ROM
-# -----------------------------
-def launch(rom):
-    # Start GPIO listener thread
-    listener_thread = threading.Thread(target=input_listener, daemon=True)
-    listener_thread.start()
-
-    # Launch emulator
-    subprocess.run([EMULATOR, os.path.join(ROM_DIR, rom)], env=ENV)
-
-# -----------------------------
-# MAIN LOOP
-# -----------------------------
 def main():
+    # Start input thread once
+    threading.Thread(target=input_listener, daemon=True).start()
+
     while True:
         os.system("clear")
         banner()
-        roms = list_roms()
+        roms = get_roms()
+        
         if not roms:
-            print("No ROMs found in ~/ktox/roms")
+            print(f"No ROMS found in {ROM_DIR}")
+            print("Add .gb or .gbc files and restart.")
+            time.sleep(5)
             return
-        rom = menu(roms)
-        if rom:
-            launch(rom)
+
+        for i, r in enumerate(roms):
+            print(f"\033[92m[{i}]\033[0m {r}")
+        
+        try:
+            choice = input("\nSelect ROM Index (or 'q' to quit): ")
+            if choice.lower() == 'q': break
+            
+            rom_path = os.path.join(ROM_DIR, roms[int(choice)])
+            
+            print(f"\nLaunching {roms[int(choice)]}...")
+            # Use --fullscreen to fit the 128x128 display
+            subprocess.run([EMULATOR, "--fullscreen", rom_path], env=ENV)
+            
+        except (ValueError, IndexError):
+            print("Invalid selection.")
+            time.sleep(1)
 
 if __name__ == "__main__":
     main()
