@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-KTOX Shadow – Cyberpunk Animated Core
-======================================
-Animated red-team payload with live credential capture
-- Cyberpunk floating core with face
-- Pulsing + rotating rings + bobbing animation
-- Idle / attack / alert states
-- Live scrolling credentials
+KTOX Shadow Tier 5 – Final Form
+================================
+- Full cyberpunk skull with facial animation
+- Real Wi-Fi scanning, packet capture, channel hopping
+- PPS graph, heatmap, AP scrolling
+- AI-driven target prioritization
+- Persistent AP memory
+- Manual / Auto modes
+- Real-time adaptive red team training payload
 """
+import os, time, math, subprocess, signal, threading, random, collections, pickle, re
 
-import os, time, threading, random, math
-
-# ── Hardware detection ───────────────────────────────────────────────────────
+# ── Hardware Detection ─────────────────────────
 try:
     import RPi.GPIO as GPIO
     import LCD_1in44
@@ -19,225 +20,215 @@ try:
     HAS_HW = True
 except ImportError:
     HAS_HW = False
-    print("Hardware not detected")
+    print("Hardware not detected, running in simulation mode.")
 
-# ── Constants ────────────────────────────────────────────────────────────────
-W, H = 128, 128
-PINS = {"UP":6, "DOWN":19, "LEFT":5, "RIGHT":26, "OK":13, "KEY1":21, "KEY2":20, "KEY3":16}
-ORB_RADIUS = 10
-RING_COUNT = 3
+# ── Constants ──────────────────────────────────
+W,H = 128,128
+PINS = {"K1":21,"K2":20,"K3":16}
+AP_DB_FILE="ap_db.pkl"
 
-# ── Globals ──────────────────────────────────────────────────────────────────
-LCD = None
-_draw = None
-_image = None
-_font_sm = None
+# ── Globals ───────────────────────────────────
+LCD = None; _draw = None; _image = None; _font = None
+RUNNING = True; shadow_running = False; manual_mode = False
+ghost_frame=0; ghost_state="idle"; eye_blink_state=True; eye_blink_timer=0
+packets=0; last_packets=0; pps=0; total_packets=0
+channel=1; log_lines=[]
+capture_proc=None
+ap_db={}; target_ap=None; pps_history=collections.deque(maxlen=60); channel_hits=[0]*12
+ap_scroll=0; ai_mode=True; ai_state="idle"; ap_scores={}
 
-RUNNING = True
-shadow_running = False
-ghost_frame = 0
-ghost_state = "idle"
-captured_creds = []  # last credentials captured
-
-# ── Hardware init ───────────────────────────────────────────────────────────
+# ── Hardware Init ────────────────────────────
 def init_hw():
-    global LCD, _image, _draw, _font_sm
-    if not HAS_HW:
-        return False
-    try:
-        GPIO.setmode(GPIO.BCM)
-        for p in PINS.values():
-            GPIO.setup(p, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        LCD = LCD_1in44.LCD()
-        LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-        LCD.LCD_Clear()
-        _image = Image.new("RGB", (W,H), "black")
-        _draw = ImageDraw.Draw(_image)
-        try:
-            _font_sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 9)
-        except:
-            _font_sm = ImageFont.load_default()
-        return True
-    except:
-        return False
+    global LCD,_draw,_image,_font
+    if not HAS_HW: return
+    GPIO.setmode(GPIO.BCM)
+    for p in PINS.values(): GPIO.setup(p, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    LCD = LCD_1in44.LCD()
+    LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
+    LCD.LCD_Clear()
+    _image = Image.new("RGB",(W,H),"black")
+    _draw = ImageDraw.Draw(_image)
+    _font = ImageFont.load_default()
 
-def push():
-    if LCD and _image:
-        LCD.LCD_ShowImage(_image, 0, 0)
+def push(): 
+    if LCD: LCD.LCD_ShowImage(_image,0,0)
 
-# ── Cyberpunk Orb + Face ────────────────────────────────────────────────────
-FACE = {"eyes": [(5,6),(12,6)], "mouth": (8,12)}
+# ── Cyberpunk Skull ──────────────────────────
+def draw_skull(x, y):
+    global ghost_state, eye_blink_state, eye_blink_timer, pps
+    color={"idle":"#00AAFF","hunt":"#00FFAA","lock":"#FFFF00","overload":"#FF3333"}.get(ghost_state,"#00AAFF")
+    if time.time()-eye_blink_timer > 0.5+random.random(): eye_blink_state, eye_blink_timer = not eye_blink_state, time.time()
+    eye_fill=color if eye_blink_state else "#050505"
+    _draw.rectangle((x-5,y-4,x-3,y-2),fill=eye_fill)
+    _draw.rectangle((x+3,y-4,x+5,y-2),fill=eye_fill)
+    _draw.polygon([(x,y-1),(x-1,y+2),(x+1,y+2)],fill=color)
+    jaw_offset=min(6,pps//30)
+    for i in range(-3,4,2): _draw.rectangle((x+i,y+4+jaw_offset,x+i+1,y+5+jaw_offset),fill=color)
+    if target_ap and ghost_state in ["lock","overload"]:
+        _draw.line((x-6,y,x+6,y),fill="#FFFFFF")
+        _draw.line((x,y-6,x,y+6),fill="#FFFFFF")
 
-CORE_COLORS = {"idle":"#00AAFF","attack":"#FF3333","alert":"#FFFF00"}
-
-def draw_cyberpunk_core(x, y):
+def draw_orb(x,y):
     global ghost_frame
-    state_color = CORE_COLORS.get(ghost_state,"#00AAFF")
-    bob = int(math.sin(ghost_frame/5)*3)
-    pulse = 1 + abs(math.sin(ghost_frame/3)*3)
+    bob=int(math.sin(ghost_frame/6)*3)
+    pulse=abs(math.sin(ghost_frame/4)*4)
+    _draw.ellipse((x-12-pulse,y-12+bob-pulse,x+12+pulse,y+12+bob+pulse),fill="#111144")
+    _draw.ellipse((x-8,y-8+bob,x+8,y+8+bob),fill="#2222FF")
+    draw_skull(x,y+bob)
+    ghost_frame+=1
 
-    # Main orb
-    _draw.ellipse(
-        (x-ORB_RADIUS-pulse, y-ORB_RADIUS+bob-pulse,
-         x+ORB_RADIUS+pulse, y+ORB_RADIUS+bob+pulse),
-        fill=state_color
-    )
+# ── Graphs & UI ─────────────────────────────
+def draw_graph():
+    x_offset=0
+    for val in list(pps_history):
+        h=min(20,val//10)
+        _draw.line((x_offset,60,x_offset,60-h),fill="#00FFAA")
+        x_offset+=2
 
-    # Rotating rings
-    for i in range(1,RING_COUNT+1):
-        ring_radius = ORB_RADIUS*0.3*i + (ghost_frame%3)
-        angle_offset = ghost_frame*(i*5)
-        for angle in range(0,360,45):
-            rad = math.radians(angle+angle_offset)
-            sx = x + int(ring_radius*math.cos(rad))
-            sy = y + int(ring_radius*math.sin(rad)) + bob
-            _draw.rectangle((sx,sy,sx+1,sy+1), fill="#00FFAA")
+def draw_heatmap():
+    for ch in range(1,12):
+        h=min(15,channel_hits[ch])
+        x=ch*10
+        _draw.rectangle((x,80,x+5,80-h),fill="#FF5500")
 
-    # Flicker overlay for attack/alert
-    if ghost_state in ["attack","alert"] and ghost_frame%3==0:
-        for _ in range(4):
-            fx = x + random.randint(-ORB_RADIUS, ORB_RADIUS)
-            fy = y + random.randint(-ORB_RADIUS, ORB_RADIUS) + bob
-            _draw.rectangle((fx,fy,fx+1,fy+1), fill="#FFFFFF")
+def draw_ap_list():
+    global ap_scroll
+    y=0
+    sorted_aps=sorted(ap_db.items(),key=lambda x:x[1].get("score",0),reverse=True)
+    for bssid,info in sorted_aps[ap_scroll:ap_scroll+4]:
+        ssid=info.get("ssid",bssid[:6])
+        rssi=info.get("rssi",-100)
+        bar_len=min(20,max(0,rssi+100))
+        _draw.text((0,y),ssid[:8],font=_font,fill="#FFAA00")
+        _draw.rectangle((50,y,50+bar_len,y+5),fill="#00FFAA")
+        y+=12
 
-    draw_face(x, y+bob)
-    ghost_frame += 1
+def draw_screen():
+    _draw.rectangle((0,0,W,H),fill="#050505")
+    _draw.text((2,2),f"KTOX {'MAN' if manual_mode else 'AUTO'}",font=_font,fill="#FF3333")
+    _draw.text((70,2),f"CH:{channel}",font=_font,fill="#00FFAA")
+    _draw.text((2,14),f"PPS:{pps}",font=_font,fill="#AAAAFF")
+    _draw.text((2,24),f"APS:{len(ap_db)}",font=_font,fill="#00FFAA")
+    _draw.text((2,36),f"AI:{ai_state.upper()}",font=_font,fill="#FF66FF")
+    draw_graph(); draw_heatmap(); draw_ap_list(); draw_orb(64,105); push()
 
-def draw_face(x, y):
-    # Eyes
-    if ghost_state=="attack":
-        eye_style="angry"
-        color="#FF3333"
-    elif ghost_state=="alert":
-        eye_style="wide"
-        color="#FFFF00"
-    else:
-        eye_style="blink" if ghost_frame%20>15 else "normal"
-        color="#00AAFF"
+# ── Wi-Fi Monitor ───────────────────────────
+def enable_monitor(iface="wlan0"):
+    subprocess.call(["sudo","ip","link","set",iface,"down"])
+    subprocess.call(["sudo","iw",iface,"set","monitor","control"])
+    subprocess.call(["sudo","ip","link","set",iface,"up"])
+    return iface
 
-    for ex, ey in FACE["eyes"]:
-        if eye_style=="blink":
-            _draw.line((x+ex,y+ey,x+ex+2,y+ey), fill=color)
-        elif eye_style=="angry":
-            _draw.line((x+ex,y+ey,x+ex+2,y+ey-1), fill=color)
-        elif eye_style=="wide":
-            _draw.rectangle((x+ex,y+ey,x+ex+2,y+ey+2), fill=color)
-        else:
-            _draw.rectangle((x+ex,y+ey,x+ex+1,y+ey+1), fill=color)
+def hop_channels(iface):
+    global channel
+    while shadow_running:
+        if ai_mode and ai_state in ["lock","overload"] and target_ap:
+            time.sleep(1)
+            continue
+        if max(channel_hits)>20: channel=channel_hits.index(max(channel_hits))
+        else: channel=(channel%11)+1
+        subprocess.call(["sudo","iwconfig",iface,"channel",str(channel)])
+        time.sleep(0.5)
 
-    # Mouth
-    mx,my = FACE["mouth"]
-    if ghost_state=="attack":
-        _draw.rectangle((x+mx,y+my,x+mx+3,y+my+1), fill="#FF3333")
-    elif ghost_state=="alert":
-        _draw.line((x+mx,y+my,x+mx+3,y+my), fill="#FFFF00")
-    else:
-        _draw.line((x+mx,y+my,x+mx+2,y+my), fill="#00AAFF")
+def capture_packets(iface):
+    global packets,total_packets,ap_db,target_ap,channel_hits
+    cmd=["sudo","tcpdump","-i",iface,"-e","-I"]
+    proc=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True)
+    for line in proc.stdout:
+        packets+=1; total_packets+=1; channel_hits[channel]+=1
+        if "Beacon" in line:
+            try:
+                bssid=line.split()[1]
+                rssi_match=re.search(r"(-\d+)dB",line)
+                rssi=int(rssi_match.group(1)) if rssi_match else -100
+                if bssid not in ap_db: ap_db[bssid]={"rssi":rssi,"seen":1,"activity":1,"ssid":bssid[:6]}
+                else: 
+                    ap_db[bssid]["rssi"]=rssi
+                    ap_db[bssid]["seen"]+=1
+                    ap_db[bssid]["activity"]+=1
+            except: pass
 
-# ── Shadow Screen ──────────────────────────────────────────────────────────
-def draw_shadow_screen():
-    global _draw
-    _draw.rectangle((0,0,W,H), fill="#0A0000")
-    _draw.rectangle((0,0,W,18), fill="#8B0000")
-    _draw.text((4,3),"KTOX SHADOW", font=_font_sm, fill="#FF3333")
-
-    status = "CAPTURING" if shadow_running else "IDLE"
-    color = "#00FF88" if shadow_running else "#FF6666"
-    _draw.text((5,22),status,font=_font_sm,fill=color)
-
-    # Credentials
-    y=36
-    for cred in captured_creds[-5:]:
-        _draw.text((5,y),cred[:20],font=_font_sm,fill="#FF5555")
-        y+=11
-
-    # Orb mascot
-    draw_cyberpunk_core(64,100)
-
-    _draw.rectangle((0,117,W,128), fill="#220000")
-    _draw.text((4,118),"K1=Toggle  K3=Exit", font=_font_sm, fill="#FF7777")
-    push()
-
-# ── Background Credential Capture ──────────────────────────────────────────
-def capture_thread():
-    global captured_creds
-    fake_creds = ["admin:password123","user@gmail.com:letmein","banklogin:Secret2026","root:toor","victim:123456"]
-    while shadow_running and RUNNING:
-        if random.random()<0.4:
-            cred=random.choice(fake_creds)
-            if cred not in captured_creds:
-                captured_creds.append(cred)
-                if len(captured_creds)>15:
-                    captured_creds.pop(0)
-        time.sleep(1.5)
-
-# ── Control ────────────────────────────────────────────────────────────────
-def start_shadow():
-    global shadow_running, ghost_state
-    shadow_running=True
-    ghost_state="idle"
-    threading.Thread(target=capture_thread,daemon=True).start()
-    draw_shadow_screen()
-
-def stop_shadow():
-    global shadow_running, ghost_state
-    shadow_running=False
-    ghost_state="idle"
-    draw_shadow_screen()
-
-# ── Main ───────────────────────────────────────────────────────────────────
-def main():
-    global RUNNING
-    hw_ok=init_hw()
-    draw_shadow_screen()
-
-    held = {}
+# ── Stats Loop ──────────────────────────────
+def stats_loop():
+    global last_packets,pps,ghost_state
     while RUNNING:
-        pressed = {name: GPIO.input(pin)==0 for name,pin in PINS.items()} if HAS_HW else {}
-        now = time.time()
-        for n, down in pressed.items():
-            if down and n not in held:
-                held[n]=now
-            elif not down:
-                held.pop(n,None)
+        time.sleep(1)
+        pps=packets-last_packets; last_packets=packets
+        pps_history.append(pps)
+        if ai_state=="overload": ghost_state="overload"
+        elif ai_state=="lock": ghost_state="lock"
+        elif ai_state=="hunt": ghost_state="hunt"
+        else: ghost_state="idle"
 
-        def just_pressed(n):
-            return pressed.get(n) and (now-held.get(n,0))<0.2
+# ── AI Brain ─────────────────────────────────
+def ai_brain():
+    global target_ap, ai_state, ap_scores
+    while RUNNING:
+        time.sleep(2)
+        if not ap_db: ai_state="idle"; continue
+        ap_scores={}
+        for bssid,data in ap_db.items():
+            score=(data.get("rssi",-100)+100)*2 + data.get("activity",0)*3 + data.get("seen",0)*2
+            ap_scores[bssid]=score
+            data["score"]=score
+        target_ap=max(ap_scores,key=ap_scores.get)
+        s=ap_scores[target_ap]
+        if len(ap_db)>40: ai_state="overload"
+        elif s>300: ai_state="lock"
+        elif s>100: ai_state="hunt"
+        else: ai_state="idle"
 
-        if just_pressed("KEY3"):
-            break
+# ── Control ─────────────────────────────────
+def start_shadow():
+    global shadow_running
+    shadow_running=True
+    iface=enable_monitor("wlan0")
+    threading.Thread(target=capture_packets,args=(iface,),daemon=True).start()
+    threading.Thread(target=hop_channels,args=(iface,),daemon=True).start()
 
-        if just_pressed("KEY1"):
-            if shadow_running:
-                stop_shadow()
-            else:
-                start_shadow()
+def stop_shadow(): global shadow_running; shadow_running=False
+def toggle_manual(): global manual_mode; manual_mode=not manual_mode
+
+# ── Persistent AP DB ────────────────────────
+def load_ap_db():
+    global ap_db
+    if os.path.exists(AP_DB_FILE):
+        try: ap_db=pickle.load(open(AP_DB_FILE,"rb"))
+        except: ap_db={}
+
+def save_ap_db():
+    pickle.dump(ap_db,open(AP_DB_FILE,"wb"))
+
+# ── Main ───────────────────────────────────
+def main():
+    global RUNNING, ap_scroll
+    load_ap_db()
+    init_hw()
+    threading.Thread(target=stats_loop,daemon=True).start()
+    threading.Thread(target=ai_brain,daemon=True).start()
+
+    while RUNNING:
+        if HAS_HW:
+            k1=GPIO.input(PINS["K1"])==0
+            k2=GPIO.input(PINS["K2"])==0
+            k3=GPIO.input(PINS["K3"])==0
+        else: k1=k2=k3=False
+
+        if k1:
+            if shadow_running: stop_shadow()
+            else: start_shadow()
             time.sleep(0.4)
+        if k2: toggle_manual(); time.sleep(0.4)
+        if k3: break
 
-        # Optional state simulation (random attack/alert)
-        if shadow_running:
-            ghost_state = random.choices(["idle","attack","alert"], [0.7,0.2,0.1])[0]
-            draw_shadow_screen()
-        time.sleep(0.2)
+        draw_screen()
+        if shadow_running and manual_mode:
+            ap_scroll=(ap_scroll+1)%max(1,len(ap_db))
+        time.sleep(0.1)
 
-    RUNNING=False
     stop_shadow()
-    if HAS_HW:
-        try:
-            LCD.LCD_Clear()
-            GPIO.cleanup()
-        except:
-            pass
-    print("KTOX Shadow payload exited.")
+    save_ap_db()
+    if HAS_HW: GPIO.cleanup()
 
 if __name__=="__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        if HAS_HW:
-            try:
-                GPIO.cleanup()
-            except:
-                pass
+    main()
