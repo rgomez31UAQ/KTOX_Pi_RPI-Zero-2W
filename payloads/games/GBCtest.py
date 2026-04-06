@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-KTOX GBC Injector - Stable & Safe Version
-==========================================
-Web ROM uploader + PyBoy gameplay on LCD
+KTOX GBC Injector - Stable Fixed Version
+=======================================
+Web ROM uploader + PyBoy gameplay on LCD with button controls
 """
 
 import os
@@ -54,11 +54,11 @@ def index():
                     return redirect('/')
                 except Exception as e:
                     return f"<h1 style='color:red;'>Upload failed: {str(e)}</h1><p><a href='/'>Back</a></p>"
+
     try:
         roms = sorted(os.listdir(ROM_DIR))
-    except Exception as e:
+    except Exception:
         roms = []
-        print(f"ROM list error: {e}")
 
     return render_template_string('''
         <body style="background:#000; color:#0f0; font-family:monospace; text-align:center; padding:20px;">
@@ -68,7 +68,7 @@ def index():
                 <button type="submit" style="background:#f00; color:white; border:none; padding:10px 20px; margin-left:10px;">INJECT ROM</button>
             </form>
             <hr style="border-color:#333;">
-            <h3>ROM VAULT ({{ len(roms) }} files)</h3>
+            <h3>ROM VAULT ({{ roms|length }} files)</h3>
             <ul style="list-style:none; padding:0; text-align:left; max-width:400px; margin:0 auto;">
                 {% for r in roms %}<li style="margin:4px 0;">{{ r }}</li>{% endfor %}
             </ul>
@@ -77,7 +77,7 @@ def index():
     ''', roms=roms)
 
 def start_web():
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)  # debug=True shows real errors
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
 
 # --- LCD & Game ---
 def lcd_init():
