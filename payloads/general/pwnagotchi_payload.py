@@ -318,7 +318,7 @@ draw = ImageDraw.Draw(canvas)
 f6 = font(6)
 f7 = font(7)
 
-# Top bar — semi-transparent dark strip
+# Top bar - semi-transparent dark strip
 draw.rectangle((0, 0, W, 13), fill=(0, 0, 0, 160))
 
 # Left: level + XP bar
@@ -347,7 +347,7 @@ draw.text((2, H - 12), f"AP:{len(STATE.aps_seen)}", fill="#00ff88", font=f6)
 up = STATE.uptime_str()
 draw.text((W - len(up)*4 - 2, H - 12), up, fill="#888888", font=f6)
 
-# Peer indicator dots (top right — one dot per peer seen)
+# Peer indicator dots (top right - one dot per peer seen)
 for i, _ in enumerate(STATE.peers[:5]):
     draw.ellipse((W - 8 - i*6, 1, W - 3 - i*6, 6), fill="#ff2dff")
 
@@ -438,7 +438,7 @@ return False
 ```
 
 def wifi_worker():
-“”“Background thread — scan, target, capture, repeat.”””
+“”“Background thread - scan, target, capture, repeat.”””
 time.sleep(3)  # Let LCD init settle
 try:
 enable_monitor()
@@ -554,7 +554,7 @@ h1{color:#ff2dff;text-align:center;letter-spacing:4px;font-size:1.1em;margin-bot
 {% for f in loot %}
 <div class="ap">{{ f }}</div>
 {% endfor %}
-{% if not loot %}<div class="ap">No loot yet — hunting...</div>{% endif %}
+{% if not loot %}<div class="ap">No loot yet - hunting...</div>{% endif %}
 </div>
 <div class="loot"><h2>PEERS</h2>
 {% for p in peers %}
@@ -653,7 +653,7 @@ STATE.set_mood("scanning")
 threading.Thread(target=wifi_worker,  daemon=True).start()
 threading.Thread(target=peer_worker,  daemon=True).start()
 threading.Thread(target=_start_web,   daemon=True).start()
-print(f"[PWN] Running — web UI at http://{get_ip()}:5000")
+print(f"[PWN] Running - web UI at http://{get_ip()}:5000")
 
 # Main render loop
 try:
