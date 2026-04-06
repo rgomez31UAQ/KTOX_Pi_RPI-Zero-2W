@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-KTOX GBC Injector - Stable Fixed Version
-=======================================
-Web ROM uploader + PyBoy gameplay on LCD with button controls
+KTOX GBC Injector - Stable Version with Fixed Game Start
+=======================================================
+Web ROM uploader + PyBoy gameplay on LCD
 """
 
 import os
@@ -21,14 +21,6 @@ try:
 except ImportError:
     HAS_HW = False
     print("Hardware not available - web server only")
-
-# Optional button helper
-try:
-    from payloads._input_helper import get_button
-    HAS_BUTTON_HELPER = True
-except ImportError:
-    HAS_BUTTON_HELPER = False
-    print("Warning: _input_helper not found - using direct GPIO")
 
 # --- CONFIG ---
 ROM_DIR = "/root/KTOx/roms"
@@ -173,7 +165,7 @@ def rom_selector(lcd):
         if lcd:
             lcd.LCD_ShowImage(img, 0, 0)
 
-        # Button polling with debounce
+        # Direct GPIO polling with debounce
         btn = None
         for name, pin in PINS.items():
             if GPIO.input(pin) == 0:
