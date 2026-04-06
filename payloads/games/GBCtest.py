@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-KTOX GBC Injector - Stable Version with Fixed Game Start
-=======================================================
-Web ROM uploader + PyBoy gameplay on LCD
+KTOX GBC Injector - Stable & Playable Version
+==============================================
+Web ROM uploader + reliable PyBoy gameplay on LCD
 """
 
 import os
