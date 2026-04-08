@@ -34,7 +34,7 @@ LOOT_DIR     = KTOX_DIR + "/loot"
 BACKUP_DIR   = "/root/ktox_backups"
 REPO_URL     = "https://github.com/wickednull/KTOx_Pi.git"
 BRANCH       = "main"
-SERVICES     = ["ktox.service", "ktox-device.service", "ktox-webui.service"]
+WEBUI_SERVICES = ["ktox-device.service", "ktox-webui.service"]
 
 PINS = {"KEY1": 21, "KEY2": 20, "KEY3": 16}
 W, H = 128, 128
@@ -48,13 +48,16 @@ if HAS_HW:
     LCD = LCD_1in44.LCD()
     LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
 
-try:
-    FONT_SM = ImageFont.truetype(
-        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 8)
-    FONT_MD = ImageFont.truetype(
-        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 9)
-except Exception:
-    FONT_SM = FONT_MD = ImageFont.load_default()
+if HAS_HW:
+    try:
+        FONT_SM = ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 8)
+        FONT_MD = ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 9)
+    except Exception:
+        FONT_SM = FONT_MD = ImageFont.load_default()
+else:
+    FONT_SM = FONT_MD = None
 
 RED       = "#8B0000"
 RED_BRITE = "#cc1a1a"
@@ -158,36 +161,80 @@ def backup_loot():
 
 def do_git_pull():
     """
-    Pull latest from GitHub.
-    If /root/KTOx is a git repo: git pull.
-    If not: git init + set remote + fetch + reset.
+    Clone the latest repo to a temp dir, then copy files into KTOX_DIR
+    exactly as install.sh does — preserving the installed file layout.
+    A direct git reset --hard would overwrite the flat install structure
+    with the raw repo layout, breaking the services.
     """
-    git_dir = Path(KTOX_DIR + "/.git")
+    import tempfile, shutil as _shutil
 
-    if not git_dir.exists():
-        # Not a git repo yet — initialise
-        _run(["git", "-C", KTOX_DIR, "init", "-q"])
-        _run(["git", "-C", KTOX_DIR, "remote", "add", "origin", REPO_URL])
+    tmp = f"/tmp/ktox_update_{int(time.time())}"
 
-    # Make sure remote URL is correct
-    _run(["git", "-C", KTOX_DIR, "remote",
-          "set-url", "origin", REPO_URL])
+    try:
+        rc, out = _run(
+            ["git", "clone", "--depth=1", "-b", BRANCH, REPO_URL, tmp],
+            timeout=150,
+        )
+        if rc != 0:
+            return False, f"Clone failed: {out[:60]}"
 
-    # Fetch
-    rc, out = _run(["git", "-C", KTOX_DIR, "fetch", "--depth=1",
-                    "origin", BRANCH], timeout=120)
-    if rc != 0:
-        return False, f"Fetch failed: {out[:60]}"
+        src = Path(tmp)
+        dst = Path(KTOX_DIR)
 
-    # Hard reset to remote
-    rc, out = _run(["git", "-C", KTOX_DIR, "reset",
-                    "--hard", f"origin/{BRANCH}"])
-    if rc != 0:
-        return False, f"Reset failed: {out[:60]}"
+        # Files from ktox_pi/ subdirectory → flat into KTOX_DIR
+        for fname in [
+            "ktox_device.py", "LCD_1in44.py", "LCD_Config.py",
+            "rj_input.py", "ktox_lcd.py", "ktox_payload_runner.py",
+        ]:
+            s = src / "ktox_pi" / fname
+            if s.exists():
+                _shutil.copy2(s, dst / fname)
 
-    # Confirm commit hash
-    _, commit = _run(["git", "-C", KTOX_DIR, "rev-parse", "--short", "HEAD"])
-    return True, f"HEAD: {commit.strip()}"
+        # Files from repo root → flat into KTOX_DIR
+        root_files = [
+            "device_server.py", "web_server.py", "nmap_parser.py",
+            "scan.py", "spoof.py", "requirements.txt",
+            "ktox.py", "ktox_mitm.py", "ktox_advanced.py",
+            "ktox_extended.py", "ktox_defense.py", "ktox_stealth.py",
+            "ktox_netattack.py", "ktox_wifi.py", "ktox_dashboard.py",
+            "ktox_repl.py", "ktox_config.py",
+            "ktox_device_pi.py",   # Pi-specific device/menu script
+            "payload_compat.py",
+        ]
+        for fname in root_files:
+            s = src / fname
+            if s.exists():
+                _shutil.copy2(s, dst / fname)
+
+        # Directories — replace in-place (keep loot/ and credentials untouched)
+        for dname in ["web", "payloads", "wifi", "Responder", "DNSSpoof", "assets"]:
+            s = src / dname
+            d = dst / dname
+            if s.exists():
+                if d.exists():
+                    _shutil.rmtree(d)
+                _shutil.copytree(s, d)
+
+        # img/logo.bmp
+        s = src / "img" / "logo.bmp"
+        if s.exists():
+            (dst / "img").mkdir(exist_ok=True)
+            _shutil.copy2(s, dst / "img" / "logo.bmp")
+
+        # Record the upstream commit hash for version tracking
+        _, commit = _run(["git", "-C", tmp, "rev-parse", "--short", "HEAD"])
+        commit = commit.strip()
+        try:
+            (dst / ".ktox_version").write_text(commit + "\n")
+        except Exception:
+            pass
+
+        return True, f"HEAD: {commit}"
+
+    except Exception as e:
+        return False, str(e)[:60]
+    finally:
+        _shutil.rmtree(tmp, ignore_errors=True)
 
 
 def install_deps():
@@ -203,20 +250,41 @@ def install_deps():
 
 
 def restart_services():
+    """
+    Restart webUI services (device_server + web_server) immediately.
+    Schedule ktox.service (the LCD/menu parent process) to restart after a
+    short delay so this script can finish displaying its final screen before
+    the parent process is killed and re-spawned.
+    """
     failed = []
-    for svc in SERVICES:
+    for svc in WEBUI_SERVICES:
         rc, out = _run(["systemctl", "restart", svc], timeout=20)
         if rc != 0:
             failed.append(svc.split(".")[0])
+    # Delay-restart the menu service so we can show "UPDATE DONE" first
+    try:
+        subprocess.Popen(
+            ["bash", "-c", "sleep 6 && systemctl restart ktox.service"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            close_fds=True,
+        )
+    except Exception:
+        pass
     if failed:
         return False, "Failed: " + ",".join(failed)
-    return True, "All services restarted"
+    return True, "Services restarting"
 
 
 def get_current_version():
-    """Get installed commit hash."""
-    rc, out = _run(["git", "-C", KTOX_DIR, "rev-parse", "--short", "HEAD"])
-    return out.strip() if rc == 0 else "unknown"
+    """Get installed commit hash from version file written by auto_update."""
+    vfile = Path(KTOX_DIR + "/.ktox_version")
+    try:
+        v = vfile.read_text().strip()
+        if v:
+            return v
+    except Exception:
+        pass
+    return "unknown"
 
 
 def get_remote_version():
@@ -286,7 +354,7 @@ try:
     _show("UPDATE FOUND", [
         (f"Current: {current}", TEXT),
         (f"Remote:  {remote[:7]}", GREEN),
-        ("", ""),
+        "",
         ("KEY1 = Install", TEXT),
         ("KEY3 = Cancel", DIM),
     ], status_col=GREEN)
@@ -329,7 +397,7 @@ try:
         _show("UPDATE FAILED", [
             ("Git pull failed:", YELLOW),
             (msg[:22], TEXT),
-            ("", ""),
+            "",
             ("Loot is safe.", DIM),
         ], status_col=YELLOW)
         time.sleep(5)
@@ -353,7 +421,7 @@ try:
         _show("UPDATE DONE", [
             ("✔ KTOx_Pi updated!", GREEN),
             (f"  {msg}", DIM),
-            ("", ""),
+            "",
             ("Restarting now…", TEXT),
         ], status_col=GREEN)
         time.sleep(3)

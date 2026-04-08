@@ -216,7 +216,7 @@ def handle_text_input_logic(initial_text, prompt):
     # Simplified text input for rename
     # This is a basic implementation, full char set and cursor movement would be complex
     current_input = list(initial_text)
-    cursor_pos = len(initial_text) - 1
+    cursor_pos = max(0, len(initial_text) - 1)
     char_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+. "
 
     while running:
@@ -255,7 +255,8 @@ def handle_text_input_logic(initial_text, prompt):
             cursor_pos = min(len(current_input), cursor_pos + 1)
         elif btn == "UP" or btn == "DOWN":
             if cursor_pos < len(current_input):
-                char_index = char_set.index(current_input[cursor_pos])
+                char = current_input[cursor_pos]
+                char_index = char_set.index(char) if char in char_set else 0
                 if btn == "UP":
                     char_index = (char_index + 1) % len(char_set)
                 else:
@@ -276,7 +277,8 @@ if __name__ == "__main__":
     # Calculate character width and height for font
     _img = Image.new("RGB", (10, 10))
     _d = ImageDraw.Draw(_img)
-    CHAR_W, CHAR_H = _d.textsize("M", font=FONT)
+    _bbox = _d.textbbox((0, 0), "M", font=FONT)
+    CHAR_W, CHAR_H = _bbox[2] - _bbox[0], _bbox[3] - _bbox[1]
     COLS = WIDTH // CHAR_W
     LINES_PER_SCREEN = HEIGHT // 11 - 3 # Approx lines that fit, minus header/footer
 

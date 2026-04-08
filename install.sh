@@ -83,12 +83,18 @@ fi
 # ── KTOx files ────────────────────────────────────────────────────────────────
 step "Installing KTOx to $KTOX_DIR..."
 mkdir -p "$KTOX_DIR"
-cp "$FIRMWARE_DIR/ktox_pi/ktox_device.py"       "$KTOX_DIR/"
-cp "$FIRMWARE_DIR/ktox_pi/LCD_1in44.py"          "$KTOX_DIR/"
-cp "$FIRMWARE_DIR/ktox_pi/LCD_Config.py"         "$KTOX_DIR/"
-cp "$FIRMWARE_DIR/ktox_pi/rj_input.py"           "$KTOX_DIR/"
-cp "$FIRMWARE_DIR/ktox_pi/ktox_lcd.py"           "$KTOX_DIR/" 2>/dev/null || true
-cp "$FIRMWARE_DIR/ktox_pi/ktox_payload_runner.py" "$KTOX_DIR/" 2>/dev/null || true
+# Core system files (from root or ktox_pi)
+for f in ktox_device.py LCD_1in44.py LCD_Config.py ktox_input.py ktox_lcd.py ktox_payload_runner.py; do
+    if [ -f "$FIRMWARE_DIR/$f" ]; then
+        cp "$FIRMWARE_DIR/$f" "$KTOX_DIR/"
+    elif [ -f "$FIRMWARE_DIR/ktox_pi/$f" ]; then
+        cp "$FIRMWARE_DIR/ktox_pi/$f" "$KTOX_DIR/"
+    fi
+done
+# Handle rj_input.py legacy name
+if [ -f "$FIRMWARE_DIR/ktox_pi/rj_input.py" ] && [ ! -f "$KTOX_DIR/ktox_input.py" ]; then
+    cp "$FIRMWARE_DIR/ktox_pi/rj_input.py" "$KTOX_DIR/ktox_input.py"
+fi
 cp "$FIRMWARE_DIR/device_server.py"                    "$KTOX_DIR/"
 cp "$FIRMWARE_DIR/web_server.py"                       "$KTOX_DIR/"
 cp "$FIRMWARE_DIR/nmap_parser.py"                      "$KTOX_DIR/"
@@ -99,6 +105,13 @@ cp -r "$FIRMWARE_DIR/payloads"                         "$KTOX_DIR/"
 [[ -d "$FIRMWARE_DIR/wifi" ]]      && cp -r "$FIRMWARE_DIR/wifi"      "$KTOX_DIR/"
 [[ -d "$FIRMWARE_DIR/Responder" ]] && cp -r "$FIRMWARE_DIR/Responder" "$KTOX_DIR/"
 [[ -d "$FIRMWARE_DIR/DNSSpoof" ]]  && cp -r "$FIRMWARE_DIR/DNSSpoof"  "$KTOX_DIR/"
+[[ -d "$FIRMWARE_DIR/Navarro" ]]  && cp -r "$FIRMWARE_DIR/Navarro"  "$KTOX_DIR/"
+[[ -d "$FIRMWARE_DIR/Icons" ]]    && cp -r "$FIRMWARE_DIR/Icons"    "$KTOX_DIR/"
+[[ -d "$FIRMWARE_DIR/scripts" ]]  && cp -r "$FIRMWARE_DIR/scripts"  "$KTOX_DIR/"
+[[ -d "$FIRMWARE_DIR/config" ]]   && cp -r "$FIRMWARE_DIR/config"   "$KTOX_DIR/"
+[[ -d "$FIRMWARE_DIR/deploy" ]]   && cp -r "$FIRMWARE_DIR/deploy"   "$KTOX_DIR/"
+[[ -d "$FIRMWARE_DIR/img" ]]      && cp -r "$FIRMWARE_DIR/img"      "$KTOX_DIR/"
+
 mkdir -p "$KTOX_DIR/img"
 [[ -f "$FIRMWARE_DIR/img/logo.bmp" ]] && cp "$FIRMWARE_DIR/img/logo.bmp" "$KTOX_DIR/img/"
 

@@ -173,6 +173,13 @@ clients: Set = set()
 clients_lock = asyncio.Lock()
 
 
+def _pty_setup(slave_fd: int):
+    """Run in child process: become session leader and set controlling terminal.
+    This allows Ctrl+C (\\x03) to deliver SIGINT via the PTY signal mechanism."""
+    os.setsid()
+    fcntl.ioctl(slave_fd, termios.TIOCSCTTY, 0)
+
+
 # ----------------------------- Shell Session ----------------------------------
 class ShellSession:
     def __init__(self, loop: asyncio.AbstractEventLoop, ws):
@@ -181,14 +188,16 @@ class ShellSession:
         self.master_fd, self.slave_fd = pty.openpty()
         env = os.environ.copy()
         env.setdefault("TERM", "xterm-256color")
+        slave_fd = self.slave_fd
         self.proc = subprocess.Popen(
             [SHELL_CMD],
-            stdin=self.slave_fd,
-            stdout=self.slave_fd,
-            stderr=self.slave_fd,
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
             cwd=SHELL_CWD,
             env=env,
             close_fds=True,
+            preexec_fn=lambda: _pty_setup(slave_fd),
         )
         os.close(self.slave_fd)
         os.set_blocking(self.master_fd, False)
@@ -449,7 +458,9 @@ async def handle_client(ws):
                 msg_type = data.get("type")
                 if msg_type not in ("auth", "auth_session"):
                     continue
-                token_ok = msg_type == "auth" and _token_ok(data.get("token", ""))
+                token_ok = msg_type == "auth" and (
+                    _token_ok(data.get("token", "")) or _session_token_ok(data.get("token", ""))
+                )
                 sess_ok = msg_type == "auth_session" and _ws_ticket_ok(data.get("ticket", ""))
                 if token_ok or sess_ok:
                     authenticated = True
@@ -475,6 +486,15 @@ async def handle_client(ws):
                 state = data.get("state")
                 if btn and state in ("press", "release"):
                     send_input_event(btn, state)
+                continue
+
+            if data.get("type") == "stealth_exit":
+                try:
+                    Path("/dev/shm/ktox_stealth.json").write_text(
+                        json.dumps({"stealth": False})
+                    )
+                except Exception:
+                    pass
                 continue
 
             if data.get("type") == "shell_open":

@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#05060a">
   <title>KTOx WebUI</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css">
@@ -237,7 +240,29 @@
       border-right: 1px solid rgba(148, 163, 184, 0.2);
     }
     .terminal-body {
-      height: 320px;
+      height: 460px;
+    }
+    .shell-key-btn {
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(15,23,42,0.7);
+      border: 1px solid rgba(148,163,184,0.2);
+      color: #94a3b8;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+    .shell-key-btn:hover {
+      background: rgba(139,0,0,0.25);
+      border-color: rgba(139,0,0,0.5);
+      color: #fca5a5;
+    }
+    .shell-key-btn:active {
+      background: rgba(139,0,0,0.45);
+      color: #fff;
     }
     .terminal-body .xterm-viewport,
     .terminal-body .xterm-screen,
@@ -332,11 +357,23 @@
         padding-right: 0.75rem !important;
       }
       #deviceTab .terminal-body {
-        height: 250px;
+        height: 360px;
       }
       #deviceShell {
         transform: scale(.96);
         transform-origin: top center;
+      }
+      /* Terminal tab mode: hide device shell, expand terminal full-height */
+      #deviceTab.terminal-mode .device-shell-col {
+        display: none !important;
+      }
+      #deviceTab.terminal-mode .terminal-col {
+        order: 1 !important;
+        width: 100% !important;
+        padding-right: 0 !important;
+      }
+      #deviceTab.terminal-mode .terminal-body {
+        height: calc(100dvh - 180px) !important;
       }
     }
   </style>
@@ -349,7 +386,7 @@
         <div class="flex items-center gap-3 select-none">
           <img src="./ktox.png" alt="KTOx" class="h-10 drop-shadow-[0_0_16px_rgba(139,0,0,0.35)]"/>
           <div>
-            <div class="text-lg font-black tracking-wide"><span class="text-red-400">R</span>ASPY<span class="text-rose-400">J</span>ACK</div>
+            <div class="text-lg font-black tracking-wide"><span class="text-red-400">K</span>TOx_<span class="text-rose-400">P</span>i</div>
             <div class="text-[11px] text-slate-400">Remote Control</div>
           </div>
         </div>
@@ -443,7 +480,7 @@
       <!-- Device card -->
       <div id="deviceTab" class="block">
         <div class="flex flex-col md:flex-row md:items-start md:gap-6">
-          <div class="md:order-1 order-2 flex-1 min-w-0">
+          <div class="terminal-col md:order-1 order-2 flex-1 min-w-0">
             <div class="terminal-wrap terminal-divider md:pr-6">
               <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800/70">
                 <div class="text-sm font-semibold text-red-400">Terminal</div>
@@ -454,20 +491,33 @@
                 </div>
               </div>
               <div id="terminal" class="terminal-body"></div>
+              <div class="flex flex-wrap items-center gap-1.5 px-3 py-2 border-t border-slate-800/70">
+                <button class="shell-key-btn" data-shell-key="&#x03;" title="Ctrl+C">^C</button>
+                <button class="shell-key-btn" data-shell-key="&#x04;" title="Ctrl+D">^D</button>
+                <button class="shell-key-btn" data-shell-key="&#x1a;" title="Ctrl+Z">^Z</button>
+                <button class="shell-key-btn" data-shell-key="&#x0c;" title="Ctrl+L (clear)">^L</button>
+                <button class="shell-key-btn" data-shell-key="&#x01;" title="Ctrl+A (start of line)">^A</button>
+                <button class="shell-key-btn" data-shell-key="&#x05;" title="Ctrl+E (end of line)">^E</button>
+                <button class="shell-key-btn" data-shell-key="&#x0b;" title="Ctrl+K (kill to end)">^K</button>
+                <button class="shell-key-btn" data-shell-key="&#x1b;" title="Escape">ESC</button>
+                <button class="shell-key-btn" data-shell-key="&#x1b;[A" title="Arrow Up">↑</button>
+                <button class="shell-key-btn" data-shell-key="&#x1b;[B" title="Arrow Down">↓</button>
+                <button class="shell-key-btn" data-shell-key="&#x09;" title="Tab">TAB</button>
+              </div>
             </div>
           </div>
 
-          <div class="md:order-2 order-1 flex justify-center md:justify-end md:pl-6">
-            <div id="deviceShell" data-theme="neon" class="device-shell theme-neon rounded-3xl p-4 md:p-5 w-fit mx-auto md:mx-0">
+          <div class="device-shell-col md:order-2 order-1 flex justify-center md:justify-end md:pl-6">
+            <div id="deviceShell" data-theme="neon" class="device-shell theme-neon rounded-3xl p-4 md:p-5 w-full md:w-fit mx-auto md:mx-0">
       <div class="pager-clip" aria-hidden="true"></div>
       <div class="pager-brand">KTOx_Pi</div>
       <div class="pager-speaker" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span>
       </div>
       <!-- Default layout (Neon / Pager) -->
-      <div class="layout-default grid grid-cols-[140px_140px] md:grid-cols-[120px_auto_120px] gap-3 md:gap-4 justify-items-center items-center">
+      <div class="layout-default grid grid-cols-2 md:grid-cols-[120px_auto_120px] gap-3 md:gap-4 md:justify-items-center items-center w-full">
         <!-- Left pad -->
-        <div class="order-2 md:order-1 flex md:block justify-center justify-self-start">
+        <div class="order-2 md:order-1 flex md:block justify-center">
           <div class="grid grid-cols-3 grid-rows-3 gap-1.5 w-[120px]">
             <div></div>
             <button class="rj-btn dpad-btn rounded-xl bg-slate-800/70 hover:bg-slate-700/70 w-10 h-10 flex items-center justify-center backdrop-blur ring-1 ring-white/10 hover:ring-red-400/30 transition" data-btn="UP">▲</button>
@@ -485,7 +535,7 @@
         <div class="order-1 md:order-2 col-span-2 md:col-span-1">
           <div class="screen-frame rounded-2xl p-2">
             <div class="flex items-center justify-center">
-              <canvas id="screen" width="128" height="128" class="w-[240px] md:w-[300px] aspect-square"></canvas>
+              <canvas id="screen" width="128" height="128" class="w-full md:w-[300px] aspect-square"></canvas>
             </div>
           </div>
           <div class="pager-text mt-3 text-center text-xs text-slate-400">OK = Enter · KEY3 = Esc</div>
@@ -493,10 +543,11 @@
         </div>
 
         <!-- Right buttons -->
-        <div class="order-3 md:order-3 flex flex-col items-center gap-2 md:items-stretch justify-self-end">
-          <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-24 ring-1 ring-white/10 transition" data-btn="KEY1">KEY1</button>
-          <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-24 ring-1 ring-white/10 transition" data-btn="KEY2">KEY2</button>
-          <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-24 ring-1 ring-white/10 transition" data-btn="KEY3">KEY3</button>
+        <div class="order-3 md:order-3 flex flex-col items-stretch gap-2 md:items-stretch">
+          <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-full md:w-24 ring-1 ring-white/10 transition" data-btn="KEY1">KEY1</button>
+          <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-full md:w-24 ring-1 ring-white/10 transition" data-btn="KEY2">KEY2</button>
+          <button class="rj-btn key-btn rounded-xl bg-fuchsia-700/80 hover:bg-fuchsia-600/80 px-3 py-2 w-full md:w-24 ring-1 ring-white/10 transition" data-btn="KEY3">KEY3</button>
+          <button onclick="exitStealth()" class="rounded-xl bg-red-900/70 hover:bg-red-700/90 px-3 py-2 w-full md:w-24 ring-1 ring-red-500/30 text-red-300 hover:text-white text-xs font-bold transition" title="Exit stealth mode">EXIT<br>STEALTH</button>
         </div>
       </div>
 
@@ -604,6 +655,15 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Payloads (mobile full-screen tab) -->
+      <div id="payloadsTab" class="hidden">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <div class="text-sm font-semibold text-red-400"><i class="fa-solid fa-bolt mr-2"></i>Payloads</div>
+          <button id="payloadsMobRefresh" type="button" class="px-2 py-1 text-[10px] rounded-md bg-slate-800/70 border border-slate-600/40 text-slate-200 hover:bg-slate-700/70 transition"><i class="fa-solid fa-rotate-right mr-1"></i>Refresh</button>
+        </div>
+        <div id="payloadsMobileList" class="space-y-2"></div>
       </div>
 
       <!-- Loot browser -->
@@ -743,10 +803,68 @@
     </div>
   </div>
 
+  <!-- Mobile bottom navigation (hidden on desktop via CSS) -->
+  <nav id="mobileNav" aria-label="Mobile navigation">
+    <button class="mob-nav-btn mob-nav-active" data-mobnav="device" aria-label="Device">
+      <i class="fa-solid fa-gamepad"></i>
+      <span>Device</span>
+    </button>
+    <button class="mob-nav-btn" data-mobnav="terminal" aria-label="Terminal">
+      <i class="fa-solid fa-terminal"></i>
+      <span>Terminal</span>
+    </button>
+    <button class="mob-nav-btn" data-mobnav="payloads" aria-label="Payloads">
+      <i class="fa-solid fa-bolt"></i>
+      <span>Payloads</span>
+    </button>
+    <button class="mob-nav-btn" data-mobnav="loot" aria-label="Loot">
+      <i class="fa-solid fa-vault"></i>
+      <span>Loot</span>
+    </button>
+    <button class="mob-nav-btn" data-mobnav="settings" aria-label="Settings">
+      <i class="fa-solid fa-sliders"></i>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- Stealth exit banner — fixed top bar, always reachable -->
+  <div id="stealthBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#7f1d1d;border-bottom:2px solid #ef4444;padding:10px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;">
+    <span style="color:#fca5a5;font-size:13px;font-weight:600;letter-spacing:.04em;">&#128274; STEALTH MODE ACTIVE</span>
+    <button onclick="exitStealthHttp()" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.05em;">EXIT STEALTH</button>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.min.js"></script>
   <script src="./shared.js"></script>
   <script src="./app.js"></script>
+  <script>
+    // Stealth banner — polls stealth state and provides HTTP-based exit
+    (function(){
+      var banner = document.getElementById('stealthBanner');
+      var POLL_MS = 2000;
+      var pollTimer = null;
+
+      function showBanner(){ if(banner) banner.style.display='flex'; }
+      function hideBanner(){ if(banner) banner.style.display='none'; }
+
+      window.exitStealthHttp = function(){
+        fetch('/api/stealth/exit', {method:'POST', credentials:'include'})
+          .then(function(r){ if(r.ok) hideBanner(); })
+          .catch(function(){});
+      };
+
+      function pollStealth(){
+        fetch('/api/stealth/status', {credentials:'include'})
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(d){
+            if(d && d.active) showBanner(); else hideBanner();
+          })
+          .catch(hideBanner);
+        pollTimer = setTimeout(pollStealth, POLL_MS);
+      }
+      pollStealth();
+    })();
+  </script>
 </body>
 </html>
 

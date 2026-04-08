@@ -9,6 +9,7 @@ KTOx Payload – Transparent Ethernet MITM Bridge
 
 import os, sys, signal, subprocess, time
 sys.path.append(os.path.abspath(os.path.join(__file__, '..', '..')))
+sys.path.append(os.path.abspath(os.path.join(__file__, '..')))
 import shutil
 from datetime import datetime
 import RPi.GPIO as GPIO
@@ -16,6 +17,10 @@ import LCD_1in44
 from LCD_1in44 import LCD
 from LCD_Config import *
 from PIL import Image, ImageDraw, ImageFont
+try:
+    from _input_helper import get_button as _get_button
+except Exception:
+    _get_button = None
 
 PINS = { "KEY3": 16 }
 
@@ -44,7 +49,13 @@ def setup_gpio():
     GPIO.setup(PINS["KEY3"], GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def wait_key3():
-    while GPIO.input(PINS["KEY3"]) == 1:
+    while True:
+        if _get_button:
+            btn = _get_button(PINS, GPIO)
+        else:
+            btn = "KEY3" if GPIO.input(PINS["KEY3"]) == 0 else None
+        if btn == "KEY3":
+            break
         time.sleep(0.1)
 
 def cleanup():
@@ -52,7 +63,30 @@ def cleanup():
     subprocess.run(["brctl", "delbr", "br0"], stdout=subprocess.DEVNULL)
     subprocess.run(["ip", "link", "set", "eth0", "down"], stdout=subprocess.DEVNULL)
     subprocess.run(["ip", "link", "set", "eth1", "down"], stdout=subprocess.DEVNULL)
-    lcd.LCD_Clear()
+    # Try multiple logo path candidates
+    _base = os.path.normpath(os.path.join(os.path.abspath(__file__), "..", "..", ".."))
+    _logo_paths = [
+        os.path.join(_base, "img", "logo.bmp"),
+        "/root/KTOx/img/logo.bmp",
+    ]
+    _shown = False
+    for _p in _logo_paths:
+        try:
+            logo = Image.open(_p).convert("RGB").resize((128, 128))
+            lcd.LCD_ShowImage(logo, 0, 0)
+            _shown = True
+            break
+        except Exception:
+            continue
+    if not _shown:
+        try:
+            _img = Image.new("RGB", (128, 128), "black")
+            _d = ImageDraw.Draw(_img)
+            _d.text((34, 55), "KTOx", font=font, fill="#00FF00")
+            lcd.LCD_ShowImage(_img, 0, 0)
+        except Exception:
+            pass
+    time.sleep(2)
     GPIO.cleanup()
 
 def check_dependencies():
