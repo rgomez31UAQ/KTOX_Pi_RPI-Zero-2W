@@ -33,7 +33,7 @@ if KTOX_ROOT not in sys.path:
     sys.path.insert(0, KTOX_ROOT)
 
 import RPi.GPIO as GPIO
-import LCD_1in44, LCD_Config
+import LCD_1in44
 from PIL import Image, ImageDraw, ImageFont
 
 HANDSHAKE_FILE = ""
@@ -90,11 +90,11 @@ def draw_ui(screen_state="main", message_lines=None):
 def run_attack():
     draw_ui("cracking")
     
-    # Command to execute
+    # Command to execute (-m 22000 = WPA-PBKDF2-PMKID+EAPOL, replaces deprecated 2500/16800)
     command = [
         "hashcat",
         "-m",
-        "2500",
+        "22000",
         HANDSHAKE_FILE,
         WORDLIST_FILE
     ]
