@@ -46,8 +46,8 @@ try:
     import LCD_Config
     import ktox_input as rj_input
     HAS_HW = True
-except ImportError as _ie:
-    print(f"[WARN] Hardware libs missing ({_ie}) — headless mode")
+except Exception as _ie:
+    print(f"[WARN] Hardware unavailable ({_ie}) — headless mode")
     HAS_HW = False
 
 # ── GPIO pin map ───────────────────────────────────────────────────────────────
@@ -614,13 +614,6 @@ def exec_payload(filename, *args):
     _write_payload_state(True, filename)
     screen_lock.set()
 
-    if HAS_HW:
-        try:
-            with draw_lock:
-                LCD.LCD_Clear()
-        except Exception:
-            pass
-
     env = os.environ.copy()
     env["PYTHONPATH"] = (
         INSTALL_PATH + os.pathsep
@@ -652,36 +645,48 @@ def exec_payload(filename, *args):
     # ── Restore hardware ────────────────────────────────────────────────────
     print("[PAYLOAD] ◄ Restoring hardware…")
     _write_payload_state(False)
-    _setup_gpio()
-    _load_fonts()
-
     try:
-        rj_input.restart_listener()
-    except Exception:
-        pass
+        _setup_gpio()
+        _load_fonts()
 
-    with draw_lock:
         try:
-            draw.rectangle((0,0,128,128), fill=color.background)
-            color.DrawBorder()
+            rj_input.restart_listener()
         except Exception:
             pass
 
-    m.render_current()
+        with draw_lock:
+            try:
+                draw.rectangle((0, 0, 128, 128), fill=color.background)
+                color.DrawBorder()
+            except Exception:
+                pass
 
-    # Drain any held buttons + clear stale state (500ms max)
-    global _last_button, _last_button_time, _button_down_since
-    _last_button       = None
-    _last_button_time  = 0.0
-    _button_down_since = 0.0
-    if HAS_HW:
-        t0 = time.time()
-        while (any(GPIO.input(p) == 0 for p in PINS.values())
-               and time.time()-t0 < 0.5):
-            time.sleep(0.03)
-    _last_button = None  # clear again after drain
+        # Push frame immediately after LCD re-init — closes the white flash
+        # window that opens during LCD_Reset() inside _setup_gpio().
+        if HAS_HW and LCD and image:
+            try:
+                LCD.LCD_ShowImage(image, 0, 0)
+            except Exception:
+                pass
 
-    screen_lock.clear()
+        m.render_current()
+
+        # Drain any held buttons + clear stale state (500ms max)
+        global _last_button, _last_button_time, _button_down_since
+        _last_button       = None
+        _last_button_time  = 0.0
+        _button_down_since = 0.0
+        if HAS_HW:
+            t0 = time.time()
+            while (any(GPIO.input(p) == 0 for p in PINS.values())
+                   and time.time()-t0 < 0.5):
+                time.sleep(0.03)
+        _last_button = None  # clear again after drain
+
+    except Exception as _hw_err:
+        print(f"[PAYLOAD] hw restore error: {_hw_err!r}")
+    finally:
+        screen_lock.clear()
     print("[PAYLOAD] ✔ ready")
 
 # ═══════════════════════════════════════════════════════════════════════════════
