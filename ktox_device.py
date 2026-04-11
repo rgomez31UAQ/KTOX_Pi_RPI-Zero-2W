@@ -528,8 +528,8 @@ def GetMenuString(inlist, duplicates=False):
                 icon = _icon_for(txt)
                 if icon:
                     draw.text((5,  row_y + 1), icon, font=icon_font, fill=fill)
-                    t = _truncate(txt.strip(), 94)
-                    draw.text((19, row_y + 1), t,    font=text_font, fill=fill)
+                    t = _truncate(txt.strip(), 90)
+                    draw.text((23, row_y + 1), t,    font=text_font, fill=fill)
                 else:
                     t = _truncate(txt.strip(), 110)
                     draw.text((5,  row_y + 1), t,    font=text_font, fill=fill)
@@ -2048,8 +2048,8 @@ class KTOxMenu:
                     icon = _icon_for(label)
                     if icon:
                         draw.text((5,  row_y + 1), icon, font=icon_font, fill=fill)
-                        t = _truncate(label.strip(), 96)
-                        draw.text((19, row_y + 1), t,    font=text_font, fill=fill)
+                        t = _truncate(label.strip(), 92)
+                        draw.text((23, row_y + 1), t,    font=text_font, fill=fill)
                     else:
                         t = _truncate(label.strip(), 108)
                         draw.text((6,  row_y + 1), t,    font=text_font, fill=fill)
