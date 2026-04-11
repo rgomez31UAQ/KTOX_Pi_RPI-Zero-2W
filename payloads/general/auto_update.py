@@ -235,10 +235,18 @@ def do_git_pull():
             if s.exists():
                 _safe_copy(s, dst / fname, skipped)
 
+        # Directories that must never be overwritten — user data lives here
+        PRESERVE_DIRS = {
+            "roms",   # Game Boy / emulator ROMs uploaded by user
+            "loot",   # Captured credentials / scan results
+        }
+
         # Directories — replace in-place (keep loot/ and credentials untouched)
         # For payloads/ we do a file-by-file validated copy instead of rmtree+copytree
         # so a single bad file in the repo can't nuke the whole payloads directory.
         for dname in ["web", "wifi", "Responder", "DNSSpoof", "assets"]:
+            if dname in PRESERVE_DIRS:
+                continue
             s = src / dname
             d = dst / dname
             if s.exists():
@@ -246,7 +254,7 @@ def do_git_pull():
                     _shutil.rmtree(d)
                 _shutil.copytree(s, d)
 
-        # payloads/ — validated file-by-file copy
+        # payloads/ — validated file-by-file copy, skipping preserve dirs
         src_payloads = src / "payloads"
         dst_payloads = dst / "payloads"
         if src_payloads.exists():
@@ -254,6 +262,9 @@ def do_git_pull():
                 if src_file.is_dir():
                     continue
                 rel = src_file.relative_to(src_payloads)
+                # Skip any path that passes through a preserved directory name
+                if any(part in PRESERVE_DIRS for part in rel.parts):
+                    continue
                 dst_file = dst_payloads / rel
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 _safe_copy(src_file, dst_file, skipped)
