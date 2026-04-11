@@ -110,7 +110,7 @@ def _load_fonts():
         except: return ImageFont.load_default()
     text_font  = _f(MONO_BOLD, 9)
     small_font = _f(MONO,      8)
-    icon_font  = _f(FA,       11) if os.path.exists(FA) else _f(MONO, 9)
+    icon_font  = _f(FA,       12) if os.path.exists(FA) else None
 
 # ── Runtime state ──────────────────────────────────────────────────────────────
 
@@ -519,14 +519,25 @@ def GetMenuString(inlist, duplicates=False):
             color.DrawMenuBackground()
             color.DrawBorder()
             for i, raw in enumerate(window):
-                txt = raw if not duplicates else raw.split("#", 1)[1]
-                sel = (i == index - offset)
-                row_y = 14 + 14*i
+                txt   = raw if not duplicates else raw.split("#", 1)[1]
+                sel   = (i == index - offset)
+                row_y = 14 + 14 * i
                 if sel:
-                    draw.rectangle([3, row_y, 124, row_y+12], fill=color.select)
+                    draw.rectangle([3, row_y, 124, row_y + 12], fill=color.select)
                 fill = color.selected_text if sel else color.text
-                t = _truncate(txt.strip(), 110)
-                draw.text((5, row_y+1), t, font=text_font, fill=fill)
+                icon = _icon_for(txt)
+                if icon:
+                    draw.text((5,  row_y + 1), icon, font=icon_font, fill=fill)
+                    t = _truncate(txt.strip(), 94)
+                    draw.text((19, row_y + 1), t,    font=text_font, fill=fill)
+                else:
+                    t = _truncate(txt.strip(), 110)
+                    draw.text((5,  row_y + 1), t,    font=text_font, fill=fill)
+            # Scroll-position pip (right edge)
+            if total > WINDOW:
+                pip_h = max(6, int(WINDOW / total * 110))
+                pip_y = 14 + int(offset / max(1, total - WINDOW) * (110 - pip_h))
+                draw.rectangle([125, pip_y, 127, pip_y + pip_h], fill=color.border)
 
         time.sleep(0.08)
         btn = getButton(timeout=120)
@@ -555,13 +566,19 @@ def RenderMenuWindowOnce(inlist, selected=0):
         color.DrawMenuBackground()
         color.DrawBorder()
         for i, txt in enumerate(window):
-            sel   = (i == idx-offset)
-            row_y = 14 + 14*i
+            sel   = (i == idx - offset)
+            row_y = 14 + 14 * i
             if sel:
-                draw.rectangle([3, row_y, 124, row_y+12], fill=color.select)
+                draw.rectangle([3, row_y, 124, row_y + 12], fill=color.select)
             fill = color.selected_text if sel else color.text
-            t = _truncate(txt.strip(), 110)
-            draw.text((5, row_y+1), t, font=text_font, fill=fill)
+            icon = _icon_for(txt)
+            if icon:
+                draw.text((5,  row_y + 1), icon, font=icon_font, fill=fill)
+                t = _truncate(txt.strip(), 94)
+                draw.text((19, row_y + 1), t,    font=text_font, fill=fill)
+            else:
+                t = _truncate(txt.strip(), 110)
+                draw.text((5,  row_y + 1), t,    font=text_font, fill=fill)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Payload engine ─────────────────────────────────────════════════════════════
@@ -1746,6 +1763,109 @@ PAYLOAD_CATEGORIES = [
 ]
 
 
+# ── FontAwesome 5 Solid icon map (Unicode Private-Use codepoints) ─────────────
+# These map menu label text → FA glyph so every item gets an icon like RaspyJack.
+
+_FA_ICONS: dict = {
+    # ── Home menu ─────────────────────────────────────────────────────────
+    "Network":          "\uf6ff",   # fa-network-wired
+    "Offensive":        "\uf54c",   # fa-skull
+    "WiFi Engine":      "\uf1eb",   # fa-wifi
+    "MITM & Spoof":     "\uf0ec",   # fa-exchange
+    "Responder":        "\uf382",   # fa-satellite-dish
+    "Purple Team":      "\uf3ed",   # fa-shield-alt
+    "Payloads":         "\uf0e7",   # fa-bolt
+    "Loot":             "\uf07c",   # fa-folder-open
+    "Stealth":          "\uf070",   # fa-eye-slash
+    "System":           "\uf013",   # fa-cog
+    # ── Payload categories ────────────────────────────────────────────────
+    "Recon":            "\uf002",   # fa-search
+    "Intercept":        "\uf0ec",   # fa-exchange
+    "DoS":              "\uf0e7",   # fa-bolt
+    "WiFi":             "\uf1eb",   # fa-wifi
+    "Bluetooth":        "\uf294",   # fa-bluetooth-b
+    "Credentials":      "\uf084",   # fa-key
+    "Evasion":          "\uf070",   # fa-eye-slash
+    "Hardware":         "\uf2db",   # fa-microchip
+    "USB":              "\uf287",   # fa-usb
+    "Social Eng":       "\uf007",   # fa-user
+    "Exfiltrate":       "\uf019",   # fa-download
+    "Remote":           "\uf233",   # fa-server
+    "Evil Portal":      "\uf0ac",   # fa-globe
+    "Utilities":        "\uf0ad",   # fa-wrench
+    "Games":            "\uf11b",   # fa-gamepad
+    "General":          "\uf013",   # fa-cog
+    "Examples":         "\uf121",   # fa-code
+    # ── Network submenu ───────────────────────────────────────────────────
+    "Scan Network":     "\uf002",
+    "Show Hosts":       "\uf0c0",   # fa-users
+    "Ping Gateway":     "\uf492",   # fa-satellite
+    "Network Info":     "\uf129",   # fa-info
+    "ARP Watch":        "\uf06e",   # fa-eye
+    # ── Offensive submenu ─────────────────────────────────────────────────
+    "Kick ONE off":     "\uf05e",   # fa-ban
+    "Kick ALL off":     "\uf1f8",   # fa-trash
+    "ARP MITM":         "\uf0ec",
+    "ARP Flood":        "\uf0e7",
+    "Gateway DoS":      "\uf54c",
+    "ARP Cage":         "\uf023",   # fa-lock
+    "NTLMv2 Capture":   "\uf084",
+    # ── WiFi submenu ──────────────────────────────────────────────────────
+    "Enable Monitor":   "\uf0e7",
+    "Disable Monitor":  "\uf070",
+    "WiFi Scan":        "\uf002",
+    "Deauth AP":        "\uf1d8",   # fa-paper-plane
+    "Handshake Cap":    "\uf0a3",   # fa-certificate
+    "PMKID Attack":     "\uf084",
+    "Evil Twin AP":     "\uf1eb",
+    "Select Adapter":   "\uf233",
+    # ── MITM submenu ──────────────────────────────────────────────────────
+    "Start MITM Suite": "\uf0ec",
+    "DNS Spoofing ON":  "\uf0ac",
+    "DNS Spoofing OFF": "\uf070",
+    "Rogue DHCP/WPAD":  "\uf233",
+    "Silent Bridge":    "\uf6ff",
+    # ── Responder submenu ─────────────────────────────────────────────────
+    "Responder ON":     "\uf382",
+    "Responder OFF":    "\uf070",
+    "Responder Logs":   "\uf15c",   # fa-file-alt
+    # ── Purple Team submenu ───────────────────────────────────────────────
+    "ARP Hardening":    "\uf3ed",
+    "Disable LLMNR":    "\uf070",
+    "SMB Signing":      "\uf023",
+    "Encrypted DNS":    "\uf0ac",
+    "Cleartext Audit":  "\uf002",
+    "Export Baseline":  "\uf019",
+    "Verify Baseline":  "\uf00c",   # fa-check
+    "Defense Report":   "\uf15c",
+    # ── System submenu ────────────────────────────────────────────────────
+    "WebUI Status":     "\uf0e0",   # fa-envelope
+    "Refresh State":    "\uf021",   # fa-sync
+    "System Info":      "\uf129",
+    "Discord Status":   "\uf392",   # fa-discord
+    "Reboot":           "\uf2f9",   # fa-redo
+    "Shutdown":         "\uf011",   # fa-power-off
+    # ── Universal ─────────────────────────────────────────────────────────
+    "Back":             "\uf060",   # fa-arrow-left
+    "Home":             "\uf015",   # fa-home
+}
+
+
+def _icon_for(label: str) -> str:
+    """Return the FontAwesome glyph for *label*, or '' when unknown / no font."""
+    if not icon_font:
+        return ""
+    bare = label.strip()
+    if bare in _FA_ICONS:
+        return _FA_ICONS[bare]
+    # Strip trailing payload count like " Games (13)" → "Games"
+    if " (" in bare:
+        key = bare[: bare.index(" (")]
+        if key in _FA_ICONS:
+            return _FA_ICONS[key]
+    return ""
+
+
 def _list_payloads(category):
     cat_dir = Path(default.payload_path) / category
     if not cat_dir.exists(): return []
@@ -1904,37 +2024,50 @@ class KTOxMenu:
                 _draw_toolbar()
                 color.DrawMenuBackground()
                 color.DrawBorder()
-                # menu title strip
+                # ── Menu title strip ─────────────────────────────────────
                 _titles = {
-                    "home":"▐ KTOx_Pi ▌","net":"Network",
-                    "off":"Offensive","wifi":"WiFi Engine",
-                    "mitm":"MITM & Spoof","resp":"Responder",
-                    "purple":"Purple Team","sys":"System","pay":"Payloads",
+                    "home": "▐ KTOx_Pi ▌", "net":    "Network",
+                    "off":  "Offensive",    "wifi":   "WiFi Engine",
+                    "mitm": "MITM & Spoof", "resp":   "Responder",
+                    "purple":"Purple Team", "sys":    "System",
+                    "pay":  "Payloads",
                 }
                 _t = _titles.get(key, key.upper())
-                draw.rectangle([3,13,125,24], fill="#1a0000")
+                draw.rectangle([3, 13, 125, 24], fill="#1a0000")
                 _centered(_t[:18], 13, font=small_font, fill=color.border)
-                draw.line([(3,24),(125,24)], fill=color.border, width=1)
-                _start_y = 26
+                draw.line([(3, 24), (125, 24)], fill=color.border, width=1)
+                _ST = 26   # items start-y
+                _RH = 13   # row height
                 for i, label in enumerate(window):
-                    is_sel = (i == sel-offset)
-                    row_y  = _start_y + 13*i
+                    is_sel = (i == sel - offset)
+                    row_y  = _ST + _RH * i
                     if is_sel:
-                        draw.rectangle(
-                            [3, row_y, 124, row_y+12],
-                            fill=color.select
-                        )
+                        draw.rectangle([3, row_y, 124, row_y + 12],
+                                       fill=color.select)
                     fill = color.selected_text if is_sel else color.text
-                    t = _truncate(label.strip(), 108)
-                    draw.text((6, row_y+1), t, font=text_font, fill=fill)
+                    icon = _icon_for(label)
+                    if icon:
+                        draw.text((5,  row_y + 1), icon, font=icon_font, fill=fill)
+                        t = _truncate(label.strip(), 96)
+                        draw.text((19, row_y + 1), t,    font=text_font, fill=fill)
+                    else:
+                        t = _truncate(label.strip(), 108)
+                        draw.text((6,  row_y + 1), t,    font=text_font, fill=fill)
+                # ── Scroll pip ───────────────────────────────────────────
+                if len(labels) > WINDOW:
+                    avail = _RH * WINDOW
+                    pip_h = max(6, int(WINDOW / len(labels) * avail))
+                    pip_y = _ST + int(offset / max(1, len(labels) - WINDOW) * (avail - pip_h))
+                    draw.rectangle([125, pip_y, 127, pip_y + pip_h],
+                                   fill=color.border)
 
             time.sleep(0.08)
             btn = getButton(timeout=120)
 
             if btn is None:                                continue
-            elif btn == "KEY_DOWN_PIN":                    sel = (sel+1) % len(labels)
-            elif btn == "KEY_UP_PIN":                      sel = (sel-1) % len(labels)
-            elif btn in ("KEY_PRESS_PIN","KEY_RIGHT_PIN"):
+            elif btn == "KEY_DOWN_PIN":                    sel = (sel + 1) % len(labels)
+            elif btn == "KEY_UP_PIN":                      sel = (sel - 1) % len(labels)
+            elif btn in ("KEY_PRESS_PIN", "KEY_RIGHT_PIN"):
                 self.select = sel
                 action = items[sel][1]
                 if isinstance(action, str):
@@ -1944,7 +2077,7 @@ class KTOxMenu:
                     self.which = saved
                 elif callable(action):
                     action()
-            elif btn in ("KEY_LEFT_PIN","KEY1_PIN"):       return
+            elif btn in ("KEY_LEFT_PIN", "KEY1_PIN"):      return
             elif btn == "KEY2_PIN":
                 self.which = "home"
                 return
@@ -2222,44 +2355,61 @@ class KTOxMenu:
             if not payloads:
                 Dialog_info("No payloads\nin this category.", wait=True)
                 return
-            items  = [(f" {name}", partial(exec_payload, path))
-                      for name, path in payloads]
-            labels = [i[0] for i in items]
-            sel    = 0
-            WINDOW = 7
+            items    = [(f" {name}", partial(exec_payload, path))
+                        for name, path in payloads]
+            labels   = [i[0] for i in items]
+            sel      = 0
+            WINDOW   = 7
+            # Resolve display title for this category
+            cat_title = next(
+                (lbl for k, lbl in PAYLOAD_CATEGORIES if k == cat_key), cat_key.upper()
+            )
+            cat_icon  = _icon_for(cat_title)
             while True:
                 total  = len(labels)
-                offset = max(0, min(sel-2, total-WINDOW))
-                window = labels[offset:offset+WINDOW]
+                offset = max(0, min(sel - 2, total - WINDOW))
+                window = labels[offset:offset + WINDOW]
+                _ST    = 26   # items start-y (below title strip)
+                _RH    = 13   # row height
                 with draw_lock:
                     _draw_toolbar()
                     color.DrawMenuBackground()
                     color.DrawBorder()
+                    # ── Category title strip ──────────────────────────────
+                    draw.rectangle([3, 13, 125, 24], fill="#1a0000")
+                    _hdr = (cat_icon + " " if cat_icon else "") + cat_title
+                    _centered(_hdr[:20], 13, font=small_font, fill=color.border)
+                    draw.line([(3, 24), (125, 24)], fill=color.border, width=1)
+                    # ── Items ─────────────────────────────────────────────
                     for i, label in enumerate(window):
-                        is_sel = (i == sel-offset)
+                        is_sel = (i == sel - offset)
+                        row_y  = _ST + _RH * i
                         if is_sel:
-                            draw.rectangle(
-                                [default.start_text[0]-5,
-                                 default.start_text[1]+default.text_gap*i,
-                                 122,
-                                 default.start_text[1]+default.text_gap*i+12],
-                                fill=color.select
-                            )
+                            draw.rectangle([3, row_y, 124, row_y + 12],
+                                           fill=color.select)
                         fill = color.selected_text if is_sel else color.text
-                        t = _truncate(label, 112-default.start_text[0])
-                        draw.text(
-                            (default.start_text[0],
-                             default.start_text[1]+default.text_gap*i),
-                            t, font=text_font, fill=fill
-                        )
+                        icon = _icon_for(label)
+                        if icon:
+                            draw.text((5,  row_y + 1), icon, font=icon_font, fill=fill)
+                            t = _truncate(label.strip(), 96)
+                            draw.text((19, row_y + 1), t,    font=text_font, fill=fill)
+                        else:
+                            t = _truncate(label.strip(), 110)
+                            draw.text((5,  row_y + 1), t,    font=text_font, fill=fill)
+                    # ── Scroll pip ────────────────────────────────────────
+                    if total > WINDOW:
+                        avail = _RH * WINDOW
+                        pip_h = max(6, int(WINDOW / total * avail))
+                        pip_y = _ST + int(offset / max(1, total - WINDOW) * (avail - pip_h))
+                        draw.rectangle([125, pip_y, 127, pip_y + pip_h],
+                                       fill=color.border)
                 time.sleep(0.08)
                 btn = getButton(timeout=120)
-                if btn is None:                                continue
-                elif btn == "KEY_DOWN_PIN":                    sel = (sel+1)%total
-                elif btn == "KEY_UP_PIN":                      sel = (sel-1)%total
-                elif btn in ("KEY_PRESS_PIN","KEY_RIGHT_PIN"):
-                    items[sel][1]()
-                elif btn in ("KEY_LEFT_PIN","KEY1_PIN"):       return
+                if btn is None:                                  continue
+                elif btn == "KEY_DOWN_PIN":                      sel = (sel + 1) % total
+                elif btn == "KEY_UP_PIN":                        sel = (sel - 1) % total
+                elif btn in ("KEY_PRESS_PIN", "KEY_RIGHT_PIN"):  items[sel][1]()
+                elif btn in ("KEY_LEFT_PIN", "KEY1_PIN"):        return
                 elif btn == "KEY2_PIN":
                     self.which = "home"; return
             return
@@ -2310,8 +2460,19 @@ class KTOxMenu:
                             fill=color.select
                         )
                     fill = color.selected_text if is_sel else color.text
-                    t = _truncate(label.strip(), 108)
-                    draw.text((6, row_y+1), t, font=text_font, fill=fill)
+                    icon = _icon_for(label)
+                    if icon:
+                        draw.text((5, row_y+1), icon, font=icon_font, fill=fill)
+                        t = _truncate(label.strip(), 94)
+                        draw.text((19, row_y+1), t, font=text_font, fill=fill)
+                    else:
+                        t = _truncate(label.strip(), 108)
+                        draw.text((6, row_y+1), t, font=text_font, fill=fill)
+                # Scroll pip
+                if total > WINDOW:
+                    pip_h = max(6, int(WINDOW / total * 110))
+                    pip_y = 14 + int(offset / max(1, total - WINDOW) * (110 - pip_h))
+                    draw.rectangle([125, pip_y, 127, pip_y + pip_h], fill=color.border)
 
             time.sleep(0.08)
             btn = getButton(timeout=120)
