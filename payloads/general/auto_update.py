@@ -201,8 +201,9 @@ def do_git_pull():
 
     try:
         rc, out = _run(
-            ["git", "clone", "--depth=1", "-b", BRANCH, REPO_URL, tmp],
-            timeout=150,
+            ["git", "clone", "--depth=1", "--single-branch", "--no-tags",
+             "-b", BRANCH, REPO_URL, tmp],
+            timeout=300,
         )
         if rc != 0:
             return False, f"Clone failed: {out[:60]}"
@@ -317,7 +318,7 @@ def install_deps():
     rc, out = _run(
         ["pip3", "install", "--break-system-packages", "-q",
          "-r", str(req)],
-        timeout=180
+        timeout=300
     )
     return rc == 0, out[:60] if rc != 0 else "deps OK"
 
