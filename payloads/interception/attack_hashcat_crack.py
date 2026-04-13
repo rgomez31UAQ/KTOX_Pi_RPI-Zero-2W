@@ -1,23 +1,6 @@
 #!/usr/bin/env python3
 """
-KTOx *payload* – **WPA/WPA2 Handshake Cracker**
-====================================================
-This payload automates the process of cracking WPA/WPA2 handshakes using
-hashcat. It allows the user to select a handshake file and a wordlist,
-and then starts the cracking process.
-
-Features:
-- Interactive UI for selecting a handshake file and a wordlist.
-- Uses hashcat to crack the handshake.
-- The cracking process runs in a background thread.
-- Graceful exit via KEY3 or Ctrl-C.
-
-Controls:
-- MAIN SCREEN:
-    - OK: Start the cracking process.
-    - KEY1: Select the handshake file.
-    - KEY2: Select the wordlist.
-    - KEY3: Exit Payload.
+KTOx Payload – WPA/WPA2 Handshake Cracker (FIXED + UI UPGRADE)
 """
 
 import sys
@@ -27,7 +10,6 @@ import signal
 import subprocess
 import threading
 
-# Prefer /root/KTOx for imports; fallback to repo-relative
 KTOX_ROOT = '/root/KTOx' if os.path.isdir('/root/KTOx') else os.path.abspath(os.path.join(__file__, '..', '..'))
 if KTOX_ROOT not in sys.path:
     sys.path.insert(0, KTOX_ROOT)
@@ -39,175 +21,201 @@ from PIL import Image, ImageDraw, ImageFont
 HANDSHAKE_FILE = ""
 WORDLIST_FILE = ""
 running = True
-attack_thread = None
 
-PINS: dict[str, int] = { "OK": 13, "KEY3": 16, "KEY1": 21, "KEY2": 20, "UP": 6, "DOWN": 19, "LEFT": 5, "RIGHT": 26 }
+PINS = { "OK": 13, "KEY3": 16, "KEY1": 21, "KEY2": 20, "UP": 6, "DOWN": 19 }
+
 GPIO.setmode(GPIO.BCM)
-for pin in PINS.values(): GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+for pin in PINS.values():
+    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
 LCD = LCD_1in44.LCD()
 LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
+
+FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 11)
 FONT = ImageFont.load_default()
 
+# -------------------- CLEANUP --------------------
 def cleanup(*_):
     global running
     running = False
-    
-    # Kill all the processes
     subprocess.run("killall hashcat", shell=True)
 
 signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
-def draw_ui(screen_state="main", message_lines=None):
+# -------------------- UI --------------------
+def draw(lines):
     img = Image.new("RGB", (128, 128), "black")
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "WPA/WPA2 Cracker", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
 
-    if message_lines:
-        if isinstance(message_lines, str):
-            message_lines = [message_lines]
-        y_offset = (128 - len(message_lines) * 12) // 2
-        for line in message_lines:
-            bbox = d.textbbox((0, 0), line, font=FONT)
-            w = bbox[2] - bbox[0]
-            x = (128 - w) // 2
-            d.text((x, y_offset), line, font=FONT, fill="yellow")
-            y_offset += 12
-    elif screen_state == "main":
-        d.text((5, 30), f"Handshake: {os.path.basename(HANDSHAKE_FILE)}", font=FONT, fill="white")
-        d.text((5, 50), f"Wordlist: {os.path.basename(WORDLIST_FILE)}", font=FONT, fill="white")
-        d.text((5, 100), "OK=Start", font=FONT, fill="cyan")
-        d.text((5, 110), "KEY1=Handshake | KEY2=Wordlist", font=FONT, fill="cyan")
-    elif screen_state == "cracking":
-        d.text((5, 50), "Cracking...", font=FONT_TITLE, fill="yellow")
-        d.text((5, 70), f"Handshake: {os.path.basename(HANDSHAKE_FILE)}", font=FONT, fill="white")
-        d.text((5, 85), f"Wordlist: {os.path.basename(WORDLIST_FILE)}", font=FONT, fill="white")
+    # Title bar
+    d.text((4, 2), "WPA CRACKER", font=FONT_TITLE, fill="#00FFAA")
+    d.line((0, 16, 128, 16), fill="#00FFAA")
+
+    y = 20
+    for line in lines:
+        d.text((4, y), line[:20], font=FONT, fill="white")
+        y += 12
 
     LCD.LCD_ShowImage(img, 0, 0)
 
-def run_attack():
-    draw_ui("cracking")
-    
-    # Command to execute (-m 22000 = WPA-PBKDF2-PMKID+EAPOL, replaces deprecated 2500/16800)
-    command = [
-        "hashcat",
-        "-m",
-        "22000",
-        HANDSHAKE_FILE,
-        WORDLIST_FILE
-    ]
-    
-    try:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        stdout, stderr = process.communicate(timeout=3600) # 1 hour timeout
-        
-        if process.returncode == 0:
-            draw_ui(message_lines=["Cracking finished!", "Check hashcat potfile."])
-        else:
-            draw_ui(message_lines=["Cracking failed!", "Check console."])
-            print(stderr)
-            
-    except subprocess.TimeoutExpired:
-        draw_ui(message_lines=["Cracking timed out!"])
-    except Exception as e:
-        draw_ui(message_lines=["Cracking failed!", str(e)])
-        
-    time.sleep(3)
-
-def handle_file_input_logic(file_type):
+# -------------------- FILE SCANNER --------------------
+def get_files(file_type):
     files = []
+
     if file_type == "Handshake":
-        loot_dir = os.path.join(KTOX_ROOT, "loot")
-        for root, dirs, filenames in os.walk(loot_dir):
-            for filename in filenames:
-                if filename.endswith(".pcap") or filename.endswith(".cap"):
-                    files.append(os.path.join(root, filename))
-    elif file_type == "Wordlist":
-        wordlist_dir = os.path.join(KTOX_ROOT, "wordlists")
-        for root, dirs, filenames in os.walk(wordlist_dir):
-            for filename in filenames:
-                if filename.endswith(".txt"):
-                    files.append(os.path.join(root, filename))
+        dirs = [os.path.join(KTOX_ROOT, "loot")]
+
+        exts = (".pcap", ".cap", ".22000")
+
+    else:
+        dirs = [
+            os.path.join(KTOX_ROOT, "wordlists"),
+            "/usr/share/wordlists",
+            "/usr/share/seclists"
+        ]
+        exts = (".txt", ".lst", ".wordlist")
+
+    for d in dirs:
+        if not os.path.isdir(d):
+            continue
+        for root, _, filenames in os.walk(d):
+            for f in filenames:
+                if f.endswith(exts):
+                    files.append(os.path.join(root, f))
+
+    return sorted(list(set(files)))
+
+# -------------------- FILE SELECTOR --------------------
+def select_file(file_type):
+    files = get_files(file_type)
 
     if not files:
-        draw_ui(message_lines=[f"No {file_type} files found!"])
+        draw([f"No {file_type}", "files found"])
         time.sleep(2)
         return None
 
-    selected_index = 0
+    idx = 0
+    offset = 0
+    visible = 6
+
     while running:
-        img = Image.new("RGB", (128, 128), "black")
-        d = ImageDraw.Draw(img)
-        d.text((5, 5), f"Select {file_type}", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
-        
-        for i, f in enumerate(files):
-            color = "yellow" if i == selected_index else "white"
-            d.text((5, 30 + i * 15), os.path.basename(f), font=FONT, fill=color)
+        view = files[offset:offset+visible]
 
-        d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
-        LCD.LCD_ShowImage(img, 0, 0)
+        lines = [f"{file_type}:"]
+        for i, f in enumerate(view):
+            name = os.path.basename(f)[:18]
+            prefix = ">" if (offset + i) == idx else " "
+            lines.append(f"{prefix} {name}")
 
-        btn = None
-        for name, pin in PINS.items():
-            if GPIO.input(pin) == 0:
-                btn = name
-                while GPIO.input(pin) == 0:
-                    time.sleep(0.05)
-                break
-        
+        lines.append("OK=Select")
+        draw(lines)
+
+        btn = get_button()
+
         if btn == "KEY3":
             return None
-        if btn == "OK":
-            return files[selected_index]
-        if btn == "UP":
-            selected_index = (selected_index - 1) % len(files)
-            time.sleep(0.2)
-        if btn == "DOWN":
-            selected_index = (selected_index + 1) % len(files)
-            time.sleep(0.2)
-        
-        time.sleep(0.1)
+        elif btn == "OK":
+            return files[idx]
+        elif btn == "UP":
+            idx = (idx - 1) % len(files)
+        elif btn == "DOWN":
+            idx = (idx + 1) % len(files)
+
+        if idx < offset:
+            offset = idx
+        elif idx >= offset + visible:
+            offset = idx - visible + 1
+
+        time.sleep(0.15)
+
+# -------------------- BUTTON HANDLER --------------------
+def get_button():
+    for name, pin in PINS.items():
+        if GPIO.input(pin) == 0:
+            while GPIO.input(pin) == 0:
+                time.sleep(0.05)
+            return name
     return None
 
+# -------------------- ATTACK --------------------
+def run_attack():
+    draw(["Starting...", "Hashcat"])
+
+    cmd = [
+        "hashcat",
+        "-m", "22000",
+        HANDSHAKE_FILE,
+        WORDLIST_FILE,
+        "--force"
+    ]
+
+    try:
+        proc = subprocess.Popen(cmd)
+
+        while proc.poll() is None:
+            draw([
+                "Cracking...",
+                os.path.basename(HANDSHAKE_FILE)[:18],
+                os.path.basename(WORDLIST_FILE)[:18],
+                "KEY3=Stop"
+            ])
+
+            if get_button() == "KEY3":
+                proc.terminate()
+                draw(["Stopped"])
+                time.sleep(2)
+                return
+
+            time.sleep(1)
+
+        draw(["Done!", "Check potfile"])
+        time.sleep(3)
+
+    except Exception as e:
+        draw(["Error:", str(e)[:18]])
+        time.sleep(3)
+
+# -------------------- MAIN LOOP --------------------
 if __name__ == "__main__":
     try:
         while running:
-            draw_ui("main")
-            
-            if GPIO.input(PINS["OK"]) == 0:
+            draw([
+                f"H: {os.path.basename(HANDSHAKE_FILE)[:16]}",
+                f"W: {os.path.basename(WORDLIST_FILE)[:16]}",
+                "",
+                "OK = Start",
+                "K1 = Handshake",
+                "K2 = Wordlist",
+                "K3 = Exit"
+            ])
+
+            btn = get_button()
+
+            if btn == "OK":
                 if HANDSHAKE_FILE and WORDLIST_FILE:
-                    attack_thread = threading.Thread(target=run_attack)
-                    attack_thread.start()
-                    time.sleep(0.3)
+                    run_attack()
                 else:
-                    draw_ui(message_lines=["Select files first!"])
+                    draw(["Select files first"])
                     time.sleep(2)
-            
-            if GPIO.input(PINS["KEY1"]) == 0:
-                new_handshake_file = handle_file_input_logic("Handshake")
-                if new_handshake_file:
-                    HANDSHAKE_FILE = new_handshake_file
-                time.sleep(0.3)
 
-            if GPIO.input(PINS["KEY2"]) == 0:
-                new_wordlist_file = handle_file_input_logic("Wordlist")
-                if new_wordlist_file:
-                    WORDLIST_FILE = new_wordlist_file
-                time.sleep(0.3)
+            elif btn == "KEY1":
+                f = select_file("Handshake")
+                if f:
+                    HANDSHAKE_FILE = f
 
-            if GPIO.input(PINS["KEY3"]) == 0:
-                cleanup()
+            elif btn == "KEY2":
+                f = select_file("Wordlist")
+                if f:
+                    WORDLIST_FILE = f
+
+            elif btn == "KEY3":
                 break
-            
+
             time.sleep(0.1)
-            
-    except (KeyboardInterrupt, SystemExit):
-        pass
+
     finally:
         cleanup()
         LCD.LCD_Clear()
         GPIO.cleanup()
-        print("WPA/WPA2 Cracker payload finished.")
+        print("Done.")
