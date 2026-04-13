@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-KTOX SDR Ghost - Live HackRF Waterfall
+KTOX SDR Ghost
 ======================================
-Follows exact Captive Portal Escape architecture.
+
 """
 
 import os
