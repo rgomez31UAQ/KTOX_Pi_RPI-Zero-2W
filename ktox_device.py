@@ -1065,17 +1065,21 @@ def _show_lock_wake(reason="Locked"):
             if HAS_HW and LCD: LCD.LCD_ShowImage(image, 0, 0)
     except Exception: pass
 
-def _play_ss_until_input(reason="Locked") -> str:
-    """Show static wake screen, then GIF loop. Returns first button pressed."""
-    _show_lock_wake(reason)
-    deadline = time.monotonic() + LOCK_SCREEN_STATIC_SECS
-    while time.monotonic() < deadline:
-        b = _get_lock_button()
-        if b: return b
-        time.sleep(0.01)
+def _play_ss_until_input(reason="Locked", skip_static=False) -> str:
+    """Show static wake screen (optional), then GIF loop. Returns first button pressed."""
+    if not skip_static:
+        _show_lock_wake(reason)
+        deadline = time.monotonic() + LOCK_SCREEN_STATIC_SECS
+        while time.monotonic() < deadline:
+            b = _get_lock_button()
+            if b: return b
+            time.sleep(0.01)
 
     frames, durs = _load_ss_frames()
     if not frames:
+        # No GIF available — fall back to static wake screen and wait
+        if skip_static:
+            _show_lock_wake(reason)
         while True:
             b = _get_lock_button()
             if b: return b
@@ -1130,15 +1134,19 @@ def _draw_pin_screen(title, prompt, entered, row, col):
             if HAS_HW and LCD: LCD.LCD_ShowImage(image, 0, 0)
     except Exception: pass
 
+_LOCK_INPUT_IDLE_SECS = 30   # return to screensaver after this many idle seconds
+
 def _enter_pin(title, prompt, allow_cancel=True) -> "str | None":
+    """Returns PIN string, None (cancel), or '__TIMEOUT__' (idle timeout)."""
     entered = []; row = 0; col = 0; hint = prompt
     prev_susp = lock_runtime["suspend_auto_lock"]
     lock_runtime["suspend_auto_lock"] = True
     try:
         while True:
             _draw_pin_screen(title, hint, entered, row, col)
-            btn = getButton(timeout=120)
-            if btn is None: continue
+            btn = getButton(timeout=_LOCK_INPUT_IDLE_SECS)
+            if btn is None:
+                return "__TIMEOUT__"
             if btn == "KEY_UP_PIN":    row = (row-1) % 4
             elif btn == "KEY_DOWN_PIN": row = (row+1) % 4
             elif btn == "KEY_LEFT_PIN": col = (col-1) % 3
@@ -1190,15 +1198,22 @@ def _draw_seq_screen(title, prompt, entered, mask=False):
     except Exception: pass
 
 def _enter_sequence(title, prompt, allow_cancel=True, mask=False) -> "list | None":
+    """Returns sequence list, None (cancel), or '__TIMEOUT__' (idle timeout)."""
     entered = []; hint = prompt; held = set()
     prev_susp = lock_runtime["suspend_auto_lock"]
     lock_runtime["suspend_auto_lock"] = True
     _wait_button_release(0.35)
+    _last_seq_input = time.monotonic()
     try:
         while True:
             _draw_seq_screen(title, hint, entered, mask)
             btn, held = _get_sequence_button(held)
-            if not btn: time.sleep(0.005); continue
+            if not btn:
+                if time.monotonic() - _last_seq_input >= _LOCK_INPUT_IDLE_SECS:
+                    return "__TIMEOUT__"
+                time.sleep(0.005)
+                continue
+            _last_seq_input = time.monotonic()
             if btn == "KEY3_PIN":
                 if allow_cancel: return None
                 continue
@@ -1226,30 +1241,39 @@ def lock_device(reason="Locked") -> bool:
     lock_runtime["in_lock_flow"] = True
     lock_runtime["suspend_auto_lock"] = True
     screen_lock.set()   # own the SPI bus for the entire lock session
+    # skip_static=True for manual lock so the screensaver starts immediately
+    skip_static = (reason == "Manual lock")
     show_kp = False
     _wait_button_release()
     try:
         while True:
             if not show_kp:
-                _play_ss_until_input(reason)
+                _play_ss_until_input(reason, skip_static=skip_static)
+                skip_static = False   # only skip on first show
                 _wait_button_release(); show_kp = True; continue
 
             if _lock_mode() == LOCK_MODE_SEQUENCE:
                 entered = _enter_sequence("Unlock", "Enter 6-step seq",
                                           allow_cancel=False, mask=True)
                 stored  = str(lock_config.get("sequence_hash") or "")
+                if entered == "__TIMEOUT__":
+                    show_kp = False; continue   # idle → back to screensaver
                 if entered and _verify_sequence(entered, stored):
                     lock_runtime["locked"] = False; _mark_user_activity()
                     m.render_current(); return True
                 Dialog_info("Wrong sequence", wait=False, timeout=1.0)
+                show_kp = False   # wrong guess → back to screensaver
             else:
                 entered = _enter_pin("Unlock", "Enter 4-digit PIN",
                                      allow_cancel=False)
                 stored  = str(lock_config.get("pin_hash") or "")
+                if entered == "__TIMEOUT__":
+                    show_kp = False; continue   # idle → back to screensaver
                 if entered and _verify_pin(entered, stored):
                     lock_runtime["locked"] = False; _mark_user_activity()
                     m.render_current(); return True
                 Dialog_info("Wrong PIN", wait=False, timeout=1.0)
+                show_kp = False   # wrong guess → back to screensaver
     finally:
         screen_lock.clear()
         lock_runtime["showing_screensaver"] = False
