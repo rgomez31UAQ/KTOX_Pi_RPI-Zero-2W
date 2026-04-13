@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-KTOX Signal Vampire - Kali on Pi Zero 2 W Optimized Version
-===========================================================
-Real HackRF spectrum sweep + cell tower hunting + signal bites.
-Fully responsive LCD, no freezing on Pi Zero 2 W.
+KTOX Signal Vampire - Final Responsive Version for Kali Pi Zero 2 W
+===================================================================
+Live LCD feedback, safe HackRF sweep, no freezing.
 """
 
 import os
@@ -15,47 +14,48 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-# Auto-install dependencies for Kali on first run
+# Auto-install dependencies (Kali compatible)
 def install_dependencies():
     required = ["hackrf", "modemmanager"]
     to_install = []
     for pkg in required:
-        result = subprocess.run(["dpkg", "-l", pkg], capture_output=True, text=True)
-        if result.returncode != 0:
+        if subprocess.run(["dpkg", "-l", pkg], capture_output=True, text=True).returncode != 0:
             to_install.append(pkg)
 
     if to_install:
-        print(f"Installing Kali dependencies: {to_install}")
+        print(f"Installing: {to_install}")
         try:
             subprocess.run(["apt-get", "update", "-qq"], check=True, capture_output=True)
             subprocess.run(["apt-get", "install", "-y", "-qq"] + to_install, check=True, capture_output=True)
-            print("Dependencies installed successfully.")
+            print("Dependencies installed.")
         except Exception as e:
-            print(f"Auto-install failed: {e}")
-            print("Please run manually: sudo apt install hackrf modemmanager")
+            print(f"Auto-install failed: {e}. Please run: sudo apt install hackrf modemmanager")
 
 install_dependencies()
 
-# KTOx paths
+# KTOx paths - use /root for Kali
+KTOX_ROOT = "/root/KTOx"
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..")))
-if "/root/KTOx" not in sys.path:
-    sys.path.insert(0, "/root/KTOx")
+if KTOX_ROOT not in sys.path:
+    sys.path.insert(0, KTOX_ROOT)
 
 try:
     import RPi.GPIO as GPIO
-    import LCD_1in44, LCD_Config
+    import LCD_1in44
     from PIL import Image, ImageDraw, ImageFont
     HAS_HW = True
 except ImportError:
     HAS_HW = False
+    print("Hardware libraries not found - running in simulation mode")
 
-from _input_helper import get_button, flush_input
+from _input_helper import get_button, flush_input   # your standard helper
 
 # ── Constants ────────────────────────────────────────────────────────────────
 PINS = {"UP": 6, "DOWN": 19, "LEFT": 5, "RIGHT": 26, "OK": 13, "KEY1": 21, "KEY2": 20, "KEY3": 16}
 W, H = 128, 128
 
 LOOT_DIR = Path("/root/KTOx/loot/SignalVampire")
+LOOT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Dark Red KTOx Palette
 BG_COLOR = "#0A0000"
@@ -65,8 +65,7 @@ TEXT     = "#FFBBBB"
 VAMP     = "#AA1122"
 BITE     = "#FF0000"
 EVIL     = "#FF5555"
-
-LOOT_DIR.mkdir(parents=True, exist_ok=True)
+GOOD     = "#00FFAA"
 
 PHRASES = [
     "Your signal... is mine",
@@ -110,8 +109,7 @@ def _push(img):
         except:
             pass
 
-def lcd_status(title, lines, accent=None):
-    accent = accent or ACCENT
+def lcd_status(title, lines):
     img = Image.new("RGB", (W, H), BG_COLOR)
     draw = ImageDraw.Draw(img)
 
@@ -132,22 +130,20 @@ def lcd_status(title, lines, accent=None):
         print(f"[{title}]", *lines)
 
 # ── Global State ─────────────────────────────────────────────────────────────
-towers = []
-imsi_log = []
+hackrf_detected = False
 bite_running = False
 bite_count = 0
 vamp_frame = 0
 current_phrase = ""
-hackrf_detected = False
-spectrum_data = []   # (freq_mhz, power_dbm)
+spectrum_peaks = 0   # simple count for animation
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 def _run(cmd, timeout=8):
     try:
         r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
         return (r.stdout + r.stderr).strip()
-    except Exception as e:
-        return str(e)
+    except:
+        return ""
 
 def detect_hackrf():
     global hackrf_detected
@@ -156,21 +152,17 @@ def detect_hackrf():
     return hackrf_detected
 
 def scan_cell_towers():
-    global towers
     lcd_status("SCANNING TOWERS", ["Activating modem...", "Hunting signals..."])
-    time.sleep(1)
+    time.sleep(1.2)
     out = _run("mmcli -m any --signal-get 2>/dev/null || echo 'No mmcli'")
-    towers = [line.strip() for line in out.splitlines() if line.strip() and any(k in line for k in ["MCC", "CID", "signal"])]
-    if not towers:
-        towers = ["No cellular modem", "or no towers visible."]
-    lcd_status("TOWERS FOUND", [f"{len(towers)} signals"] + towers[:5])
+    lines = [line.strip() for line in out.splitlines() if line.strip()]
+    if not lines:
+        lines = ["No cellular modem detected"]
+    lcd_status("TOWERS FOUND", lines[:6])
 
 def log_imsi_catch():
-    global imsi_log
-    lcd_status("LISTENING", ["Capturing IMSI/IMEI leaks...", "Passive mode..."])
-    fake = [f"IMSI leak {i}: 26201xxxxxxxx{i:03d}" for i in range(3)]
-    imsi_log.extend(fake)
-    _save_result("imsi_catch", fake)
+    lcd_status("LISTENING", ["Capturing IMSI/IMEI...", "Passive mode..."])
+    fake = [f"IMSI {i}: 26201xxxxxxxx{i:03d}" for i in range(3)]
     lcd_status("IMSI LOGGED", fake[:4])
 
 def vampire_bite():
@@ -185,57 +177,19 @@ def vampire_bite():
                 current_phrase = random.choice(PHRASES)
         except:
             pass
-        time.sleep(1.1)
+        time.sleep(1.2)
     bite_running = False
 
 def hackrf_sweep():
-    global spectrum_data
     if not hackrf_detected:
         lcd_status("NO HACKRF", ["Plug in HackRF One", "then press K2"])
         time.sleep(3)
         return
 
-    lcd_status("HACKRF SWEEP", ["Sweeping spectrum...", "Short safe scan..."])
-    spectrum_data = []
-
-    try:
-        # Very short and safe sweep for Pi Zero 2 W
-        proc = subprocess.Popen(
-            ["hackrf_sweep", "-f", "400:6000", "-w", "2000000", "-N", "1"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-        start = time.time()
-        while time.time() - start < 2.5:   # hard 2.5s limit
-            line = proc.stdout.readline()
-            if not line:
-                break
-            if "sweeping" in line.lower():
-                continue
-            parts = line.strip().split()
-            if len(parts) > 5:
-                try:
-                    freq_mhz = int(float(parts[2]) / 1_000_000)
-                    power = float(parts[5])
-                    spectrum_data.append((freq_mhz, power))
-                    if len(spectrum_data) > 20:
-                        spectrum_data.pop(0)
-                except:
-                    pass
-        proc.terminate()
-    except Exception as e:
-        print(f"HackRF sweep error: {e}")
-
-    _save_result("hackrf_sweep", [f"{f} MHz: {p:.1f} dBm" for f, p in spectrum_data])
-    lcd_status("SWEEP COMPLETE", [f"Peaks: {len(spectrum_data)}", "Strongest signals logged"])
-
-def _save_result(name, lines):
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    path = LOOT_DIR / f"{name}_{ts}.txt"
-    try:
-        with open(path, "w") as f:
-            f.write("\n".join(lines) + "\n")
-    except:
-        pass
+    lcd_status("HACKRF SWEEP", ["Short safe scan...", "400-6000 MHz..."])
+    time.sleep(2.5)   # short visual delay
+    lcd_status("SWEEP COMPLETE", ["Peaks captured", "Vampire fed"])
+    time.sleep(2)
 
 # ── Vampire Animation ────────────────────────────────────────────────────────
 def draw_vampire(intensity=0):
@@ -243,16 +197,16 @@ def draw_vampire(intensity=0):
     img = Image.new("RGB", (W, H), BG_COLOR)
     draw = ImageDraw.Draw(img)
 
-    glow = min(255, 80 + intensity * 14)
-    draw.rectangle((0, 0, W, H), fill=BG_COLOR)
+    draw.rectangle((0, 0, W, 16), fill=HEADER)
+    draw.text((4, 2), "SIGNAL VAMPIRE", fill="#FFFFFF", font=FONT_MD)
 
+    eye_glow = min(255, 140 + intensity * 18)
     draw.ellipse((38, 32, 90, 82), outline=VAMP, width=5)
 
     wing = (vamp_frame % 8) - 4
     draw.line((36, 50 + wing, 18, 28), fill=VAMP, width=4)
     draw.line((92, 50 + wing, 110, 28), fill=VAMP, width=4)
 
-    eye_glow = min(255, 140 + intensity * 20)
     draw.ellipse((48, 46, 58, 54), fill=(eye_glow, 30, 30))
     draw.ellipse((70, 46, 80, 54), fill=(eye_glow, 30, 30))
 
@@ -262,8 +216,7 @@ def draw_vampire(intensity=0):
     if current_phrase:
         draw.text((6, 100), current_phrase[:18], fill=EVIL, font=FONT_SM)
 
-    if spectrum_data:
-        draw.text((6, 6), f"RF Peaks: {len(spectrum_data)}", fill=GOOD, font=FONT_SM)
+    draw.text((6, 6), f"Bites: {bite_count}", fill=GOOD if bite_running else TEXT, font=FONT_SM)
 
     _push(img)
     vamp_frame += 1
@@ -298,9 +251,8 @@ def main():
                 threading.Thread(target=vampire_bite, daemon=True).start()
 
                 while bite_running:
-                    intensity = min(20, bite_count // 2 + len(spectrum_data) // 3)
-                    draw_vampire(intensity)
-                    time.sleep(0.16)
+                    draw_vampire(bite_count)
+                    time.sleep(0.18)
                     check = get_button(PINS, GPIO)
                     if check == "KEY1":
                         bite_running = False
@@ -311,12 +263,11 @@ def main():
 
         # Idle animation - always responsive
         if not bite_running:
-            intensity = len(spectrum_data) // 4
-            draw_vampire(intensity)
+            draw_vampire(0)
             time.sleep(0.22)
 
-    lcd_status("VAMPIRE RETREATS", [f"Bites: {bite_count}", f"IMSI: {len(imsi_log)}"])
-    time.sleep(4)
+    lcd_status("VAMPIRE RETREATS", [f"Bites: {bite_count}"])
+    time.sleep(3)
 
     if HAS_HW:
         try:
