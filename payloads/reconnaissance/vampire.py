@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-KTOX Signal Vampire - Final Responsive Version for Kali Pi Zero 2 W
+KTOX Signal Vampire
 ===================================================================
 Live LCD feedback, safe HackRF sweep, no freezing.
 """
