@@ -1,207 +1,236 @@
 #!/usr/bin/env python3
 """
-KTOx ULTRA-HACKER HUD – Cyberpunk Elite Edition
--------------------------------------------------
-HUD with live packet visualization, pulsing threat bars,
-ghost trails, AI cyberpunk logs, and neon glitch animations.
+KTOX SDR Ghost - Live HackRF Waterfall
+======================================
+Follows exact Captive Portal Escape architecture.
 """
 
-import os, time, random, json, subprocess
+import os
+import sys
+import time
+import subprocess
+import random
 from datetime import datetime
+from pathlib import Path
+
+# Auto-install dependencies (Kali)
+def install_dependencies():
+    required = ["hackrf", "modemmanager"]
+    to_install = [pkg for pkg in required if subprocess.run(["dpkg", "-l", pkg], capture_output=True, text=True).returncode != 0]
+    if to_install:
+        print(f"Installing: {to_install}")
+        try:
+            subprocess.run(["apt-get", "update", "-qq"], check=True, capture_output=True)
+            subprocess.run(["apt-get", "install", "-y", "-qq"] + to_install, check=True, capture_output=True)
+            print("Dependencies installed.")
+        except Exception as e:
+            print(f"Auto-install failed: {e}")
+
+install_dependencies()
+
+# KTOx paths
+sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..")))
+if "/root/KTOx" not in sys.path:
+    sys.path.insert(0, "/root/KTOx")
 
 try:
     import RPi.GPIO as GPIO
-    import LCD_1in44
+    import LCD_1in44, LCD_Config
     from PIL import Image, ImageDraw, ImageFont
     HAS_HW = True
-except:
+except ImportError:
     HAS_HW = False
-    print("Hardware not detected, running in simulation mode")
 
-# ── CONFIG ─────────────────────────────────────────────
-W,H=128,128
-PINS={"UP":6,"DOWN":19,"LEFT":5,"RIGHT":26,"OK":13,"KEY1":21,"KEY2":20,"KEY3":16}
-MODES=["HUD","GHOST","AI","GAME","AURA"]
-MODE=0
-DEVICE_LOG="ktx_devices.json"
-MAX_AI_LOG=20
+from _input_helper import get_button, flush_input
 
-# ── GLOBALS ─────────────────────────────────────────────
-devices = {}
-ghost_trails = {}
-ai_log=[]
-game_code=[random.randint(0,3) for _ in range(4)]
-game_input=[]
-_glitch_timer = 0
+# ── Constants ────────────────────────────────────────────────────────────────
+PINS = {"UP": 6, "DOWN": 19, "LEFT": 5, "RIGHT": 26, "OK": 13, "KEY1": 21, "KEY2": 20, "KEY3": 16}
+W, H = 128, 128
 
-LCD=_draw=_image=_font=None
+LOOT_DIR = Path("/root/KTOx/loot/SDRGhost")
+LOOT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── PHRASES ─────────────────────────────────────────────
-AI_PHRASES=[
-"Neon shadows detected","Packet ghosts online","Signal spike at 0xDEADBEEF",
-"Firewall bypassed","Ghost in the machine","Zero-day incoming",
-"Code bleeding","Packet swarm detected","Deep web shadows",
-"Quantum breach active","System integrity compromised","Encrypting reality",
-"Cyber drift detected","Neural overload imminent","RAM ghosts active",
-"Network bleed detected","Ghost packet spawned","Black ICE alert",
-"Override initialized","Synthetic pulse detected","Signal anomaly",
-"Digital phantoms","Firmware breach","Trace suppressed","Data shadowing active",
-"Neon grid compromised","Network phantoms","Memory leak detected","Pulse breach",
-"Digital bleed","AI ghost detected","Kernel override","Firmware anomaly",
-"Packet cascade","Quantum leak","Signal breach","Cyber drift","Black code active",
-"Neural spike","Firewall phantom","Packet anomaly","System shadow","Data ripple",
-"Code fragment found","Network bleed","Signal pulse","Deep net trace","Override active",
-"Ghost matrix detected","Cyber pulse","Neural bleed","Packet shadow","Digital breach",
-"Signal ripple","Zero-trust breach","Memory ghost","System phantom","Network spike",
-"Firmware ghost","AI drift","Quantum spike","Cyber ripple","Code ghosted","Pulse detected",
-"Packet drift","System breach","Digital ripple","Neon ghost","Kernel spike","Data phantom",
-"Signal ghost","Firmware bleed","Override detected","Neural trace","Packet fragment",
-"Deep web breach","Cyber anomaly","Black ICE spike","Ghost protocol","AI breach",
-"Signal anomaly detected","Packet ripple","Cyber phantom","Neural ghost"
-]
+# Dark Red KTOx Palette
+BG_COLOR = "#0A0000"
+HEADER   = "#8B0000"
+ACCENT   = "#FF3333"
+TEXT     = "#FFBBBB"
+WATER    = "#00FFAA"
+WEAK     = "#FF5555"
 
-# ── INIT ───────────────────────────────────────────────
-def init():
-    global LCD,_draw,_image,_font
-    if not HAS_HW: return
-    GPIO.setmode(GPIO.BCM)
-    for p in PINS.values(): GPIO.setup(p, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    LCD=LCD_1in44.LCD(); LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT); LCD.LCD_Clear()
-    _image=Image.new("RGB",(W,H),"black"); _draw=ImageDraw.Draw(_image); _font=ImageFont.load_default()
+# ── LCD helpers (exact same as your Captive Portal Escape) ───────────────────
+lcd_hw = None
+FONT_SM = None
+FONT_MD = None
 
-def push():
-    if HAS_HW and LCD: LCD.LCD_ShowImage(_image,0,0)
-
-# ── DEVICE LOG ──────────────────────────────────────────
-def load_devices():
-    global devices
-    if os.path.exists(DEVICE_LOG):
-        try: devices=json.load(open(DEVICE_LOG,"r"))
-        except: devices={}
-
-def save_devices(): json.dump(devices, open(DEVICE_LOG,"w"))
-
-# ── SYSTEM STATS ───────────────────────────────────────
-def get_cpu():
-    try: return float(subprocess.getoutput("top -bn1 | grep 'Cpu' | awk '{print $2}'"))
-    except: return 0.0
-def get_ram():
-    try: mem=subprocess.getoutput("free -m | grep Mem").split(); return int(mem[2]),int(mem[1])
-    except: return 0,0
-def get_temp():
-    try: return float(subprocess.getoutput("vcgencmd measure_temp").split('=')[1].split("'")[0])
-    except: return 0.0
-
-# ── WIFI SCAN & PACKET SIM ──────────────────────────────
-def scan_wifi():
-    global devices
-    nets=[]
+if HAS_HW:
     try:
-        iface=subprocess.getoutput("iw dev | grep Interface | awk '{print $2}'").splitlines()[0]
-        raw=subprocess.getoutput(f"iwlist {iface} scanning | egrep 'ESSID|Signal level'")
-        lines=raw.splitlines()
-        for i in range(0,len(lines),2):
-            try:
-                ssid=lines[i].split(":")[1].replace('"','')
-                sig=int(lines[i+1].split("=")[2].split()[0])
-                mac=f"{ssid}_{sig}"; threat=max(1,min(5,int((sig+100)/20)))
-                devices[mac]={"ssid":ssid,"sig":sig,"threat":threat,"last_seen":datetime.now().isoformat()}
-                nets.append((ssid,sig,threat))
-            except: continue
-    except: pass
-    return nets
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        for p in PINS.values():
+            GPIO.setup(p, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-# ── AI UPDATE ──────────────────────────────────────────
-def ai_update(nets):
-    global ai_log
-    if not nets or random.random()<0.3: msg=random.choice(AI_PHRASES)
-    else: msg=f"Detected {len(nets)} signals"
-    ai_log.append(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
-    if len(ai_log)>MAX_AI_LOG: ai_log.pop(0)
+        lcd_hw = LCD_1in44.LCD()
+        lcd_hw.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
+        lcd_hw.LCD_Clear()
 
-# ── DRAW FUNCTIONS ─────────────────────────────────────
-def draw_hud(nets):
-    global _glitch_timer
-    _draw.rectangle((0,0,W,H), fill="black")
-    cpu=get_cpu(); ram_used,ram_total=get_ram(); temp=get_temp()
-    _draw.text((2,2),"HUD",font=_font,fill="#FF44FF")
-    _draw.text((2,15),f"CPU:{cpu:.1f}%",font=_font,fill="#FF88FF")
-    _draw.text((2,28),f"RAM:{ram_used}/{ram_total}MB",font=_font,fill="#FF88FF")
-    _draw.text((2,41),f"TEMP:{temp:.1f}C",font=_font,fill="#FF88FF")
-    _draw.text((2,54),f"NETS:{len(nets)}",font=_font,fill="#FF88FF")
+        try:
+            FONT_SM = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 8)
+            FONT_MD = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 9)
+        except:
+            FONT_SM = FONT_MD = ImageFont.load_default()
+    except Exception as e:
+        print(f"LCD init failed: {e}")
 
-    top_nets=sorted(nets,key=lambda x:x[2],reverse=True)[:5]
-    for i,(s,sig,threat) in enumerate(top_nets):
-        bar="#"*threat; color=["#44FF44","#FFFF44","#FF4444","#FF2222","#880000"][min(threat-1,4)]
-        # PULSING threat
-        if int(time.time()*2)%2==0: color="#FF0000"
-        _draw.text((2,67+i*10),f"{s[:12]} {bar}",font=_font,fill=color)
-        # LIVE packet spikes
-        for j in range(threat): _draw.line((2+j*3,67+i*10,2+j*3,67+i*10-random.randint(1,5)),fill=color)
+def _push(img):
+    if lcd_hw:
+        try:
+            lcd_hw.LCD_ShowImage(img, 0, 0)
+        except:
+            pass
 
-    # NEON GLITCH
-    _glitch_timer+=1
-    if _glitch_timer%3==0:
-        for _ in range(2):
-            x1=random.randint(0,W-1); y1=random.randint(0,H-1)
-            x2=x1+random.randint(1,5); y2=y1+random.randint(1,5)
-            _draw.rectangle((x1,y1,x2,y2),outline="#FF00FF")
+def lcd_status(title, lines, tc=None, lc=None):
+    tc = tc or HEADER
+    lc = lc or TEXT
+    img = Image.new("RGB", (W, H), BG_COLOR)
+    draw = ImageDraw.Draw(img)
 
-def draw_ghost(nets):
-    _draw.rectangle((0,0,W,H), fill="black")
-    t=int(time.time()*5)
-    for i,(s,sig,threat) in enumerate(nets[:8]):
-        x=(i*15+t)%W; y=int((sig+100)*1.2)%H
-        colors=["#44FF44","#FFFF44","#FF4444","#FF2222","#880000"]
-        c=colors[min(threat-1,len(colors)-1)]
-        _draw.ellipse((x,y,x+3,y+3), fill=c)
-        ghost_trails.setdefault(s,[]).append((x,y))
-        if len(ghost_trails[s])>6: ghost_trails[s].pop(0)
-        for j,(tx,ty) in enumerate(ghost_trails[s]): _draw.ellipse((tx,ty,tx+2,ty+2), fill=c)
+    draw.rectangle((0, 0, W, 14), fill=tc)
+    draw.text((3, 2), title[:20], fill="#FFFFFF", font=FONT_MD)
 
-def draw_ai():
-    _draw.rectangle((0,0,W,H), fill="black")
-    _draw.text((2,2),"AI",font=_font,fill="#FF44FF")
-    for i,line in enumerate(ai_log[-6:]): _draw.text((2,15+i*15),line[:18],font=_font,fill="#FFCCFF")
+    y = 18
+    for ln in (lines or []):
+        draw.text((3, y), str(ln)[:21], fill=lc, font=FONT_SM)
+        y += 11
+        if y > H - 12:
+            break
+    _push(img)
 
-def draw_game():
-    _draw.rectangle((0,0,W,H), fill="black"); _draw.text((2,2),"UNLOCK",font=_font,fill="#FF44FF")
-    for i,v in enumerate(game_input): _draw.text((10+i*20,60),str(v),font=_font,fill="#FFCCFF")
+    if not HAS_HW:
+        print(f"[{title}]", *lines)
 
-def draw_aura():
-    _draw.rectangle((0,0,W,H), fill=(random.randint(0,50),0,random.randint(0,50)))
+# ── Global State ─────────────────────────────────────────────────────────────
+hackrf_detected = False
+spectrum_buffer = []   # power values for waterfall
 
-# ── MAIN LOOP ─────────────────────────────────────────
+# ── Helpers ──────────────────────────────────────────────────────────────────
+def _run(cmd, timeout=8):
+    try:
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
+        return (r.stdout + r.stderr).strip()
+    except:
+        return ""
+
+def detect_hackrf():
+    global hackrf_detected
+    out = _run("hackrf_info 2>/dev/null")
+    hackrf_detected = "HackRF" in out
+    return hackrf_detected
+
+def hackrf_sweep():
+    global spectrum_buffer
+    if not hackrf_detected:
+        lcd_status("NO HACKRF", ["Plug in HackRF One", "then press K2"])
+        time.sleep(3)
+        return
+
+    lcd_status("SDR GHOST", ["Starting HackRF sweep...", "400-6000 MHz..."])
+    spectrum_buffer = []
+
+    try:
+        proc = subprocess.Popen(
+            ["hackrf_sweep", "-f", "400:6000", "-w", "1000000", "-N", "1"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        start = time.time()
+        while time.time() - start < 2.5:
+            line = proc.stdout.readline()
+            if not line:
+                break
+            parts = line.strip().split()
+            if len(parts) > 5:
+                try:
+                    power = float(parts[5])
+                    spectrum_buffer.append(power)
+                    if len(spectrum_buffer) > W:
+                        spectrum_buffer.pop(0)
+                except:
+                    pass
+        proc.terminate()
+    except Exception as e:
+        print(f"HackRF error: {e}")
+
+    lcd_status("SWEEP COMPLETE", [f"Peaks captured: {len(spectrum_buffer)}"])
+
+def draw_waterfall():
+    img = Image.new("RGB", (W, H), BG_COLOR)
+    draw = ImageDraw.Draw(img)
+
+    draw.rectangle((0, 0, W, 14), fill=HEADER)
+    draw.text((3, 2), "SDR WATERFALL", fill="#FFFFFF", font=FONT_MD)
+
+    if spectrum_buffer:
+        min_p = min(spectrum_buffer) if spectrum_buffer else -100
+        max_p = max(spectrum_buffer) if spectrum_buffer else -30
+        range_p = max(1, max_p - min_p)
+
+        for x in range(min(W, len(spectrum_buffer))):
+            power = spectrum_buffer[x]
+            normalized = max(0, min(1, (power - min_p) / range_p))
+            height = int(normalized * (H - 30))
+            color_val = int(normalized * 255)
+            color = (color_val, int(color_val * 0.6), 0)
+            draw.line((x, H - 14 - height, x, H - 14), fill=color)
+
+    draw.rectangle((0, 116, W, 128), fill="#220000")
+    draw.text((3, 118), "K2=Scan  K1=Waterfall  K3=Exit", fill=ACCENT, font=FONT_SM)
+
+    _push(img)
+
+# ── Main ─────────────────────────────────────────────────────────────────────
 def main():
-    global MODE, game_input
-    init(); load_devices()
+    flush_input()
+
+    detect_hackrf()
+    hackrf_msg = "HackRF detected" if hackrf_detected else "HackRF not found"
+
+    lcd_status("SDR GHOST", ["KTOx Spectrum Viewer", hackrf_msg, "K2 = Scan   K1 = Waterfall"])
+    time.sleep(2)
+
+    waterfall_active = False
+
     while True:
-        nets=scan_wifi(); ai_update(nets)
-        if MODE==0: draw_hud(nets)
-        elif MODE==1: draw_ghost(nets)
-        elif MODE==2: draw_ai()
-        elif MODE==3: draw_game()
-        elif MODE==4: draw_aura()
-        push()
+        btn = get_button(PINS, GPIO)
 
-        if HAS_HW:
-            if GPIO.input(PINS["UP"])==0: MODE=(MODE-1)%len(MODES); time.sleep(0.3)
-            if GPIO.input(PINS["DOWN"])==0: MODE=(MODE+1)%len(MODES); time.sleep(0.3)
-            if MODE==3:
-                if GPIO.input(PINS["LEFT"])==0: game_input.append(0)
-                if GPIO.input(PINS["RIGHT"])==0: game_input.append(1)
-                if GPIO.input(PINS["OK"])==0: game_input.append(2)
-                if GPIO.input(PINS["KEY1"])==0: game_input.append(3)
-                if len(game_input)==4:
-                    if game_input==game_code: ai_log.append("ACCESS GRANTED")
-                    else: ai_log.append("ACCESS DENIED")
-                    game_input=[]
-                    time.sleep(1)
-            if GPIO.input(PINS["KEY3"])==0: break
-        time.sleep(0.1)
+        if btn == "KEY3":
+            break
 
-    save_devices()
+        elif btn == "KEY2":
+            hackrf_sweep()
+
+        elif btn == "KEY1":
+            waterfall_active = not waterfall_active
+            if waterfall_active:
+                lcd_status("WATERFALL LIVE", ["Real-time spectrum...", "K1 to stop"])
+            else:
+                lcd_status("WATERFALL PAUSED", ["K1 to resume"])
+
+        if waterfall_active:
+            draw_waterfall()
+        else:
+            lcd_status("SDR GHOST", ["Ready", hackrf_msg, "K2=Scan  K1=Waterfall"])
+
+        time.sleep(0.12)
+
+    lcd_status("SDR GHOST", ["Shutting down...", "Goodbye"])
+    time.sleep(2)
+
     if HAS_HW:
-        GPIO.cleanup(); LCD.LCD_Clear()
+        try:
+            GPIO.cleanup()
+        except:
+            pass
+    print("KTOX SDR Ghost exited.")
 
-if __name__=="__main__": main()
+if __name__ == "__main__":
+    main()
