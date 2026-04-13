@@ -244,6 +244,7 @@ def do_git_pull():
             "ktox_repl.py", "ktox_config.py",
             "ktox_device_pi.py",
             "payload_compat.py",
+            "sitecustomize.py",
         ]
         for fname in root_files:
             s = src / fname
