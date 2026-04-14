@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-KTOx - Auto Crack Pipeline (Fixed Monitor Mode)
+KTOx - Auto Crack Pipeline (Monitor Mode Debug)
 =================================================
 Author: wickednull
 
-- Automatically detects and enables monitor mode on wlan0/wlan1
-- Scans for APs using airodump-ng with reliable CSV parsing
+- Enables monitor mode on wlan0/wlan1
+- Displays live airodump-ng output for debugging
+- Parses APs from both CSV and stdout
 - Handshake + PMKID capture
 - Any wordlist via file browser
-- Real-time hashcat progress
 
 Controls:
-  UP/DOWN  – select target
+  UP/DOWN  – scroll targets
   OK       – start attack
   KEY1     – toggle deauth burst
   KEY2     – cycle wordlist / browse
@@ -27,7 +27,7 @@ import requests
 from datetime import datetime
 
 # ----------------------------------------------------------------------
-# Hardware & LCD (KTOx standard)
+# Hardware & LCD
 # ----------------------------------------------------------------------
 try:
     import RPi.GPIO as GPIO
@@ -58,7 +58,6 @@ def font(size=9):
         return ImageFont.load_default()
 
 f9 = font(9)
-f11 = font(11)
 
 # ----------------------------------------------------------------------
 # Directories & webhook
@@ -77,7 +76,7 @@ def webhook(msg):
         pass
 
 # ----------------------------------------------------------------------
-# LCD drawing helpers (KTOx dark red style)
+# LCD drawing helpers
 # ----------------------------------------------------------------------
 def draw(lines, title="KTOx CRACK", title_color="#8B0000", text_color="#FFBBBB"):
     img = Image.new("RGB", (W, H), "#0A0000")
@@ -220,39 +219,24 @@ def run(cmd, timeout=30):
         return ""
 
 def get_wlan():
-    """Return first available wlan interface (wlan0, wlan1)."""
     for iface in ["wlan0", "wlan1"]:
         if os.path.exists(f"/sys/class/net/{iface}"):
             return iface
     return None
 
 def enable_monitor_mode(iface):
-    """
-    Enable monitor mode on given interface.
-    Returns the monitor interface name (e.g., wlan0mon) or None if failed.
-    """
-    # Kill interfering processes
     run("airmon-ng check kill")
-    # Try using airmon-ng (most reliable)
     out = run(f"airmon-ng start {iface}")
-    # Look for monitor interface name
     mon = f"{iface}mon"
     if os.path.exists(f"/sys/class/net/{mon}"):
         return mon
-    # Alternative naming (sometimes wlan0 -> wlan0mon)
-    # If not, maybe the interface itself is in monitor mode
-    # Check if interface is already in monitor mode
-    iw_info = run(f"iw dev {iface} info")
-    if "type monitor" in iw_info:
-        return iface
-    # Last resort: try to set manually
+    # Fallback: try to set monitor on the interface itself
     run(f"ip link set {iface} down")
     run(f"iw dev {iface} set type monitor")
     run(f"ip link set {iface} up")
     return iface
 
 def disable_monitor_mode(iface):
-    """Disable monitor mode and restore managed."""
     run(f"airmon-ng stop {iface}mon")
     run(f"ip link set {iface} down")
     run(f"iw dev {iface} set type managed")
@@ -260,67 +244,73 @@ def disable_monitor_mode(iface):
     run("systemctl restart NetworkManager")
 
 # ----------------------------------------------------------------------
-# Scan for APs (robust CSV parsing)
+# AP scanning with debug output
 # ----------------------------------------------------------------------
-def scan_aps(mon):
-    draw([f"Scanning 15 sec...", f"Monitor: {mon}"])
+def scan_aps_debug(mon):
+    """Show live airodump-ng output for 10 seconds, then parse APs."""
+    draw([f"Starting scan on {mon}", "Showing live data...", "Press any key to stop"], title="SCAN DEBUG")
     tmp = f"/tmp/ktox_scan_{int(time.time())}"
-    # Run airodump-ng for 15 seconds
+    # Run airodump-ng, capture both CSV and terminal output
     proc = subprocess.Popen(
-        f"timeout 15 airodump-ng --output-format csv -w {tmp} {mon}",
-        shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        f"airodump-ng --output-format csv -w {tmp} {mon}",
+        shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
     )
-    proc.wait()
+    start = time.time()
+    lines_to_show = []
+    while time.time() - start < 15:
+        # Read a line from stdout (if any)
+        try:
+            line = proc.stdout.readline()
+            if line:
+                lines_to_show.append(line.strip())
+                # Keep only last 6 lines for display
+                if len(lines_to_show) > 6:
+                    lines_to_show.pop(0)
+                # Update LCD with these lines
+                img = Image.new("RGB", (W, H), "#0A0000")
+                d = ImageDraw.Draw(img)
+                d.rectangle((0, 0, W, 17), fill="#8B0000")
+                d.text((4, 3), "LIVE SCAN", font=f9, fill="#FF3333")
+                y = 20
+                for l in lines_to_show[-6:]:
+                    d.text((4, y), l[:23], font=f9, fill="#FFBBBB")
+                    y += 12
+                d.rectangle((0, H-12, W, H), fill="#220000")
+                d.text((4, H-10), "Scanning...", font=f9, fill="#FF7777")
+                LCD.LCD_ShowImage(img, 0, 0)
+        except:
+            pass
+        # Check for button press to abort early
+        if wait_btn(0.05) is not None:
+            break
+        time.sleep(0.1)
+
+    proc.terminate()
     time.sleep(1)
 
+    # Now parse CSV file
     csv_file = f"{tmp}-01.csv"
-    if not os.path.exists(csv_file):
-        draw(["No CSV output", "Monitor may be down", "Check airmon-ng"], text_color="#FF8888")
-        return []
-
-    with open(csv_file, errors="ignore") as f:
-        lines = f.readlines()
-
-    # Find header line (starts with "BSSID")
-    header_idx = -1
-    for i, line in enumerate(lines):
-        if line.strip().startswith("BSSID"):
-            header_idx = i
-            break
-    if header_idx == -1:
-        draw(["No BSSID header", "Invalid scan output"], text_color="#FF8888")
-        return []
-
-    # Parse header to get column indices
-    headers = [h.strip() for h in lines[header_idx].split(",")]
-    try:
-        col_bssid = headers.index("BSSID")
-        col_ch = headers.index("channel")
-        col_pwr = headers.index("PWR")
-        col_essid = headers.index("ESSID")
-    except ValueError:
-        draw(["CSV column error", "Check airodump-ng version"], text_color="#FF8888")
-        return []
-
     aps = []
-    for line in lines[header_idx+1:]:
-        if not line.strip() or "Station MAC" in line:
-            continue
-        parts = [p.strip() for p in line.split(",")]
-        if len(parts) <= max(col_bssid, col_ch, col_pwr, col_essid):
-            continue
-        bssid = parts[col_bssid]
-        if not re.match(r"([0-9A-Fa-f]{2}:){5}", bssid):
-            continue
-        ch = parts[col_ch]
-        pwr = parts[col_pwr]
-        essid = parts[col_essid]
-        if essid and essid != "(not associated)":
-            try:
-                sig = int(pwr)
-            except:
-                sig = -90
-            aps.append((bssid, ch, essid, sig))
+    if os.path.exists(csv_file):
+        with open(csv_file, errors="ignore") as f:
+            lines = f.readlines()
+        # Find the line that contains BSSID
+        for line in lines:
+            if line.startswith("BSSID"):
+                continue
+            if re.match(r"([0-9A-Fa-f]{2}:){5}", line.strip()):
+                parts = [p.strip() for p in line.split(",")]
+                if len(parts) >= 14:
+                    bssid = parts[0]
+                    ch = parts[3]
+                    pwr = parts[8]
+                    essid = parts[13]
+                    if essid and essid != "(not associated)":
+                        try:
+                            sig = int(pwr)
+                        except:
+                            sig = -90
+                        aps.append((bssid, ch, essid, sig))
     # Cleanup
     for f in [csv_file, f"{tmp}-01.kismet.csv", f"{tmp}-01.kismet.netxml"]:
         try: os.remove(f)
@@ -446,19 +436,12 @@ def main():
             pass
         return
     draw([f"Monitor: {mon}", "Testing..."])
+    time.sleep(1)
 
-    # Quick test: try to get interface info
-    test = run(f"iw dev {mon} info")
-    if "monitor" not in test and "type monitor" not in test:
-        draw(["Monitor mode not active", "Try manually", "KEY3 to exit"], text_color="#FF8888")
-        while wait_btn(0.5) != "KEY3":
-            pass
-        return
-
-    # Scan for APs
-    aps = scan_aps(mon)
+    # Scan for APs with live debug output
+    aps = scan_aps_debug(mon)
     if not aps:
-        draw(["No APs found", "Check interface & location", "KEY3 to exit"], text_color="#FF8888")
+        draw(["No APs found", "Try moving closer", "or check interface", "KEY3 to exit"], text_color="#FF8888")
         while wait_btn(0.5) != "KEY3":
             pass
         return
