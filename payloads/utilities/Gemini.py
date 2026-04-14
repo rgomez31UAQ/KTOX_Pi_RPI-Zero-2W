@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 """
-KTOx payload – Gemini Chat (Debug)
-====================================
-Author: wickednull
-
-Tests API key and shows detailed error if invalid.
+KTOx payload – Gemini Chat (Working)
+=====================================
+Uses Google's Python library – no keytar issues.
 """
 
 import os
 import sys
 import time
 import textwrap
-import subprocess
-import json
 from datetime import datetime
 
 # ----------------------------------------------------------------------
@@ -25,7 +21,7 @@ try:
     HAS_HW = True
 except ImportError:
     HAS_HW = False
-    print("KTOx hardware not found")
+    print("Hardware not found")
     sys.exit(1)
 
 PINS = {
@@ -49,11 +45,33 @@ def font(size=9):
 f9 = font(9)
 
 # ----------------------------------------------------------------------
-# Directories
+# API setup
 # ----------------------------------------------------------------------
+KEY_FILE = "/root/KTOx/gemini_key.txt"
 LOOT_DIR = "/root/KTOx/loot/GeminiChat"
 os.makedirs(LOOT_DIR, exist_ok=True)
-KEY_FILE = "/root/KTOx/gemini_key.txt"
+
+def get_api_key():
+    # First try environment variable
+    key = os.environ.get("GEMINI_API_KEY")
+    if key:
+        return key.strip()
+    # Then try file
+    if os.path.exists(KEY_FILE):
+        with open(KEY_FILE, "r") as f:
+            return f.read().strip()
+    return None
+
+# Import Gemini only if key exists
+API_KEY = get_api_key()
+HAS_GEMINI = False
+if API_KEY:
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=API_KEY)
+        HAS_GEMINI = True
+    except ImportError:
+        pass
 
 # ----------------------------------------------------------------------
 # LCD helpers
@@ -82,56 +100,7 @@ def wait_btn(timeout=0.1):
     return None
 
 # ----------------------------------------------------------------------
-# API key reading and testing
-# ----------------------------------------------------------------------
-def get_api_key():
-    # Try environment
-    key = os.environ.get("GEMINI_API_KEY")
-    if key:
-        return key.strip()
-    # Try file
-    if os.path.exists(KEY_FILE):
-        try:
-            with open(KEY_FILE, "r") as f:
-                key = f.read().strip()
-                if key:
-                    return key
-        except:
-            pass
-    return None
-
-def test_api_key(key):
-    """Return (success, error_message) where error_message is empty on success."""
-    # Basic format check
-    if not key.startswith("AIza"):
-        return False, "Key doesn't start with AIza (invalid format)"
-    if len(key) < 30:
-        return False, "Key too short (should be ~39 chars)"
-    # Build curl command with proper escaping
-    payload = '{"contents":[{"parts":[{"text":"Hello"}]}]}'
-    cmd = [
-        "curl", "-s", "-X", "POST",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={key}",
-        "-H", "Content-Type: application/json",
-        "-d", payload
-    ]
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-        data = json.loads(result.stdout)
-        if "error" in data:
-            err_msg = data["error"].get("message", "Unknown error")
-            return False, err_msg
-        # Check if we got a valid response
-        if "candidates" in data:
-            return True, ""
-        return False, "Unexpected response format (no candidates)"
-    except json.JSONDecodeError:
-        return False, "Invalid JSON response from API"
-    except Exception as e:
-        return False, str(e)
-
-# ----------------------------------------------------------------------
-# Keyboard (same as before)
+# Keyboard (QWERTY)
 # ----------------------------------------------------------------------
 KEYBOARD_ROWS = [
     "qwertyuiop",
@@ -202,37 +171,6 @@ def osk_input(prompt="Ask Gemini:", initial=""):
         time.sleep(0.05)
 
 # ----------------------------------------------------------------------
-# Gemini API caller (curl)
-# ----------------------------------------------------------------------
-def gemini_chat(api_key, user_input, history):
-    """Send chat request, return assistant response."""
-    contents = []
-    for role, content in history:
-        contents.append({"role": "user" if role == "user" else "model", "parts": [{"text": content}]})
-    contents.append({"role": "user", "parts": [{"text": user_input}]})
-    payload = {"contents": contents}
-    payload_json = json.dumps(payload)
-    cmd = [
-        "curl", "-s", "-X", "POST",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={api_key}",
-        "-H", "Content-Type: application/json",
-        "-d", payload_json
-    ]
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
-        data = json.loads(result.stdout)
-        if "error" in data:
-            return f"API error: {data['error'].get('message', 'Unknown')}"
-        candidates = data.get("candidates", [])
-        if candidates:
-            parts = candidates[0].get("content", {}).get("parts", [])
-            if parts:
-                return parts[0].get("text", "No text")
-        return "Unexpected API response"
-    except Exception as e:
-        return f"Request failed: {str(e)}"
-
-# ----------------------------------------------------------------------
 # Conversation viewer
 # ----------------------------------------------------------------------
 class ConversationView:
@@ -282,27 +220,13 @@ class ConversationView:
 # Main
 # ----------------------------------------------------------------------
 def main():
-    # Get API key
-    api_key = get_api_key()
-    if not api_key:
-        draw_screen(["API key missing", "", "Set GEMINI_API_KEY", "or create file:", KEY_FILE, "KEY3 to exit"], title_color="#FF4444")
+    if not HAS_GEMINI:
+        draw_screen(["Gemini not ready", "", "Install: pip install", "google-generativeai", "Set API key in", "/root/KTOx/gemini_key.txt", "KEY3 to exit"], title_color="#FF4444")
         while wait_btn(0.5) != "KEY3":
             pass
         return
 
-    # Show masked key for verification
-    masked = api_key[:8] + "..." + api_key[-4:]
-    draw_screen([f"Key: {masked}", "Testing...", "Please wait"], title="GEMINI")
-    ok, err = test_api_key(api_key)
-    if not ok:
-        draw_screen(["API key invalid!", err[:22], "", "Check key format", "KEY3 to exit"], title_color="#FF4444")
-        while wait_btn(0.5) != "KEY3":
-            pass
-        return
-
-    draw_screen(["API key valid!", "Starting chat..."], title="GEMINI", title_color="#00AA00")
-    time.sleep(1)
-
+    model = genai.GenerativeModel("gemini-1.5-flash")
     viewer = ConversationView()
     viewer.add_message("assistant", "Gemini ready. Ask me anything.")
     state = "conversation"
@@ -325,9 +249,13 @@ def main():
                 state = "conversation"
                 continue
             draw_screen(["Thinking...", "Please wait"], title="GEMINI", title_color="#444400")
-            response = gemini_chat(api_key, user_input, viewer.history)
+            try:
+                response = model.generate_content(user_input)
+                answer = response.text
+            except Exception as e:
+                answer = f"Error: {str(e)[:30]}"
             viewer.add_message("user", user_input)
-            viewer.add_message("assistant", response)
+            viewer.add_message("assistant", answer)
             state = "conversation"
             viewer.draw()
         time.sleep(0.05)
