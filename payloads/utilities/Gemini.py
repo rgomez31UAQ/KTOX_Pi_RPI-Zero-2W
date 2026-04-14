@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-KTOx payload – Gemini Chat (Final Working)
-===========================================
+KTOx payload – Gemini Chat (Final)
+===================================
 Author: wickednull
 
-Full QWERTY keyboard, scrollable conversation, API key from file.
-Works with latest Gemini models.
+- QWERTY on-screen keyboard
+- Scrollable conversation history
+- Uses curl + correct model name (gemini-1.5-flash)
+- Filters initial greeting from API requests
+- Shows clear API errors on LCD
 """
 
 import os
@@ -26,7 +29,7 @@ try:
     HAS_HW = True
 except ImportError:
     HAS_HW = False
-    print("Hardware not found")
+    print("KTOx hardware not found")
     sys.exit(1)
 
 PINS = {
@@ -57,14 +60,16 @@ LOOT_DIR = "/root/KTOx/loot/GeminiChat"
 os.makedirs(LOOT_DIR, exist_ok=True)
 
 def get_api_key():
-    # Try environment variable first
+    # Try environment first
     key = os.environ.get("GEMINI_API_KEY")
     if key:
         return key.strip()
-    # Then try file
+    # Then file
     if os.path.exists(KEY_FILE):
         with open(KEY_FILE, "r") as f:
-            return f.read().strip()
+            raw = f.read()
+            # Remove any trailing newline or carriage return
+            return raw.strip()
     return None
 
 API_KEY = get_api_key()
@@ -164,29 +169,32 @@ def osk_input(prompt="Ask Gemini:", initial=""):
         time.sleep(0.05)
 
 # ----------------------------------------------------------------------
-# Gemini API (curl) – fully corrected
+# Gemini API (curl) – corrected roles and model
 # ----------------------------------------------------------------------
 def gemini_chat(user_input, history):
     """
     Send chat request to Gemini API.
     history: list of (role, content) where role is "user" or "assistant"
     """
-    # Build contents array for API
     contents = []
     for role, content in history:
-        # Skip empty messages and the initial greeting (so first message is from user)
-        if not content.strip() or content == "Gemini ready. Ask me anything.":
+        # Skip the initial greeting (so first message is from user)
+        if "Gemini ready" in content:
             continue
+        # Skip empty messages
+        if not content.strip():
+            continue
+        # Map internal role to API role: "user" stays "user", "assistant" becomes "model"
         api_role = "user" if role == "user" else "model"
         contents.append({"role": api_role, "parts": [{"text": content}]})
     
-    # Add current user input
+    # Add the current user input
     contents.append({"role": "user", "parts": [{"text": user_input}]})
     
     payload = json.dumps({"contents": contents})
     
-    # Use a stable, supported model
-    model = "gemini-1.5-flash"   # or "gemini-2.0-flash-exp" if you prefer
+    # Correct model name – no spaces, exact string
+    model = "gemini-1.5-flash"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={API_KEY}"
     
     cmd = ["curl", "-s", "-X", "POST", url, "-H", "Content-Type: application/json", "-d", payload]
@@ -204,7 +212,7 @@ def gemini_chat(user_input, history):
         
         candidates = data.get("candidates", [])
         if candidates:
-            # Check for safety block
+            # Check for safety blocks
             if candidates[0].get("finishReason") == "SAFETY":
                 return "Error: Response blocked by safety filters."
             parts = candidates[0].get("content", {}).get("parts", [])
@@ -213,16 +221,16 @@ def gemini_chat(user_input, history):
         
         return "Unexpected API response structure"
     except json.JSONDecodeError:
-        return f"Invalid JSON response: {result.stdout[:100]}"
+        return f"Invalid JSON: {result.stdout[:80]}"
     except Exception as e:
-        return f"Request failed: {str(e)}"
+        return f"Request failed: {str(e)[:30]}"
 
 # ----------------------------------------------------------------------
 # Conversation viewer (scrollable)
 # ----------------------------------------------------------------------
 class ConversationView:
     def __init__(self):
-        self.history = []  # (role, content)
+        self.history = []  # list of (role, content) where role = "user" or "assistant"
         self.lines = []
         self.scroll = 0
 
@@ -273,7 +281,7 @@ def main():
             pass
         return
 
-    # Test API key quickly (optional)
+    # Quick API test with a simple hello
     draw_screen(["Testing API key...", "Please wait"], title="GEMINI")
     test_response = gemini_chat("Hello", [])
     if test_response.startswith("API error") or test_response.startswith("Error") or test_response.startswith("Request failed"):
@@ -283,7 +291,7 @@ def main():
         return
 
     viewer = ConversationView()
-    # Add greeting to display only – it will be filtered out when sent to API
+    # Add greeting (display only – will be filtered from API)
     viewer.add_message("assistant", "Gemini ready. Ask me anything.")
     state = "conversation"
 
@@ -312,7 +320,7 @@ def main():
             viewer.draw()
         time.sleep(0.05)
 
-    # Save session
+    # Save session to loot
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"session_{ts}.txt"
     filepath = os.path.join(LOOT_DIR, filename)
