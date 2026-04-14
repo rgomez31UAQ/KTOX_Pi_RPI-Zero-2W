@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-KTOx payload – Gemini Chat (Working)
-=====================================
-Uses Google's Python library – no keytar issues.
+KTOx Gemini Chat – Working with curl (404 fixed)
 """
 
 import os
 import sys
 import time
 import textwrap
+import subprocess
+import json
 from datetime import datetime
 
 # ----------------------------------------------------------------------
@@ -45,33 +45,22 @@ def font(size=9):
 f9 = font(9)
 
 # ----------------------------------------------------------------------
-# API setup
+# API key
 # ----------------------------------------------------------------------
 KEY_FILE = "/root/KTOx/gemini_key.txt"
 LOOT_DIR = "/root/KTOx/loot/GeminiChat"
 os.makedirs(LOOT_DIR, exist_ok=True)
 
 def get_api_key():
-    # First try environment variable
     key = os.environ.get("GEMINI_API_KEY")
     if key:
         return key.strip()
-    # Then try file
     if os.path.exists(KEY_FILE):
         with open(KEY_FILE, "r") as f:
             return f.read().strip()
     return None
 
-# Import Gemini only if key exists
 API_KEY = get_api_key()
-HAS_GEMINI = False
-if API_KEY:
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=API_KEY)
-        HAS_GEMINI = True
-    except ImportError:
-        pass
 
 # ----------------------------------------------------------------------
 # LCD helpers
@@ -100,7 +89,7 @@ def wait_btn(timeout=0.1):
     return None
 
 # ----------------------------------------------------------------------
-# Keyboard (QWERTY)
+# Keyboard
 # ----------------------------------------------------------------------
 KEYBOARD_ROWS = [
     "qwertyuiop",
@@ -138,9 +127,6 @@ def osk_input(prompt="Ask Gemini:", initial=""):
     input_text = initial
     selected_row = 0
     selected_col = 0
-    current_row = KEYBOARD_ROWS[selected_row]
-    if selected_col >= len(current_row):
-        selected_col = len(current_row) - 1
     while True:
         draw_keyboard(input_text, selected_row, selected_col)
         btn = wait_btn(0.5)
@@ -171,11 +157,42 @@ def osk_input(prompt="Ask Gemini:", initial=""):
         time.sleep(0.05)
 
 # ----------------------------------------------------------------------
+# Gemini API using curl (correct model name)
+# ----------------------------------------------------------------------
+def gemini_chat(user_input, history):
+    """Send chat request to Gemini API using curl. Returns response text."""
+    # Build conversation history
+    contents = []
+    for role, content in history:
+        contents.append({"role": "user" if role == "user" else "model", "parts": [{"text": content}]})
+    contents.append({"role": "user", "parts": [{"text": user_input}]})
+    payload = json.dumps({"contents": contents})
+    
+    # Use a stable model – if you have access to gemini-2.0-flash-exp, you can change it
+    model = "gemini-1.5-flash"   # <-- CORRECTED SPELLING
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={API_KEY}"
+    
+    cmd = ["curl", "-s", "-X", "POST", url, "-H", "Content-Type: application/json", "-d", payload]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        data = json.loads(result.stdout)
+        if "error" in data:
+            return f"API error: {data['error'].get('message', 'Unknown')}"
+        candidates = data.get("candidates", [])
+        if candidates:
+            parts = candidates[0].get("content", {}).get("parts", [])
+            if parts:
+                return parts[0].get("text", "No text")
+        return "Unexpected API response"
+    except Exception as e:
+        return f"Request failed: {str(e)}"
+
+# ----------------------------------------------------------------------
 # Conversation viewer
 # ----------------------------------------------------------------------
 class ConversationView:
     def __init__(self):
-        self.history = []  # (role, content)
+        self.history = []
         self.lines = []
         self.scroll = 0
 
@@ -220,13 +237,12 @@ class ConversationView:
 # Main
 # ----------------------------------------------------------------------
 def main():
-    if not HAS_GEMINI:
-        draw_screen(["Gemini not ready", "", "Install: pip install", "google-generativeai", "Set API key in", "/root/KTOx/gemini_key.txt", "KEY3 to exit"], title_color="#FF4444")
+    if not API_KEY:
+        draw_screen(["No API key", "Put key in", "/root/KTOx/gemini_key.txt", "KEY3 to exit"], title_color="#FF4444")
         while wait_btn(0.5) != "KEY3":
             pass
         return
 
-    model = genai.GenerativeModel("gemini-1.5-flash")
     viewer = ConversationView()
     viewer.add_message("assistant", "Gemini ready. Ask me anything.")
     state = "conversation"
@@ -249,13 +265,9 @@ def main():
                 state = "conversation"
                 continue
             draw_screen(["Thinking...", "Please wait"], title="GEMINI", title_color="#444400")
-            try:
-                response = model.generate_content(user_input)
-                answer = response.text
-            except Exception as e:
-                answer = f"Error: {str(e)[:30]}"
+            response = gemini_chat(user_input, viewer.history)
             viewer.add_message("user", user_input)
-            viewer.add_message("assistant", answer)
+            viewer.add_message("assistant", response)
             state = "conversation"
             viewer.draw()
         time.sleep(0.05)
