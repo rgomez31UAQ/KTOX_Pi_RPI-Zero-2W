@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – Video Player with Bluetooth Audio (FIXED)
-=========================================================
+KTOx Payload – Video Player with Bluetooth Audio (FULLY FIXED)
+===============================================================
 - Plays videos on the 128x128 LCD using ffmpeg
-- Audio routed to ALSA default device (works with PipeWire/PulseAudio/Bluetooth)
-- Manages Bluetooth speakers/headphones (scan, pair, connect, set as audio sink)
+- Audio routed to PulseAudio (works with Bluetooth speakers)
+- Manages Bluetooth speakers/headphones (scan, pair, connect)
 - Clean exit – no freezing, proper LCD reinit
+- Smooth scrolling file browser
 
 Controls:
   File browser:
@@ -96,7 +97,7 @@ def wait_btn(timeout=0.1):
     return None
 
 # ----------------------------------------------------------------------
-# Bluetooth manager (fixed for Pi Zero 2W)
+# Bluetooth manager
 # ----------------------------------------------------------------------
 def bluetooth_cmd(cmd):
     try:
@@ -257,7 +258,7 @@ def draw_browser(path, entries, sel, scroll):
     draw_screen(lines)
 
 # ----------------------------------------------------------------------
-# Video player with audio (FIXED)
+# Video player with audio (FIXED: using PulseAudio)
 # ----------------------------------------------------------------------
 playback_active = False
 ffmpeg_proc = None
@@ -282,25 +283,15 @@ def play_video(video_path):
     draw.text((4,60), "Loading...", font=font_sm, fill="#00FF00")
     LCD.LCD_ShowImage(image, 0, 0)
 
-    # *** FIX: added audio output to ALSA default device ***
+    # *** FIXED: audio output to PulseAudio (works with Bluetooth) ***
     cmd = [
         "ffmpeg", "-i", video_path,
-        "-vf", "scale=128:128,fps=8",    # reduced fps for smoother CPU
+        "-vf", "scale=128:128,fps=8",
         "-pix_fmt", "rgb24",
         "-f", "rawvideo",
         "-",
-        "-f", "alsa", "-device", "default"
+        "-f", "pulse", "-device", "default"
     ]
-    # If ALSA fails, try PulseAudio:
-    # cmd = [
-    #     "ffmpeg", "-i", video_path,
-    #     "-vf", "scale=128:128,fps=8",
-    #     "-pix_fmt", "rgb24",
-    #     "-f", "rawvideo",
-    #     "-",
-    #     "-f", "pulse", "-device", "default"
-    # ]
-
     try:
         ffmpeg_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     except Exception as e:
