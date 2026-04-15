@@ -1,24 +1,28 @@
+cat > /root/KTOx/payloads/bt_audio_manager.py << 'EOF'
 #!/usr/bin/env python3
 """
-KTOx Payload – BT Audio Pair
-==============================
-Scan for Bluetooth speakers/headphones, pair & connect, and set as
-the default PulseAudio/PipeWire audio sink so media plays through them.
+KTOx Payload – Bluetooth Audio Manager
+=======================================
+Scan, pair, connect, and automatically set up A2DP audio sink.
+No manual terminal commands needed.
 
 Controls:
-  UP / DOWN   Browse discovered devices
-  OK          Pair + connect (or disconnect if already connected)
-  KEY1        Disconnect current device & rescan
-  KEY2        Force-set selected device as default audio sink
-  KEY3        Exit payload
+  UP/DOWN – navigate
+  OK      – select / pair+connect
+  KEY2    – scan for devices
+  KEY3    – exit
 """
 
-import os, sys, time, subprocess, re
+import os
+import sys
+import time
+import subprocess
+import re
+import select
 
-KTOX_ROOT = "/root/KTOx"
-if os.path.isdir(KTOX_ROOT) and KTOX_ROOT not in sys.path:
-    sys.path.insert(0, KTOX_ROOT)
-
+# ----------------------------------------------------------------------
+# Hardware
+# ----------------------------------------------------------------------
 try:
     import RPi.GPIO as GPIO
     import LCD_1in44
@@ -26,339 +30,227 @@ try:
     HAS_HW = True
 except ImportError:
     HAS_HW = False
+    print("Hardware not found")
+    sys.exit(1)
 
-PINS = {"UP":6, "DOWN":19, "LEFT":5, "RIGHT":26, "OK":13, "KEY1":21, "KEY2":20, "KEY3":16}
-SCAN_SECONDS = 12
+PINS = {"UP":6, "DOWN":19, "LEFT":5, "RIGHT":26,
+        "OK":13, "KEY1":21, "KEY2":20, "KEY3":16}
 
+GPIO.setmode(GPIO.BCM)
+for pin in PINS.values():
+    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-# ── LCD ────────────────────────────────────────────────────────────────────────
+LCD = LCD_1in44.LCD()
+LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
+W, H = 128, 128
 
-_lcd       = None
-_image     = None
-_draw      = None
-_font_bold = None
-_font_sm   = None
-
-
-def _load_font(path, size):
+def font(size=9):
     try:
-        return ImageFont.truetype(path, size)
-    except Exception:
+        return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", size)
+    except:
         return ImageFont.load_default()
+f9 = font(9)
 
+def draw_screen(lines, title="BT AUDIO", title_color="#8B0000"):
+    img = Image.new("RGB", (W, H), "#0A0000")
+    d = ImageDraw.Draw(img)
+    d.rectangle((0,0,W,17), fill=title_color)
+    d.text((4,3), title[:20], font=f9, fill="#FF3333")
+    y = 20
+    for line in lines[:7]:
+        d.text((4,y), line[:23], font=f9, fill="#FFBBBB")
+        y += 12
+    d.rectangle((0,H-12,W,H), fill="#220000")
+    d.text((4,H-10), "UP/DN OK K2=scan K3=exit", font=f9, fill="#FF7777")
+    LCD.LCD_ShowImage(img,0,0)
 
-def _init_lcd():
-    global _lcd, _image, _draw, _font_bold, _font_sm
-    _lcd = LCD_1in44.LCD()
-    _lcd.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-    _lcd.LCD_Clear()
-    _image = Image.new("RGB", (128, 128), "black")
-    _draw  = ImageDraw.Draw(_image)
-    _font_bold = _load_font("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 10)
-    _font_sm   = _load_font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 9)
-
-
-def _show():
-    if _lcd:
-        _lcd.LCD_ShowImage(_image, 0, 0)
-
-
-def _draw_header(title, bg=(50, 0, 100)):
-    _draw.rectangle([(0, 0), (128, 16)], fill=bg)
-    _draw.text((4, 3), title[:21], font=_font_sm, fill=(200, 150, 255))
-
-
-def _draw_footer(text):
-    _draw.rectangle([(0, 112), (128, 128)], fill=(20, 20, 20))
-    _draw.text((4, 114), text, font=_font_sm, fill=(110, 110, 110))
-
-
-def _show_status(msg, color=(200, 200, 200)):
-    _draw.rectangle([(0, 0), (128, 128)], fill=(5, 0, 15))
-    _draw_header("BT AUDIO PAIR", (50, 0, 100))
-    y = 26
-    for line in msg.split("\n"):
-        _draw.text((4, y), line[:21], font=_font_sm, fill=color)
-        y += 14
-    _show()
-
-
-# ── Bluetooth helpers ──────────────────────────────────────────────────────────
-
-def _bt_cmd(cmd_str, timeout=15):
-    """Run one or more bluetoothctl commands non-interactively."""
-    try:
-        # Escape single quotes in MAC addresses etc.
-        escaped = cmd_str.replace("'", "\\'")
-        full = f"printf '{escaped}\\nexit\\n' | bluetoothctl"
-        r = subprocess.run(full, shell=True, capture_output=True, text=True, timeout=timeout)
-        return r.stdout
-    except Exception as e:
-        return str(e)
-
-
-def _scan_devices():
-    """Power on BT, scan for SCAN_SECONDS, return list of {mac, name} dicts."""
-    _show_status("Powering on\nBluetooth...", (150, 200, 255))
-    _bt_cmd("power on")
-    time.sleep(1)
-
-    scan_proc = subprocess.Popen(
-        ["bluetoothctl", "scan", "on"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-    )
-
-    for i in range(SCAN_SECONDS, 0, -1):
-        _show_status(
-            f"Scanning...\n{i}s remaining\n\n\nKEY3 = Cancel",
-            (150, 200, 255)
-        )
-        if HAS_HW and GPIO.input(PINS["KEY3"]) == 0:
-            break
-        time.sleep(1)
-
-    scan_proc.terminate()
-    try:
-        scan_proc.wait(timeout=2)
-    except Exception:
-        scan_proc.kill()
-
-    _bt_cmd("scan off", timeout=3)
-    _show_status("Processing...", (200, 200, 100))
-
-    raw = _bt_cmd("devices", timeout=5)
-    devices = []
-    seen    = set()
-    pat     = re.compile(r"Device\s+((?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2})\s+(.+)")
-
-    for line in raw.splitlines():
-        m = pat.search(line)
-        if m:
-            mac  = m.group(1).upper()
-            name = m.group(2).strip()
-            if mac not in seen:
-                seen.add(mac)
-                devices.append({"mac": mac, "name": name})
-
-    return devices
-
-
-def _connect_device(dev):
-    mac  = dev["mac"]
-    name = dev["name"]
-
-    _show_status(f"Pairing...\n{name[:18]}", (200, 200, 100))
-    _bt_cmd(f"pair {mac}", timeout=20)
-    time.sleep(0.5)
-
-    _show_status(f"Trusting...\n{name[:18]}", (200, 200, 100))
-    _bt_cmd(f"trust {mac}", timeout=5)
-    time.sleep(0.5)
-
-    _show_status(f"Connecting...\n{name[:18]}", (200, 200, 100))
-    out = _bt_cmd(f"connect {mac}", timeout=20)
-    time.sleep(1.0)
-
-    if "Connection successful" in out or "Connected: yes" in out:
-        return True
-
-    # Double-check via info
-    info = _bt_cmd(f"info {mac}", timeout=5)
-    return "Connected: yes" in info
-
-
-def _disconnect_device(mac):
-    _bt_cmd(f"disconnect {mac}", timeout=10)
-
-
-def _get_connected_mac():
-    """Return the MAC of the currently connected BT device, or None."""
-    try:
-        out = subprocess.run(
-            ["bluetoothctl", "info"],
-            capture_output=True, text=True, timeout=5
-        ).stdout
-        m = re.search(r"Device\s+((?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2})", out)
-        if m and "Connected: yes" in out:
-            return m.group(1).upper()
-    except Exception:
-        pass
+def wait_btn(timeout=0.1):
+    start = time.time()
+    while time.time() - start < timeout:
+        for name, pin in PINS.items():
+            if GPIO.input(pin) == 0:
+                time.sleep(0.05)
+                return name
+        time.sleep(0.02)
     return None
 
-
-def _set_default_sink(mac):
-    """Try to set BT device as default PulseAudio/PipeWire audio output."""
-    # PulseAudio / PipeWire (pactl)
+# ----------------------------------------------------------------------
+# Bluetooth helpers
+# ----------------------------------------------------------------------
+def bt_cmd(cmd):
     try:
-        sinks_raw = subprocess.run(
-            ["pactl", "list", "sinks", "short"],
-            capture_output=True, text=True, timeout=5
-        ).stdout
-        mac_under = mac.replace(":", "_").lower()
-        for line in sinks_raw.splitlines():
-            line_low = line.lower()
-            if mac_under in line_low or "bluez" in line_low or "a2dp" in line_low:
-                sink_name = line.split()[1]
-                subprocess.run(
-                    ["pactl", "set-default-sink", sink_name],
-                    timeout=5, capture_output=True
-                )
-                return True, sink_name
-    except Exception:
-        pass
+        proc = subprocess.run(["bluetoothctl", cmd], capture_output=True, text=True, timeout=10)
+        return proc.stdout + proc.stderr
+    except:
+        return ""
 
-    # Fallback: ALSA bluealsa
-    try:
-        subprocess.run(
-            ["amixer", "-D", "bluealsa", "cset", "name='Master Playback Volume'", "80%"],
-            capture_output=True, timeout=5
-        )
-        return True, "bluealsa"
-    except Exception:
-        pass
+def scan_devices(duration=8):
+    draw_screen(["Scanning...", f"{duration} seconds"], title="BT SCAN")
+    bt_cmd("scan off")
+    bt_cmd("menu scan")
+    bt_cmd("transport le")
+    bt_cmd("back")
+    bt_cmd("scan on")
+    time.sleep(duration)
+    bt_cmd("scan off")
+    out = bt_cmd("devices")
+    devices = []
+    for line in out.splitlines():
+        if line.startswith("Device "):
+            parts = line.split(" ", 2)
+            if len(parts) >= 3:
+                devices.append((parts[1], parts[2]))
+    # deduplicate by MAC
+    seen = set()
+    unique = []
+    for mac, name in devices:
+        if mac not in seen:
+            seen.add(mac)
+            unique.append((mac, name))
+    return unique
 
-    return False, None
+def pair_and_connect(mac):
+    draw_screen([f"Pairing {mac[:17]}", "Please wait..."])
+    # Use bluetoothctl in interactive mode for reliable pairing
+    proc = subprocess.Popen(["bluetoothctl"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, text=True, bufsize=1)
+    proc.stdin.write("power on\n")
+    time.sleep(0.5)
+    proc.stdin.write("agent on\n")
+    proc.stdin.write("default-agent\n")
+    proc.stdin.write(f"pair {mac}\n")
+    time.sleep(5)
+    proc.stdin.write(f"trust {mac}\n")
+    time.sleep(1)
+    proc.stdin.write(f"connect {mac}\n")
+    time.sleep(5)
+    proc.stdin.write("quit\n")
+    proc.wait(timeout=10)
+    return True
 
-
-# ── Device list drawing ────────────────────────────────────────────────────────
-
-def _draw_device_list(devices, sel, connected_mac):
-    _draw.rectangle([(0, 0), (128, 128)], fill=(5, 0, 15))
-    count = f"({len(devices)})" if devices else ""
-    _draw_header(f"BT AUDIO PAIR {count}", (50, 0, 100))
-
-    if not devices:
-        _draw.text((8,  45), "No devices found.", font=_font_sm, fill=(150, 150, 150))
-        _draw.text((8,  60), "KEY1 = Rescan",     font=_font_sm, fill=(100, 100, 200))
-        _draw_footer("KEY3=Exit")
-        _show()
-        return
-
-    max_items = 6
-    start = max(0, sel - max_items + 1) if sel >= max_items else 0
-    y = 20
-
-    for i in range(max_items):
-        idx = start + i
-        if idx >= len(devices):
+def setup_audio_sink():
+    """Ensure PulseAudio is configured for A2DP and set default sink."""
+    # Install missing module if needed
+    subprocess.run("pactl load-module module-bluez5-discover 2>/dev/null", shell=True)
+    # Find Bluetooth sink
+    sinks = subprocess.run("pactl list sinks short", shell=True, capture_output=True, text=True).stdout
+    sink_name = None
+    for line in sinks.splitlines():
+        if "bluez" in line:
+            sink_name = line.split()[1]
             break
-        dev    = devices[idx]
-        is_sel = (idx == sel)
-        is_con = (dev["mac"] == connected_mac)
+    if sink_name:
+        subprocess.run(f"pactl set-default-sink {sink_name}", shell=True)
+        # Set profile to a2dp-sink for the card
+        cards = subprocess.run("pactl list cards short", shell=True, capture_output=True, text=True).stdout
+        for line in cards.splitlines():
+            if "bluez" in line:
+                card_id = line.split()[0]
+                subprocess.run(f"pactl set-card-profile {card_id} a2dp-sink", shell=True)
+        return True
+    return False
 
-        if is_sel:
-            _draw.rectangle([(0, y - 1), (128, y + 12)], fill=(40, 0, 80))
+def test_audio():
+    """Play a short test tone."""
+    subprocess.run("speaker-test -t sine -f 1000 -c 2 -l 1 -D default", shell=True, stderr=subprocess.DEVNULL)
 
-        icon     = "\u2714" if is_con else "\u25cf"
-        icon_col = (0, 255, 100) if is_con else (90, 90, 180)
-        name_col = (0, 255, 150) if is_con else ((220, 180, 255) if is_sel else (170, 170, 210))
-        label    = dev["name"][:16]
+def get_paired_devices():
+    out = bt_cmd("devices")
+    devices = []
+    for line in out.splitlines():
+        if line.startswith("Device "):
+            parts = line.split(" ", 2)
+            if len(parts) >= 3:
+                devices.append((parts[1], parts[2]))
+    return devices
 
-        _draw.text((4,  y), icon,  font=_font_sm, fill=icon_col)
-        _draw.text((16, y), label, font=_font_sm, fill=name_col)
-        y += 13
-
-    _draw_footer("OK=Conn K1=Scan K2=Snk")
-    _show()
-
-
-# ── Main ──────────────────────────────────────────────────────────────────────
-
+# ----------------------------------------------------------------------
+# Main UI
+# ----------------------------------------------------------------------
 def main():
-    if not HAS_HW:
-        print("[bt_audio_pair] No hardware — cannot run.")
-        return
+    # Ensure PulseAudio is running
+    subprocess.run("pulseaudio --start", shell=True)
+    # Load Bluetooth module
+    subprocess.run("pactl load-module module-bluez5-discover", shell=True)
 
-    GPIO.setmode(GPIO.BCM)
-    for pin in PINS.values():
-        GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-    _init_lcd()
-
-    devices       = _scan_devices()
-    sel           = 0
-    connected_mac = _get_connected_mac()
-    _held         = {}
-
-    try:
-        while True:
-            _draw_device_list(devices, sel, connected_mac)
-
-            now     = time.time()
-            pressed = {n: GPIO.input(p) == 0 for n, p in PINS.items()}
-            for n, down in pressed.items():
-                if down:
-                    _held.setdefault(n, now)
-                else:
-                    _held.pop(n, None)
-
-            def jp(name):
-                return pressed.get(name) and (now - _held.get(name, now)) <= 0.06
-
-            if jp("KEY3"):
-                break
-
-            elif jp("UP"):
-                sel = max(0, sel - 1)
-            elif jp("DOWN"):
-                sel = min(len(devices) - 1, sel + 1) if devices else 0
-
-            elif jp("KEY1"):
-                # Disconnect current + rescan
-                if connected_mac:
-                    _show_status("Disconnecting...", (200, 100, 100))
-                    _disconnect_device(connected_mac)
-                    connected_mac = None
-                    time.sleep(0.8)
-                devices = _scan_devices()
-                sel     = 0
-                connected_mac = _get_connected_mac()
-
-            elif jp("KEY2") and devices:
-                # Force-set selected device as audio sink
-                dev = devices[sel]
-                ok, sink = _set_default_sink(dev["mac"])
-                if ok:
-                    _show_status(f"Sink set!\n{sink[:18]}", (0, 255, 100))
-                else:
-                    _show_status("Sink failed.\nCheck PulseAudio\nor PipeWire.", (255, 100, 100))
-                time.sleep(2)
-
-            elif jp("OK") and devices:
-                dev = devices[sel]
-                if dev["mac"] == connected_mac:
-                    # Already connected — disconnect
-                    _show_status(f"Disconnecting\n{dev['name'][:18]}...", (200, 100, 100))
-                    _disconnect_device(dev["mac"])
-                    connected_mac = None
-                    time.sleep(1)
-                else:
-                    ok = _connect_device(dev)
-                    if ok:
-                        connected_mac = dev["mac"]
-                        # Auto-route audio
-                        _set_default_sink(dev["mac"])
-                        _show_status(
-                            f"Connected!\n{dev['name'][:18]}\n\nAudio routed.\nKEY2=Re-set sink",
-                            (0, 255, 100)
-                        )
-                    else:
-                        _show_status(
-                            f"Failed to\nconnect to\n{dev['name'][:18]}",
-                            (255, 80, 80)
-                        )
+    while True:
+        # Show paired devices
+        paired = get_paired_devices()
+        lines = ["Paired devices:"]
+        if paired:
+            for i, (mac, name) in enumerate(paired[:4]):
+                lines.append(f"{i+1}. {name[:15]}")
+        else:
+            lines.append("(none)")
+        lines.append("")
+        lines.append("KEY2=Scan  OK=Connect")
+        draw_screen(lines, title="BT AUDIO")
+        btn = wait_btn(0.5)
+        if btn == "KEY3":
+            break
+        elif btn == "KEY2":
+            devices = scan_devices(8)
+            if not devices:
+                draw_screen(["No devices found", "KEY3 to continue"])
+                while wait_btn(0.5) != "KEY3":
+                    pass
+                continue
+            # Select device
+            idx = 0
+            while True:
+                mac, name = devices[idx]
+                draw_screen([f"Select:", name[:18], "", f"{idx+1}/{len(devices)}", "UP/DOWN OK"])
+                btn2 = wait_btn(0.5)
+                if btn2 == "UP":
+                    idx = (idx - 1) % len(devices)
+                elif btn2 == "DOWN":
+                    idx = (idx + 1) % len(devices)
+                elif btn2 == "OK":
+                    pair_and_connect(mac)
+                    draw_screen(["Connected", name, "Setting up audio..."])
                     time.sleep(2)
-                    connected_mac = _get_connected_mac()
+                    if setup_audio_sink():
+                        draw_screen(["Audio sink ready", "Testing...", name])
+                        test_audio()
+                        draw_screen(["Connected & working!", name, "Press KEY3 to exit"])
+                    else:
+                        draw_screen(["Audio setup failed", "Check pulseaudio"])
+                    while wait_btn(0.5) not in ("KEY3", "KEY1"):
+                        pass
+                    break
+                elif btn2 == "KEY3":
+                    break
+                time.sleep(0.05)
+        elif btn == "OK" and paired:
+            # Choose from paired devices
+            idx = 0
+            while True:
+                mac, name = paired[idx]
+                draw_screen([f"Connect to:", name[:18], "", f"{idx+1}/{len(paired)}", "UP/DOWN OK"])
+                btn2 = wait_btn(0.5)
+                if btn2 == "UP":
+                    idx = (idx - 1) % len(paired)
+                elif btn2 == "DOWN":
+                    idx = (idx + 1) % len(paired)
+                elif btn2 == "OK":
+                    draw_screen([f"Connecting to {name[:15]}..."])
+                    bt_cmd(f"connect {mac}")
+                    time.sleep(3)
+                    setup_audio_sink()
+                    draw_screen(["Connected", name, "Audio ready", "Testing..."])
+                    test_audio()
+                    draw_screen(["Success!", name, "KEY3 to exit"])
+                    while wait_btn(0.5) != "KEY3":
+                        pass
+                    break
+                elif btn2 == "KEY3":
+                    break
+                time.sleep(0.05)
 
-            time.sleep(0.05)
-
-    except KeyboardInterrupt:
-        pass
-    finally:
-        if _lcd:
-            _lcd.LCD_Clear()
-        GPIO.cleanup()
-
+    LCD.LCD_Clear()
+    GPIO.cleanup()
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()
+EOF
