@@ -1,4 +1,3 @@
-cat > /root/KTOx/payloads/bluetooth/bt_audio_manager.py << 'EOF'
 #!/usr/bin/env python3
 """
 KTOx Payload – Bluetooth Audio Manager
