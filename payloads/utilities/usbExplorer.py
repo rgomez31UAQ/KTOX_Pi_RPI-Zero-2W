@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – USB File Explorer (Improved Detection)
-=======================================================
-- Uses lsblk for reliable USB detection (mount points)
-- Manual refresh with KEY2 on LCD
-- Cyberpunk UI, copy files/folders
+KTOx Payload – USB File Explorer (Auto-Mount)
+===============================================
+- Auto-detects USB drives, mounts them if needed
+- Copy files/folders from USB to KTOx
+- Cyberpunk UI, LCD controls, refresh on KEY2
 """
 
-import os, sys, time, socket, threading, shutil, subprocess
+import os, sys, time, socket, threading, shutil, subprocess, json
 from flask import Flask, render_template_string, request, jsonify
 
 # Hardware
@@ -38,59 +38,47 @@ if HAS_HW:
 app = Flask(__name__)
 
 # ----------------------------------------------------------------------
-# Reliable USB detection using lsblk
+# USB detection with auto-mount
 # ----------------------------------------------------------------------
 def get_usb_drives():
-    """Return list of mounted USB drives with mount points."""
+    """Return list of mounted USB drives (auto-mounts if needed)."""
     drives = []
     try:
-        # Run lsblk to get all block devices with their mount points, model, and size
-        # Filter by TRAN=usb (transport) or by looking at device model containing "USB"
         result = subprocess.run(
             ['lsblk', '-o', 'NAME,MOUNTPOINT,MODEL,TRAN,SIZE', '-J'],
             capture_output=True, text=True, check=True
         )
-        import json
         data = json.loads(result.stdout)
         for device in data.get('blockdevices', []):
-            # Check if device transport is 'usb' or model suggests USB
-            if device.get('tran') == 'usb' or 'USB' in device.get('model', ''):
-                # If the device itself has a mount point (e.g., /dev/sda1)
-                if device.get('mountpoint'):
-                    drives.append({
-                        'mount': device['mountpoint'],
-                        'device': f"/dev/{device['name']}"
-                    })
-                # Check children (partitions)
-                for child in device.get('children', []):
-                    if child.get('mountpoint'):
-                        drives.append({
-                            'mount': child['mountpoint'],
-                            'device': f"/dev/{child['name']}"
-                        })
+            is_usb = device.get('tran') == 'usb' or 'USB' in device.get('model', '')
+            if not is_usb:
+                continue
+            # Check device and its partitions (children)
+            candidates = [device] + device.get('children', [])
+            for cand in candidates:
+                name = cand['name']
+                mount = cand.get('mountpoint')
+                if mount:
+                    drives.append({'mount': mount, 'device': f"/dev/{name}"})
+                else:
+                    # Partition exists but not mounted – try to mount it
+                    dev_path = f"/dev/{name}"
+                    temp_mount = f"/mnt/usb_{name}"
+                    try:
+                        if not os.path.exists(temp_mount):
+                            os.makedirs(temp_mount, exist_ok=True)
+                        # Mount with proper options for FAT/NTFS
+                        subprocess.run(['mount', dev_path, temp_mount], capture_output=True, check=False)
+                        # Verify mount succeeded
+                        check = subprocess.run(['findmnt', '-no', 'TARGET', dev_path], capture_output=True, text=True)
+                        mount_point = check.stdout.strip()
+                        if mount_point and os.path.exists(mount_point):
+                            drives.append({'mount': mount_point, 'device': dev_path})
+                    except Exception as e:
+                        print(f"Auto-mount failed for {dev_path}: {e}")
     except Exception as e:
-        print(f"lsblk error: {e}")
-        # Fallback to pyudev (if available)
-        try:
-            import pyudev
-            context = pyudev.Context()
-            for dev in context.list_devices(subsystem='block', DEVTYPE='partition'):
-                if dev.get('ID_BUS') == 'usb':
-                    dev_node = dev.device_node
-                    if dev_node:
-                        mount = subprocess.run(['findmnt', '-no', 'TARGET', dev_node], capture_output=True, text=True).stdout.strip()
-                        if mount and os.path.exists(mount):
-                            drives.append({'mount': mount, 'device': dev_node})
-        except ImportError:
-            pass
-    # Remove duplicates (by mount point)
-    seen = set()
-    unique = []
-    for d in drives:
-        if d['mount'] not in seen:
-            seen.add(d['mount'])
-            unique.append(d)
-    return unique
+        print(f"USB detection error: {e}")
+    return drives
 
 # ----------------------------------------------------------------------
 # File listing helpers
@@ -118,7 +106,7 @@ def size_fmt(size):
     return f"{size:.1f}TB"
 
 # ----------------------------------------------------------------------
-# HTML Template (same as before)
+# HTML Template (same as before, with refresh button)
 # ----------------------------------------------------------------------
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -432,7 +420,6 @@ HTML_TEMPLATE = """
     }
 
     browseLocal('/root');
-    // Auto-refresh USB list every 5 seconds
     setInterval(refreshUsbList, 5000);
 </script>
 </body>
@@ -538,7 +525,7 @@ def main():
         server_thread = threading.Thread(target=run_flask, daemon=True)
         server_thread.start()
         time.sleep(2)
-        # Button handling loop (for refresh)
+        # Button handling loop (for refresh and exit)
         held = {}
         while True:
             now = time.time()
@@ -553,12 +540,17 @@ def main():
                 LCD.LCD_Clear()
                 os._exit(0)
             if pressed.get("KEY2") and (now - held.get("KEY2", now)) <= 0.05:
-                # Refresh: just force LCD to re-read drives on next loop
+                # Refresh: just wait; LCD loop will re-read drives on next iteration
                 time.sleep(0.3)
             time.sleep(0.1)
     else:
         app.run(host='0.0.0.0', port=PORT, debug=False)
 
 if __name__ == "__main__":
-    print("Starting USB Explorer with improved detection...")
+    # Ensure we can mount drives (requires sudo)
+    if os.geteuid() != 0:
+        print("⚠️  This payload requires root privileges for mounting USB drives.")
+        print("   Please run with: sudo python3 usb_explorer.py")
+        sys.exit(1)
+    print("Starting USB Explorer with auto-mount...")
     main()
