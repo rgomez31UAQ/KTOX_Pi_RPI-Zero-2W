@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – USB File Explorer (Auto-Mount)
-===============================================
-- Auto-detects USB drives, mounts them if needed
+KTOx Payload – USB File Explorer (Persistent Mounts)
+=====================================================
+- Detects USB drives, mounts them once, keeps them mounted
 - Copy files/folders from USB to KTOx
 - Cyberpunk UI, LCD controls, refresh on KEY2
+- Unmounts all on exit (KEY3)
 """
 
 import os, sys, time, socket, threading, shutil, subprocess, json
@@ -38,10 +39,25 @@ if HAS_HW:
 app = Flask(__name__)
 
 # ----------------------------------------------------------------------
-# USB detection with auto-mount
+# Global mount registry
+# ----------------------------------------------------------------------
+MOUNT_REGISTRY = {}  # device_path -> mount_point
+
+def unmount_all():
+    """Unmount all USB drives we mounted."""
+    global MOUNT_REGISTRY
+    for dev, mp in list(MOUNT_REGISTRY.items()):
+        if mp.startswith('/mnt/ktox_usb_'):
+            subprocess.run(['umount', mp], capture_output=True)
+            print(f"Unmounted {mp}")
+    MOUNT_REGISTRY.clear()
+
+# ----------------------------------------------------------------------
+# USB detection with persistent mounting
 # ----------------------------------------------------------------------
 def get_usb_drives():
-    """Return list of mounted USB drives (auto-mounts if needed)."""
+    """Return list of mounted USB drives (mounts once, stores globally)."""
+    global MOUNT_REGISTRY
     drives = []
     try:
         result = subprocess.run(
@@ -53,29 +69,30 @@ def get_usb_drives():
             is_usb = device.get('tran') == 'usb' or 'USB' in device.get('model', '')
             if not is_usb:
                 continue
-            # Check device and its partitions (children)
             candidates = [device] + device.get('children', [])
             for cand in candidates:
                 name = cand['name']
+                dev_path = f"/dev/{name}"
                 mount = cand.get('mountpoint')
                 if mount:
-                    drives.append({'mount': mount, 'device': f"/dev/{name}"})
+                    # Already mounted by system
+                    MOUNT_REGISTRY[dev_path] = mount
+                    drives.append({'mount': mount, 'device': dev_path})
                 else:
-                    # Partition exists but not mounted – try to mount it
-                    dev_path = f"/dev/{name}"
-                    temp_mount = f"/mnt/usb_{name}"
-                    try:
-                        if not os.path.exists(temp_mount):
-                            os.makedirs(temp_mount, exist_ok=True)
-                        # Mount with proper options for FAT/NTFS
-                        subprocess.run(['mount', dev_path, temp_mount], capture_output=True, check=False)
-                        # Verify mount succeeded
-                        check = subprocess.run(['findmnt', '-no', 'TARGET', dev_path], capture_output=True, text=True)
-                        mount_point = check.stdout.strip()
-                        if mount_point and os.path.exists(mount_point):
-                            drives.append({'mount': mount_point, 'device': dev_path})
-                    except Exception as e:
-                        print(f"Auto-mount failed for {dev_path}: {e}")
+                    # Not mounted – check registry first
+                    if dev_path in MOUNT_REGISTRY:
+                        drives.append({'mount': MOUNT_REGISTRY[dev_path], 'device': dev_path})
+                        continue
+                    # Mount it persistently
+                    mount_point = f"/mnt/ktox_usb_{name}"
+                    os.makedirs(mount_point, exist_ok=True)
+                    ret = subprocess.run(['mount', dev_path, mount_point], capture_output=True)
+                    if ret.returncode == 0:
+                        MOUNT_REGISTRY[dev_path] = mount_point
+                        drives.append({'mount': mount_point, 'device': dev_path})
+                        print(f"Mounted {dev_path} to {mount_point}")
+                    else:
+                        print(f"Failed to mount {dev_path}: {ret.stderr.decode()}")
     except Exception as e:
         print(f"USB detection error: {e}")
     return drives
@@ -106,7 +123,7 @@ def size_fmt(size):
     return f"{size:.1f}TB"
 
 # ----------------------------------------------------------------------
-# HTML Template (same as before, with refresh button)
+# HTML Template (cyberpunk, with refresh)
 # ----------------------------------------------------------------------
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -463,10 +480,11 @@ def api_copy():
     data = request.get_json()
     sources = data.get('sources', [])
     dest = data.get('destination', '')
+    print(f"Copy: {sources} -> {dest}")  # debug
     if not sources or not dest:
         return jsonify({'message': 'Invalid request'}), 400
     if not os.path.isdir(dest):
-        return jsonify({'message': 'Destination is not a directory'}), 400
+        return jsonify({'message': f'Destination {dest} not a directory'}), 400
     copied = 0
     errors = []
     for src in sources:
@@ -479,6 +497,7 @@ def api_copy():
             copied += 1
         except Exception as e:
             errors.append(f"{os.path.basename(src)}: {str(e)[:30]}")
+            print(f"Copy error: {e}")
     msg = f"Copied {copied} item(s)."
     if errors:
         msg += f" Errors: {', '.join(errors[:2])}"
@@ -525,7 +544,6 @@ def main():
         server_thread = threading.Thread(target=run_flask, daemon=True)
         server_thread.start()
         time.sleep(2)
-        # Button handling loop (for refresh and exit)
         held = {}
         while True:
             now = time.time()
@@ -536,21 +554,20 @@ def main():
                 else:
                     held.pop(n, None)
             if pressed.get("KEY3") and (now - held.get("KEY3", now)) <= 0.05:
+                unmount_all()
                 GPIO.cleanup()
                 LCD.LCD_Clear()
                 os._exit(0)
             if pressed.get("KEY2") and (now - held.get("KEY2", now)) <= 0.05:
-                # Refresh: just wait; LCD loop will re-read drives on next iteration
                 time.sleep(0.3)
             time.sleep(0.1)
     else:
         app.run(host='0.0.0.0', port=PORT, debug=False)
 
 if __name__ == "__main__":
-    # Ensure we can mount drives (requires sudo)
     if os.geteuid() != 0:
         print("⚠️  This payload requires root privileges for mounting USB drives.")
         print("   Please run with: sudo python3 usb_explorer.py")
         sys.exit(1)
-    print("Starting USB Explorer with auto-mount...")
+    print("Starting USB Explorer with persistent mounts...")
     main()
