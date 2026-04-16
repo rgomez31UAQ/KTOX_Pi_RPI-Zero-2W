@@ -1,31 +1,16 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – USB File Explorer (Enhanced)
-============================================
-- Full directory navigation on USB drives
-- Select multiple files/folders (checkboxes)
-- Copy selected items to any local KTOx directory
-- Cyberpunk UI, real-time status
-
-Controls (LCD):
-  KEY3  Exit payload
-  KEY1  Toggle server (auto-start)
-
-Access: http://<IP>:8889
+KTOx Payload – USB File Explorer (Improved Detection)
+=======================================================
+- Uses lsblk for reliable USB detection (mount points)
+- Manual refresh with KEY2 on LCD
+- Cyberpunk UI, copy files/folders
 """
 
-import os
-import sys
-import time
-import socket
-import threading
-import shutil
-import subprocess
+import os, sys, time, socket, threading, shutil, subprocess
 from flask import Flask, render_template_string, request, jsonify
 
-# ----------------------------------------------------------------------
-# Hardware & LCD
-# ----------------------------------------------------------------------
+# Hardware
 try:
     import RPi.GPIO as GPIO
     import LCD_1in44
@@ -34,20 +19,13 @@ try:
 except ImportError:
     HAS_HW = False
 
-try:
-    import pyudev
-    HAS_UDEV = True
-except ImportError:
-    HAS_UDEV = False
-    print("Install pyudev for better USB detection: pip install pyudev")
-
-PINS = {"UP":6, "DOWN":19, "LEFT":5, "RIGHT":26, "OK":13, "KEY1":21, "KEY2":20, "KEY3":16}
+PINS = {"UP":6,"DOWN":19,"LEFT":5,"RIGHT":26,"OK":13,"KEY1":21,"KEY2":20,"KEY3":16}
+PORT = 8889
 
 if HAS_HW:
     GPIO.setmode(GPIO.BCM)
     for pin in PINS.values():
         GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
     LCD = LCD_1in44.LCD()
     LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
     W, H = 128, 128
@@ -57,46 +35,62 @@ if HAS_HW:
     except:
         font_sm = font_bold = ImageFont.load_default()
 
-# ----------------------------------------------------------------------
-# Flask app
-# ----------------------------------------------------------------------
-PORT = 8889
 app = Flask(__name__)
 
 # ----------------------------------------------------------------------
-# USB detection (pyudev + fallback)
+# Reliable USB detection using lsblk
 # ----------------------------------------------------------------------
 def get_usb_drives():
-    """Return list of dicts: {'mount': mount_point, 'device': dev_node}"""
+    """Return list of mounted USB drives with mount points."""
     drives = []
-    if HAS_UDEV:
-        context = pyudev.Context()
-        for device in context.list_devices(subsystem='block', DEVTYPE='partition'):
-            if device.get('ID_BUS') == 'usb':
-                dev_node = device.device_node
-                if not dev_node:
-                    continue
-                # Find mount point
-                try:
-                    result = subprocess.run(
-                        ['findmnt', '-no', 'TARGET', dev_node],
-                        capture_output=True, text=True, check=False
-                    )
-                    mount_point = result.stdout.strip()
-                except:
-                    mount_point = None
-                if mount_point and os.path.exists(mount_point):
-                    drives.append({'mount': mount_point, 'device': dev_node})
-    # Fallback: scan common mount points
-    if not drives:
-        base_dirs = ["/media/pi", "/media", "/mnt", "/run/media"]
-        for base in base_dirs:
-            if os.path.isdir(base):
-                for entry in os.listdir(base):
-                    full = os.path.join(base, entry)
-                    if os.path.ismount(full):
-                        drives.append({'mount': full, 'device': 'unknown'})
-    return drives
+    try:
+        # Run lsblk to get all block devices with their mount points, model, and size
+        # Filter by TRAN=usb (transport) or by looking at device model containing "USB"
+        result = subprocess.run(
+            ['lsblk', '-o', 'NAME,MOUNTPOINT,MODEL,TRAN,SIZE', '-J'],
+            capture_output=True, text=True, check=True
+        )
+        import json
+        data = json.loads(result.stdout)
+        for device in data.get('blockdevices', []):
+            # Check if device transport is 'usb' or model suggests USB
+            if device.get('tran') == 'usb' or 'USB' in device.get('model', ''):
+                # If the device itself has a mount point (e.g., /dev/sda1)
+                if device.get('mountpoint'):
+                    drives.append({
+                        'mount': device['mountpoint'],
+                        'device': f"/dev/{device['name']}"
+                    })
+                # Check children (partitions)
+                for child in device.get('children', []):
+                    if child.get('mountpoint'):
+                        drives.append({
+                            'mount': child['mountpoint'],
+                            'device': f"/dev/{child['name']}"
+                        })
+    except Exception as e:
+        print(f"lsblk error: {e}")
+        # Fallback to pyudev (if available)
+        try:
+            import pyudev
+            context = pyudev.Context()
+            for dev in context.list_devices(subsystem='block', DEVTYPE='partition'):
+                if dev.get('ID_BUS') == 'usb':
+                    dev_node = dev.device_node
+                    if dev_node:
+                        mount = subprocess.run(['findmnt', '-no', 'TARGET', dev_node], capture_output=True, text=True).stdout.strip()
+                        if mount and os.path.exists(mount):
+                            drives.append({'mount': mount, 'device': dev_node})
+        except ImportError:
+            pass
+    # Remove duplicates (by mount point)
+    seen = set()
+    unique = []
+    for d in drives:
+        if d['mount'] not in seen:
+            seen.add(d['mount'])
+            unique.append(d)
+    return unique
 
 # ----------------------------------------------------------------------
 # File listing helpers
@@ -124,7 +118,7 @@ def size_fmt(size):
     return f"{size:.1f}TB"
 
 # ----------------------------------------------------------------------
-# HTML Template – Cyberpunk with checkboxes
+# HTML Template (same as before)
 # ----------------------------------------------------------------------
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -232,15 +226,22 @@ HTML_TEMPLATE = """
         footer { margin-top: 30px; text-align: center; color: #4a6; font-size: 0.7rem; }
         ::-webkit-scrollbar { width: 6px; background: #0a0f0f; }
         ::-webkit-scrollbar-thumb { background: #0ff; border-radius: 3px; }
+        .refresh-btn {
+            background: #0a2a2a;
+            border: 1px solid #0ff;
+            color: #0ff;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>⎯ KTOx USB EXPLORER ⎯</h1>
     <div class="panel-row">
-        <!-- USB Source Panel -->
         <div class="panel">
-            <h2>⚡ USB DRIVE</h2>
+            <h2>⚡ USB DRIVE <button class="refresh-btn" onclick="refreshUsbList()">⟳</button></h2>
             <select id="usbSelect" onchange="loadUsbRoot()">
                 <option value="">-- Select USB --</option>
                 {% for drive in drives %}
@@ -256,8 +257,6 @@ HTML_TEMPLATE = """
                 <button class="copy-btn" onclick="copySelected()">▶ COPY SELECTED TO DESTINATION ◀</button>
             </div>
         </div>
-
-        <!-- Local Destination Panel -->
         <div class="panel">
             <h2>💾 KTOx DESTINATION</h2>
             <div class="path-bar">
@@ -277,6 +276,19 @@ HTML_TEMPLATE = """
     let currentLocalPath = "/root";
     let selectedPaths = new Set();
 
+    function refreshUsbList() {
+        fetch('/api/usb/drives')
+            .then(r => r.json())
+            .then(data => {
+                const select = document.getElementById('usbSelect');
+                select.innerHTML = '<option value="">-- Select USB --</option>';
+                for (let drive of data) {
+                    select.innerHTML += `<option value="${drive.mount}">${drive.mount}</option>`;
+                }
+                if (currentUsbPath) loadUsbRoot();
+            });
+    }
+
     function loadUsbRoot() {
         const usb = document.getElementById('usbSelect').value;
         if (!usb) {
@@ -284,10 +296,10 @@ HTML_TEMPLATE = """
             return;
         }
         currentUsbPath = usb;
-        refreshUsbList(usb);
+        refreshUsbListAtPath(usb);
     }
 
-    function refreshUsbList(path) {
+    function refreshUsbListAtPath(path) {
         fetch('/api/usb/list?path=' + encodeURIComponent(path))
             .then(r => r.json())
             .then(data => renderUsbFileList(data));
@@ -302,7 +314,7 @@ HTML_TEMPLATE = """
         } else {
             currentUsbPath = target;
         }
-        refreshUsbList(currentUsbPath);
+        refreshUsbListAtPath(currentUsbPath);
     }
 
     function renderUsbFileList(items) {
@@ -326,7 +338,6 @@ HTML_TEMPLATE = """
             `;
         }
         container.innerHTML = html;
-        // Restore checkbox states
         document.querySelectorAll('#usbFileList input[type="checkbox"]').forEach(cb => {
             if (selectedPaths.has(cb.value)) cb.checked = true;
         });
@@ -338,7 +349,7 @@ HTML_TEMPLATE = """
             .then(data => {
                 if (data.is_dir) {
                     currentUsbPath = path;
-                    refreshUsbList(path);
+                    refreshUsbListAtPath(path);
                 }
             });
     }
@@ -402,11 +413,9 @@ HTML_TEMPLATE = """
         .then(r => r.json())
         .then(data => {
             document.getElementById('status').innerHTML = `✅ ${data.message}`;
-            // Refresh local file list to show copied items
             browseLocal(currentLocalPath);
-            // Clear selections
             selectedPaths.clear();
-            refreshUsbList(currentUsbPath);
+            refreshUsbListAtPath(currentUsbPath);
         })
         .catch(err => {
             document.getElementById('status').innerHTML = `❌ Error: ${err}`;
@@ -422,8 +431,9 @@ HTML_TEMPLATE = """
         });
     }
 
-    // Initial load
     browseLocal('/root');
+    // Auto-refresh USB list every 5 seconds
+    setInterval(refreshUsbList, 5000);
 </script>
 </body>
 </html>
@@ -437,13 +447,16 @@ def index():
     drives = get_usb_drives()
     return render_template_string(HTML_TEMPLATE, drives=drives)
 
+@app.route('/api/usb/drives')
+def api_usb_drives():
+    return jsonify(get_usb_drives())
+
 @app.route('/api/usb/list')
 def api_usb_list():
     path = request.args.get('path', '')
     if not os.path.exists(path):
         return jsonify([])
-    items = list_directory(path)
-    return jsonify(items)
+    return jsonify(list_directory(path))
 
 @app.route('/api/usb/isdir')
 def api_usb_isdir():
@@ -456,8 +469,7 @@ def api_local_list():
     path = request.args.get('path', '/root')
     if not os.path.exists(path):
         path = '/root'
-    items = list_directory(path)
-    return jsonify(items)
+    return jsonify(list_directory(path))
 
 @app.route('/api/copy', methods=['POST'])
 def api_copy():
@@ -486,7 +498,7 @@ def api_copy():
     return jsonify({'message': msg})
 
 # ----------------------------------------------------------------------
-# LCD display
+# LCD display with refresh on KEY2
 # ----------------------------------------------------------------------
 def lcd_loop():
     if not HAS_HW:
@@ -510,7 +522,7 @@ def lcd_loop():
         d.text((4,y), f"IP: {ip}:{PORT}", font=font_sm, fill="#FFBBBB"); y+=12
         d.text((4,y), f"USB: {usb_status[:15]}", font=font_sm, fill="#FFBBBB"); y+=12
         d.text((4,y), "Status: RUNNING", font=font_sm, fill="#00FF00"); y+=12
-        d.text((4,y), "KEY3=Exit", font=font_sm, fill="#FF7777")
+        d.text((4,y), "K2=Refresh  K3=Exit", font=font_sm, fill="#FF7777")
         d.rectangle((0,H-12,W,H), fill="#220000")
         LCD.LCD_ShowImage(img, 0, 0)
         time.sleep(2)
@@ -519,10 +531,6 @@ def lcd_loop():
 # Main
 # ----------------------------------------------------------------------
 def main():
-    if not HAS_UDEV:
-        print("\n⚠️  pyudev not installed. USB detection may be limited.")
-        print("   Install: pip install pyudev\n")
-
     if HAS_HW:
         threading.Thread(target=lcd_loop, daemon=True).start()
         def run_flask():
@@ -530,17 +538,27 @@ def main():
         server_thread = threading.Thread(target=run_flask, daemon=True)
         server_thread.start()
         time.sleep(2)
+        # Button handling loop (for refresh)
+        held = {}
         while True:
-            for name, pin in PINS.items():
-                if GPIO.input(pin) == 0:
-                    time.sleep(0.05)
-                    if name == "KEY3":
-                        GPIO.cleanup()
-                        LCD.LCD_Clear()
-                        os._exit(0)
+            now = time.time()
+            pressed = {n: GPIO.input(p)==0 for n,p in PINS.items()}
+            for n, down in pressed.items():
+                if down:
+                    if n not in held: held[n] = now
+                else:
+                    held.pop(n, None)
+            if pressed.get("KEY3") and (now - held.get("KEY3", now)) <= 0.05:
+                GPIO.cleanup()
+                LCD.LCD_Clear()
+                os._exit(0)
+            if pressed.get("KEY2") and (now - held.get("KEY2", now)) <= 0.05:
+                # Refresh: just force LCD to re-read drives on next loop
+                time.sleep(0.3)
             time.sleep(0.1)
     else:
         app.run(host='0.0.0.0', port=PORT, debug=False)
 
 if __name__ == "__main__":
+    print("Starting USB Explorer with improved detection...")
     main()
