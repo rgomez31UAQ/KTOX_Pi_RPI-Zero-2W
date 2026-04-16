@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – KTOxFliX (Cyberpunk Edition)
+KTOx Payload – KTOxFliX 
 ============================================
 - Industrial cyberpunk UI: red/black, neon glows, monospace
 - Movie & TV show library with IMDb metadata (no API key)
