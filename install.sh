@@ -65,6 +65,20 @@ apt-get install -y --no-install-recommends \
 apt-get install -y brcmfmac-nexmon-dkms firmware-nexmon 2>/dev/null \
     || warn "Nexmon unavailable — use external USB adapter for WiFi attacks"
 
+# ── whoami-project (Going Dark payload) ───────────────────────────────────────
+step "Installing kali-whoami (Going Dark)..."
+apt-get install -y --no-install-recommends tor curl python3-scapy 2>/dev/null || warn "Some whoami deps failed"
+if ! command -v kali-whoami &>/dev/null; then
+    WHOAMI_TMP="$(mktemp -d)"
+    git clone --depth=1 https://github.com/owerdogan/whoami-project "$WHOAMI_TMP" 2>/dev/null \
+        && make -C "$WHOAMI_TMP" install 2>/dev/null \
+        && info "kali-whoami installed to /usr/bin/kali-whoami" \
+        || warn "kali-whoami install failed — Going Dark will still run without it"
+    rm -rf "$WHOAMI_TMP"
+else
+    info "kali-whoami already present"
+fi
+
 # ── Pip packages ──────────────────────────────────────────────────────────────
 step "Installing Python packages..."
 pip3 install --break-system-packages rich flask websockets pillow spidev RPi.GPIO requests 2>/dev/null \
