@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – USB File Explorer (Cyberpunk)
-=============================================
-- Auto‑detects USB drives (mount points)
-- Web UI to browse USB and copy files to any local directory
-- LCD shows server IP:port
-- KEY3 exits, server auto‑starts
-
-Access: http://<IP>:8889
+KTOx Payload – USB File Explorer
+=========================================================
+- Uses pyudev for reliable USB device detection
+- Finds or creates the mount point
+- Auto-mounts the drive if necessary
+- Full cyberpunk web UI to copy files to KTOx
 """
 
 import os
@@ -30,6 +28,14 @@ try:
 except ImportError:
     HAS_HW = False
     print("Hardware not found – LCD disabled")
+
+# Try to import pyudev - this is the key to reliable detection
+try:
+    import pyudev
+    HAS_UDEV = True
+except ImportError:
+    HAS_UDEV = False
+    print("pyudev not found. Install with: pip install pyudev")
 
 PINS = {"UP":6, "DOWN":19, "LEFT":5, "RIGHT":26, "OK":13, "KEY1":21, "KEY2":20, "KEY3":16}
 
@@ -54,29 +60,89 @@ PORT = 8889
 app = Flask(__name__)
 
 # ----------------------------------------------------------------------
-# USB detection
+# USB detection using pyudev
 # ----------------------------------------------------------------------
 def get_usb_mounts():
+    """Get list of currently mounted USB drives."""
     mounts = []
-    # Common mount points
-    base_dirs = ["/media/pi", "/media", "/mnt", "/run/media"]
-    for base in base_dirs:
-        if os.path.isdir(base):
-            for entry in os.listdir(base):
-                full = os.path.join(base, entry)
-                if os.path.ismount(full):
-                    mounts.append(full)
-    # Also check lsblk
-    try:
-        output = subprocess.check_output("lsblk -o MOUNTPOINT -l -n", shell=True, text=True)
-        for line in output.splitlines():
-            mp = line.strip()
-            if mp and mp not in mounts and os.path.ismount(mp):
-                if mp.startswith(("/media", "/mnt", "/run/media")):
-                    mounts.append(mp)
-    except:
-        pass
+    if not HAS_UDEV:
+        # Fallback to checking common mount points
+        base_dirs = ["/media/pi", "/media", "/mnt", "/run/media"]
+        for base in base_dirs:
+            if os.path.isdir(base):
+                for entry in os.listdir(base):
+                    full = os.path.join(base, entry)
+                    if os.path.ismount(full):
+                        mounts.append(full)
+        return mounts
+
+    context = pyudev.Context()
+    for device in context.list_devices(subsystem='block', DEVTYPE='partition'):
+        # Check if it's a USB device
+        if device.get('ID_BUS') == 'usb':
+            # Get the device node (e.g., /dev/sda1)
+            dev_node = device.device_node
+            if dev_node:
+                # Use findmnt to get the mount point
+                try:
+                    result = subprocess.run(
+                        ['findmnt', '-no', 'TARGET', dev_node],
+                        capture_output=True, text=True, check=False
+                    )
+                    mount_point = result.stdout.strip()
+                    if mount_point and os.path.exists(mount_point):
+                        mounts.append(mount_point)
+                except:
+                    pass
     return sorted(set(mounts))
+
+def mount_usb(dev_node):
+    """Attempt to mount a USB device to a standard location."""
+    mount_base = "/media/usb"
+    # Create a unique mount point based on device node
+    mount_point = os.path.join(mount_base, os.path.basename(dev_node))
+    os.makedirs(mount_point, exist_ok=True)
+    try:
+        subprocess.run(['sudo', 'mount', dev_node, mount_point], check=True, capture_output=True)
+        return mount_point
+    except subprocess.CalledProcessError:
+        return None
+
+def find_usb_drives():
+    """Return list of USB drives with device node and mount point."""
+    drives = []
+    if not HAS_UDEV:
+        # Fallback: return mount points from common locations
+        for mp in get_usb_mounts():
+            drives.append({'mount': mp, 'device': 'unknown'})
+        return drives
+
+    context = pyudev.Context()
+    for device in context.list_devices(subsystem='block', DEVTYPE='partition'):
+        if device.get('ID_BUS') == 'usb':
+            dev_node = device.device_node
+            if not dev_node:
+                continue
+
+            # Try to find existing mount point
+            mount_point = None
+            try:
+                result = subprocess.run(
+                    ['findmnt', '-no', 'TARGET', dev_node],
+                    capture_output=True, text=True, check=False
+                )
+                mount_point = result.stdout.strip()
+            except:
+                pass
+
+            # If not mounted, try to mount it
+            if not mount_point or not os.path.exists(mount_point):
+                mount_point = mount_usb(dev_node)
+
+            if mount_point and os.path.exists(mount_point):
+                drives.append({'mount': mount_point, 'device': dev_node})
+
+    return drives
 
 # ----------------------------------------------------------------------
 # File listing helpers
@@ -229,8 +295,8 @@ HTML_TEMPLATE = """
             <div class="usb-selector">
                 <select id="usbSelect" onchange="loadUsbRoot()">
                     <option value="">-- Select USB --</option>
-                    {% for mount in usb_mounts %}
-                    <option value="{{ mount }}">{{ mount }}</option>
+                    {% for drive in drives %}
+                    <option value="{{ drive.mount }}">{{ drive.mount }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -355,10 +421,13 @@ HTML_TEMPLATE = """
 </html>
 """
 
+# ----------------------------------------------------------------------
+# Flask routes
+# ----------------------------------------------------------------------
 @app.route('/')
 def index():
-    usb_mounts = get_usb_mounts()
-    return render_template_string(HTML_TEMPLATE, usb_mounts=usb_mounts)
+    drives = find_usb_drives()
+    return render_template_string(HTML_TEMPLATE, drives=drives)
 
 @app.route('/api/usb/list')
 def api_usb_list():
@@ -413,7 +482,6 @@ def lcd_loop():
     if not HAS_HW:
         return
     ip = socket.gethostbyname(socket.gethostname())
-    # Try to get real IP
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(('8.8.8.8', 1))
@@ -422,13 +490,15 @@ def lcd_loop():
     except:
         pass
     while True:
+        drives = find_usb_drives()
+        usb_status = drives[0]['mount'] if drives else "none"
         img = Image.new("RGB", (W, H), "#0A0000")
         d = ImageDraw.Draw(img)
         d.rectangle((0,0,W,17), fill="#8B0000")
         d.text((4,3), "USB EXPLORER", font=font_bold, fill="#FF3333")
         y = 20
         d.text((4,y), f"IP: {ip}:{PORT}", font=font_sm, fill="#FFBBBB"); y+=12
-        d.text((4,y), "USB: " + (get_usb_mounts()[0] if get_usb_mounts() else "none"), font=font_sm, fill="#FFBBBB"); y+=12
+        d.text((4,y), f"USB: {usb_status[:15]}", font=font_sm, fill="#FFBBBB"); y+=12
         d.text((4,y), "Status: RUNNING", font=font_sm, fill="#00FF00"); y+=12
         d.text((4,y), "KEY3=Exit", font=font_sm, fill="#FF7777")
         d.rectangle((0,H-12,W,H), fill="#220000")
@@ -439,16 +509,18 @@ def lcd_loop():
 # Main
 # ----------------------------------------------------------------------
 def main():
+    if not HAS_UDEV:
+        print("\n⚠️  pyudev is not installed.")
+        print("   Please install it with: pip install pyudev\n")
+        print("   The script will continue with fallback detection, but may be less reliable.\n")
+
     if HAS_HW:
-        # Start LCD thread
         threading.Thread(target=lcd_loop, daemon=True).start()
-        # Start Flask server
         def run_flask():
             app.run(host='0.0.0.0', port=PORT, debug=False, use_reloader=False)
         server_thread = threading.Thread(target=run_flask, daemon=True)
         server_thread.start()
         time.sleep(2)
-        # Button loop
         while True:
             for name, pin in PINS.items():
                 if GPIO.input(pin) == 0:
@@ -459,7 +531,6 @@ def main():
                         os._exit(0)
             time.sleep(0.1)
     else:
-        # No LCD – just run server
         app.run(host='0.0.0.0', port=PORT, debug=False)
 
 if __name__ == "__main__":
