@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – KTOxFliX (Cinemagoer Edition)
-==============================================
-- Movie & TV show library with metadata from IMDb (no API key)
-- Groups TV shows by folder
-- Posters download automatically and display correctly
+KTOx Payload – KTOxFliX (Cyberpunk Edition)
+============================================
+- Industrial cyberpunk UI: red/black, neon glows, monospace
+- Movie & TV show library with IMDb metadata (no API key)
+- Posters download on first access (cached)
 - Web UI on port 80, upload on port 8888
-- LCD shows IP, QR for uplink
 """
 
 import os, sys, time, socket, threading, json, requests, hashlib
@@ -35,12 +34,11 @@ os.makedirs(VIDEO_DIR, exist_ok=True)
 os.makedirs(POSTER_DIR, exist_ok=True)
 os.makedirs("/root/KTOx/static", exist_ok=True)
 
-# Flask apps
 app_lib = Flask("Library")
 app_up = Flask("Uplink")
 
 # ----------------------------------------------------------------------
-# Cinemagoer (no API key) – fetch metadata
+# IMDb metadata (no API key)
 # ----------------------------------------------------------------------
 try:
     from imdb import Cinemagoer
@@ -60,7 +58,6 @@ def save_cache(cache):
         json.dump(cache, f, indent=2)
 
 def get_metadata(title, media_type='movie'):
-    """Fetch metadata using Cinemagoer, caches results."""
     if not HAS_IMDB:
         return None
     cache = load_cache()
@@ -79,13 +76,12 @@ def get_metadata(title, media_type='movie'):
                         'year': movie.get('year'),
                         'plot': movie.get('plot')[0] if movie.get('plot') else 'No description',
                         'poster': movie.get('cover url'),
-                        'rating': movie.get('rating'),
                         'type': 'movie'
                     }
                     cache[key] = info
                     save_cache(cache)
                     return info
-        else:  # tv series
+        else:
             results = ia.search_movie(title)
             for res in results:
                 if res.get('kind') == 'tv series':
@@ -95,19 +91,16 @@ def get_metadata(title, media_type='movie'):
                         'year': series.get('year'),
                         'plot': series.get('plot')[0] if series.get('plot') else 'No description',
                         'poster': series.get('cover url'),
-                        'rating': series.get('rating'),
-                        'seasons': series.get('number of seasons'),
                         'type': 'series'
                     }
                     cache[key] = info
                     save_cache(cache)
                     return info
     except Exception as e:
-        print(f"Metadata fetch error for {title}: {e}")
+        print(f"Metadata error for {title}: {e}")
     return None
 
-def get_poster_path(title, media_type):
-    """Download poster locally if URL exists, return web‑accessible path."""
+def get_or_download_poster(title, media_type):
     info = get_metadata(title, media_type)
     if not info or not info.get('poster'):
         return None
@@ -115,184 +108,375 @@ def get_poster_path(title, media_type):
     safe = hashlib.md5(f"{media_type}:{title}".encode()).hexdigest()
     local_path = os.path.join(POSTER_DIR, f"{safe}.jpg")
     web_path = f"/static/posters/{safe}.jpg"
-    
     if not os.path.exists(local_path):
         try:
-            # IMDb requires a User-Agent to avoid 403
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            headers = {'User-Agent': 'Mozilla/5.0'}
             r = requests.get(poster_url, headers=headers, timeout=10)
             if r.status_code == 200:
                 with open(local_path, 'wb') as f:
                     f.write(r.content)
-                print(f"✓ Downloaded poster for: {title}")
+                print(f"✓ Downloaded poster for {title}")
             else:
-                print(f"✗ Failed to download poster for {title} (HTTP {r.status_code})")
                 return None
         except Exception as e:
-            print(f"✗ Error downloading poster for {title}: {e}")
+            print(f"✗ Failed to download poster for {title}: {e}")
             return None
     return web_path
 
 # ----------------------------------------------------------------------
-# Background metadata updater (so UI loads instantly)
-# ----------------------------------------------------------------------
-def background_metadata_updater():
-    """Scan library and fetch missing metadata in background."""
-    while True:
-        time.sleep(5)  # let the server start
-        print("Background metadata updater running...")
-        for entry in os.listdir(VIDEO_DIR):
-            full = os.path.join(VIDEO_DIR, entry)
-            if os.path.isdir(full):
-                # TV series folder
-                for f in os.listdir(full):
-                    if f.lower().endswith(VIDEO_EXTS):
-                        get_metadata(entry, 'series')
-                        break  # only need one episode to identify series
-            elif entry.lower().endswith(VIDEO_EXTS):
-                # Movie file
-                name = os.path.splitext(entry)[0].replace('_', ' ').replace('.', ' ')
-                get_metadata(name, 'movie')
-        time.sleep(3600)  # rescan every hour
-
-# ----------------------------------------------------------------------
-# Scan library – group TV shows by folder
+# Scan library
 # ----------------------------------------------------------------------
 def scan_library():
     items = []
     for entry in sorted(os.listdir(VIDEO_DIR)):
         full = os.path.join(VIDEO_DIR, entry)
         if os.path.isdir(full):
-            # TV series folder
-            episodes = []
-            for f in os.listdir(full):
-                if f.lower().endswith(VIDEO_EXTS):
-                    episodes.append(f)
+            episodes = [f for f in os.listdir(full) if f.lower().endswith(VIDEO_EXTS)]
             if episodes:
                 info = get_metadata(entry, 'series')
-                poster_url = get_poster_path(entry, 'series') if info else None
+                poster = get_or_download_poster(entry, 'series') if info else None
                 items.append({
                     'type': 'series',
                     'name': info['title'] if info else entry,
                     'plot': info['plot'] if info else 'No description.',
-                    'poster': poster_url,
+                    'poster': poster,
                     'path': entry,
                     'episodes': episodes
                 })
         elif entry.lower().endswith(VIDEO_EXTS):
-            # Movie
             name = os.path.splitext(entry)[0].replace('_', ' ').replace('.', ' ')
             info = get_metadata(name, 'movie')
-            poster_url = get_poster_path(name, 'movie') if info else None
+            poster = get_or_download_poster(name, 'movie') if info else None
             items.append({
                 'type': 'movie',
                 'name': info['title'] if info else name,
                 'plot': info['plot'] if info else 'No description.',
-                'poster': poster_url,
+                'poster': poster,
                 'year': info['year'] if info else '',
                 'path': entry
             })
     return items
 
 # ----------------------------------------------------------------------
-# Web UI templates (cyberpunk)
+# Cyberpunk Web UI Templates
 # ----------------------------------------------------------------------
 LIBRARY_HTML = """
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>KTOxFliX</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+    <title>KTOxFLIX // CYBERPUNK</title>
     <style>
-        body { background: #0a0a0a; color: #ccc; font-family: monospace; margin:0; }
-        nav { background: #000; padding: 15px; border-bottom: 2px solid #f00; display: flex; justify-content: space-between; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; padding: 20px; }
-        .card { background: #111; border: 1px solid #300; text-decoration: none; color: inherit; transition: 0.2s; }
-        .card:hover { transform: scale(1.02); border-color: #0ff; }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; }
-        .card div { padding: 8px; font-size: 12px; text-align: center; }
-        footer { text-align: center; padding: 20px; color: #555; }
-        .placeholder { background: #1a1a2a; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #666; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000000;
+            background-image: radial-gradient(rgba(255, 0, 0, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            color: #ff3333;
+            min-height: 100vh;
+        }
+        /* Glitch header */
+        .glitch {
+            position: relative;
+            text-shadow: 0.05em 0 0 rgba(255,0,0,0.75), -0.05em -0.025em 0 rgba(0,255,255,0.75);
+            animation: glitch 0.3s infinite;
+        }
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 rgba(255,0,0,0.75), -0.05em -0.025em 0 rgba(0,255,255,0.75); }
+            50% { text-shadow: -0.05em -0.025em 0 rgba(255,0,0,0.75), 0.025em 0.05em 0 rgba(0,255,255,0.75); }
+            100% { text-shadow: 0.025em 0.05em 0 rgba(255,0,0,0.75), 0.05em -0.05em 0 rgba(0,255,255,0.75); }
+        }
+        nav {
+            background: #0a0000;
+            border-bottom: 2px solid #ff0000;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            box-shadow: 0 0 15px rgba(255,0,0,0.3);
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            letter-spacing: 4px;
+        }
+        .logo span { color: #00ffff; }
+        .port-badge {
+            font-size: 0.8rem;
+            border: 1px solid #ff0000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(255,0,0,0.1);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 25px;
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #0a0505;
+            border: 1px solid #330000;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,0,0,0.2), transparent);
+            transition: left 0.5s;
+            z-index: 1;
+        }
+        .card:hover::before { left: 100%; }
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #ff0000;
+            box-shadow: 0 0 20px rgba(255,0,0,0.4);
+        }
+        .card img {
+            width: 100%;
+            aspect-ratio: 2/3;
+            object-fit: cover;
+            border-bottom: 1px solid #330000;
+        }
+        .card-title {
+            padding: 12px;
+            font-size: 0.8rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: #050000;
+        }
+        footer {
+            text-align: center;
+            padding: 25px;
+            border-top: 1px solid #330000;
+            margin-top: 30px;
+            font-size: 0.7rem;
+            color: #882222;
+        }
+        ::-webkit-scrollbar { width: 6px; background: #111; }
+        ::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 3px; }
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; padding: 15px; }
+            .logo { font-size: 1.2rem; }
+        }
     </style>
 </head>
 <body>
-    <nav><div style="color:#f00">KTOxFLIX</div><div>PORT 80</div></nav>
+    <nav>
+        <div class="logo glitch">KTOx<span>FLIX</span></div>
+        <div class="port-badge">PORT 80 // ACTIVE</div>
+    </nav>
     <div class="grid">
         {% for item in items %}
         <a href="/detail/{{ item.type }}/{{ item.path }}" class="card">
             {% if item.poster %}
-            <img src="{{ item.poster }}">
+            <img src="{{ item.poster }}" onerror="this.src='/static/placeholder.jpg'">
             {% else %}
-            <div class="placeholder" style="aspect-ratio:2/3; display:flex; align-items:center; justify-content:center;">🎬</div>
+            <img src="/static/placeholder.jpg">
             {% endif %}
-            <div>{{ item.name[:30] }}</div>
+            <div class="card-title">{{ item.name[:35] }}</div>
         </a>
         {% endfor %}
     </div>
-    <footer>KTOx – Metadata from IMDb</footer>
+    <footer>KTOxFLIX // INDUSTRIAL CYBERPUNK // METADATA BY IMDb</footer>
+    <script>
+        // Add a tiny glitch effect on hover to all cards (CSS handles most)
+        console.log("KTOxFLIX // ONLINE");
+    </script>
 </body>
 </html>
 """
 
-SERIES_DETAIL = """
+DETAIL_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ series.name }} - KTOxFliX</title>
+    <title>{{ title }} // KTOxFLIX</title>
     <style>
-        body { background: #0a0a0a; color: #ccc; font-family: monospace; margin:0; }
-        .container { max-width: 800px; margin: 30px auto; background: #111; padding: 20px; border: 1px solid #300; }
-        .poster { float: left; width: 150px; margin-right: 20px; border: 1px solid #0ff; }
-        h2 { color: #f00; }
-        .episode-list { clear: both; margin-top: 30px; }
-        .episode { background: #1a1a1a; margin: 5px 0; padding: 8px; border-left: 3px solid #0ff; }
-        .episode a { color: #0ff; text-decoration: none; }
+        body {
+            background: #000;
+            font-family: 'Share Tech Mono', monospace;
+            color: #ff4444;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: #0a0505;
+            border: 1px solid #ff0000;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 0 30px rgba(255,0,0,0.2);
+        }
+        .poster {
+            float: left;
+            width: 180px;
+            margin-right: 25px;
+            border: 2px solid #ff0000;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.8);
+        }
+        h2 {
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px #ff0000;
+            margin-top: 0;
+        }
+        .year {
+            color: #00ffff;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        .plot {
+            line-height: 1.5;
+            margin-bottom: 25px;
+            color: #dddddd;
+        }
+        .episode-list {
+            clear: both;
+            margin-top: 30px;
+            border-top: 1px solid #330000;
+            padding-top: 20px;
+        }
+        .episode {
+            background: #1a0505;
+            margin: 8px 0;
+            padding: 10px;
+            border-left: 4px solid #ff0000;
+            transition: 0.2s;
+        }
+        .episode:hover {
+            background: #2a0a0a;
+            transform: translateX(5px);
+        }
+        .episode a {
+            color: #ff8888;
+            text-decoration: none;
+            font-family: monospace;
+        }
+        video {
+            width: 100%;
+            margin-top: 25px;
+            border: 1px solid #ff0000;
+            border-radius: 8px;
+        }
+        .back {
+            display: inline-block;
+            margin-top: 30px;
+            color: #ff0000;
+            text-decoration: none;
+            border: 1px solid #ff0000;
+            padding: 8px 20px;
+            border-radius: 30px;
+            transition: 0.2s;
+        }
+        .back:hover {
+            background: #ff0000;
+            color: #000;
+            box-shadow: 0 0 15px #ff0000;
+        }
+        @media (max-width: 600px) {
+            .poster { float: none; display: block; margin: 0 auto 20px; width: 140px; }
+            h2 { text-align: center; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        {% if series.poster %}<img class="poster" src="{{ series.poster }}">{% endif %}
-        <h2>{{ series.name }}</h2>
-        <p>{{ series.plot }}</p>
+        {% if poster %}<img class="poster" src="{{ poster }}">{% endif %}
+        <h2>{{ title }}</h2>
+        {% if year %}<div class="year">// YEAR: {{ year }}</div>{% endif %}
+        <div class="plot">{{ plot }}</div>
+        {% if episodes %}
         <div class="episode-list">
-            <h3>Episodes</h3>
+            <h3 style="color:#ff0000;">▶ EPISODES</h3>
             {% for ep in episodes %}
-            <div class="episode"><a href="/stream/{{ series.path }}/{{ ep }}">▶ {{ ep }}</a></div>
+            <div class="episode"><a href="/stream/{{ path }}/{{ ep }}">⚡ {{ ep }}</a></div>
             {% endfor %}
         </div>
-        <p><a href="/" style="color:#f00">← Back to Library</a></p>
+        {% else %}
+        <video controls>
+            <source src="/stream/{{ path }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        {% endif %}
+        <div style="text-align: center;"><a href="/" class="back">⏎ RETURN TO LIBRARY</a></div>
     </div>
 </body>
 </html>
 """
 
-MOVIE_DETAIL = """
+UPLINK_HTML = """
 <!DOCTYPE html>
 <html>
-<head>
-    <title>{{ movie.name }} - KTOxFliX</title>
-    <style>
-        body { background: #0a0a0a; color: #ccc; font-family: monospace; margin:0; }
-        .container { max-width: 800px; margin: 30px auto; background: #111; padding: 20px; border: 1px solid #300; }
-        .poster { float: left; width: 150px; margin-right: 20px; border: 1px solid #0ff; }
-        h2 { color: #f00; }
-        video { width: 100%; margin-top: 30px; }
-    </style>
+<head><title>KTOx // DATA UPLINK</title>
+<style>
+    body {
+        background: #000;
+        color: #0f0;
+        font-family: 'Courier New', monospace;
+        padding: 30px;
+    }
+    .container {
+        max-width: 600px;
+        margin: auto;
+        border: 1px solid #0f0;
+        padding: 25px;
+        border-radius: 12px;
+        background: #050505;
+        box-shadow: 0 0 20px #0f0;
+    }
+    h1 { color: #0f0; text-shadow: 0 0 3px #0f0; }
+    input, button {
+        background: #111;
+        border: 1px solid #0f0;
+        color: #0f0;
+        padding: 10px;
+        width: 100%;
+        margin-bottom: 15px;
+        font-family: monospace;
+    }
+    button { cursor: pointer; width: auto; }
+    button:hover { background: #0f0; color: #000; }
+</style>
 </head>
 <body>
-    <div class="container">
-        {% if movie.poster %}<img class="poster" src="{{ movie.poster }}">{% endif %}
-        <h2>{{ movie.name }} ({{ movie.year }})</h2>
-        <p>{{ movie.plot }}</p>
-        <video controls>
-            <source src="/stream/{{ movie.path }}" type="video/mp4">
-        </video>
-        <p><a href="/" style="color:#f00">← Back to Library</a></p>
-    </div>
+<div class="container">
+    <h1>⤒ KTOx DATA UPLINK ⤓</h1>
+    <form method="POST" action="/upload" enctype="multipart/form-data">
+        <label>Subdirectory (optional):</label>
+        <input type="text" name="subdir">
+        <label>Files:</label>
+        <input type="file" name="files" multiple>
+        <label>Folder:</label>
+        <input type="file" name="files" multiple webkitdirectory>
+        <button type="submit">UPLOAD</button>
+    </form>
+</div>
 </body>
 </html>
 """
 
+# ----------------------------------------------------------------------
+# Flask routes
+# ----------------------------------------------------------------------
 @app_lib.route('/')
 def library():
     items = scan_library()
@@ -305,27 +489,28 @@ def series_detail(series_path):
     if os.path.isdir(full_path):
         episodes = sorted([f for f in os.listdir(full_path) if f.lower().endswith(VIDEO_EXTS)])
     info = get_metadata(series_path, 'series')
-    poster_url = get_poster_path(series_path, 'series') if info else None
-    series = {
-        'name': info['title'] if info else series_path,
-        'plot': info['plot'] if info else 'No description.',
-        'poster': poster_url
-    }
-    return render_template_string(SERIES_DETAIL, series=series, episodes=episodes)
+    poster = get_or_download_poster(series_path, 'series') if info else None
+    return render_template_string(DETAIL_HTML,
+        title=info['title'] if info else series_path,
+        plot=info['plot'] if info else 'No description.',
+        poster=poster,
+        episodes=episodes,
+        path=series_path
+    )
 
 @app_lib.route('/detail/movie/<path:movie_path>')
 def movie_detail(movie_path):
     name = os.path.splitext(movie_path)[0].replace('_', ' ').replace('.', ' ')
     info = get_metadata(name, 'movie')
-    poster_url = get_poster_path(name, 'movie') if info else None
-    movie = {
-        'name': info['title'] if info else name,
-        'plot': info['plot'] if info else 'No description.',
-        'poster': poster_url,
-        'year': info['year'] if info else '',
-        'path': movie_path
-    }
-    return render_template_string(MOVIE_DETAIL, movie=movie)
+    poster = get_or_download_poster(name, 'movie') if info else None
+    return render_template_string(DETAIL_HTML,
+        title=info['title'] if info else name,
+        year=info['year'] if info else '',
+        plot=info['plot'] if info else 'No description.',
+        poster=poster,
+        episodes=None,
+        path=movie_path
+    )
 
 @app_lib.route('/stream/<path:video_path>')
 def stream(video_path):
@@ -333,30 +518,7 @@ def stream(video_path):
 
 @app_lib.route('/static/<path:filename>')
 def static_files(filename):
-    """Serve static files from the absolute KTOx static folder."""
     return send_from_directory("/root/KTOx/static", filename)
-
-# ----------------------------------------------------------------------
-# Uplink (file/folder upload)
-# ----------------------------------------------------------------------
-UPLINK_HTML = """
-<!DOCTYPE html>
-<html>
-<head><title>KTOx Uplink</title><style>body{background:#000;color:#0f0;font-family:monospace;padding:20px}</style></head>
-<body>
-    <h1>KTOx DATA UPLINK</h1>
-    <form method="POST" action="/upload" enctype="multipart/form-data">
-        <label>Subdirectory (optional):</label><br>
-        <input type="text" name="subdir" style="width:100%"><br><br>
-        <label>Files:</label><br>
-        <input type="file" name="files" multiple><br><br>
-        <label>Folder:</label><br>
-        <input type="file" name="files" multiple webkitdirectory><br><br>
-        <button type="submit">UPLOAD</button>
-    </form>
-</body>
-</html>
-"""
 
 @app_up.route('/')
 def uplink():
@@ -375,7 +537,7 @@ def upload():
     return redirect(url_for('uplink'))
 
 # ----------------------------------------------------------------------
-# LCD & main
+# LCD & main (unchanged)
 # ----------------------------------------------------------------------
 def get_ip():
     try:
@@ -388,9 +550,6 @@ def get_ip():
         return '127.0.0.1'
 
 def main():
-    # Start background metadata updater
-    threading.Thread(target=background_metadata_updater, daemon=True).start()
-    
     if not HAS_HW:
         threading.Thread(target=lambda: app_lib.run(host='0.0.0.0', port=80), daemon=True).start()
         app_up.run(host='0.0.0.0', port=8888)
@@ -444,21 +603,13 @@ def main():
         GPIO.cleanup()
 
 if __name__ == "__main__":
-    # Check dependencies
+    # Create placeholder if missing
+    placeholder = "/root/KTOx/static/placeholder.jpg"
+    if not os.path.exists(placeholder):
+        img = Image.new('RGB', (200,300), color=(30,30,50))
+        img.save(placeholder)
     if not HAS_IMDB:
-        print("\n⚠️  Cinemagoer not installed. Installing...")
+        print("Installing cinemagoer...")
         os.system("pip install cinemagoer")
-        # Re-attempt import
-        try:
-            from imdb import Cinemagoer
-            HAS_IMDB = True
-            print("✓ Cinemagoer installed successfully.\n")
-        except:
-            print("✗ Failed to install Cinemagoer. Please run: pip install cinemagoer\n")
-    # Create placeholder image (if not exists)
-    placeholder_path = "/root/KTOx/static/placeholder.jpg"
-    if not os.path.exists(placeholder_path):
-        placeholder = Image.new('RGB', (200,300), color=(30,30,50))
-        placeholder.save(placeholder_path)
-    print("Starting KTOxFliX (Cinemagoer Edition)...")
+    print("Starting KTOxFliX (Cyberpunk UI)...")
     main()
