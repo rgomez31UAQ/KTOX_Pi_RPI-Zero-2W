@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – USB File Explorer (Cyberpunk Edition)
-=====================================================
-Web UI to browse USB drives and copy files/folders to any local directory.
-
-Controls (LCD):
-  KEY1   Start/stop server toggle
-  KEY3   Exit payload
+KTOx Payload – USB File Explorer (Cyberpunk)
+=============================================
+- Auto‑detects USB drives (mount points)
+- Web UI to browse USB and copy files to any local directory
+- LCD shows server IP:port
+- KEY3 exits, server auto‑starts
 
 Access: http://<IP>:8889
 """
@@ -18,7 +17,7 @@ import socket
 import threading
 import shutil
 import subprocess
-from flask import Flask, render_template_string, request, send_file, jsonify
+from flask import Flask, render_template_string, request, jsonify
 
 # ----------------------------------------------------------------------
 # Hardware & LCD
@@ -49,32 +48,30 @@ if HAS_HW:
         font_sm = font_bold = ImageFont.load_default()
 
 # ----------------------------------------------------------------------
-# Flask web app
+# Flask app
 # ----------------------------------------------------------------------
 PORT = 8889
 app = Flask(__name__)
 
 # ----------------------------------------------------------------------
-# Helper: detect USB mount points
+# USB detection
 # ----------------------------------------------------------------------
 def get_usb_mounts():
-    """Return list of mount points likely to be USB drives."""
     mounts = []
-    # Common mount locations
-    candidates = ["/media/pi", "/media", "/mnt", "/run/media"]
-    for base in candidates:
+    # Common mount points
+    base_dirs = ["/media/pi", "/media", "/mnt", "/run/media"]
+    for base in base_dirs:
         if os.path.isdir(base):
             for entry in os.listdir(base):
                 full = os.path.join(base, entry)
                 if os.path.ismount(full):
                     mounts.append(full)
-    # Also check lsblk for removable devices
+    # Also check lsblk
     try:
         output = subprocess.check_output("lsblk -o MOUNTPOINT -l -n", shell=True, text=True)
         for line in output.splitlines():
             mp = line.strip()
             if mp and mp not in mounts and os.path.ismount(mp):
-                # Heuristic: USB often under /media or /mnt
                 if mp.startswith(("/media", "/mnt", "/run/media")):
                     mounts.append(mp)
     except:
@@ -85,7 +82,6 @@ def get_usb_mounts():
 # File listing helpers
 # ----------------------------------------------------------------------
 def list_directory(path):
-    """Return list of {'name','type','size','path'} for contents of path."""
     items = []
     try:
         for entry in sorted(os.scandir(path), key=lambda e: (not e.is_dir(), e.name.lower())):
@@ -107,7 +103,7 @@ def size_fmt(size):
     return f"{size:.1f}TB"
 
 # ----------------------------------------------------------------------
-# Web UI – Cyberpunk style
+# HTML template (cyberpunk)
 # ----------------------------------------------------------------------
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -123,22 +119,15 @@ HTML_TEMPLATE = """
             color: #0ff;
             padding: 20px;
         }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1400px; margin: 0 auto; }
         h1 {
             font-size: 2rem;
-            text-shadow: 0 0 5px #0ff, 0 0 10px #0ff;
+            text-shadow: 0 0 5px #0ff;
             border-left: 4px solid #0ff;
             padding-left: 20px;
             margin-bottom: 20px;
         }
-        .panel-row {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
+        .panel-row { display: flex; gap: 20px; flex-wrap: wrap; }
         .panel {
             flex: 1;
             background: #0f1212;
@@ -148,14 +137,10 @@ HTML_TEMPLATE = """
             box-shadow: 0 0 10px rgba(0,255,255,0.2);
         }
         .panel h2 {
-            font-size: 1.3rem;
-            margin-bottom: 15px;
             color: #f0f;
             text-shadow: 0 0 3px #f0f;
             border-bottom: 1px solid #0ff;
             padding-bottom: 5px;
-        }
-        .usb-selector {
             margin-bottom: 15px;
         }
         .usb-selector select {
@@ -165,6 +150,7 @@ HTML_TEMPLATE = """
             padding: 8px;
             width: 100%;
             font-family: monospace;
+            margin-bottom: 15px;
         }
         .file-list {
             max-height: 400px;
@@ -179,45 +165,24 @@ HTML_TEMPLATE = """
             align-items: center;
             gap: 8px;
         }
-        .file-item:hover {
-            background: #1a2a2a;
-            text-shadow: 0 0 2px #0ff;
-        }
-        .file-item.selected {
-            background: #2a4a4a;
-            border-left: 3px solid #0ff;
-        }
-        .file-icon {
-            width: 20px;
-            text-align: center;
-        }
-        .file-name {
-            flex: 1;
-            word-break: break-word;
-        }
-        .file-size {
-            color: #8a8;
-            font-size: 0.75rem;
-        }
+        .file-item:hover { background: #1a2a2a; text-shadow: 0 0 2px #0ff; }
+        .file-item.selected { background: #2a4a4a; border-left: 3px solid #0ff; }
+        .file-icon { width: 20px; text-align: center; }
+        .file-name { flex: 1; word-break: break-word; }
+        .file-size { color: #8a8; font-size: 0.75rem; }
         .dir-icon { color: #0ff; }
         .file-icon-file { color: #f0f; }
-        .dest-browser {
-            margin-bottom: 15px;
-        }
         .dest-path {
             background: #111;
             padding: 8px;
             border: 1px solid #0ff;
-            font-family: monospace;
             display: flex;
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
+            margin-bottom: 15px;
         }
-        .dest-path span {
-            flex: 1;
-            word-break: break-all;
-        }
+        .dest-path span { flex: 1; word-break: break-all; }
         .dest-path button {
             background: #0a2a2a;
             border: 1px solid #0ff;
@@ -225,14 +190,7 @@ HTML_TEMPLATE = """
             padding: 4px 10px;
             cursor: pointer;
         }
-        .dest-path button:hover {
-            background: #0ff;
-            color: #000;
-        }
-        .action-bar {
-            margin-top: 20px;
-            text-align: center;
-        }
+        .dest-path button:hover { background: #0ff; color: #000; }
         .copy-btn {
             background: #0ff;
             color: #000;
@@ -245,12 +203,11 @@ HTML_TEMPLATE = """
             letter-spacing: 2px;
             transition: 0.2s;
             box-shadow: 0 0 10px #0ff;
+            display: block;
+            width: 100%;
+            margin-top: 20px;
         }
-        .copy-btn:hover {
-            background: #f0f;
-            box-shadow: 0 0 15px #f0f;
-            color: #000;
-        }
+        .copy-btn:hover { background: #f0f; box-shadow: 0 0 15px #f0f; }
         .status {
             margin-top: 15px;
             padding: 8px;
@@ -258,27 +215,15 @@ HTML_TEMPLATE = """
             border-left: 4px solid #0ff;
             font-family: monospace;
         }
-        footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #4a6;
-            font-size: 0.7rem;
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-            background: #0a0f0f;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #0ff;
-            border-radius: 3px;
-        }
+        footer { margin-top: 30px; text-align: center; color: #4a6; font-size: 0.7rem; }
+        ::-webkit-scrollbar { width: 6px; background: #0a0f0f; }
+        ::-webkit-scrollbar-thumb { background: #0ff; border-radius: 3px; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>⎯ KTOx USB EXPLORER ⎯</h1>
     <div class="panel-row">
-        <!-- Left: USB source -->
         <div class="panel">
             <h2>⚡ USB DRIVE</h2>
             <div class="usb-selector">
@@ -289,28 +234,19 @@ HTML_TEMPLATE = """
                     {% endfor %}
                 </select>
             </div>
-            <div id="usbFileList" class="file-list">
-                <div class="file-item">Select a USB drive</div>
-            </div>
+            <div id="usbFileList" class="file-list">Select a USB drive</div>
         </div>
-        <!-- Right: local destination -->
         <div class="panel">
             <h2>💾 LOCAL DESTINATION</h2>
-            <div class="dest-browser">
-                <div class="dest-path">
-                    <span id="destPath">/root</span>
-                    <button onclick="browseLocal('/root')">Home</button>
-                    <button onclick="browseLocal('..')">Up</button>
-                </div>
-                <div id="localFileList" class="file-list">
-                    Loading...
-                </div>
+            <div class="dest-path">
+                <span id="destPath">/root</span>
+                <button onclick="browseLocal('/root')">Home</button>
+                <button onclick="browseLocal('..')">Up</button>
             </div>
+            <div id="localFileList" class="file-list">Loading...</div>
         </div>
     </div>
-    <div class="action-bar">
-        <button class="copy-btn" onclick="copySelected()">▶ COPY SELECTED TO DESTINATION ◀</button>
-    </div>
+    <button class="copy-btn" onclick="copySelected()">▶ COPY SELECTED TO DESTINATION ◀</button>
     <div id="status" class="status">Ready.</div>
     <footer>KTOx Cyberdeck – USB File Transfer</footer>
 </div>
@@ -328,10 +264,8 @@ HTML_TEMPLATE = """
         }
         fetch('/api/usb/list?path=' + encodeURIComponent(usb))
             .then(r => r.json())
-            .then(data => {
-                renderFileList(data, 'usbFileList', true);
-                currentUsbPath = usb;
-            });
+            .then(data => renderFileList(data, 'usbFileList', true));
+        currentUsbPath = usb;
     }
 
     function browseLocal(path) {
@@ -364,7 +298,7 @@ HTML_TEMPLATE = """
             html += `
                 <div class="file-item" data-path="${item.path}" ${selectable}>
                     <div class="file-icon ${colorClass}">${icon}</div>
-                    <div class="file-name">${item.name}</div>
+                    <div class="file-name">${escapeHtml(item.name)}</div>
                     <div class="file-size">${sizeText}</div>
                 </div>
             `;
@@ -388,19 +322,16 @@ HTML_TEMPLATE = """
             document.getElementById('status').innerText = '❌ No files selected.';
             return;
         }
-        const dest = currentLocalPath;
         document.getElementById('status').innerHTML = '⏳ Copying... please wait.';
         fetch('/api/copy', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ sources: selectedUsbFiles, destination: dest })
+            body: JSON.stringify({ sources: selectedUsbFiles, destination: currentLocalPath })
         })
         .then(r => r.json())
         .then(data => {
             document.getElementById('status').innerHTML = `✅ ${data.message}`;
-            // Refresh local file list to show copied items
             browseLocal(currentLocalPath);
-            // Clear selection
             selectedUsbFiles = [];
             document.querySelectorAll('#usbFileList .file-item').forEach(el => el.classList.remove('selected'));
         })
@@ -409,7 +340,15 @@ HTML_TEMPLATE = """
         });
     }
 
-    // Initial load
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
     browseLocal('/root');
 </script>
 </body>
@@ -455,7 +394,6 @@ def api_copy():
     for src in sources:
         try:
             if os.path.isdir(src):
-                # Copy entire directory tree
                 dest_path = os.path.join(dest, os.path.basename(src))
                 shutil.copytree(src, dest_path, dirs_exist_ok=True)
             else:
@@ -469,13 +407,20 @@ def api_copy():
     return jsonify({'message': msg})
 
 # ----------------------------------------------------------------------
-# LCD display thread
+# LCD display
 # ----------------------------------------------------------------------
 def lcd_loop():
     if not HAS_HW:
         return
-    ip = get_local_ip()
-    server_running = True
+    ip = socket.gethostbyname(socket.gethostname())
+    # Try to get real IP
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 1))
+        ip = s.getsockname()[0]
+        s.close()
+    except:
+        pass
     while True:
         img = Image.new("RGB", (W, H), "#0A0000")
         d = ImageDraw.Draw(img)
@@ -484,58 +429,37 @@ def lcd_loop():
         y = 20
         d.text((4,y), f"IP: {ip}:{PORT}", font=font_sm, fill="#FFBBBB"); y+=12
         d.text((4,y), "USB: " + (get_usb_mounts()[0] if get_usb_mounts() else "none"), font=font_sm, fill="#FFBBBB"); y+=12
-        status = "RUNNING" if server_running else "STOPPED"
-        d.text((4,y), f"Status: {status}", font=font_sm, fill="#00FF00"); y+=12
-        d.text((4,y), "KEY1=Toggle  KEY3=Exit", font=font_sm, fill="#FF7777")
+        d.text((4,y), "Status: RUNNING", font=font_sm, fill="#00FF00"); y+=12
+        d.text((4,y), "KEY3=Exit", font=font_sm, fill="#FF7777")
         d.rectangle((0,H-12,W,H), fill="#220000")
         LCD.LCD_ShowImage(img, 0, 0)
-        time.sleep(1)
-
-def get_local_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(('8.8.8.8', 1))
-        ip = s.getsockname()[0]
-    except:
-        ip = '127.0.0.1'
-    finally:
-        s.close()
-    return ip
+        time.sleep(2)
 
 # ----------------------------------------------------------------------
-# Main – start Flask server and LCD
+# Main
 # ----------------------------------------------------------------------
 def main():
     if HAS_HW:
         # Start LCD thread
         threading.Thread(target=lcd_loop, daemon=True).start()
-        # Button handling in main thread
-        running = True
-        server_thread = None
-        flask_running = False
-        while running:
-            # Check buttons
+        # Start Flask server
+        def run_flask():
+            app.run(host='0.0.0.0', port=PORT, debug=False, use_reloader=False)
+        server_thread = threading.Thread(target=run_flask, daemon=True)
+        server_thread.start()
+        time.sleep(2)
+        # Button loop
+        while True:
             for name, pin in PINS.items():
                 if GPIO.input(pin) == 0:
                     time.sleep(0.05)
                     if name == "KEY3":
-                        running = False
-                    elif name == "KEY1":
-                        if flask_running:
-                            flask_running = False
-                            # Flask can't be easily stopped; we'll just ignore toggling off
-                            # Instead we can restart but not needed
-                        else:
-                            if server_thread is None or not server_thread.is_alive():
-                                server_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=PORT, debug=False, use_reloader=False), daemon=True)
-                                server_thread.start()
-                                flask_running = True
-                    break
+                        GPIO.cleanup()
+                        LCD.LCD_Clear()
+                        os._exit(0)
             time.sleep(0.1)
-        GPIO.cleanup()
-        LCD.LCD_Clear()
     else:
-        # No LCD, just run server
+        # No LCD – just run server
         app.run(host='0.0.0.0', port=PORT, debug=False)
 
 if __name__ == "__main__":
