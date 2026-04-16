@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – KTOxFliX
+KTOx Payload – KTOxFliX (Cinemagoer Edition)
 ==============================================
 - Movie & TV show library with metadata from IMDb (no API key)
-- Groups TV shows by folder (series)
+- Groups TV shows by folder
+- Posters download automatically and display correctly
 - Web UI on port 80, upload on port 8888
 - LCD shows IP, QR for uplink
 """
@@ -26,10 +27,12 @@ except ImportError:
 # ----------------------------------------------------------------------
 VIDEO_DIR = "/root/Videos"
 CACHE_FILE = "/root/Videos/metadata_cache.json"
+POSTER_DIR = "/root/KTOx/static/posters"
 VIDEO_EXTS = ('.mp4', '.mkv', '.avi', '.mov', '.webm')
 PINS = {"UP":6,"DOWN":19,"LEFT":5,"RIGHT":26,"OK":13,"KEY1":21,"KEY2":20,"KEY3":16}
 
 os.makedirs(VIDEO_DIR, exist_ok=True)
+os.makedirs(POSTER_DIR, exist_ok=True)
 os.makedirs("/root/KTOx/static", exist_ok=True)
 
 # Flask apps
@@ -104,24 +107,53 @@ def get_metadata(title, media_type='movie'):
     return None
 
 def get_poster_path(title, media_type):
-    """Download poster locally if URL exists."""
+    """Download poster locally if URL exists, return web‑accessible path."""
     info = get_metadata(title, media_type)
     if not info or not info.get('poster'):
         return None
     poster_url = info['poster']
-    # Create safe filename
     safe = hashlib.md5(f"{media_type}:{title}".encode()).hexdigest()
-    local_path = f"/root/KTOx/static/posters/{safe}.jpg"
-    os.makedirs("/root/KTOx/static/posters", exist_ok=True)
+    local_path = os.path.join(POSTER_DIR, f"{safe}.jpg")
+    web_path = f"/static/posters/{safe}.jpg"
+    
     if not os.path.exists(local_path):
         try:
-            r = requests.get(poster_url, timeout=10)
+            # IMDb requires a User-Agent to avoid 403
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            r = requests.get(poster_url, headers=headers, timeout=10)
             if r.status_code == 200:
                 with open(local_path, 'wb') as f:
                     f.write(r.content)
-        except:
-            pass
-    return local_path if os.path.exists(local_path) else None
+                print(f"✓ Downloaded poster for: {title}")
+            else:
+                print(f"✗ Failed to download poster for {title} (HTTP {r.status_code})")
+                return None
+        except Exception as e:
+            print(f"✗ Error downloading poster for {title}: {e}")
+            return None
+    return web_path
+
+# ----------------------------------------------------------------------
+# Background metadata updater (so UI loads instantly)
+# ----------------------------------------------------------------------
+def background_metadata_updater():
+    """Scan library and fetch missing metadata in background."""
+    while True:
+        time.sleep(5)  # let the server start
+        print("Background metadata updater running...")
+        for entry in os.listdir(VIDEO_DIR):
+            full = os.path.join(VIDEO_DIR, entry)
+            if os.path.isdir(full):
+                # TV series folder
+                for f in os.listdir(full):
+                    if f.lower().endswith(VIDEO_EXTS):
+                        get_metadata(entry, 'series')
+                        break  # only need one episode to identify series
+            elif entry.lower().endswith(VIDEO_EXTS):
+                # Movie file
+                name = os.path.splitext(entry)[0].replace('_', ' ').replace('.', ' ')
+                get_metadata(name, 'movie')
+        time.sleep(3600)  # rescan every hour
 
 # ----------------------------------------------------------------------
 # Scan library – group TV shows by folder
@@ -138,12 +170,12 @@ def scan_library():
                     episodes.append(f)
             if episodes:
                 info = get_metadata(entry, 'series')
-                poster_path = get_poster_path(entry, 'series') if info else None
+                poster_url = get_poster_path(entry, 'series') if info else None
                 items.append({
                     'type': 'series',
                     'name': info['title'] if info else entry,
                     'plot': info['plot'] if info else 'No description.',
-                    'poster': f"/static/posters/{hashlib.md5(f'series:{entry}'.encode()).hexdigest()}.jpg" if poster_path else None,
+                    'poster': poster_url,
                     'path': entry,
                     'episodes': episodes
                 })
@@ -151,12 +183,12 @@ def scan_library():
             # Movie
             name = os.path.splitext(entry)[0].replace('_', ' ').replace('.', ' ')
             info = get_metadata(name, 'movie')
-            poster_path = get_poster_path(name, 'movie') if info else None
+            poster_url = get_poster_path(name, 'movie') if info else None
             items.append({
                 'type': 'movie',
                 'name': info['title'] if info else name,
                 'plot': info['plot'] if info else 'No description.',
-                'poster': f"/static/posters/{hashlib.md5(f'movie:{name}'.encode()).hexdigest()}.jpg" if poster_path else None,
+                'poster': poster_url,
                 'year': info['year'] if info else '',
                 'path': entry
             })
@@ -273,11 +305,11 @@ def series_detail(series_path):
     if os.path.isdir(full_path):
         episodes = sorted([f for f in os.listdir(full_path) if f.lower().endswith(VIDEO_EXTS)])
     info = get_metadata(series_path, 'series')
-    poster_path = get_poster_path(series_path, 'series') if info else None
+    poster_url = get_poster_path(series_path, 'series') if info else None
     series = {
         'name': info['title'] if info else series_path,
         'plot': info['plot'] if info else 'No description.',
-        'poster': f"/static/posters/{hashlib.md5(f'series:{series_path}'.encode()).hexdigest()}.jpg" if poster_path else None
+        'poster': poster_url
     }
     return render_template_string(SERIES_DETAIL, series=series, episodes=episodes)
 
@@ -285,11 +317,11 @@ def series_detail(series_path):
 def movie_detail(movie_path):
     name = os.path.splitext(movie_path)[0].replace('_', ' ').replace('.', ' ')
     info = get_metadata(name, 'movie')
-    poster_path = get_poster_path(name, 'movie') if info else None
+    poster_url = get_poster_path(name, 'movie') if info else None
     movie = {
         'name': info['title'] if info else name,
         'plot': info['plot'] if info else 'No description.',
-        'poster': f"/static/posters/{hashlib.md5(f'movie:{name}'.encode()).hexdigest()}.jpg" if poster_path else None,
+        'poster': poster_url,
         'year': info['year'] if info else '',
         'path': movie_path
     }
@@ -301,6 +333,7 @@ def stream(video_path):
 
 @app_lib.route('/static/<path:filename>')
 def static_files(filename):
+    """Serve static files from the absolute KTOx static folder."""
     return send_from_directory("/root/KTOx/static", filename)
 
 # ----------------------------------------------------------------------
@@ -355,6 +388,9 @@ def get_ip():
         return '127.0.0.1'
 
 def main():
+    # Start background metadata updater
+    threading.Thread(target=background_metadata_updater, daemon=True).start()
+    
     if not HAS_HW:
         threading.Thread(target=lambda: app_lib.run(host='0.0.0.0', port=80), daemon=True).start()
         app_up.run(host='0.0.0.0', port=8888)
@@ -419,8 +455,10 @@ if __name__ == "__main__":
             print("✓ Cinemagoer installed successfully.\n")
         except:
             print("✗ Failed to install Cinemagoer. Please run: pip install cinemagoer\n")
-    # Create placeholder image
-    placeholder = Image.new('RGB', (200,300), color=(30,30,50))
-    placeholder.save("/root/KTOx/static/placeholder.jpg")
+    # Create placeholder image (if not exists)
+    placeholder_path = "/root/KTOx/static/placeholder.jpg"
+    if not os.path.exists(placeholder_path):
+        placeholder = Image.new('RGB', (200,300), color=(30,30,50))
+        placeholder.save(placeholder_path)
     print("Starting KTOxFliX (Cinemagoer Edition)...")
     main()
