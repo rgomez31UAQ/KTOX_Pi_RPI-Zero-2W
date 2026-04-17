@@ -7,6 +7,7 @@ KTOx Payload – KTOxFliX (Final, Non‑Blocking)
 - Uplink on port 8888 (hidden from LCD)
 - LCD: IP, system stats, QR for library (KEY1)
 - Background scanner – no freezes
+- LCD initialises immediately, even without network
 """
 
 import os, sys, time, socket, threading, json, hashlib, re, requests
@@ -249,7 +250,6 @@ cache_lock = threading.Lock()
 
 def background_scanner():
     """Update library cache every 10 minutes (or 5 min for first run)."""
-    # Initial scan after a short delay to let the web server start
     time.sleep(5)
     while True:
         try:
@@ -921,7 +921,7 @@ def series_detail(series_path):
     seasons = scan_series_structure(full_path)  # fast, no network
     if not seasons:
         return redirect('/')
-    meta = get_metadata_for_item(series_path, full_path, 'series')  # may use cache
+    meta = get_metadata_for_item(series_path, full_path, 'series')
     return render_template_string(SEASONS_LIST,
         series={'name': meta['title'], 'path': series_path},
         poster=meta['poster_url'],
@@ -1039,7 +1039,7 @@ def get_ram_usage():
         return 0.0
 
 # ----------------------------------------------------------------------
-# LCD and main thread (optimized)
+# LCD and main thread (optimised, non‑blocking IP)
 # ----------------------------------------------------------------------
 def get_ip():
     try:
@@ -1058,15 +1058,6 @@ def run_uplink():
     app_up.run(host='0.0.0.0', port=8888, debug=False, use_reloader=False)
 
 def main():
-    # Pre‑generate QR code (once)
-    ip = get_ip()
-    qr_factory = qrcode.QRCode(box_size=3, border=2)
-    qr_factory.add_data(f"http://{ip}")
-    qr_img = qr_factory.make_image(fill_color="white", back_color="black").get_image().resize((128,128))
-
-    # Start background scanner
-    threading.Thread(target=background_scanner, daemon=True).start()
-
     if not HAS_HW:
         threading.Thread(target=run_library, daemon=True).start()
         threading.Thread(target=run_uplink, daemon=True).start()
@@ -1081,11 +1072,30 @@ def main():
     lcd.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
     lcd.LCD_Clear()
 
-    show_qr = False
-    held = {}
-
+    # Start Flask servers first (they don't need the IP)
     threading.Thread(target=run_library, daemon=True).start()
     threading.Thread(target=run_uplink, daemon=True).start()
+
+    # Now try to get the IP (non‑blocking attempt, fallback to localhost)
+    ip = None
+    for _ in range(10):   # try for ~2 seconds
+        ip = get_ip()
+        if ip and ip != '127.0.0.1':
+            break
+        time.sleep(0.2)
+    if not ip or ip == '127.0.0.1':
+        ip = "0.0.0.0"   # fallback, QR may be wrong but LCD still works
+
+    # Pre‑generate QR code (only once)
+    qr_factory = qrcode.QRCode(box_size=3, border=2)
+    qr_factory.add_data(f"http://{ip}")
+    qr_img = qr_factory.make_image(fill_color="white", back_color="black").get_image().resize((128,128))
+
+    # Start background scanner (doesn't need network either)
+    threading.Thread(target=background_scanner, daemon=True).start()
+
+    show_qr = False
+    held = {}
 
     try:
         while True:
