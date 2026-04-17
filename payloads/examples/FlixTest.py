@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – KTOxFliX (Library Only + System Stats)
-======================================================
+KTOx Payload – KTOxFliX (Stable)
+==================================
 - Movies, TV Series with season folders
-- Settings: OMDb API key, online metadata, local posters
-- LCD shows IP, port, CPU temp, CPU usage, RAM usage
+- Settings: OMDb API key, online metadata
+- LCD shows IP, port, CPU temp, CPU load, RAM
 - KEY1: QR code for library (port 80)
 - KEY3: Exit
 """
 
-import os, sys, time, socket, threading, json, hashlib, re, requests, psutil
+import os, sys, time, socket, threading, json, hashlib, re, requests
 from flask import Flask, render_template_string, send_from_directory, request, redirect, url_for, jsonify
 from werkzeug.utils import secure_filename
 
@@ -63,7 +63,7 @@ def save_settings(settings):
 settings = load_settings()
 
 # ----------------------------------------------------------------------
-# Metadata helpers
+# Metadata helpers (unchanged)
 # ----------------------------------------------------------------------
 def clean_title(filename):
     name = os.path.splitext(filename)[0]
@@ -241,7 +241,7 @@ def scan_library():
     return movies, series
 
 # ----------------------------------------------------------------------
-# Web UI Templates
+# Web UI Templates (simplified – same as before)
 # ----------------------------------------------------------------------
 LIBRARY_HTML = """
 <!DOCTYPE html>
@@ -909,22 +909,42 @@ def api_clear_cache():
     return jsonify({'message': 'Poster cache cleared.'})
 
 # ----------------------------------------------------------------------
-# System stats helpers
+# System stats helpers (no psutil)
 # ----------------------------------------------------------------------
 def get_cpu_temp():
     try:
         with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
-            temp = int(f.read().strip()) / 1000.0
-            return temp
+            return int(f.read().strip()) / 1000.0
     except:
         return 0.0
 
-def get_cpu_usage():
-    return psutil.cpu_percent(interval=0.5)
+def get_cpu_load():
+    try:
+        with open("/proc/stat", "r") as f:
+            line = f.readline().strip()
+        parts = line.split()
+        idle = int(parts[4])
+        total = sum(int(p) for p in parts[1:])
+        return 100.0 * (total - idle) / total
+    except:
+        return 0.0
 
 def get_ram_usage():
-    mem = psutil.virtual_memory()
-    return mem.percent
+    try:
+        with open("/proc/meminfo", "r") as f:
+            lines = f.readlines()
+        total = 0
+        avail = 0
+        for line in lines:
+            if line.startswith("MemTotal:"):
+                total = int(line.split()[1])
+            elif line.startswith("MemAvailable:"):
+                avail = int(line.split()[1])
+        if total > 0:
+            return 100.0 * (total - avail) / total
+        return 0.0
+    except:
+        return 0.0
 
 # ----------------------------------------------------------------------
 # LCD display with system stats
@@ -969,7 +989,7 @@ def lcd_loop():
             d.text((4,20), f"IP: {ip}:{LIB_PORT}", fill="#FFBBBB", font=font)
             temp = get_cpu_temp()
             temp_color = "#00FF00" if temp < 60 else "#FFFF00" if temp < 75 else "#FF0000"
-            d.text((4,32), f"CPU: {get_cpu_usage():.0f}%  {temp:.0f}C", fill=temp_color, font=font)
+            d.text((4,32), f"CPU: {get_cpu_load():.0f}%  {temp:.0f}C", fill=temp_color, font=font)
             d.text((4,44), f"RAM: {get_ram_usage():.0f}%", fill="#FFBBBB", font=font)
             d.text((4,56), "PORT 80: LIBRARY", fill="cyan", font=font)
             d.text((4,68), "K1:QR  K3:EXIT", fill="#FF7777", font=font)
@@ -1000,21 +1020,21 @@ def main():
         app.run(host='0.0.0.0', port=LIB_PORT, debug=False)
         return
 
-    # Start LCD thread
+    # Start LCD thread as daemon
     threading.Thread(target=lcd_loop, daemon=True).start()
-    # Start Flask server
+    # Run Flask (blocking)
     app.run(host='0.0.0.0', port=LIB_PORT, debug=False, use_reloader=False)
 
 if __name__ == "__main__":
     # Ensure dependencies
     try:
-        import psutil
-    except ImportError:
-        os.system("pip install psutil")
-    try:
         import requests
     except ImportError:
         os.system("pip install requests")
+    try:
+        import qrcode
+    except ImportError:
+        os.system("pip install qrcode pillow")
     placeholder = "/root/KTOx/static/placeholder.jpg"
     if not os.path.exists(placeholder):
         try:
@@ -1023,5 +1043,5 @@ if __name__ == "__main__":
             img.save(placeholder)
         except:
             pass
-    print("Starting KTOxFliX (Library Only + System Stats)...")
+    print("Starting KTOxFliX (Stable)...")
     main()
