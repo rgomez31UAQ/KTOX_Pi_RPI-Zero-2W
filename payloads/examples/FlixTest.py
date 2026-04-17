@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – KTOxFliX (with Settings)
-========================================
-- Tabs: Movies, TV Series, Settings
-- Placeholder posters + optional online metadata (TVMaze for series, OMDb for movies)
-- User-configurable API key for OMDb
-- Settings saved to /root/KTOx/loot/KTOxFliX/settings.json
+KTOx Payload – KTOxFliX (with Seasons Support)
+===============================================
+- Movies, TV Series with season folders
+- Settings: OMDb API key, online metadata, local posters
 - Uplink on port 8888, LCD support
 """
 
@@ -73,7 +71,6 @@ def clean_title(filename):
     return name.capitalize()
 
 def get_tvmaze_series(title):
-    """Fetch series metadata from TVMaze (no API key)."""
     if not settings.get("use_online_metadata"):
         return None
     try:
@@ -95,7 +92,6 @@ def get_tvmaze_series(title):
     return None
 
 def get_omdb_movie(title):
-    """Fetch movie metadata from OMDb (requires API key)."""
     api_key = settings.get("omdb_api_key", "")
     if not api_key or not settings.get("use_online_metadata"):
         return None
@@ -116,7 +112,6 @@ def get_omdb_movie(title):
     return None
 
 def download_poster(url, identifier):
-    """Download poster from URL to POSTER_DIR, return web path."""
     safe = hashlib.md5(identifier.encode()).hexdigest()
     dest = os.path.join(POSTER_DIR, f"{safe}.jpg")
     if not os.path.exists(dest):
@@ -129,7 +124,6 @@ def download_poster(url, identifier):
     return f"/static/posters/{safe}.jpg"
 
 def get_or_create_placeholder(title, media_type):
-    """Fallback: generate a text placeholder image."""
     safe = hashlib.md5(f"{media_type}:{title}".encode()).hexdigest()
     local_path = os.path.join(POSTER_DIR, f"{safe}.jpg")
     web_path = f"/static/posters/{safe}.jpg"
@@ -145,10 +139,8 @@ def get_or_create_placeholder(title, media_type):
     return web_path
 
 def get_metadata_for_item(entry, full_path, media_type):
-    """Return metadata dict with title, plot, poster_url (web path)."""
     title = clean_title(entry)
     info = {'title': title, 'plot': 'No description', 'poster_url': None, 'year': ''}
-    # Local poster first
     if settings.get("use_local_posters"):
         for ext in ['.jpg', '.jpeg', '.png']:
             poster_file = os.path.join(full_path, 'poster' + ext)
@@ -164,7 +156,6 @@ def get_metadata_for_item(entry, full_path, media_type):
                         pass
                 info['poster_url'] = f"/static/posters/{safe}.jpg"
                 return info
-    # Online metadata
     if settings.get("use_online_metadata"):
         if media_type == 'series':
             tvmaze = get_tvmaze_series(title)
@@ -176,7 +167,7 @@ def get_metadata_for_item(entry, full_path, media_type):
                     if poster_url:
                         info['poster_url'] = poster_url
                         return info
-        else:  # movie
+        else:
             omdb = get_omdb_movie(title)
             if omdb:
                 info['title'] = omdb['title']
@@ -187,7 +178,6 @@ def get_metadata_for_item(entry, full_path, media_type):
                     if poster_url:
                         info['poster_url'] = poster_url
                         return info
-    # Fallback to placeholder
     info['poster_url'] = get_or_create_placeholder(title, media_type)
     return info
 
@@ -196,22 +186,53 @@ def clear_poster_cache():
         os.remove(os.path.join(POSTER_DIR, f))
 
 # ----------------------------------------------------------------------
-# Scan library
+# Scan library with season detection
 # ----------------------------------------------------------------------
+def scan_series_structure(path):
+    """Recursively scan a series folder, return list of seasons."""
+    seasons = []
+    # Check if there are subdirectories that might be seasons
+    items = os.listdir(path)
+    subdirs = [i for i in items if os.path.isdir(os.path.join(path, i))]
+    # If there are subdirs and they look like season names, treat as seasons
+    season_folders = [s for s in subdirs if re.search(r'(season|saison|stagione|temporada|第[0-9]+季|[0-9]+[ ]*季)', s, re.IGNORECASE) or s.lower().startswith('season')]
+    if season_folders:
+        # Use the detected season folders
+        for sf in sorted(season_folders):
+            sf_path = os.path.join(path, sf)
+            episodes = [f for f in os.listdir(sf_path) if f.lower().endswith(VIDEO_EXTS)]
+            if episodes:
+                seasons.append({
+                    'name': sf,
+                    'path': os.path.relpath(sf_path, VIDEO_DIR),
+                    'episodes': sorted(episodes)
+                })
+    else:
+        # No season folders: treat all videos as one season (maybe named "Season 1")
+        episodes = [f for f in items if f.lower().endswith(VIDEO_EXTS)]
+        if episodes:
+            seasons.append({
+                'name': "Season 1",
+                'path': os.path.relpath(path, VIDEO_DIR),
+                'episodes': sorted(episodes)
+            })
+    return seasons
+
 def scan_library():
     movies = []
     series = []
     for entry in sorted(os.listdir(VIDEO_DIR)):
         full = os.path.join(VIDEO_DIR, entry)
         if os.path.isdir(full):
-            episodes = [f for f in os.listdir(full) if f.lower().endswith(VIDEO_EXTS)]
-            if episodes:
+            seasons = scan_series_structure(full)
+            if seasons:
+                # Get series metadata
                 meta = get_metadata_for_item(entry, full, 'series')
                 series.append({
                     'name': meta['title'],
                     'poster': meta['poster_url'],
                     'path': entry,
-                    'episodes': episodes
+                    'seasons': seasons
                 })
         elif entry.lower().endswith(VIDEO_EXTS):
             meta = get_metadata_for_item(entry, full, 'movie')
@@ -224,7 +245,7 @@ def scan_library():
     return movies, series
 
 # ----------------------------------------------------------------------
-# Web UI Templates (tabs with Settings)
+# Web UI Templates (updated for seasons)
 # ----------------------------------------------------------------------
 LIBRARY_HTML = """
 <!DOCTYPE html>
@@ -490,11 +511,103 @@ LIBRARY_HTML = """
 </html>
 """
 
-SERIES_DETAIL = """
+SEASONS_LIST = """
 <!DOCTYPE html>
 <html>
 <head>
     <title>{{ series.name }} // KTOxFLIX</title>
+    <style>
+        body {
+            background: #000;
+            font-family: 'Share Tech Mono', monospace;
+            color: #ff4444;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: #0a0505;
+            border: 1px solid #ff0000;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 0 30px rgba(255,0,0,0.2);
+        }
+        .poster {
+            float: left;
+            width: 180px;
+            margin-right: 25px;
+            border: 2px solid #ff0000;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.8);
+        }
+        h2 {
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px #ff0000;
+            margin-top: 0;
+        }
+        .season-list {
+            clear: both;
+            margin-top: 30px;
+            border-top: 1px solid #330000;
+            padding-top: 20px;
+        }
+        .season {
+            background: #1a0505;
+            margin: 8px 0;
+            padding: 10px;
+            border-left: 4px solid #ff0000;
+            transition: 0.2s;
+        }
+        .season a {
+            color: #ff8888;
+            text-decoration: none;
+            font-family: monospace;
+            font-size: 1.2rem;
+        }
+        .back {
+            display: inline-block;
+            margin-top: 30px;
+            color: #ff0000;
+            text-decoration: none;
+            border: 1px solid #ff0000;
+            padding: 8px 20px;
+            border-radius: 30px;
+            transition: 0.2s;
+        }
+        .back:hover {
+            background: #ff0000;
+            color: #000;
+            box-shadow: 0 0 15px #ff0000;
+        }
+        @media (max-width: 600px) {
+            .poster { float: none; display: block; margin: 0 auto 20px; width: 140px; }
+            h2 { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if poster %}<img class="poster" src="{{ poster }}">{% endif %}
+        <h2>{{ series.name }}</h2>
+        <div class="season-list">
+            <h3 style="color:#ff0000;">▶ SEASONS</h3>
+            {% for season in seasons %}
+            <div class="season"><a href="/detail/season/{{ series.path }}/{{ season.path }}">⚡ {{ season.name }}</a></div>
+            {% endfor %}
+        </div>
+        <div style="text-align: center;"><a href="/" class="back">⏎ RETURN TO LIBRARY</a></div>
+    </div>
+</body>
+</html>
+"""
+
+EPISODE_LIST = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ season_name }} // KTOxFLIX</title>
     <style>
         body {
             background: #000;
@@ -539,10 +652,6 @@ SERIES_DETAIL = """
             border-left: 4px solid #ff0000;
             transition: 0.2s;
         }
-        .episode:hover {
-            background: #2a0a0a;
-            transform: translateX(5px);
-        }
         .episode a {
             color: #ff8888;
             text-decoration: none;
@@ -572,14 +681,14 @@ SERIES_DETAIL = """
 <body>
     <div class="container">
         {% if poster %}<img class="poster" src="{{ poster }}">{% endif %}
-        <h2>{{ series.name }}</h2>
+        <h2>{{ series_name }} - {{ season_name }}</h2>
         <div class="episode-list">
             <h3 style="color:#ff0000;">▶ EPISODES</h3>
             {% for ep in episodes %}
-            <div class="episode"><a href="/play/{{ series.path }}/{{ ep }}">⚡ {{ ep }}</a></div>
+            <div class="episode"><a href="/play/{{ season_path }}/{{ ep }}">⚡ {{ ep }}</a></div>
             {% endfor %}
         </div>
-        <div style="text-align: center;"><a href="/" class="back">⏎ RETURN TO LIBRARY</a></div>
+        <div style="text-align: center;"><a href="/detail/series/{{ series_path }}" class="back">⏎ BACK TO SEASONS</a></div>
     </div>
 </body>
 </html>
@@ -712,10 +821,10 @@ PLAYER_HTML = """
     <div class="container">
         <h2>▶ {{ episode }}</h2>
         <video controls autoplay>
-            <source src="/stream/{{ series_path }}/{{ episode }}" type="video/mp4">
+            <source src="/stream/{{ season_path }}/{{ episode }}" type="video/mp4">
         </video>
         <br>
-        <a href="/detail/series/{{ series_path }}" class="back">⏎ BACK TO EPISODES</a>
+        <a href="/detail/season/{{ series_path }}/{{ season_path }}" class="back">⏎ BACK TO EPISODES</a>
     </div>
 </body>
 </html>
@@ -785,6 +894,66 @@ def library():
         use_local=settings.get("use_local_posters", True)
     )
 
+@app_lib.route('/detail/series/<path:series_path>')
+def series_detail(series_path):
+    full_path = os.path.join(VIDEO_DIR, series_path)
+    # Get seasons data
+    seasons = scan_series_structure(full_path)
+    if not seasons:
+        return redirect('/')
+    meta = get_metadata_for_item(series_path, full_path, 'series')
+    return render_template_string(SEASONS_LIST,
+        series={'name': meta['title'], 'path': series_path},
+        poster=meta['poster_url'],
+        seasons=seasons
+    )
+
+@app_lib.route('/detail/season/<path:series_path>/<path:season_path>')
+def season_detail(series_path, season_path):
+    full_season = os.path.join(VIDEO_DIR, series_path, season_path)
+    if not os.path.isdir(full_season):
+        return redirect('/')
+    episodes = [f for f in os.listdir(full_season) if f.lower().endswith(VIDEO_EXTS)]
+    episodes = sorted(episodes)
+    # Get series metadata for poster
+    series_full = os.path.join(VIDEO_DIR, series_path)
+    meta = get_metadata_for_item(series_path, series_full, 'series')
+    return render_template_string(EPISODE_LIST,
+        series_name=meta['title'],
+        season_name=os.path.basename(season_path),
+        poster=meta['poster_url'],
+        episodes=episodes,
+        series_path=series_path,
+        season_path=season_path
+    )
+
+@app_lib.route('/detail/movie/<path:movie_path>')
+def movie_detail(movie_path):
+    full_path = os.path.join(VIDEO_DIR, movie_path)
+    meta = get_metadata_for_item(movie_path, full_path, 'movie')
+    return render_template_string(MOVIE_DETAIL,
+        movie={'name': meta['title'], 'path': movie_path, 'poster': meta['poster_url']}
+    )
+
+@app_lib.route('/play/<path:season_path>/<path:episode>')
+def play_episode(season_path, episode):
+    # Determine series path from season path (two levels up from VIDEO_DIR)
+    # season_path is relative to VIDEO_DIR, e.g., "Series Name/Season 1"
+    series_path = os.path.dirname(season_path)
+    return render_template_string(PLAYER_HTML,
+        episode=episode,
+        series_path=series_path,
+        season_path=season_path
+    )
+
+@app_lib.route('/stream/<path:video_path>')
+def stream(video_path):
+    return send_from_directory(VIDEO_DIR, video_path)
+
+@app_lib.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory("/root/KTOx/static", filename)
+
 @app_lib.route('/api/settings', methods=['POST'])
 def api_settings():
     data = request.json
@@ -798,42 +967,6 @@ def api_settings():
 def api_clear_cache():
     clear_poster_cache()
     return jsonify({'message': 'Poster cache cleared.'})
-
-@app_lib.route('/detail/series/<path:series_path>')
-def series_detail(series_path):
-    full_path = os.path.join(VIDEO_DIR, series_path)
-    episodes = []
-    if os.path.isdir(full_path):
-        episodes = sorted([f for f in os.listdir(full_path) if f.lower().endswith(VIDEO_EXTS)])
-    meta = get_metadata_for_item(series_path, full_path, 'series')
-    return render_template_string(SERIES_DETAIL,
-        series={'name': meta['title'], 'path': series_path},
-        poster=meta['poster_url'],
-        episodes=episodes
-    )
-
-@app_lib.route('/detail/movie/<path:movie_path>')
-def movie_detail(movie_path):
-    full_path = os.path.join(VIDEO_DIR, movie_path)
-    meta = get_metadata_for_item(movie_path, full_path, 'movie')
-    return render_template_string(MOVIE_DETAIL,
-        movie={'name': meta['title'], 'path': movie_path, 'poster': meta['poster_url']}
-    )
-
-@app_lib.route('/play/<path:series_path>/<path:episode>')
-def play_episode(series_path, episode):
-    return render_template_string(PLAYER_HTML,
-        episode=episode,
-        series_path=series_path
-    )
-
-@app_lib.route('/stream/<path:video_path>')
-def stream(video_path):
-    return send_from_directory(VIDEO_DIR, video_path)
-
-@app_lib.route('/static/<path:filename>')
-def static_files(filename):
-    return send_from_directory("/root/KTOx/static", filename)
 
 @app_up.route('/')
 def uplink():
@@ -852,7 +985,7 @@ def upload():
     return redirect(url_for('uplink'))
 
 # ----------------------------------------------------------------------
-# LCD and main thread
+# LCD and main thread (unchanged)
 # ----------------------------------------------------------------------
 def get_ip():
     try:
@@ -937,12 +1070,10 @@ def main():
         GPIO.cleanup()
 
 if __name__ == "__main__":
-    # Ensure dependencies
     try:
         import requests
     except ImportError:
         os.system("pip install requests")
-    # Create placeholder image if missing
     placeholder = "/root/KTOx/static/placeholder.jpg"
     if not os.path.exists(placeholder):
         try:
@@ -951,5 +1082,5 @@ if __name__ == "__main__":
             img.save(placeholder)
         except:
             pass
-    print("Starting KTOxFliX with Settings...")
+    print("Starting KTOxFliX with Season Support...")
     main()
