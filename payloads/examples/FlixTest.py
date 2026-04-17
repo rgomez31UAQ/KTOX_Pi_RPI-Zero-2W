@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – KTOxFliX (Tabs)
-===============================
-- Separate tabs for Movies and TV Series
-- No footer text
-- Works without external metadata
+KTOx Payload – KTOxFliX (with Settings)
+========================================
+- Tabs: Movies, TV Series, Settings
+- Placeholder posters + optional online metadata (TVMaze for series, OMDb for movies)
+- User-configurable API key for OMDb
+- Settings saved to /root/KTOx/loot/KTOxFliX/settings.json
+- Uplink on port 8888, LCD support
 """
 
-import os, sys, time, socket, threading, json, hashlib, re
-from flask import Flask, render_template_string, send_from_directory, request, redirect, url_for
+import os, sys, time, socket, threading, json, hashlib, re, requests
+from flask import Flask, render_template_string, send_from_directory, request, redirect, url_for, jsonify
 from werkzeug.utils import secure_filename
 
 # Hardware
@@ -25,18 +27,43 @@ except ImportError:
 # ----------------------------------------------------------------------
 VIDEO_DIR = "/root/Videos"
 POSTER_DIR = "/root/KTOx/static/posters"
+SETTINGS_DIR = "/root/KTOx/loot/KTOxFliX"
+SETTINGS_FILE = os.path.join(SETTINGS_DIR, "settings.json")
 VIDEO_EXTS = ('.mp4', '.mkv', '.avi', '.mov', '.webm')
 PINS = {"UP":6,"DOWN":19,"LEFT":5,"RIGHT":26,"OK":13,"KEY1":21,"KEY2":20,"KEY3":16}
 
 os.makedirs(VIDEO_DIR, exist_ok=True)
 os.makedirs(POSTER_DIR, exist_ok=True)
 os.makedirs("/root/KTOx/static", exist_ok=True)
+os.makedirs(SETTINGS_DIR, exist_ok=True)
 
 app_lib = Flask("Library")
 app_up = Flask("Uplink")
 
 # ----------------------------------------------------------------------
-# Simple title from filename
+# Settings management
+# ----------------------------------------------------------------------
+DEFAULT_SETTINGS = {
+    "omdb_api_key": "",
+    "use_online_metadata": True,
+    "use_local_posters": True
+}
+
+def load_settings():
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, 'r') as f:
+            saved = json.load(f)
+            return {**DEFAULT_SETTINGS, **saved}
+    return DEFAULT_SETTINGS.copy()
+
+def save_settings(settings):
+    with open(SETTINGS_FILE, 'w') as f:
+        json.dump(settings, f, indent=2)
+
+settings = load_settings()
+
+# ----------------------------------------------------------------------
+# Metadata helpers
 # ----------------------------------------------------------------------
 def clean_title(filename):
     name = os.path.splitext(filename)[0]
@@ -45,7 +72,64 @@ def clean_title(filename):
     name = ' '.join(name.split())
     return name.capitalize()
 
+def get_tvmaze_series(title):
+    """Fetch series metadata from TVMaze (no API key)."""
+    if not settings.get("use_online_metadata"):
+        return None
+    try:
+        url = f"https://api.tvmaze.com/singlesearch/shows?q={title}"
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            summary = data.get('summary', '')
+            if summary:
+                summary = re.sub(r'<[^>]+>', '', summary)
+            return {
+                'title': data.get('name'),
+                'plot': summary[:200] or 'No description',
+                'poster': data.get('image', {}).get('original'),
+                'year': data.get('premiered', '')[:4]
+            }
+    except:
+        pass
+    return None
+
+def get_omdb_movie(title):
+    """Fetch movie metadata from OMDb (requires API key)."""
+    api_key = settings.get("omdb_api_key", "")
+    if not api_key or not settings.get("use_online_metadata"):
+        return None
+    try:
+        url = f"http://www.omdbapi.com/?t={title}&apikey={api_key}"
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get('Response') == 'True':
+                return {
+                    'title': data.get('Title'),
+                    'plot': data.get('Plot', 'No description'),
+                    'poster': data.get('Poster'),
+                    'year': data.get('Year', '')
+                }
+    except:
+        pass
+    return None
+
+def download_poster(url, identifier):
+    """Download poster from URL to POSTER_DIR, return web path."""
+    safe = hashlib.md5(identifier.encode()).hexdigest()
+    dest = os.path.join(POSTER_DIR, f"{safe}.jpg")
+    if not os.path.exists(dest):
+        try:
+            img_data = requests.get(url, timeout=10).content
+            with open(dest, 'wb') as f:
+                f.write(img_data)
+        except:
+            return None
+    return f"/static/posters/{safe}.jpg"
+
 def get_or_create_placeholder(title, media_type):
+    """Fallback: generate a text placeholder image."""
     safe = hashlib.md5(f"{media_type}:{title}".encode()).hexdigest()
     local_path = os.path.join(POSTER_DIR, f"{safe}.jpg")
     web_path = f"/static/posters/{safe}.jpg"
@@ -60,6 +144,57 @@ def get_or_create_placeholder(title, media_type):
             open(local_path, 'w').close()
     return web_path
 
+def get_metadata_for_item(entry, full_path, media_type):
+    """Return metadata dict with title, plot, poster_url (web path)."""
+    title = clean_title(entry)
+    info = {'title': title, 'plot': 'No description', 'poster_url': None, 'year': ''}
+    # Local poster first
+    if settings.get("use_local_posters"):
+        for ext in ['.jpg', '.jpeg', '.png']:
+            poster_file = os.path.join(full_path, 'poster' + ext)
+            if os.path.exists(poster_file):
+                safe = hashlib.md5(f"{media_type}:{entry}".encode()).hexdigest()
+                dest = os.path.join(POSTER_DIR, f"{safe}.jpg")
+                if not os.path.exists(dest):
+                    try:
+                        from PIL import Image as PILImage
+                        img = PILImage.open(poster_file)
+                        img.save(dest)
+                    except:
+                        pass
+                info['poster_url'] = f"/static/posters/{safe}.jpg"
+                return info
+    # Online metadata
+    if settings.get("use_online_metadata"):
+        if media_type == 'series':
+            tvmaze = get_tvmaze_series(title)
+            if tvmaze:
+                info['title'] = tvmaze['title']
+                info['plot'] = tvmaze['plot']
+                if tvmaze['poster']:
+                    poster_url = download_poster(tvmaze['poster'], f"series:{entry}")
+                    if poster_url:
+                        info['poster_url'] = poster_url
+                        return info
+        else:  # movie
+            omdb = get_omdb_movie(title)
+            if omdb:
+                info['title'] = omdb['title']
+                info['plot'] = omdb['plot']
+                info['year'] = omdb['year']
+                if omdb['poster'] and omdb['poster'] != 'N/A':
+                    poster_url = download_poster(omdb['poster'], f"movie:{title}")
+                    if poster_url:
+                        info['poster_url'] = poster_url
+                        return info
+    # Fallback to placeholder
+    info['poster_url'] = get_or_create_placeholder(title, media_type)
+    return info
+
+def clear_poster_cache():
+    for f in os.listdir(POSTER_DIR):
+        os.remove(os.path.join(POSTER_DIR, f))
+
 # ----------------------------------------------------------------------
 # Scan library
 # ----------------------------------------------------------------------
@@ -71,26 +206,25 @@ def scan_library():
         if os.path.isdir(full):
             episodes = [f for f in os.listdir(full) if f.lower().endswith(VIDEO_EXTS)]
             if episodes:
-                title = clean_title(entry)
-                poster = get_or_create_placeholder(title, 'series')
+                meta = get_metadata_for_item(entry, full, 'series')
                 series.append({
-                    'name': title,
-                    'poster': poster,
+                    'name': meta['title'],
+                    'poster': meta['poster_url'],
                     'path': entry,
                     'episodes': episodes
                 })
         elif entry.lower().endswith(VIDEO_EXTS):
-            title = clean_title(entry)
-            poster = get_or_create_placeholder(title, 'movie')
+            meta = get_metadata_for_item(entry, full, 'movie')
             movies.append({
-                'name': title,
-                'poster': poster,
-                'path': entry
+                'name': meta['title'],
+                'poster': meta['poster_url'],
+                'path': entry,
+                'year': meta['year']
             })
     return movies, series
 
 # ----------------------------------------------------------------------
-# Web UI Templates (with tabs)
+# Web UI Templates (tabs with Settings)
 # ----------------------------------------------------------------------
 LIBRARY_HTML = """
 <!DOCTYPE html>
@@ -218,6 +352,44 @@ LIBRARY_HTML = """
         .section.active {
             display: block;
         }
+        .settings-panel {
+            background: #0a0505;
+            border: 1px solid #ff0000;
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 500px;
+            margin: 30px auto;
+        }
+        .settings-panel label {
+            display: block;
+            margin: 15px 0 5px;
+            color: #ff8888;
+        }
+        .settings-panel input, .settings-panel select {
+            background: #1a1a1a;
+            border: 1px solid #ff0000;
+            color: #0f0;
+            padding: 8px;
+            width: 100%;
+            font-family: monospace;
+        }
+        .settings-panel button {
+            background: #2a0a0a;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+            padding: 8px 16px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-family: monospace;
+        }
+        .settings-panel button:hover {
+            background: #ff0000;
+            color: #000;
+        }
+        .status-msg {
+            margin-top: 10px;
+            color: #ffcc00;
+        }
         ::-webkit-scrollbar { width: 6px; background: #111; }
         ::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 3px; }
         @media (max-width: 600px) {
@@ -236,6 +408,7 @@ LIBRARY_HTML = """
     <div class="tabs">
         <div class="tab active" data-tab="movies">🎬 MOVIES</div>
         <div class="tab" data-tab="series">📺 TV SERIES</div>
+        <div class="tab" data-tab="settings">⚙️ SETTINGS</div>
     </div>
     <div id="movies-section" class="section active">
         <div class="grid">
@@ -263,6 +436,20 @@ LIBRARY_HTML = """
             {% endif %}
         </div>
     </div>
+    <div id="settings-section" class="section">
+        <div class="settings-panel">
+            <h2 style="color:#ff0000;">⚙️ SETTINGS</h2>
+            <label>OMDb API Key (for movies)</label>
+            <input type="text" id="omdb_key" placeholder="Enter your OMDb API key" value="{{ omdb_key }}">
+            <label>Use Online Metadata (TVMaze + OMDb)</label>
+            <input type="checkbox" id="online_meta" {% if use_online %}checked{% endif %}>
+            <label>Use Local Posters (poster.jpg in folder)</label>
+            <input type="checkbox" id="local_posters" {% if use_local %}checked{% endif %}>
+            <button id="saveSettings">💾 SAVE SETTINGS</button>
+            <button id="clearCache">🗑️ CLEAR POSTER CACHE</button>
+            <div id="settingsStatus" class="status-msg"></div>
+        </div>
+    </div>
     <script>
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -271,6 +458,31 @@ LIBRARY_HTML = """
                 const target = tab.getAttribute('data-tab');
                 document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
                 document.getElementById(target + '-section').classList.add('active');
+            });
+        });
+
+        document.getElementById('saveSettings').addEventListener('click', () => {
+            const omdb_key = document.getElementById('omdb_key').value;
+            const online_meta = document.getElementById('online_meta').checked;
+            const local_posters = document.getElementById('local_posters').checked;
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ omdb_api_key: omdb_key, use_online_metadata: online_meta, use_local_posters: local_posters })
+            })
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('settingsStatus').innerText = data.message;
+                setTimeout(() => location.reload(), 1500);
+            })
+            .catch(err => document.getElementById('settingsStatus').innerText = 'Error saving');
+        });
+
+        document.getElementById('clearCache').addEventListener('click', () => {
+            fetch('/api/clear_cache', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('settingsStatus').innerText = data.message;
             });
         });
     </script>
@@ -566,7 +778,26 @@ UPLINK_HTML = """
 @app_lib.route('/')
 def library():
     movies, series = scan_library()
-    return render_template_string(LIBRARY_HTML, movies=movies, series=series)
+    return render_template_string(LIBRARY_HTML,
+        movies=movies, series=series,
+        omdb_key=settings.get("omdb_api_key", ""),
+        use_online=settings.get("use_online_metadata", True),
+        use_local=settings.get("use_local_posters", True)
+    )
+
+@app_lib.route('/api/settings', methods=['POST'])
+def api_settings():
+    data = request.json
+    settings['omdb_api_key'] = data.get('omdb_api_key', '')
+    settings['use_online_metadata'] = data.get('use_online_metadata', True)
+    settings['use_local_posters'] = data.get('use_local_posters', True)
+    save_settings(settings)
+    return jsonify({'message': 'Settings saved. Reloading...'})
+
+@app_lib.route('/api/clear_cache', methods=['POST'])
+def api_clear_cache():
+    clear_poster_cache()
+    return jsonify({'message': 'Poster cache cleared.'})
 
 @app_lib.route('/detail/series/<path:series_path>')
 def series_detail(series_path):
@@ -574,20 +805,19 @@ def series_detail(series_path):
     episodes = []
     if os.path.isdir(full_path):
         episodes = sorted([f for f in os.listdir(full_path) if f.lower().endswith(VIDEO_EXTS)])
-    title = clean_title(series_path)
-    poster = get_or_create_placeholder(title, 'series')
+    meta = get_metadata_for_item(series_path, full_path, 'series')
     return render_template_string(SERIES_DETAIL,
-        series={'name': title, 'path': series_path},
-        poster=poster,
+        series={'name': meta['title'], 'path': series_path},
+        poster=meta['poster_url'],
         episodes=episodes
     )
 
 @app_lib.route('/detail/movie/<path:movie_path>')
 def movie_detail(movie_path):
-    name = clean_title(movie_path)
-    poster = get_or_create_placeholder(name, 'movie')
+    full_path = os.path.join(VIDEO_DIR, movie_path)
+    meta = get_metadata_for_item(movie_path, full_path, 'movie')
     return render_template_string(MOVIE_DETAIL,
-        movie={'name': name, 'path': movie_path, 'poster': poster}
+        movie={'name': meta['title'], 'path': movie_path, 'poster': meta['poster_url']}
     )
 
 @app_lib.route('/play/<path:series_path>/<path:episode>')
@@ -707,6 +937,11 @@ def main():
         GPIO.cleanup()
 
 if __name__ == "__main__":
+    # Ensure dependencies
+    try:
+        import requests
+    except ImportError:
+        os.system("pip install requests")
     # Create placeholder image if missing
     placeholder = "/root/KTOx/static/placeholder.jpg"
     if not os.path.exists(placeholder):
@@ -716,5 +951,5 @@ if __name__ == "__main__":
             img.save(placeholder)
         except:
             pass
-    print("Starting KTOxFliX with separate tabs...")
+    print("Starting KTOxFliX with Settings...")
     main()
