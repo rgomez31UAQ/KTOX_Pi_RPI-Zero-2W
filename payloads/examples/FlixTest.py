@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – KTOxFliX (with Seasons Support)
-===============================================
+KTOx Payload – KTOxFliX (Seasons Working)
+==========================================
 - Movies, TV Series with season folders
 - Settings: OMDb API key, online metadata, local posters
 - Uplink on port 8888, LCD support
@@ -191,13 +191,11 @@ def clear_poster_cache():
 def scan_series_structure(path):
     """Recursively scan a series folder, return list of seasons."""
     seasons = []
-    # Check if there are subdirectories that might be seasons
     items = os.listdir(path)
     subdirs = [i for i in items if os.path.isdir(os.path.join(path, i))]
-    # If there are subdirs and they look like season names, treat as seasons
+    # If there are subdirs that look like season names, treat as seasons
     season_folders = [s for s in subdirs if re.search(r'(season|saison|stagione|temporada|第[0-9]+季|[0-9]+[ ]*季)', s, re.IGNORECASE) or s.lower().startswith('season')]
     if season_folders:
-        # Use the detected season folders
         for sf in sorted(season_folders):
             sf_path = os.path.join(path, sf)
             episodes = [f for f in os.listdir(sf_path) if f.lower().endswith(VIDEO_EXTS)]
@@ -208,7 +206,7 @@ def scan_series_structure(path):
                     'episodes': sorted(episodes)
                 })
     else:
-        # No season folders: treat all videos as one season (maybe named "Season 1")
+        # No season folders: treat all videos as one season (named "Season 1")
         episodes = [f for f in items if f.lower().endswith(VIDEO_EXTS)]
         if episodes:
             seasons.append({
@@ -226,7 +224,6 @@ def scan_library():
         if os.path.isdir(full):
             seasons = scan_series_structure(full)
             if seasons:
-                # Get series metadata
                 meta = get_metadata_for_item(entry, full, 'series')
                 series.append({
                     'name': meta['title'],
@@ -245,7 +242,7 @@ def scan_library():
     return movies, series
 
 # ----------------------------------------------------------------------
-# Web UI Templates (updated for seasons)
+# Web UI Templates (tabs, seasons, episodes)
 # ----------------------------------------------------------------------
 LIBRARY_HTML = """
 <!DOCTYPE html>
@@ -594,7 +591,7 @@ SEASONS_LIST = """
         <div class="season-list">
             <h3 style="color:#ff0000;">▶ SEASONS</h3>
             {% for season in seasons %}
-            <div class="season"><a href="/detail/season/{{ series.path }}/{{ season.path }}">⚡ {{ season.name }}</a></div>
+            <div class="season"><a href="/detail/season/{{ season.path }}">⚡ {{ season.name }}</a></div>
             {% endfor %}
         </div>
         <div style="text-align: center;"><a href="/" class="back">⏎ RETURN TO LIBRARY</a></div>
@@ -824,7 +821,7 @@ PLAYER_HTML = """
             <source src="/stream/{{ season_path }}/{{ episode }}" type="video/mp4">
         </video>
         <br>
-        <a href="/detail/season/{{ series_path }}/{{ season_path }}" class="back">⏎ BACK TO EPISODES</a>
+        <a href="/detail/season/{{ season_path }}" class="back">⏎ BACK TO EPISODES</a>
     </div>
 </body>
 </html>
@@ -897,7 +894,6 @@ def library():
 @app_lib.route('/detail/series/<path:series_path>')
 def series_detail(series_path):
     full_path = os.path.join(VIDEO_DIR, series_path)
-    # Get seasons data
     seasons = scan_series_structure(full_path)
     if not seasons:
         return redirect('/')
@@ -908,14 +904,15 @@ def series_detail(series_path):
         seasons=seasons
     )
 
-@app_lib.route('/detail/season/<path:series_path>/<path:season_path>')
-def season_detail(series_path, season_path):
-    full_season = os.path.join(VIDEO_DIR, series_path, season_path)
+@app_lib.route('/detail/season/<path:season_path>')
+def season_detail(season_path):
+    # season_path is relative to VIDEO_DIR, e.g., "Series Name/Season 1"
+    full_season = os.path.join(VIDEO_DIR, season_path)
     if not os.path.isdir(full_season):
         return redirect('/')
     episodes = [f for f in os.listdir(full_season) if f.lower().endswith(VIDEO_EXTS)]
     episodes = sorted(episodes)
-    # Get series metadata for poster
+    series_path = os.path.dirname(season_path)
     series_full = os.path.join(VIDEO_DIR, series_path)
     meta = get_metadata_for_item(series_path, series_full, 'series')
     return render_template_string(EPISODE_LIST,
@@ -937,17 +934,15 @@ def movie_detail(movie_path):
 
 @app_lib.route('/play/<path:season_path>/<path:episode>')
 def play_episode(season_path, episode):
-    # Determine series path from season path (two levels up from VIDEO_DIR)
-    # season_path is relative to VIDEO_DIR, e.g., "Series Name/Season 1"
-    series_path = os.path.dirname(season_path)
+    # season_path is relative to VIDEO_DIR (e.g., "Series Name/Season 1")
     return render_template_string(PLAYER_HTML,
         episode=episode,
-        series_path=series_path,
         season_path=season_path
     )
 
 @app_lib.route('/stream/<path:video_path>')
 def stream(video_path):
+    # video_path can be a direct file or inside a season folder (e.g., "Series Name/Season 1/Episode.mp4")
     return send_from_directory(VIDEO_DIR, video_path)
 
 @app_lib.route('/static/<path:filename>')
