@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – KTOxFliX (Seasons Working)
-==========================================
+KTOx Payload – KTOxFliX (Seasons Working + System Stats)
+==========================================================
 - Movies, TV Series with season folders
 - Settings: OMDb API key, online metadata, local posters
-- Uplink on port 8888, LCD support
+- Uplink on port 8888 (hidden from LCD, but runs)
+- LCD shows IP, system stats, library port, QR for library
 """
 
 import os, sys, time, socket, threading, json, hashlib, re, requests
@@ -39,7 +40,7 @@ app_lib = Flask("Library")
 app_up = Flask("Uplink")
 
 # ----------------------------------------------------------------------
-# Settings management
+# Settings management (unchanged)
 # ----------------------------------------------------------------------
 DEFAULT_SETTINGS = {
     "omdb_api_key": "",
@@ -61,7 +62,7 @@ def save_settings(settings):
 settings = load_settings()
 
 # ----------------------------------------------------------------------
-# Metadata helpers
+# Metadata helpers (unchanged)
 # ----------------------------------------------------------------------
 def clean_title(filename):
     name = os.path.splitext(filename)[0]
@@ -186,7 +187,7 @@ def clear_poster_cache():
         os.remove(os.path.join(POSTER_DIR, f))
 
 # ----------------------------------------------------------------------
-# Scan library with season detection
+# Scan library with season detection (unchanged)
 # ----------------------------------------------------------------------
 def scan_series_structure(path):
     """Recursively scan a series folder, return list of seasons."""
@@ -242,7 +243,7 @@ def scan_library():
     return movies, series
 
 # ----------------------------------------------------------------------
-# Web UI Templates (tabs, seasons, episodes)
+# Web UI Templates (unchanged, same as your working version)
 # ----------------------------------------------------------------------
 LIBRARY_HTML = """
 <!DOCTYPE html>
@@ -879,7 +880,7 @@ UPLINK_HTML = """
 """
 
 # ----------------------------------------------------------------------
-# Flask routes
+# Flask routes (unchanged)
 # ----------------------------------------------------------------------
 @app_lib.route('/')
 def library():
@@ -906,7 +907,6 @@ def series_detail(series_path):
 
 @app_lib.route('/detail/season/<path:season_path>')
 def season_detail(season_path):
-    # season_path is relative to VIDEO_DIR, e.g., "Series Name/Season 1"
     full_season = os.path.join(VIDEO_DIR, season_path)
     if not os.path.isdir(full_season):
         return redirect('/')
@@ -934,7 +934,6 @@ def movie_detail(movie_path):
 
 @app_lib.route('/play/<path:season_path>/<path:episode>')
 def play_episode(season_path, episode):
-    # season_path is relative to VIDEO_DIR (e.g., "Series Name/Season 1")
     return render_template_string(PLAYER_HTML,
         episode=episode,
         season_path=season_path
@@ -942,7 +941,6 @@ def play_episode(season_path, episode):
 
 @app_lib.route('/stream/<path:video_path>')
 def stream(video_path):
-    # video_path can be a direct file or inside a season folder (e.g., "Series Name/Season 1/Episode.mp4")
     return send_from_directory(VIDEO_DIR, video_path)
 
 @app_lib.route('/static/<path:filename>')
@@ -980,7 +978,45 @@ def upload():
     return redirect(url_for('uplink'))
 
 # ----------------------------------------------------------------------
-# LCD and main thread (unchanged)
+# System stats helpers
+# ----------------------------------------------------------------------
+def get_cpu_temp():
+    try:
+        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+            return int(f.read().strip()) / 1000.0
+    except:
+        return 0.0
+
+def get_cpu_load():
+    try:
+        with open("/proc/stat", "r") as f:
+            line = f.readline().strip()
+        parts = line.split()
+        idle = int(parts[4])
+        total = sum(int(p) for p in parts[1:])
+        return 100.0 * (total - idle) / total
+    except:
+        return 0.0
+
+def get_ram_usage():
+    try:
+        with open("/proc/meminfo", "r") as f:
+            lines = f.readlines()
+        total = 0
+        avail = 0
+        for line in lines:
+            if line.startswith("MemTotal:"):
+                total = int(line.split()[1])
+            elif line.startswith("MemAvailable:"):
+                avail = int(line.split()[1])
+        if total > 0:
+            return 100.0 * (total - avail) / total
+        return 0.0
+    except:
+        return 0.0
+
+# ----------------------------------------------------------------------
+# LCD and main thread (modified: removed uplink port, changed QR to library)
 # ----------------------------------------------------------------------
 def get_ip():
     try:
@@ -1023,13 +1059,13 @@ def main():
     try:
         while True:
             now = time.time()
-            img = Image.new("RGB", (128,128), "black")
+            img = Image.new("RGB", (128,128), "#0A0000")
             draw = ImageDraw.Draw(img)
 
             if show_qr:
                 import qrcode
                 qr = qrcode.QRCode(box_size=3, border=2)
-                qr.add_data(f"http://{ip}:8888")
+                qr.add_data(f"http://{ip}")   # port 80 is default
                 qr_img = qr.make_image().convert("RGB").resize((128,128))
                 img.paste(qr_img, (0,0))
             else:
@@ -1039,10 +1075,15 @@ def main():
                 except:
                     font = ImageFont.load_default()
                 draw.text((4,3), "KTOxFLIX", fill="black", font=font)
-                draw.text((4,30), f"IP: {ip}", fill="white", font=font)
-                draw.text((4,50), "PORT 80: LIB", fill="cyan", font=font)
-                draw.text((4,65), "PORT 8888: UP", fill="red", font=font)
-                draw.text((4,113), "K1:QR  K3:EXIT", fill=(150,150,150), font=font)
+                draw.text((4,20), f"IP: {ip}", fill="white", font=font)
+                draw.text((4,32), "PORT 80: LIBRARY", fill="cyan", font=font)
+                # System stats
+                temp = get_cpu_temp()
+                temp_color = "#00FF00" if temp < 60 else "#FFFF00" if temp < 75 else "#FF0000"
+                draw.text((4,44), f"CPU: {get_cpu_load():.0f}%  {temp:.0f}C", fill=temp_color, font=font)
+                draw.text((4,56), f"RAM: {get_ram_usage():.0f}%", fill="#FFBBBB", font=font)
+                draw.text((4,68), "K1:QR  K3:EXIT", fill="#FF7777", font=font)
+                draw.rectangle((0,112),(128,128), fill="#220000")
 
             lcd.LCD_ShowImage(img, 0, 0)
 
@@ -1059,7 +1100,7 @@ def main():
                 show_qr = not show_qr
                 time.sleep(0.3)
 
-            time.sleep(0.1)
+            time.sleep(0.5)
     finally:
         lcd.LCD_Clear()
         GPIO.cleanup()
@@ -1077,5 +1118,5 @@ if __name__ == "__main__":
             img.save(placeholder)
         except:
             pass
-    print("Starting KTOxFliX with Season Support...")
+    print("Starting KTOxFliX with System Stats (uplink hidden, QR for library)...")
     main()
