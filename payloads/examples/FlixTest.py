@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – KTOxFliX (Seasons Working + System Stats)
-==========================================================
+KTOx Payload – KTOxFliX (Final, Non‑Blocking)
+==============================================
 - Movies, TV Series with season folders
 - Settings: OMDb API key, online metadata, local posters
-- Uplink on port 8888 (runs but not shown on LCD)
-- LCD shows IP, system stats, library port, QR for library (KEY1)
+- Uplink on port 8888 (hidden from LCD)
+- LCD: IP, system stats, QR for library (KEY1)
+- Background scanner – no freezes
 """
 
 import os, sys, time, socket, threading, json, hashlib, re, requests
-import qrcode  # moved to top for reliability
+import qrcode
 from flask import Flask, render_template_string, send_from_directory, request, redirect, url_for, jsonify
 from werkzeug.utils import secure_filename
 
@@ -63,7 +64,7 @@ def save_settings(settings):
 settings = load_settings()
 
 # ----------------------------------------------------------------------
-# Metadata helpers (identical to working version)
+# Metadata helpers (unchanged)
 # ----------------------------------------------------------------------
 def clean_title(filename):
     name = os.path.splitext(filename)[0]
@@ -188,14 +189,12 @@ def clear_poster_cache():
         os.remove(os.path.join(POSTER_DIR, f))
 
 # ----------------------------------------------------------------------
-# Scan library with season detection
+# Scan library with season detection (called by background thread)
 # ----------------------------------------------------------------------
 def scan_series_structure(path):
-    """Recursively scan a series folder, return list of seasons."""
     seasons = []
     items = os.listdir(path)
     subdirs = [i for i in items if os.path.isdir(os.path.join(path, i))]
-    # If there are subdirs that look like season names, treat as seasons
     season_folders = [s for s in subdirs if re.search(r'(season|saison|stagione|temporada|第[0-9]+季|[0-9]+[ ]*季)', s, re.IGNORECASE) or s.lower().startswith('season')]
     if season_folders:
         for sf in sorted(season_folders):
@@ -208,7 +207,6 @@ def scan_series_structure(path):
                     'episodes': sorted(episodes)
                 })
     else:
-        # No season folders: treat all videos as one season (named "Season 1")
         episodes = [f for f in items if f.lower().endswith(VIDEO_EXTS)]
         if episodes:
             seasons.append({
@@ -244,7 +242,29 @@ def scan_library():
     return movies, series
 
 # ----------------------------------------------------------------------
-# Web UI Templates (identical to working version – included for completeness)
+# Global cache & background scanner
+# ----------------------------------------------------------------------
+library_cache = {"movies": [], "series": []}
+cache_lock = threading.Lock()
+
+def background_scanner():
+    """Update library cache every 10 minutes (or 5 min for first run)."""
+    # Initial scan after a short delay to let the web server start
+    time.sleep(5)
+    while True:
+        try:
+            print("[SCANNER] Refreshing library metadata...")
+            m, s = scan_library()
+            with cache_lock:
+                library_cache["movies"] = m
+                library_cache["series"] = s
+            print("[SCANNER] Scan complete. Movies: {}, Series: {}".format(len(m), len(s)))
+        except Exception as e:
+            print(f"[SCANNER] Error: {e}")
+        time.sleep(600)  # every 10 minutes
+
+# ----------------------------------------------------------------------
+# Web UI Templates (identical to working version)
 # ----------------------------------------------------------------------
 LIBRARY_HTML = """
 <!DOCTYPE html>
@@ -881,11 +901,13 @@ UPLINK_HTML = """
 """
 
 # ----------------------------------------------------------------------
-# Flask routes (identical to working version)
+# Flask routes (using cache)
 # ----------------------------------------------------------------------
 @app_lib.route('/')
 def library():
-    movies, series = scan_library()
+    with cache_lock:
+        movies = library_cache["movies"]
+        series = library_cache["series"]
     return render_template_string(LIBRARY_HTML,
         movies=movies, series=series,
         omdb_key=settings.get("omdb_api_key", ""),
@@ -896,10 +918,10 @@ def library():
 @app_lib.route('/detail/series/<path:series_path>')
 def series_detail(series_path):
     full_path = os.path.join(VIDEO_DIR, series_path)
-    seasons = scan_series_structure(full_path)
+    seasons = scan_series_structure(full_path)  # fast, no network
     if not seasons:
         return redirect('/')
-    meta = get_metadata_for_item(series_path, full_path, 'series')
+    meta = get_metadata_for_item(series_path, full_path, 'series')  # may use cache
     return render_template_string(SEASONS_LIST,
         series={'name': meta['title'], 'path': series_path},
         poster=meta['poster_url'],
@@ -979,7 +1001,7 @@ def upload():
     return redirect(url_for('uplink'))
 
 # ----------------------------------------------------------------------
-# System stats helpers (new)
+# System stats helpers
 # ----------------------------------------------------------------------
 def get_cpu_temp():
     try:
@@ -1017,7 +1039,7 @@ def get_ram_usage():
         return 0.0
 
 # ----------------------------------------------------------------------
-# LCD and main thread (modified to include stats, remove uplink port, change QR)
+# LCD and main thread (optimized)
 # ----------------------------------------------------------------------
 def get_ip():
     try:
@@ -1036,6 +1058,15 @@ def run_uplink():
     app_up.run(host='0.0.0.0', port=8888, debug=False, use_reloader=False)
 
 def main():
+    # Pre‑generate QR code (once)
+    ip = get_ip()
+    qr_factory = qrcode.QRCode(box_size=3, border=2)
+    qr_factory.add_data(f"http://{ip}")
+    qr_img = qr_factory.make_image(fill_color="white", back_color="black").get_image().resize((128,128))
+
+    # Start background scanner
+    threading.Thread(target=background_scanner, daemon=True).start()
+
     if not HAS_HW:
         threading.Thread(target=run_library, daemon=True).start()
         threading.Thread(target=run_uplink, daemon=True).start()
@@ -1050,7 +1081,6 @@ def main():
     lcd.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
     lcd.LCD_Clear()
 
-    ip = get_ip()
     show_qr = False
     held = {}
 
@@ -1064,10 +1094,6 @@ def main():
             draw = ImageDraw.Draw(img)
 
             if show_qr:
-                # QR for library (port 80)
-                qr = qrcode.QRCode(box_size=3, border=2)
-                qr.add_data(f"http://{ip}")
-                qr_img = qr.make_image(fill_color="white", back_color="black").get_image().resize((128,128))
                 img.paste(qr_img, (0,0))
             else:
                 draw.rectangle([(0,0),(128,18)], fill=(120,0,0))
@@ -1078,7 +1104,6 @@ def main():
                 draw.text((4,3), "KTOxFLIX", fill="black", font=font)
                 draw.text((4,20), f"IP: {ip}", fill="white", font=font)
                 draw.text((4,32), "PORT 80: LIBRARY", fill="cyan", font=font)
-                # System stats
                 temp = get_cpu_temp()
                 temp_color = "#00FF00" if temp < 60 else "#FFFF00" if temp < 75 else "#FF0000"
                 draw.text((4,44), f"CPU: {get_cpu_load():.0f}%  {temp:.0f}C", fill=temp_color, font=font)
@@ -1101,16 +1126,13 @@ def main():
                 show_qr = not show_qr
                 time.sleep(0.3)
 
-            time.sleep(0.5)  # update stats every 0.5 seconds
+            time.sleep(0.5)
     finally:
         lcd.LCD_Clear()
         GPIO.cleanup()
 
 if __name__ == "__main__":
-    try:
-        import requests
-    except ImportError:
-        os.system("pip install requests")
+    # Manual install instructions – no automatic pip calls
     placeholder = "/root/KTOx/static/placeholder.jpg"
     if not os.path.exists(placeholder):
         try:
@@ -1119,5 +1141,5 @@ if __name__ == "__main__":
             img.save(placeholder)
         except:
             pass
-    print("Starting KTOxFliX with Season Support and System Stats...")
+    print("Starting KTOxFliX (non‑blocking, background scanner)...")
     main()
