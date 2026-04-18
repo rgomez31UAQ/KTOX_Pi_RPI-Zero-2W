@@ -50,10 +50,9 @@ def font(size=9):
         return ImageFont.load_default()
 
 f9 = font(9)
-f11 = font(11)
 
 # ----------------------------------------------------------------------
-# Flask web server (runs in background)
+# Flask web server
 # ----------------------------------------------------------------------
 PORT = 8890
 app = Flask(__name__)
@@ -85,7 +84,7 @@ def is_text_file(filepath):
     return filepath.lower().endswith(text_exts)
 
 # ----------------------------------------------------------------------
-# Web UI template (same as original)
+# Web UI template (simplified, no complex JS that might break)
 # ----------------------------------------------------------------------
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -268,7 +267,8 @@ HTML_TEMPLATE = """
     function reload() {
         fetch('/api/list?path=' + encodeURIComponent(currentPath))
             .then(r => r.json())
-            .then(data => renderFileList(data));
+            .then(data => renderFileList(data))
+            .catch(err => console.error(err));
     }
 
     function parentDir() {
@@ -657,6 +657,7 @@ def main():
     os._exit(0)
 
 if __name__ == "__main__":
+    # Ensure qrcode is installed
     try:
         import qrcode
     except ImportError:
