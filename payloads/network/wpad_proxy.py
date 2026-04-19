@@ -69,7 +69,7 @@ font = scaled_font()
 LOOT_DIR = "/root/KTOx/loot/WPAD"
 os.makedirs(LOOT_DIR, exist_ok=True)
 
-DNSMASQ_CONF = "/tmp/raspyjack_wpad_dnsmasq.conf"
+DNSMASQ_CONF = "/tmp/ktox_wpad_dnsmasq.conf"
 PROXY_PORT = 8888
 WPAD_PORT = 80
 GATEWAY_IP = "10.0.77.1"
@@ -329,7 +329,7 @@ def _write_dnsmasq_conf(iface, pi_ip):
         f"address=/#/{pi_ip}\n"
         f"no-resolv\n"
         f"log-queries\n"
-        f"log-facility=/tmp/raspyjack_wpad_dns.log\n"
+        f"log-facility=/tmp/ktox_wpad_dns.log\n"
     )
     with open(DNSMASQ_CONF, "w") as fh:
         fh.write(conf)
@@ -440,7 +440,7 @@ def _stop_attack():
     )
 
     # Remove temp files
-    for path in (DNSMASQ_CONF, "/tmp/raspyjack_wpad_dns.log"):
+    for path in (DNSMASQ_CONF, "/tmp/ktox_wpad_dns.log"):
         try:
             os.remove(path)
         except OSError:

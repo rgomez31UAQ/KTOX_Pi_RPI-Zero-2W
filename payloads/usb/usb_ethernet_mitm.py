@@ -65,13 +65,13 @@ LOOT_DIR = "/root/KTOx/loot/USBEthMITM"
 os.makedirs(LOOT_DIR, exist_ok=True)
 
 GADGET_BASE = "/sys/kernel/config/usb_gadget"
-GADGET_NAME = "raspyjack_eth"
-DNSMASQ_CONF = "/tmp/raspyjack_usbeth_dnsmasq.conf"
+GADGET_NAME = "ktox_eth"
+DNSMASQ_CONF = "/tmp/ktox_usbeth_dnsmasq.conf"
 USB_IFACE = "usb0"
 GATEWAY_IP = "10.0.88.1"
 DHCP_RANGE_START = "10.0.88.10"
 DHCP_RANGE_END = "10.0.88.50"
-DNS_LOG = "/tmp/raspyjack_usbeth_dns.log"
+DNS_LOG = "/tmp/ktox_usbeth_dns.log"
 ROWS_VISIBLE = 6
 
 # ---------------------------------------------------------------------------

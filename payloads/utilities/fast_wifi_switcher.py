@@ -39,9 +39,9 @@ try:
     from payloads._input_helper import get_virtual_button
     
     # Import WiFi integration functions
-    from wifi.raspyjack_integration import (
-        set_raspyjack_interface,
-        get_current_raspyjack_interface,
+    from wifi.ktox_integration import (
+        set_ktox_interface,
+        get_current_ktox_interface,
         get_interface_status,
         ensure_interface_default
     )
@@ -93,7 +93,7 @@ class FastWiFiSwitcher:
     def get_current(self):
         """Get current interface quickly."""
         try:
-            return get_current_raspyjack_interface()
+            return get_current_ktox_interface()
         except:
             return "unknown"
     
@@ -151,7 +151,7 @@ class FastWiFiSwitcher:
             # - Auto-connect using WiFi profiles  
             # - Disconnected interface handling
             # - LCD-friendly status messages
-            success = set_raspyjack_interface(target_interface, lcd_callback)
+            success = set_ktox_interface(target_interface, lcd_callback)
             
             if success:
                 # Quick status check for display

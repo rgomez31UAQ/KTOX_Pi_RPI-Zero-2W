@@ -47,11 +47,11 @@ PINS = {
 }
 WIDTH, HEIGHT = LCD_1in44.LCD_WIDTH, LCD_1in44.LCD_HEIGHT
 
-GADGET_NAME = "raspyjack_usb"
+GADGET_NAME = "ktox_usb"
 CONFIGFS_BASE = "/sys/kernel/config/usb_gadget"
 GADGET_PATH = os.path.join(CONFIGFS_BASE, GADGET_NAME)
-IMAGE_PATH = "/tmp/raspyjack_usb.img"
-MOUNT_PATH = "/tmp/raspyjack_usb_mount"
+IMAGE_PATH = "/tmp/ktox_usb.img"
+MOUNT_PATH = "/tmp/ktox_usb_mount"
 IMAGE_SIZE_MB = 64
 TEMPLATE_DIR = "/root/KTOx/templates/usb"
 

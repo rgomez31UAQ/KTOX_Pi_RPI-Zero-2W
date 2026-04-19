@@ -58,7 +58,7 @@ font = scaled_font()
 # ---------------------------------------------------------------------------
 LOOT_DIR = "/root/KTOx/loot/Keylogger"
 GADGET_BASE = "/sys/kernel/config/usb_gadget"
-GADGET_NAME = "raspyjack_keylog"
+GADGET_NAME = "ktox_keylog"
 HID_DEV = "/dev/hidg0"
 EVDEV_DIR = "/dev/input"
 ROWS_VISIBLE = 7

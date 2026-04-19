@@ -72,8 +72,8 @@ font = scaled_font()
 LOOT_DIR = "/root/KTOx/loot/EnterpriseEvilTwin"
 os.makedirs(LOOT_DIR, exist_ok=True)
 
-HOSTAPD_CONF = "/tmp/raspyjack_ent_hostapd.conf"
-DNSMASQ_CONF = "/tmp/raspyjack_ent_dnsmasq.conf"
+HOSTAPD_CONF = "/tmp/ktox_ent_hostapd.conf"
+DNSMASQ_CONF = "/tmp/ktox_ent_dnsmasq.conf"
 RADIUS_SECRET = b"testing123"
 RADIUS_PORT = 1812
 GATEWAY_IP = "10.0.88.1"

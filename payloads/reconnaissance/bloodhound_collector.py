@@ -122,7 +122,7 @@ def _run_bloodhound_python(out_dir):
            "-u", _get("username"), "-p", _get("password"),
            "-d", _get("domain"), "-c", "All",
            "-ns", _get("dc_ip"), "--zip",
-           "--output-prefix", "raspyjack"]
+           "--output-prefix", "ktox"]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True,
                               timeout=300, cwd=out_dir)

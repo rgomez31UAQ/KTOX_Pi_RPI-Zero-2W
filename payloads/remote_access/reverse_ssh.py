@@ -204,7 +204,7 @@ def _generate_keypair():
                 "-b", "4096",
                 "-f", key_path,
                 "-N", "",  # no passphrase
-                "-C", "raspyjack-tunnel",
+                "-C", "ktox-tunnel",
             ],
             capture_output=True, text=True, timeout=30,
         )
