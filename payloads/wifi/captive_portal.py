@@ -74,8 +74,8 @@ LOOT_DIR = "/root/KTOx/loot/CaptivePortal"
 os.makedirs(LOOT_DIR, exist_ok=True)
 
 SITES_DIR = "/root/KTOx/DNSSpoof/sites"
-HOSTAPD_CONF = "/tmp/raspyjack_captive_hostapd.conf"
-DNSMASQ_CONF = "/tmp/raspyjack_captive_dnsmasq.conf"
+HOSTAPD_CONF = "/tmp/ktox_captive_hostapd.conf"
+DNSMASQ_CONF = "/tmp/ktox_captive_dnsmasq.conf"
 PORTAL_PORT = 80
 GATEWAY_IP = "10.0.99.1"
 DHCP_RANGE_START = "10.0.99.10"

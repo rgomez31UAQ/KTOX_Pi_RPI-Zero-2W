@@ -56,7 +56,7 @@ font = scaled_font()
 # Constants
 # ---------------------------------------------------------------------------
 LOOT_ROOT = "/root/KTOx/loot"
-MOUNT_POINT = "/mnt/raspyjack_usb"
+MOUNT_POINT = "/mnt/ktox_usb"
 os.makedirs(MOUNT_POINT, exist_ok=True)
 
 DEBOUNCE = 0.22

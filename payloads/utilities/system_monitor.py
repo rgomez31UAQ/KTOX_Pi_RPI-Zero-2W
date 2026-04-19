@@ -52,7 +52,7 @@ font = scaled_font()
 VIEWS = ["Dashboard", "CPU Graph", "Network"]
 REFRESH_INTERVAL = 2.0
 DEBOUNCE = 0.20
-SERVICES = ["raspyjack", "raspyjack-device", "raspyjack-webui", "caddy"]
+SERVICES = ["ktox", "ktox-device", "ktox-webui", "caddy"]
 
 lock = threading.Lock()
 _running = True
@@ -312,7 +312,7 @@ def _draw_dashboard(lcd, snap):
     d.text((2, y), "Services:", font=font, fill="#aaa"); y += 12
     for svc, st in snap.services.items():
         color = "#00ff00" if st == "active" else "#ff4444"
-        short = svc.replace("raspyjack-", "rj-")[:12]
+        short = svc.replace("ktox-", "rj-")[:12]
         d.text((2, y), f" {short}: {st}", font=font, fill=color); y += 11
         if y > 112:
             break

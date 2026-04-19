@@ -135,7 +135,7 @@ def _build_device_xml(device, ip):
     <modelName>{device['model']}</modelName>
     <modelNumber>1.0</modelNumber>
     <serialNumber>RJ-{int(time.time()) % 100000}</serialNumber>
-    <UDN>uuid:raspyjack-{device['name'].lower()}-001</UDN>
+    <UDN>uuid:ktox-{device['name'].lower()}-001</UDN>
     <presentationURL>http://{ip}:{HTTP_PORT}/login</presentationURL>
   </device>
 </root>"""
@@ -297,7 +297,7 @@ def _ssdp_thread():
             "HTTP/1.1 200 OK\r\n"
             f"LOCATION: http://{local_ip}:{HTTP_PORT}/device.xml\r\n"
             f"ST: {device['st']}\r\n"
-            "USN: uuid:raspyjack-ssdp-001::upnp:rootdevice\r\n"
+            "USN: uuid:ktox-ssdp-001::upnp:rootdevice\r\n"
             "CACHE-CONTROL: max-age=1800\r\n"
             f"SERVER: {device['manufacturer']}/{device['model']} UPnP/1.0\r\n"
             "EXT:\r\n"

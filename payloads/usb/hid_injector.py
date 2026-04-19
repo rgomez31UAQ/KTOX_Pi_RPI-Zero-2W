@@ -61,7 +61,7 @@ font = scaled_font()
 SCRIPTS_DIR = "/root/KTOx/payloads/hid_scripts"
 LOOT_DIR = "/root/KTOx/loot/HIDInjector"
 GADGET_BASE = "/sys/kernel/config/usb_gadget"
-GADGET_NAME = "raspyjack_hid"
+GADGET_NAME = "ktox_hid"
 HID_DEV = "/dev/hidg0"
 ROWS_VISIBLE = 7
 

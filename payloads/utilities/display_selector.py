@@ -150,7 +150,7 @@ def main():
                             d.text((64, 64), "Restart UI...", font=font_big, fill="#FF0000", anchor="mm")
                             LCD.LCD_ShowImage(img, 0, 0)
                             time.sleep(1)
-                            os.system("sudo systemctl restart raspyjack")
+                            os.system("sudo systemctl restart ktox")
                             return 0
                         elif btn2 == "KEY3":
                             break

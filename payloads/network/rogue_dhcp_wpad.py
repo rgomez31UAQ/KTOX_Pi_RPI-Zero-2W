@@ -35,7 +35,7 @@ KEY3 = 16
 LOOT_DIR = "/root/KTOx/loot/DHCP"
 popup_message = ""
 popup_until = 0.0
-WPAD_DIR = "/tmp/raspyjack_wpad"
+WPAD_DIR = "/tmp/ktox_wpad"
 
 
 def lcd_init():
@@ -169,7 +169,7 @@ def write_dnsmasq_conf(iface, gw_ip, dhcp_start, dhcp_end, wpad_url, log_file):
         f"dhcp-option=252,{wpad_url}",
         "",
     ])
-    path = "/tmp/raspyjack_rogue_dhcp.conf"
+    path = "/tmp/ktox_rogue_dhcp.conf"
     with open(path, "w") as f:
         f.write(conf)
     return path

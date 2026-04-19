@@ -69,8 +69,8 @@ font = scaled_font()
 LOOT_DIR = "/root/KTOx/loot/KarmaAP"
 os.makedirs(LOOT_DIR, exist_ok=True)
 
-HOSTAPD_CONF = "/tmp/raspyjack_karma_hostapd.conf"
-DNSMASQ_CONF = "/tmp/raspyjack_karma_dnsmasq.conf"
+HOSTAPD_CONF = "/tmp/ktox_karma_hostapd.conf"
+DNSMASQ_CONF = "/tmp/ktox_karma_dnsmasq.conf"
 PORTAL_PORT = 80
 GATEWAY_IP = "10.0.77.1"
 DHCP_RANGE_START = "10.0.77.10"

@@ -54,7 +54,7 @@ font = scaled_font()
 
 LOOT_ROOT = "/root/KTOx/loot"
 WEBHOOK_FILE = "/root/KTOx/discord_webhook.txt"
-SERVICES = ["raspyjack", "raspyjack-device", "raspyjack-webui", "caddy"]
+SERVICES = ["ktox", "ktox-device", "ktox-webui", "caddy"]
 VIEWS = ["Overview", "Payloads", "Loot", "Network"]
 REFRESH_INTERVAL = 5.0
 DEBOUNCE = 0.22
@@ -246,7 +246,7 @@ def _draw_overview(lcd, snap):
     d.text((2, y), "Services:", font=font, fill="#aaa"); y += 12
     for svc, st in snap.services.items():
         color = "#00ff00" if st == "active" else "#ff4444"
-        short = svc.replace("raspyjack-", "rj-")[:12]
+        short = svc.replace("ktox-", "rj-")[:12]
         d.text((2, y), f" {short}: {st}", font=font, fill=color); y += 11
         if y > 112:
             break
