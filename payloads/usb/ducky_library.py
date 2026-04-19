@@ -217,8 +217,8 @@ def _execute_script(fname):
             exec_progress = "Running..."
 
         result = subprocess.run(
-            ["python3", HID_INJECTOR, script_path],
-            capture_output=True, text=True, timeout=120,
+            ["python3", HID_INJECTOR, "--run", script_path],
+            capture_output=True, text=True, timeout=180,
         )
 
         if result.returncode == 0:

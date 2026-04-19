@@ -46,14 +46,11 @@ PINS = {
     "UP": 6, "DOWN": 19, "LEFT": 5, "RIGHT": 26,
     "OK": 13, "KEY1": 21, "KEY2": 20, "KEY3": 16,
 }
-GPIO.setmode(GPIO.BCM)
-for pin in PINS.values():
-    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-LCD = LCD_1in44.LCD()
-LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-WIDTH, HEIGHT = LCD.width, LCD.height
-font = scaled_font()
+# LCD/GPIO are initialized in main() so that --run mode can skip them
+LCD = None
+WIDTH, HEIGHT = 128, 128
+font = None
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -593,6 +590,16 @@ def draw_main_view():
 
 def main():
     global scripts, scroll_pos, status_msg, test_mode, injecting
+    global LCD, WIDTH, HEIGHT, font
+
+    GPIO.setmode(GPIO.BCM)
+    for pin in PINS.values():
+        GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+    LCD = LCD_1in44.LCD()
+    LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
+    WIDTH, HEIGHT = LCD.width, LCD.height
+    font = scaled_font()
 
     _create_sample_script()
     scripts = _scan_scripts()
@@ -678,4 +685,11 @@ def main():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) >= 3 and sys.argv[1] == "--run":
+        # Headless mode: called by ducky_library.py to execute a single script.
+        # Skip GPIO/LCD init entirely to avoid conflicting with the caller.
+        script_path = sys.argv[2]
+        _setup_gadget()
+        _execute_script(script_path)
+        sys.exit(0)
     raise SystemExit(main())
