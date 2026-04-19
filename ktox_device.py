@@ -37,6 +37,16 @@ PAYLOAD_LOG  = LOOT_DIR + "/payload.log"
 VERSION      = "1.0"
 
 sys.path.insert(0, KTOX_DIR)
+sys.path.insert(0, KTOX_DIR + "/ktox_pi")
+
+# ── WebUI input bridge (independent of physical hardware) ──────────────────────
+
+try:
+    import ktox_input as rj_input
+    HAS_INPUT = True
+except Exception as _ie:
+    print(f"[WARN] WebUI input bridge unavailable ({_ie})")
+    HAS_INPUT = False
 
 # ── Hardware imports ───────────────────────────────────────────────────────────
 
@@ -45,7 +55,6 @@ try:
     from PIL import Image, ImageDraw, ImageFont
     import LCD_1in44
     import LCD_Config
-    import ktox_input as rj_input
     HAS_HW = True
 except Exception as _ie:
     print(f"[WARN] Hardware unavailable ({_ie}) — headless mode")
@@ -372,8 +381,8 @@ def getButton(timeout=120):
                 exec_payload(req)
                 continue
 
-        # Virtual button from WebUI (Unix socket)
-        if HAS_HW:
+        # Virtual button from WebUI (Unix socket) — works with or without GPIO hardware
+        if HAS_INPUT:
             try:
                 v = rj_input.get_virtual_button()
                 if v:
@@ -988,12 +997,13 @@ def _wait_button_release(timeout=1.0):
 
 def _get_lock_button():
     """Non-blocking: return pressed button name or None."""
-    if HAS_HW:
+    if HAS_INPUT:
         try:
             v = rj_input.get_virtual_button()
             if v: _mark_user_activity(); return v
         except Exception:
             pass
+    if HAS_HW:
         try:
             for name, pin in PINS.items():
                 if GPIO.input(pin) == 0:
@@ -1004,7 +1014,7 @@ def _get_lock_button():
 
 def _get_sequence_button(held: set):
     """Non-blocking sequence input: returns (button, new_held_set)."""
-    if HAS_HW:
+    if HAS_INPUT:
         try:
             v = rj_input.get_virtual_button()
             if v: _mark_user_activity(); return v, held

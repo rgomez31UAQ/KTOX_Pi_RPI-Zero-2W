@@ -25,11 +25,15 @@ will now also respond to WebUI button presses — the held state is written to
 read back here via ktox_input.is_pin_held().
 """
 
-import os
+import os, sys
 
 if os.environ.get("KTOX_PAYLOAD") == "1":
     try:
-        # ktox_input is importable because PYTHONPATH includes /root/KTOx/
+        # Ensure ktox_pi/ subdir is on the path so ktox_input is importable
+        _ktox_dir = os.environ.get("KTOX_DIR", "/root/KTOx")
+        _ktox_pi = os.path.join(_ktox_dir, "ktox_pi")
+        if _ktox_pi not in sys.path:
+            sys.path.insert(0, _ktox_pi)
         # In the subprocess context the listener thread cannot bind the socket
         # (parent already owns it), but is_pin_held() falls through to reading
         # /dev/shm/ktox_held which the parent updates on every press/release.
