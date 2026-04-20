@@ -1,79 +1,115 @@
 #!/usr/bin/env bash
-# Install PyBoy Game Boy emulator for KTOx
+# Install PyBoy Game Boy emulator for KTOx (ARM / Raspberry Pi)
 # Usage: sudo bash scripts/install_pyboy.sh
 #
-# Fixes for ARM (Pi Zero 2 W / Pi 4):
-#   - --prefer-binary  avoids source builds that fail when apt cython3 < 3.0
-#   - python3-numpy    required by pyboy for screen pixel access
-#   - libsdl2-2.0-0   runtime SDL2 library (not just dev headers)
-#   - Tries multiple pip methods in order so one failure doesn't abort all
+# Strategy:
+#   1. piwheels.org  — pre-built ARM wheels, zero compilation, no disk issues
+#   2. PyPI binary   — fallback if piwheels doesn't have this exact ABI
+#   3. system cython + no-build-isolation — last resort, avoids Cython recompile
+#
+# Why NOT pip default on ARM:
+#   pip falls back to source when no wheel exists for armv7l.
+#   Building Cython 3 from source fills /tmp (No space left on device).
 
 set -e
 
 info() { printf "\e[1;32m[INFO]\e[0m %s\n" "$*"; }
 warn() { printf "\e[1;33m[WARN]\e[0m %s\n" "$*"; }
-err()  { printf "\e[1;31m[ERR ]\e[0m %s\n" "$*"; }
+err()  { printf "\e[1;31m[ERR ]\e[0m %s\n" "$*"; exit 1; }
 
-info "Installing PyBoy dependencies..."
+# ---------------------------------------------------------------------------
+# 0. Free disk space before attempting anything
+# ---------------------------------------------------------------------------
+info "Freeing disk space before install..."
+pip3 cache purge 2>/dev/null || true
+apt-get clean 2>/dev/null || true
+rm -rf /tmp/pip-* /tmp/cc*.s 2>/dev/null || true
 
-# System packages
-# libsdl2-2.0-0  = SDL2 runtime  (pyboy headless still links it)
-# libsdl2-dev    = headers needed only if building from source
-# python3-dev    = CPython headers for any C extension compilation
-# python3-numpy  = required by pyboy.screen for pixel data
-# cython3 from apt is 0.29 — we deliberately skip it here and let
-# pip pull Cython 3 instead (pyboy >=2 requires Cython 3+).
+AVAIL=$(df /tmp --output=avail -BM 2>/dev/null | tail -1 | tr -d 'M ')
+info "Free space in /tmp: ${AVAIL:-?} MB"
+if [ -n "$AVAIL" ] && [ "$AVAIL" -lt 150 ]; then
+    warn "/tmp has less than 150 MB free — using /var/tmp as build dir"
+    export TMPDIR=/var/tmp
+    mkdir -p "$TMPDIR"
+fi
+
+# ---------------------------------------------------------------------------
+# 1. Runtime system libraries  (never need compilation)
+# ---------------------------------------------------------------------------
+info "Installing system libraries..."
 apt-get install -y --no-install-recommends \
-    libsdl2-2.0-0 libsdl2-dev python3-dev python3-numpy \
-  || warn "Some apt packages failed — continuing anyway"
+    libsdl2-2.0-0 python3-numpy \
+  || warn "apt install partial — continuing"
 
-info "Installing PyBoy via pip (prefer binary wheels to avoid Cython issues)..."
+# ---------------------------------------------------------------------------
+# 2. pip install — piwheels first (pre-compiled ARM binaries)
+# ---------------------------------------------------------------------------
+PIWHEELS="--extra-index-url https://www.piwheels.org/simple"
+BREAK="--break-system-packages"
+PREFER="--prefer-binary"
 
-INSTALLED=0
-
-# Method 1: Debian Bookworm / Pi OS 12 — system pip with break flag
-if pip3 install --prefer-binary --break-system-packages "pyboy>=2.0" 2>/dev/null; then
-    info "Installed via pip (--break-system-packages)"
+info "Trying piwheels.org (pre-built ARM wheel — no compilation)..."
+if pip3 install $PREFER $PIWHEELS $BREAK "pyboy>=2.0" 2>/dev/null; then
+    info "Installed from piwheels (break-system-packages)"
+    INSTALLED=1
+elif pip3 install $PREFER $PIWHEELS "pyboy>=2.0" 2>/dev/null; then
+    info "Installed from piwheels (standard)"
     INSTALLED=1
 
-# Method 2: Older Pi OS / Raspbian — no break flag needed
-elif pip3 install --prefer-binary "pyboy>=2.0" 2>/dev/null; then
-    info "Installed via pip (standard)"
+# ---------------------------------------------------------------------------
+# 3. PyPI binary-only fallback
+# ---------------------------------------------------------------------------
+elif pip3 install $PREFER --only-binary=:all: $BREAK "pyboy>=2.0" 2>/dev/null; then
+    info "Installed from PyPI (binary-only)"
     INSTALLED=1
 
-# Method 3: User install (no root needed, PATH must include ~/.local/bin)
-elif pip3 install --prefer-binary --user "pyboy>=2.0" 2>/dev/null; then
-    info "Installed via pip (--user)"
-    INSTALLED=1
+# ---------------------------------------------------------------------------
+# 4. No-build-isolation with system cython (avoids downloading+building Cython)
+# ---------------------------------------------------------------------------
+else
+    info "Binary install failed. Trying --no-build-isolation with system cython..."
+    apt-get install -y --no-install-recommends \
+        libsdl2-dev python3-dev cython3 \
+      || warn "Dev deps partial"
 
-# Method 4: pipx / virtual-env fallback
-elif python3 -m pip install --prefer-binary "pyboy>=2.0" 2>/dev/null; then
-    info "Installed via python3 -m pip"
-    INSTALLED=1
+    if pip3 install $BREAK --no-build-isolation "pyboy>=2.0" 2>/dev/null; then
+        info "Installed with system cython (no-build-isolation)"
+        INSTALLED=1
+    elif pip3 install --no-build-isolation "pyboy>=2.0" 2>/dev/null; then
+        info "Installed with system cython"
+        INSTALLED=1
+    else
+        INSTALLED=0
+    fi
 fi
 
-if [ "$INSTALLED" -eq 0 ]; then
-    err "All pip methods failed."
-    err "Try manually: pip3 install --prefer-binary --break-system-packages pyboy"
-    exit 1
+if [ "${INSTALLED:-0}" -eq 0 ]; then
+    err "All install methods failed. Check disk space (df -h) and try:
+  pip3 install --extra-index-url https://www.piwheels.org/simple --prefer-binary pyboy"
 fi
 
-# Make sure numpy is importable (pip may have skipped it if apt version was found)
+# ---------------------------------------------------------------------------
+# 5. Ensure numpy is importable
+# ---------------------------------------------------------------------------
 python3 -c "import numpy" 2>/dev/null \
-  || pip3 install --prefer-binary --break-system-packages numpy 2>/dev/null \
-  || pip3 install --prefer-binary numpy 2>/dev/null \
-  || warn "numpy install failed — pyboy screen features may not work"
+  || pip3 install $PREFER $PIWHEELS $BREAK numpy 2>/dev/null \
+  || warn "numpy check failed — screen pixel access may not work"
 
-# ROMs directory
+# ---------------------------------------------------------------------------
+# 6. ROMs directory + verify
+# ---------------------------------------------------------------------------
 mkdir -p /root/KTOx/roms
 
-# Verify
-if python3 -c "from pyboy import PyBoy; print('[OK] PyBoy', __import__('importlib.metadata', fromlist=['version']).version('pyboy'), 'ready')" 2>/dev/null; then
-    info "PyBoy import verified successfully."
+if python3 -c "
+from pyboy import PyBoy
+import importlib.metadata
+v = importlib.metadata.version('pyboy')
+print(f'[OK] PyBoy {v} ready')
+" 2>/dev/null; then
+    info "Verification passed."
 else
-    err "PyBoy installed but import check failed."
-    err "Run: python3 -c \"from pyboy import PyBoy\" to debug."
-    exit 1
+    err "PyBoy installed but import check failed. Run:
+  python3 -c \"from pyboy import PyBoy\""
 fi
 
 info "Done! Place .gb / .gbc ROMs in /root/KTOx/roms/"
