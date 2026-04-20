@@ -255,20 +255,20 @@ def export_loot():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(171, 178, 185))
     with lock:
         active = sniffing
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_main_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "OS DETECT")
 
@@ -278,12 +278,12 @@ def draw_main_view():
         sc = scroll_pos
         pkts = pkt_count
 
-    d.text((2, 15), f"{status[:16]}  pkt:{pkts}", font=font, fill="#888")
+    d.text((2, 15), f"{status[:16]}  pkt:{pkts}", font=font, fill=(113, 125, 126))
 
     if not table:
-        d.text((10, 45), "OK: Start sniffing", font=font, fill="#666")
-        d.text((10, 57), "Passive TCP SYN", font=font, fill="#666")
-        d.text((10, 69), "fingerprinting", font=font, fill="#666")
+        d.text((10, 45), "OK: Start sniffing", font=font, fill=(86, 101, 115))
+        d.text((10, 57), "Passive TCP SYN", font=font, fill=(86, 101, 115))
+        d.text((10, 69), "fingerprinting", font=font, fill=(86, 101, 115))
     else:
         visible = table[sc:sc + ROWS_VISIBLE - 1]
         for i, (ip, info) in enumerate(visible):
@@ -299,18 +299,18 @@ def draw_main_view():
         if total > ROWS_VISIBLE - 1:
             bar_h = max(4, int((ROWS_VISIBLE - 1) / total * 88))
             bar_y = 28 + int(sc / total * 88) if total > 0 else 28
-            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill="#444")
+            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill=(34, 0, 0))
 
     _draw_footer(d, f"Hosts:{len(table)} K3:Exit")
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def _show_message(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 50), line1, font=font, fill="#00FF00")
+    d.text((10, 50), line1, font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2, font=font, fill="#888")
+        d.text((4, 65), line2, font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -322,14 +322,14 @@ def _show_message(line1, line2=""):
 def main():
     global scroll_pos, stop_flag, os_table, pkt_count
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 20), "PASSIVE OS DETECT", font=font, fill="#00CCFF")
-    d.text((4, 40), "p0f-style TCP SYN", font=font, fill="#888")
-    d.text((4, 52), "fingerprinting", font=font, fill="#888")
-    d.text((4, 72), "OK=Start/Stop", font=font, fill="#666")
-    d.text((4, 84), "K1=Clear K2=Export", font=font, fill="#666")
-    d.text((4, 96), "K3=Exit", font=font, fill="#666")
+    d.text((4, 20), "PASSIVE OS DETECT", font=font, fill=(171, 178, 185))
+    d.text((4, 40), "p0f-style TCP SYN", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "fingerprinting", font=font, fill=(113, 125, 126))
+    d.text((4, 72), "OK=Start/Stop", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "K1=Clear K2=Export", font=font, fill=(86, 101, 115))
+    d.text((4, 96), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 

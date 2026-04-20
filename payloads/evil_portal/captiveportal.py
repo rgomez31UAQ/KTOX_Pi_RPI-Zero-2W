@@ -512,15 +512,15 @@ def draw_menu():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill="#8B0000")
-    d.text((4,3), "CAPTIVE PORTAL", font=f9, fill="#FF3333")
+    d.text((4,3), "CAPTIVE PORTAL", font=f9, fill=(231, 76, 60))
     tag = "[ON]" if portal_running else "[OFF]"
-    d.text((90,3), tag, font=f9, fill="#00FF00" if portal_running else "#FF4444")
+    d.text((90,3), tag, font=f9, fill=(30, 132, 73) if portal_running else "#FF4444")
     y = 20
     for i, item in enumerate(MENU_ITEMS):
         if i == menu_idx:
-            d.text((4, y), f"> {item}", font=f9, fill="#FFBBBB")
+            d.text((4, y), f"> {item}", font=f9, fill=(171, 178, 185))
         else:
-            d.text((4, y), f"  {item}", font=f9, fill="#AAAAAA")
+            d.text((4, y), f"  {item}", font=f9, fill=(171, 178, 185))
         y += 12
         if y > 110: break
     d.rectangle((0, H-12, W, H), fill="#220000")
@@ -531,19 +531,19 @@ def draw_status():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill="#8B0000")
-    d.text((4,3), "PORTAL STATUS", font=f9, fill="#FF3333")
+    d.text((4,3), "PORTAL STATUS", font=f9, fill=(231, 76, 60))
     cfg = _load_config()
     ssid = cfg.get("ssid", "FreeWiFi")
     portal = cfg.get("selected_portal", "") or "built-in"
     creds = _count_creds()
     y = 20
-    d.text((4, y), f"Service: {'RUNNING' if portal_running else 'STOPPED'}", font=f9, fill="#00FF00" if portal_running else "#FF4444"); y+=12
-    d.text((4, y), f"SSID: {ssid[:16]}", font=f9, fill="#FFBBBB"); y+=12
-    d.text((4, y), f"Portal: {portal[:16]}", font=f9, fill="#FFBBBB"); y+=12
-    d.text((4, y), f"Clients: {clients_connected}", font=f9, fill="#FFBBBB"); y+=12
-    d.text((4, y), f"Creds: {creds}", font=f9, fill="#FFFF00"); y+=12
-    d.text((4, y), f"IP: {GATEWAY_IP}", font=f9, fill="#888"); y+=12
-    d.text((4, y), status_msg[:22], font=f9, fill="#00FF00")
+    d.text((4, y), f"Service: {'RUNNING' if portal_running else 'STOPPED'}", font=f9, fill=(30, 132, 73) if portal_running else "#FF4444"); y+=12
+    d.text((4, y), f"SSID: {ssid[:16]}", font=f9, fill=(171, 178, 185)); y+=12
+    d.text((4, y), f"Portal: {portal[:16]}", font=f9, fill=(171, 178, 185)); y+=12
+    d.text((4, y), f"Clients: {clients_connected}", font=f9, fill=(171, 178, 185)); y+=12
+    d.text((4, y), f"Creds: {creds}", font=f9, fill=(212, 172, 13)); y+=12
+    d.text((4, y), f"IP: {GATEWAY_IP}", font=f9, fill=(113, 125, 126)); y+=12
+    d.text((4, y), status_msg[:22], font=f9, fill=(30, 132, 73))
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "K3=Back", font=f9, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -552,15 +552,15 @@ def draw_select_portal():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill="#8B0000")
-    d.text((4,3), "SELECT PORTAL", font=f9, fill="#FF3333")
+    d.text((4,3), "SELECT PORTAL", font=f9, fill=(231, 76, 60))
     portals = _discover_portals()
     current = _load_config().get("selected_portal", "")
     if not portals:
-        d.text((4,40), "No portals found", font=f9, fill="#FF4444")
-        d.text((4,52), "Place HTML in:", font=f9, fill="#888")
-        d.text((4,64), "/root/KTOx/portals/", font=f9, fill="#888")
-        d.text((4,76), "Subfolder with", font=f9, fill="#888")
-        d.text((4,88), "index.html or login.html", font=f9, fill="#888")
+        d.text((4,40), "No portals found", font=f9, fill=(231, 76, 60))
+        d.text((4,52), "Place HTML in:", font=f9, fill=(113, 125, 126))
+        d.text((4,64), "/root/KTOx/portals/", font=f9, fill=(113, 125, 126))
+        d.text((4,76), "Subfolder with", font=f9, fill=(113, 125, 126))
+        d.text((4,88), "index.html or login.html", font=f9, fill=(113, 125, 126))
     else:
         y = 20
         for i, name in enumerate(portals[scroll_pos:scroll_pos+7]):
@@ -579,17 +579,17 @@ def draw_whitelist():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill="#8B0000")
-    d.text((4,3), "WHITELIST", font=f9, fill="#FF3333")
+    d.text((4,3), "WHITELIST", font=f9, fill=(231, 76, 60))
     wl = _load_whitelist()
     if not wl:
-        d.text((4,40), "No MACs whitelisted", font=f9, fill="#888")
-        d.text((4,52), "OK to add last DHCP", font=f9, fill="#888")
-        d.text((4,64), "client to whitelist", font=f9, fill="#888")
+        d.text((4,40), "No MACs whitelisted", font=f9, fill=(113, 125, 126))
+        d.text((4,52), "OK to add last DHCP", font=f9, fill=(113, 125, 126))
+        d.text((4,64), "client to whitelist", font=f9, fill=(113, 125, 126))
     else:
         y = 20
         for i, mac in enumerate(wl[scroll_pos:scroll_pos+7]):
             sel = (scroll_pos + i) == scroll_pos
-            d.text((4, y), f"{'> ' if sel else '  '}{mac}", font=f9, fill="#FFBBBB" if sel else "#AAAAAA")
+            d.text((4, y), f"{'> ' if sel else '  '}{mac}", font=f9, fill=(171, 178, 185) if sel else "#AAAAAA")
             y += 12
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), f"{len(wl)} MACs  OK:Add  KEY2:Del  K3:Back", font=f9, fill="#FF7777")
@@ -599,7 +599,7 @@ def draw_creds():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill="#8B0000")
-    d.text((4,3), "CAPTURED CREDS", font=f9, fill="#FF3333")
+    d.text((4,3), "CAPTURED CREDS", font=f9, fill=(231, 76, 60))
     lines = []
     try:
         with open(CREDS_LOG, "r") as f:
@@ -607,11 +607,11 @@ def draw_creds():
     except:
         pass
     if not lines:
-        d.text((4,40), "No credentials yet", font=f9, fill="#888")
+        d.text((4,40), "No credentials yet", font=f9, fill=(113, 125, 126))
     else:
         y = 20
         for line in lines[scroll_pos:scroll_pos+7]:
-            d.text((4, y), line[:23], font=f9, fill="#FFAA00")
+            d.text((4, y), line[:23], font=f9, fill=(212, 172, 13))
             y += 12
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), f"{len(lines)} entries  U/D:Scroll  K3:Back", font=f9, fill="#FF7777")
@@ -621,10 +621,10 @@ def draw_ssid_editor(current_ssid):
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill="#8B0000")
-    d.text((4,3), "EDIT SSID", font=f9, fill="#FF3333")
-    d.text((4,25), f"Current: {current_ssid[:20]}", font=f9, fill="#FFBBBB")
-    d.text((4,45), "Use keyboard helper", font=f9, fill="#AAAAAA")
-    d.text((4,60), "Press OK to edit", font=f9, fill="#00FF00")
+    d.text((4,3), "EDIT SSID", font=f9, fill=(231, 76, 60))
+    d.text((4,25), f"Current: {current_ssid[:20]}", font=f9, fill=(171, 178, 185))
+    d.text((4,45), "Use keyboard helper", font=f9, fill=(171, 178, 185))
+    d.text((4,60), "Press OK to edit", font=f9, fill=(30, 132, 73))
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "OK:Edit  K3:Cancel", font=f9, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -641,13 +641,13 @@ def lcd_keyboard(title, default=""):
         img = Image.new("RGB", (W, H), "#0A0000")
         d = ImageDraw.Draw(img)
         d.rectangle((0,0,W,17), fill="#8B0000")
-        d.text((4,3), title, font=f9, fill="#FF3333")
+        d.text((4,3), title, font=f9, fill=(231, 76, 60))
         disp = "".join(result)[:28]
-        d.text((4,22), disp, font=f9, fill="#00FF00")
-        d.text((4,38), f"Char: {chars[char_idx]}", font=f9, fill="#FFBBBB")
-        d.text((4,54), "L/R:move  U/D:char", font=f9, fill="#AAAAAA")
-        d.text((4,66), "OK:add  KEY2:del", font=f9, fill="#AAAAAA")
-        d.text((4,78), "KEY1:save  KEY3:cancel", font=f9, fill="#AAAAAA")
+        d.text((4,22), disp, font=f9, fill=(30, 132, 73))
+        d.text((4,38), f"Char: {chars[char_idx]}", font=f9, fill=(171, 178, 185))
+        d.text((4,54), "L/R:move  U/D:char", font=f9, fill=(171, 178, 185))
+        d.text((4,66), "OK:add  KEY2:del", font=f9, fill=(171, 178, 185))
+        d.text((4,78), "KEY1:save  KEY3:cancel", font=f9, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
         btn = wait_btn(0.2)
         if btn == "UP":
@@ -683,7 +683,7 @@ def main():
     # Select WiFi interface
     ifaces = [name for name in os.listdir("/sys/class/net") if name.startswith("wlan")]
     if not ifaces:
-        img = Image.new("RGB", (W, H), "black")
+        img = Image.new("RGB", (W, H), (10, 0, 0))
         d = ImageDraw.Draw(img)
         d.text((4,40), "No WiFi interface", font=f9, fill="red")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -691,14 +691,14 @@ def main():
         return
     _iface = "wlan1" if "wlan1" in ifaces else ifaces[0]
     # Splash
-    img = Image.new("RGB", (W, H), "black")
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((6,16), "CAPTIVE PORTAL", font=f11, fill="#FF4444")
-    d.text((4,36), "WiFi credential", font=f9, fill="#888")
-    d.text((4,48), "capture portal", font=f9, fill="#888")
-    d.text((4,68), f"Iface: {_iface}", font=f9, fill="#00CCFF")
-    d.text((4,80), "UP/DN:Nav  OK:Select", font=f9, fill="#666")
-    d.text((4,92), "K1:Toggle  K3:Exit", font=f9, fill="#666")
+    d.text((6,16), "CAPTIVE PORTAL", font=f11, fill=(231, 76, 60))
+    d.text((4,36), "WiFi credential", font=f9, fill=(113, 125, 126))
+    d.text((4,48), "capture portal", font=f9, fill=(113, 125, 126))
+    d.text((4,68), f"Iface: {_iface}", font=f9, fill=(171, 178, 185))
+    d.text((4,80), "UP/DN:Nav  OK:Select", font=f9, fill=(86, 101, 115))
+    d.text((4,92), "K1:Toggle  K3:Exit", font=f9, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 

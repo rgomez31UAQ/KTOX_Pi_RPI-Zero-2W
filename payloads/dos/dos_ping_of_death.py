@@ -88,10 +88,10 @@ def save_loot_snapshot():
         print(f"Error saving loot: {e}", file=sys.stderr)
 
 def draw_ui(screen_state="main", message_lines=None):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "DoS: Ping of Death", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
+    d.text((5, 5), "DoS: Ping of Death", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
     
     if message_lines:
         if isinstance(message_lines, str):
@@ -101,25 +101,25 @@ def draw_ui(screen_state="main", message_lines=None):
             bbox = d.textbbox((0, 0), line, font=FONT)
             w = bbox[2] - bbox[0]
             x = (WIDTH - w) // 2
-            d.text((x, y_offset), line, font=FONT, fill="yellow")
+            d.text((x, y_offset), line, font=FONT, fill=(212, 172, 13))
             y_offset += 12
     elif screen_state == "main":
-        d.text((5, 30), "Target IP:", font=FONT, fill="white")
-        d.text((5, 45), TARGET_IP, font=FONT_TITLE, fill="yellow")
-        d.text((5, 100), "OK=Send | KEY1=Edit IP", font=FONT, fill="cyan")
-        d.text((5, 110), "KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 30), "Target IP:", font=FONT, fill=(242, 243, 244))
+        d.text((5, 45), TARGET_IP, font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 100), "OK=Send | KEY1=Edit IP", font=FONT, fill=(171, 178, 185))
+        d.text((5, 110), "KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "attacking":
         d.text((5, 40), "Sending Packet...", font=FONT_TITLE, fill="red")
-        d.text((5, 60), f"Target: {TARGET_IP}", font=FONT, fill="white")
-        d.text((5, 115), "KEY3=Stop", font=FONT, fill="cyan")
+        d.text((5, 60), f"Target: {TARGET_IP}", font=FONT, fill=(242, 243, 244))
+        d.text((5, 115), "KEY3=Stop", font=FONT, fill=(171, 178, 185))
     elif screen_state == "sent":
-        d.text((5, 40), "Packet sent!", font=FONT_TITLE, fill="lime")
-        d.text((5, 60), "Check target.", font=FONT, fill="white")
-        d.text((5, 115), "KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 40), "Packet sent!", font=FONT_TITLE, fill=(231, 76, 60))
+        d.text((5, 60), "Check target.", font=FONT, fill=(242, 243, 244))
+        d.text((5, 115), "KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "failed":
         d.text((5, 40), "Attack FAILED!", font=FONT_TITLE, fill="red")
-        d.text((5, 60), "Check console.", font=FONT, fill="white")
-        d.text((5, 115), "KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 60), "Check console.", font=FONT, fill=(242, 243, 244))
+        d.text((5, 115), "KEY3=Exit", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -135,19 +135,19 @@ def handle_ip_input_logic(initial_ip):
     
     while running:
         # Draw the UI for IP input
-        img = Image.new("RGB", (128, 128), "black")
+        img = Image.new("RGB", (128, 128), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), "Enter Target IP", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), "Enter Target IP", font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
         
         # Display the current input
-        d.text((5, 40), f"IP: {input_ip}", font=FONT, fill="white")
+        d.text((5, 40), f"IP: {input_ip}", font=FONT, fill=(242, 243, 244))
         
         # Display the character selection
-        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill="yellow")
+        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill=(212, 172, 13))
         
-        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill="cyan")
-        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill="cyan")
+        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill=(171, 178, 185))
+        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         btn = None

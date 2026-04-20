@@ -204,18 +204,18 @@ class AddWizard:
         self.interval = 10
 
 def _draw_schedule(lcd, entries, cursor, scroll, status=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), "SCHEDULER", font=font, fill="#00ccff")
-    d.text((108, 1), "K3", font=font, fill="#888")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "SCHEDULER", font=font, fill=(171, 178, 185))
+    d.text((108, 1), "K3", font=font, fill=(113, 125, 126))
 
     y = 16
     visible = 6
     if not entries:
-        d.text((4, 50), "No entries", font=font, fill="#666")
-        d.text((4, 64), "K1 to add", font=font, fill="#888")
+        d.text((4, 50), "No entries", font=font, fill=(86, 101, 115))
+        d.text((4, 64), "K1 to add", font=font, fill=(113, 125, 126))
     else:
         end = min(len(entries), scroll + visible)
         for i in range(scroll, end):
@@ -233,18 +233,18 @@ def _draw_schedule(lcd, entries, cursor, scroll, status=""):
 
     if status:
         d.rectangle((0, 92, 127, 105), fill="#222200")
-        d.text((2, 94), status[:22], font=font, fill="#ffaa00")
+        d.text((2, 94), status[:22], font=font, fill=(212, 172, 13))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "OK:tog K1+ K2- K3:ex", font=font, fill="#666")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "OK:tog K1+ K2- K3:ex", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 def _draw_wizard(lcd, wiz):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), "ADD ENTRY", font=font, fill="#ffaa00")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "ADD ENTRY", font=font, fill=(212, 172, 13))
 
     if wiz.step == 0:
         d.text((2, 16), "Select payload:", font=font, fill="#aaa")
@@ -258,7 +258,7 @@ def _draw_wizard(lcd, wiz):
             color = "#ffaa00" if i == wiz.sel else "#ccc"
             d.text((2, y), f"{marker}{name}", font=font, fill=color)
             y += 13
-        d.text((2, 110), "^v:pick OK:select", font=font, fill="#666")
+        d.text((2, 110), "^v:pick OK:select", font=font, fill=(86, 101, 115))
 
     elif wiz.step == 1:
         d.text((2, 20), "Mode:", font=font, fill="#aaa")
@@ -267,18 +267,18 @@ def _draw_wizard(lcd, wiz):
             marker = ">" if modes[idx] == wiz.mode else " "
             color = "#ffaa00" if modes[idx] == wiz.mode else "#ccc"
             d.text((2, 36 + idx * 14), f"{marker}{m}", font=font, fill=color)
-        d.text((2, 110), "^v:pick OK:next", font=font, fill="#666")
+        d.text((2, 110), "^v:pick OK:next", font=font, fill=(86, 101, 115))
 
     elif wiz.step == 2:
         if wiz.mode == "repeat":
-            d.text((2, 30), f"Every {wiz.interval} min", font=font, fill="#00ff00")
+            d.text((2, 30), f"Every {wiz.interval} min", font=font, fill=(30, 132, 73))
             d.text((2, 50), "UP/DOWN to adjust", font=font, fill="#aaa")
         else:
-            d.text((2, 30), f"At {wiz.at_hh:02d}:{wiz.at_mm:02d}", font=font, fill="#00ff00")
+            d.text((2, 30), f"At {wiz.at_hh:02d}:{wiz.at_mm:02d}", font=font, fill=(30, 132, 73))
             d.text((2, 50), "UP/DN=hour L/R=min", font=font, fill="#aaa")
-        d.text((2, 110), "OK:confirm", font=font, fill="#666")
+        d.text((2, 110), "OK:confirm", font=font, fill=(86, 101, 115))
 
-    d.text((108, 1), "K3", font=font, fill="#888")
+    d.text((108, 1), "K3", font=font, fill=(113, 125, 126))
     lcd.LCD_ShowImage(img, 0, 0)
 
 def main():

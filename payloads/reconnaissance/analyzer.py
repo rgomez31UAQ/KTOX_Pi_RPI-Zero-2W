@@ -499,19 +499,19 @@ def _rgb(ratio):
 
 
 def _header(d, font, band_name):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "ANALYZER", font=font, fill="#00FF00")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "ANALYZER", font=font, fill=(30, 132, 73))
     if hasattr(d, "textbbox"):
         tw = d.textbbox((0, 0), band_name, font=font)[2]
     else:
         tw, _ = d.textsize(band_name, font=font)
-    d.text((125 - tw, 1), band_name, font=font, fill="white")
+    d.text((125 - tw, 1), band_name, font=font, fill=(242, 243, 244))
     # Running indicator dot
-    d.ellipse((121, 3, 125, 7), fill="#00FF00" if running else "#FF0000")
+    d.ellipse((121, 3, 125, 7), fill=(30, 132, 73) if running else "#FF0000")
 
 
 def _footer(d, font, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
@@ -552,7 +552,7 @@ def _draw_wifi(d, font, channels):
     step = max(1, n // 7)
     for i in range(0, n, step):
         x = x0 + i * (bw + gap)
-        d.text((x, 108), str(channels[i])[:3], font=font, fill="#666")
+        d.text((x, 108), str(channels[i])[:3], font=font, fill=(86, 101, 115))
 
     bi = r.index(max(r))
     return f"Pk:Ch{channels[bi]} {pd[bi]}dBm {sum(r)}p/s"
@@ -571,7 +571,7 @@ def _draw_ble(d, font):
 
     if not devs:
         msg = "Scanning..." if ble_ready else "No BT adapter"
-        d.text((25, 55), msg, font=font, fill="#666")
+        d.text((25, 55), msg, font=font, fill=(86, 101, 115))
         return "BLE: 0 devices"
 
     n = len(devs)
@@ -593,7 +593,7 @@ def _draw_ble(d, font):
         d.line((x, bb - ph, x + bw - 1, bb - ph), fill="#FF00FF")
         # Device label
         lbl = (info["name"] or mac[-5:])[:4]
-        d.text((x, 101), lbl[:3], font=font, fill="#666")
+        d.text((x, 101), lbl[:3], font=font, fill=(86, 101, 115))
 
     best = devs[0][1]["rssi"]
     return f"BLE:{n} best:{best}dBm"
@@ -628,19 +628,19 @@ def _draw_btfreq(d, font):
         if cnt > 0:
             ratio = cnt / mx
             h = max(1, int(ratio * BAR_H))
-            d.rectangle((x, BAR_BOT - h, x + 3, BAR_BOT), fill="#00FFFF")
+            d.rectangle((x, BAR_BOT - h, x + 3, BAR_BOT), fill=(171, 178, 185))
 
     # Channel labels
     for i in range(0, n, 2):
         x = x0 + i * (bw + gap)
-        d.text((x, 108), str(CH24[i]), font=font, fill="#666")
+        d.text((x, 108), str(CH24[i]), font=font, fill=(86, 101, 115))
 
     return f"WiFi:{sum(r)} BT:{sum(adv.values())}"
 
 
 def draw_frame(lcd, font):
     """Render one complete frame to the LCD."""
-    img = Image.new("RGB", (W, H), "black")
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
     band = BANDS[band_idx]
@@ -707,14 +707,14 @@ def main():
     font = ImageFont.load_default()
 
     # Splash screen
-    img = Image.new("RGB", (W, H), "black")
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((16, 25), "RF ANALYZER", font=font, fill="#00FF00")
-    d.text((4, 48), "KEY1  Start / Stop", font=font, fill="#888")
-    d.text((4, 60), "KEY2  Exit", font=font, fill="#888")
-    d.text((4, 72), "KEY3  Reset stats", font=font, fill="#888")
-    d.text((4, 84), "L / R Change band", font=font, fill="#888")
-    d.text((4, 96), "U / D Dwell speed", font=font, fill="#888")
+    d.text((16, 25), "RF ANALYZER", font=font, fill=(30, 132, 73))
+    d.text((4, 48), "KEY1  Start / Stop", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "KEY2  Exit", font=font, fill=(113, 125, 126))
+    d.text((4, 72), "KEY3  Reset stats", font=font, fill=(113, 125, 126))
+    d.text((4, 84), "L / R Change band", font=font, fill=(113, 125, 126))
+    d.text((4, 96), "U / D Dwell speed", font=font, fill=(113, 125, 126))
     lcd.LCD_ShowImage(img, 0, 0)
 
     try:

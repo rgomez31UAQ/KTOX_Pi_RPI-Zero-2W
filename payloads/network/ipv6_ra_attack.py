@@ -217,13 +217,13 @@ def _victim_sniffer_thread(iface_name, prefix):
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "IPv6 RA SPOOF", font=font, fill="#AA00FF")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if attacking else "#444")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if attacking else "#444")
 
     with lock:
         msg = status_msg
@@ -232,9 +232,9 @@ def _draw_frame(lcd, font):
         victim_list = list(victims.items())
         is_attacking = attacking
 
-    d.text((2, 16), f"IF: {iface}", font=font, fill="#888")
-    d.text((2, 26), f"Pfx: {prefix[:18]}", font=font, fill="#FFAA00")
-    d.text((2, 36), f"Sent:{sent} Victims:{len(victim_list)}", font=font, fill="#AAAAAA")
+    d.text((2, 16), f"IF: {iface}", font=font, fill=(113, 125, 126))
+    d.text((2, 26), f"Pfx: {prefix[:18]}", font=font, fill=(212, 172, 13))
+    d.text((2, 36), f"Sent:{sent} Victims:{len(victim_list)}", font=font, fill=(171, 178, 185))
 
     # Victim list
     visible = victim_list[scroll:scroll + ROWS_VISIBLE]
@@ -243,14 +243,14 @@ def _draw_frame(lcd, font):
         # Truncate IPv6 for display
         short = v6addr.split("::")[-1] if "::" in v6addr else v6addr[-12:]
         mac_short = info["mac"][-8:]
-        d.text((2, y), f"{short[:10]} {mac_short}", font=font, fill="#CCCCCC")
+        d.text((2, y), f"{short[:10]} {mac_short}", font=font, fill=(242, 243, 244))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if is_attacking:
-        d.text((2, 117), "OK:Stop K3:Exit", font=font, fill="#888")
+        d.text((2, 117), "OK:Stop K3:Exit", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Start K1:Pfx K3:Quit", font=font, fill="#888")
+        d.text((2, 117), "OK:Start K1:Pfx K3:Quit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -273,9 +273,9 @@ def main():
     font = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font, fill="#FF0000")
+        d.text((4, 50), "scapy not found!", font=font, fill=(231, 76, 60))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

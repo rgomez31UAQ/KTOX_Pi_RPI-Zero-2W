@@ -68,7 +68,7 @@ signal.signal(signal.SIGTERM, cleanup)
 
 # --- UI Drawing Functions ---
 def draw_message(lines, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = 40
     for line in lines:
@@ -80,10 +80,10 @@ def draw_message(lines, color="yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_log_selection_ui(log_files, current_selection):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Log File", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Log File", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, log_name in enumerate(log_files):
@@ -91,29 +91,29 @@ def draw_log_selection_ui(log_files, current_selection):
         d.text((5, y_pos), log_name, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=View | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=View | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_log_viewer_ui():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
     with ui_lock:
         if current_log_file:
-            d.text((5, 5), f"Log: {os.path.basename(current_log_file)}", font=FONT_TITLE, fill="#00FF00")
+            d.text((5, 5), f"Log: {os.path.basename(current_log_file)}", font=FONT_TITLE, fill=(30, 132, 73))
         else:
-            d.text((5, 5), "Log Viewer", font=FONT_TITLE, fill="#00FF00")
-        d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+            d.text((5, 5), "Log Viewer", font=FONT_TITLE, fill=(30, 132, 73))
+        d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
         visible_lines = [line for line in log_lines][display_offset:]
         y_pos = 25
         for line in visible_lines:
-            d.text((5, y_pos), line[:COLS], font=FONT, fill="white") # Truncate long lines
+            d.text((5, y_pos), line[:COLS], font=FONT, fill=(242, 243, 244)) # Truncate long lines
             y_pos += 11
             if y_pos > HEIGHT - 15: # Stop if we run out of screen space
                 break
     
-    d.text((5, 115), "UP/DOWN=Scroll | OK=Refresh | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Scroll | OK=Refresh | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 # --- Log Management Functions ---

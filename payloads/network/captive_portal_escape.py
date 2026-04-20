@@ -86,7 +86,7 @@ def lcd_status(title, lines, accent=None):
 
     # Header
     draw.rectangle((0, 0, W, 16), fill=HEADER)
-    draw.text((4, 2), title[:20], fill="#FFFFFF", font=FONT_MD)
+    draw.text((4, 2), title[:20], fill=(242, 243, 244), font=FONT_MD)
 
     y = 20
     for line in lines[:8]:
@@ -260,7 +260,7 @@ def render_menu(cursor):
     draw = ImageDraw.Draw(img)
 
     draw.rectangle((0, 0, W, 16), fill=HEADER)
-    draw.text((4, 2), "CAPTIVE ESCAPE", fill="#FFFFFF", font=FONT_MD)
+    draw.text((4, 2), "CAPTIVE ESCAPE", fill=(242, 243, 244), font=FONT_MD)
 
     ok = _internet_ok()
     badge = "FREE" if ok else "LOCKED"
@@ -279,7 +279,7 @@ def render_menu(cursor):
         line = f"[{sc}] {t['name']}"
         if sel:
             draw.rectangle((0, y, W, y + 11), fill=HEADER)
-            draw.text((4, y), line[:21], fill="#FFFFFF", font=FONT_SM)
+            draw.text((4, y), line[:21], fill=(242, 243, 244), font=FONT_SM)
         else:
             draw.text((4, y), line[:21], fill=col, font=FONT_SM)
         y += 12

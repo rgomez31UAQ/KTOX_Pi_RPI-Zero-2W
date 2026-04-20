@@ -42,17 +42,17 @@ _GAME_W, _GAME_H = 128, 128
 font = ImageFont.load_default()
 
 # ---------------------------------------------------------------------------
-# Colours (green/black RaspyJack theme)
+# Colours (KTOX dark-red theme)
 # ---------------------------------------------------------------------------
-COL_BG = (0, 0, 0)
-COL_WALL = (80, 80, 80)
-COL_FLOOR = (20, 20, 20)
-COL_PLAYER = (0, 255, 0)
-COL_BOX = (180, 100, 0)
-COL_BOX_ON = (255, 200, 0)
-COL_TARGET = (200, 0, 0)
-COL_TEXT = (0, 255, 0)
-COL_DIM = (0, 120, 0)
+COL_BG     = (10,  0,   0)   # KTOX BG
+COL_WALL   = (113, 125, 126) # STEEL
+COL_FLOOR  = (34,  0,   0)   # FOOTER
+COL_PLAYER = (231, 76,  60)  # EMBER
+COL_BOX    = (146, 43,  33)  # RUST
+COL_BOX_ON = (212, 172, 13)  # YELLOW
+COL_TARGET = (192, 57,  43)  # BLOOD
+COL_TEXT   = (242, 243, 244) # WHITE
+COL_DIM    = (86,  101, 115) # DIM
 
 # ---------------------------------------------------------------------------
 # Levels (classic Sokoban format)

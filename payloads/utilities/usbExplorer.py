@@ -408,11 +408,11 @@ def lcd_loop():
         img = Image.new("RGB", (W, H), "#0A0000")
         d = ImageDraw.Draw(img)
         d.rectangle((0,0,W,17), fill="#8B0000")
-        d.text((4,3), "USB EXPLORER", font=font_bold, fill="#FF3333")
+        d.text((4,3), "USB EXPLORER", font=font_bold, fill=(231, 76, 60))
         y = 20
-        d.text((4,y), f"IP: {ip}:{PORT}", font=font_sm, fill="#FFBBBB"); y+=12
-        d.text((4,y), f"USB: {usb_status[:15]}", font=font_sm, fill="#FFBBBB"); y+=12
-        d.text((4,y), "Status: RUNNING", font=font_sm, fill="#00FF00"); y+=12
+        d.text((4,y), f"IP: {ip}:{PORT}", font=font_sm, fill=(171, 178, 185)); y+=12
+        d.text((4,y), f"USB: {usb_status[:15]}", font=font_sm, fill=(171, 178, 185)); y+=12
+        d.text((4,y), "Status: RUNNING", font=font_sm, fill=(30, 132, 73)); y+=12
         d.text((4,y), "K2=Refresh  K3=Exit", font=font_sm, fill="#FF7777")
         d.rectangle((0,H-12,W,H), fill="#220000")
         LCD.LCD_ShowImage(img, 0, 0)

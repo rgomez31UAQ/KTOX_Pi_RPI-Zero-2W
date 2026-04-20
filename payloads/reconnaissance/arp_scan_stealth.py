@@ -264,13 +264,13 @@ def _export_loot():
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "STEALTH SCAN", font=font, fill="#00AAFF")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if scanning else "#444")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if scanning else "#444")
 
     with lock:
         prog = progress
@@ -281,7 +281,7 @@ def _draw_frame(lcd, font):
 
     # Progress bar
     bar_x, bar_y, bar_w, bar_h = 4, 18, 120, 8
-    d.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), outline="#444")
+    d.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), outline=(34, 0, 0))
     fill_w = int(prog * (bar_w - 2))
     if fill_w > 0:
         d.rectangle(
@@ -292,8 +292,8 @@ def _draw_frame(lcd, font):
     # Stats line
     pct = int(prog * 100)
     spoof_tag = "SPOOF" if mac_spoof else "REAL"
-    d.text((4, 28), f"{done}/{total} ({pct}%) Found:{found}", font=font, fill="#AAAAAA")
-    d.text((4, 40), f"MAC: {spoof_tag}", font=font, fill="#FFAA00")
+    d.text((4, 28), f"{done}/{total} ({pct}%) Found:{found}", font=font, fill=(171, 178, 185))
+    d.text((4, 40), f"MAC: {spoof_tag}", font=font, fill=(212, 172, 13))
 
     # Scrollable host list
     visible = host_list[scroll:scroll + ROWS_VISIBLE]
@@ -303,9 +303,9 @@ def _draw_frame(lcd, font):
         mac_short = host["mac"][-8:]
         vendor = host["vendor"][:5] if host["vendor"] else ""
         line = f"{ip:<15s} {mac_short}"
-        d.text((2, y), line, font=font, fill="#CCCCCC")
+        d.text((2, y), line, font=font, fill=(242, 243, 244))
         if vendor:
-            d.text((110, y), vendor[:3], font=font, fill="#888")
+            d.text((110, y), vendor[:3], font=font, fill=(113, 125, 126))
 
     # Scroll indicator
     total_items = len(host_list)
@@ -313,14 +313,14 @@ def _draw_frame(lcd, font):
         bar_area = 60
         ind_h = max(4, int(ROWS_VISIBLE / total_items * bar_area))
         ind_y = 54 + int(scroll / total_items * bar_area)
-        d.rectangle((126, ind_y, 127, ind_y + ind_h), fill="#444")
+        d.rectangle((126, ind_y, 127, ind_y + ind_h), fill=(34, 0, 0))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if scanning:
-        d.text((2, 117), "Scanning... K3:Exit", font=font, fill="#888")
+        d.text((2, 117), "Scanning... K3:Exit", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Scan K2:Exp K3:Quit", font=font, fill="#888")
+        d.text((2, 117), "OK:Scan K2:Exp K3:Quit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -342,10 +342,10 @@ def main():
     font = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font, fill="#FF0000")
-        d.text((4, 65), "pip install scapy", font=font, fill="#888")
+        d.text((4, 50), "scapy not found!", font=font, fill=(231, 76, 60))
+        d.text((4, 65), "pip install scapy", font=font, fill=(113, 125, 126))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()
@@ -354,16 +354,16 @@ def main():
     iface, cidr = _detect_iface_and_subnet()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((8, 16), "STEALTH ARP SCAN", font=font, fill="#00AAFF")
-    d.text((4, 36), "Slow randomized scan", font=font, fill="#888")
-    d.text((4, 48), f"Iface: {iface or 'none'}", font=font, fill="#666")
-    d.text((4, 60), f"Net: {cidr or 'none'}", font=font, fill="#666")
-    d.text((4, 76), "OK    Start scan", font=font, fill="#666")
-    d.text((4, 88), "KEY1  Toggle spoof", font=font, fill="#666")
-    d.text((4, 100), "KEY2  Export results", font=font, fill="#666")
-    d.text((4, 112), "KEY3  Exit", font=font, fill="#666")
+    d.text((4, 36), "Slow randomized scan", font=font, fill=(113, 125, 126))
+    d.text((4, 48), f"Iface: {iface or 'none'}", font=font, fill=(86, 101, 115))
+    d.text((4, 60), f"Net: {cidr or 'none'}", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "OK    Start scan", font=font, fill=(86, 101, 115))
+    d.text((4, 88), "KEY1  Toggle spoof", font=font, fill=(86, 101, 115))
+    d.text((4, 100), "KEY2  Export results", font=font, fill=(86, 101, 115))
+    d.text((4, 112), "KEY3  Exit", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -385,9 +385,9 @@ def main():
                         target=_scan_thread, args=(iface, cidr), daemon=True
                     ).start()
                 else:
-                    img2 = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                    img2 = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                     d2 = ScaledDraw(img2)
-                    d2.text((4, 50), "No network found!", font=font, fill="#FF0000")
+                    d2.text((4, 50), "No network found!", font=font, fill=(231, 76, 60))
                     lcd.LCD_ShowImage(img2, 0, 0)
                     time.sleep(1.5)
                 time.sleep(0.3)
@@ -401,14 +401,14 @@ def main():
                     has_data = len(discovered) > 0
                 if has_data:
                     fname = _export_loot()
-                    img2 = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                    img2 = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                     d2 = ScaledDraw(img2)
-                    d2.text((4, 50), "Exported!", font=font, fill="#00FF00")
-                    d2.text((4, 65), fname[:22], font=font, fill="#888")
+                    d2.text((4, 50), "Exported!", font=font, fill=(30, 132, 73))
+                    d2.text((4, 65), fname[:22], font=font, fill=(113, 125, 126))
                     lcd.LCD_ShowImage(img2, 0, 0)
                     time.sleep(1.5)
                 else:
-                    img2 = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                    img2 = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                     d2 = ScaledDraw(img2)
                     d2.text((4, 50), "No data to export", font=font, fill="#FF8800")
                     lcd.LCD_ShowImage(img2, 0, 0)

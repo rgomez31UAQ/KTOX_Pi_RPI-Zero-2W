@@ -90,10 +90,10 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_ui(status_msg=None, message_lines=None):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "BLE Service Explorer", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "BLE Service Explorer", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if message_lines:
         if isinstance(message_lines, str):
@@ -103,10 +103,10 @@ def draw_ui(status_msg=None, message_lines=None):
             bbox = d.textbbox((0, 0), line, font=FONT)
             w = bbox[2] - bbox[0]
             x = (WIDTH - w) // 2
-            d.text((x, y_offset), line, font=FONT, fill="yellow")
+            d.text((x, y_offset), line, font=FONT, fill=(212, 172, 13))
             y_offset += 12
     elif status_msg:
-        d.text((10, 60), status_msg, font=FONT, fill="yellow")
+        d.text((10, 60), status_msg, font=FONT, fill=(212, 172, 13))
     else: # Display scan results
         start_index = max(0, selected_index - 4)
         end_index = min(len(results), start_index + 8)
@@ -118,7 +118,7 @@ def draw_ui(status_msg=None, message_lines=None):
             d.text((5, y_pos), line, font=FONT, fill=color)
             y_pos += 11
 
-    d.text((5, 110), "OK=Scan | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 110), "OK=Scan | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def run_scan():

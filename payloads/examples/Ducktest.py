@@ -551,7 +551,7 @@ def draw_screen(ui):
     d = ImageDraw.Draw(img)
     # Header
     d.rectangle((0, 0, W, 17), fill="#8B0000")
-    d.text((4, 3), "USB RUBBER DUCKY", font=f9, fill="#FF3333")
+    d.text((4, 3), "USB RUBBER DUCKY", font=f9, fill=(231, 76, 60))
     # HID status
     hid_ok = os.path.exists(HID_DEVICE)
     status_color = "#00FF00" if hid_ok else "#FF0000"
@@ -565,15 +565,15 @@ def draw_screen(ui):
         for i in range(start, min(start + max_rows, len(ui.payloads))):
             name = ui.payloads[i][:-3] if ui.payloads[i].endswith(".ds") else ui.payloads[i][:-8]
             prefix = ">" if i == ui.selected else " "
-            d.text((4, y), f"{prefix} {name[:20]}", font=f9, fill="#FFBBBB")
+            d.text((4, y), f"{prefix} {name[:20]}", font=f9, fill=(171, 178, 185))
             y += 12
         if not ui.payloads:
-            d.text((4, y), "No payloads found", font=f9, fill="#888888")
+            d.text((4, y), "No payloads found", font=f9, fill=(113, 125, 126))
         d.text((4, H-12), "UP/DN OK K1=refresh K3=exit", font=f9, fill="#FF7777")
     elif ui.state == "preview":
         # Preview header
         name = ui.payloads[ui.selected][:-3] if ui.payloads[ui.selected].endswith(".ds") else ui.payloads[ui.selected][:-8]
-        d.text((4, 20), f"PREVIEW: {name[:18]}", font=f9, fill="#00FFFF")
+        d.text((4, 20), f"PREVIEW: {name[:18]}", font=f9, fill=(171, 178, 185))
         # Preview content
         max_lines = 5
         visible = ui.preview_lines[ui.preview_scroll:ui.preview_scroll + max_lines]
@@ -584,16 +584,16 @@ def draw_screen(ui):
     elif ui.state == "run":
         # Running screen
         if ui.countdown > 0:
-            d.text((4, 40), f"Running in {ui.countdown}...", font=f14, fill="#FFFF00")
+            d.text((4, 40), f"Running in {ui.countdown}...", font=f14, fill=(212, 172, 13))
         elif ui.running:
-            d.text((4, 40), "Executing payload...", font=f9, fill="#00FF00")
+            d.text((4, 40), "Executing payload...", font=f9, fill=(30, 132, 73))
             if ui.step_msg:
-                d.text((4, 55), ui.step_msg[:23], font=f9, fill="#AAAAAA")
+                d.text((4, 55), ui.step_msg[:23], font=f9, fill=(171, 178, 185))
         else:
             # Done
             color = "#00FF00" if ui.run_ok else "#FF0000"
             d.text((4, 40), "DONE" if ui.run_ok else "FAILED", font=f14, fill=color)
-            d.text((4, 60), ui.run_msg[:23], font=f9, fill="#FFBBBB")
+            d.text((4, 60), ui.run_msg[:23], font=f9, fill=(171, 178, 185))
         d.text((4, H-12), "K3=back", font=f9, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)
 

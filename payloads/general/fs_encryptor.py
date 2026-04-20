@@ -76,7 +76,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def show_message(lines, color="lime"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40
@@ -89,43 +89,43 @@ def show_message(lines, color="lime"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "FS Encryptor", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
+    d.text((5, 5), "FS Encryptor", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
     
     if screen_state == "main":
-        d.text((5, 30), "Sandbox Dir:", font=FONT, fill="white")
-        d.text((5, 45), SANDBOX_DIR[:16] + "...", font=FONT_TITLE, fill="yellow")
-        d.text((5, 65), "XOR Key:", font=FONT, fill="white")
-        d.text((5, 80), str(XOR_KEY), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "OK=Encrypt | KEY1=Edit Dir | KEY2=Edit Key | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 30), "Sandbox Dir:", font=FONT, fill=(242, 243, 244))
+        d.text((5, 45), SANDBOX_DIR[:16] + "...", font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 65), "XOR Key:", font=FONT, fill=(242, 243, 244))
+        d.text((5, 80), str(XOR_KEY), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "OK=Encrypt | KEY1=Edit Dir | KEY2=Edit Key | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "dir_input":
-        d.text((5, 30), "Enter Dir Path:", font=FONT, fill="white")
+        d.text((5, 30), "Enter Dir Path:", font=FONT, fill=(242, 243, 244))
         display_dir = list(current_dir_input)
         if dir_input_cursor_pos < len(display_dir):
             display_dir[dir_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_dir[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_dir[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     elif screen_state == "key_input":
-        d.text((5, 30), "Enter XOR Key (0-255):", font=FONT, fill="white")
+        d.text((5, 30), "Enter XOR Key (0-255):", font=FONT, fill=(242, 243, 244))
         display_key = list(current_key_input)
         if key_input_cursor_pos < len(display_key):
             display_key[key_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_key), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Digit | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_key), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Digit | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     elif screen_state == "encrypting":
-        d.text((5, 50), "Encrypting files...", font=FONT_TITLE, fill="yellow")
-        d.text((5, 70), "Please wait.", font=FONT, fill="white")
-        d.text((5, 115), "KEY3=Stop", font=FONT, fill="cyan")
+        d.text((5, 50), "Encrypting files...", font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 70), "Please wait.", font=FONT, fill=(242, 243, 244))
+        d.text((5, 115), "KEY3=Stop", font=FONT, fill=(171, 178, 185))
     elif screen_state == "complete":
-        d.text((5, 50), "Encryption Complete!", font=FONT_TITLE, fill="lime")
-        d.text((5, 70), "Check directory.", font=FONT, fill="white")
-        d.text((5, 115), "KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 50), "Encryption Complete!", font=FONT_TITLE, fill=(231, 76, 60))
+        d.text((5, 70), "Check directory.", font=FONT, fill=(242, 243, 244))
+        d.text((5, 115), "KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "error":
         d.text((5, 50), "ERROR!", font=FONT_TITLE, fill="red")
-        d.text((5, 70), "Check console.", font=FONT, fill="white")
-        d.text((5, 115), "KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 70), "Check console.", font=FONT, fill=(242, 243, 244))
+        d.text((5, 115), "KEY3=Exit", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 

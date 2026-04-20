@@ -260,10 +260,10 @@ def draw_keyboard(input_text, selected_row, selected_col):
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill="#004466")
-    d.text((4,3), "URL ENTRY", font=font_sm, fill="#FF3333")
-    d.rectangle((2,19,W-2,27), fill="#222222")
+    d.text((4,3), "URL ENTRY", font=font_sm, fill=(231, 76, 60))
+    d.rectangle((2,19,W-2,27), fill=(10, 0, 0))
     display_text = input_text[-20:] if len(input_text) > 20 else input_text
-    d.text((4,20), display_text, font=font_sm, fill="#FFFF00")
+    d.text((4,20), display_text, font=font_sm, fill=(212, 172, 13))
     for r, row in enumerate(KEYBOARD_ROWS):
         y = ROW_Y[r]
         for c, ch in enumerate(row):
@@ -272,7 +272,7 @@ def draw_keyboard(input_text, selected_row, selected_col):
                 d.rectangle((x-1, y-1, x+CELL_W-1, y+7), fill="#FF8800")
                 d.text((x, y), ch, font=font_sm, fill="#000000")
             else:
-                d.text((x, y), ch, font=font_sm, fill="#FFFFFF")
+                d.text((x, y), ch, font=font_sm, fill=(242, 243, 244))
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "OK=add  K1=go  K2=del  K3=cancel", font=font_sm, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -320,28 +320,28 @@ def draw_browser(browser):
     # Header: title + tab indicator
     d.rectangle((0,0,W,17), fill="#8B0000")
     title = f"[{browser.current_tab+1}/{len(browser.tabs)}] {tab.title[:15]}"
-    d.text((4,3), title[:20], font=font_sm, fill="#FF3333")
+    d.text((4,3), title[:20], font=font_sm, fill=(231, 76, 60))
     # Status line
-    d.text((4, H-24), browser.status[:23], font=font_sm, fill="#AAAAAA")
+    d.text((4, H-24), browser.status[:23], font=font_sm, fill=(171, 178, 185))
     # Content
     lines = tab.page_text[tab.scroll:tab.scroll+6]
     y = 20
     for line in lines:
-        d.text((4, y), line[:23], font=font_sm, fill="#FFBBBB")
+        d.text((4, y), line[:23], font=font_sm, fill=(171, 178, 185))
         y += 12
     # Links indicator
     if tab.links:
-        d.text((4, H-12), f"🔗 {len(tab.links)} links", font=font_sm, fill="#00FF00")
+        d.text((4, H-12), f"🔗 {len(tab.links)} links", font=font_sm, fill=(30, 132, 73))
     else:
-        d.text((4, H-12), "No links", font=font_sm, fill="#666666")
+        d.text((4, H-12), "No links", font=font_sm, fill=(86, 101, 115))
     # Scrollbar
     total = max(1, len(tab.page_text))
     if total > 6:
         sb_h = H - 20 - 24
         bar_h = max(3, int(sb_h * 6 / total))
         bar_y = 18 + int(sb_h * tab.scroll / total)
-        d.rectangle((W-3, 18, W-1, H-25), fill="#444444")
-        d.rectangle((W-3, bar_y, W-1, bar_y+bar_h), fill="#FF0000")
+        d.rectangle((W-3, 18, W-1, H-25), fill=(34, 0, 0))
+        d.rectangle((W-3, bar_y, W-1, bar_y+bar_h), fill=(231, 76, 60))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def wait_btn(timeout=0.1):
@@ -437,10 +437,10 @@ def draw_screen(lines, title="BROWSER", title_color="#8B0000"):
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill=title_color)
-    d.text((4,3), title[:20], font=font_sm, fill="#FF3333")
+    d.text((4,3), title[:20], font=font_sm, fill=(231, 76, 60))
     y = 20
     for line in lines[:7]:
-        d.text((4,y), line[:23], font=font_sm, fill="#FFBBBB")
+        d.text((4,y), line[:23], font=font_sm, fill=(171, 178, 185))
         y += 12
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "UP/DN OK KEY1/2/3", font=font_sm, fill="#FF7777")

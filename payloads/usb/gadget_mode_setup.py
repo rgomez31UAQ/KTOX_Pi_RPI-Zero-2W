@@ -396,7 +396,7 @@ def action_persist_disable():
 def _draw():
     """Render current status to LCD."""
     rows = get_status()
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
@@ -415,18 +415,18 @@ def _draw():
     y = 16
     for label, val, ok in visible:
         col_v = "#00CC44" if ok else "#FF4444"
-        d.text((2, y), f"{label}:", font=font_sm, fill="#888888")
+        d.text((2, y), f"{label}:", font=font_sm, fill=(113, 125, 126))
         d.text((72, y), val[:14], font=font_sm, fill=col_v)
         y += 13
 
     # Status bar
-    d.rectangle((0, 104, 127, 114), fill="#111111")
+    d.rectangle((0, 104, 127, 114), fill=(10, 0, 0))
     bar_col = "#FFAA00" if is_busy else "#555555"
     d.text((2, 105), (msg or "")[:26], font=font_sm, fill=bar_col)
 
     # Footer
-    d.rectangle((0, 115, 127, 127), fill="#111111")
-    d.text((2, 116), "OK:Load K1:+Persist K2:-", font=font_sm, fill="#444444")
+    d.rectangle((0, 115, 127, 127), fill=(10, 0, 0))
+    d.text((2, 116), "OK:Load K1:+Persist K2:-", font=font_sm, fill=(34, 0, 0))
 
     LCD.LCD_ShowImage(img, 0, 0)
 

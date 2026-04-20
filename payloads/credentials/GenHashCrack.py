@@ -25,7 +25,7 @@ def init_hw():
     LCD = LCD_1in44.LCD()
     LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
     LCD.LCD_Clear()
-    image = Image.new("RGB", (W, H), "black")
+    image = Image.new("RGB", (W, H), (10, 0, 0))
     draw = ImageDraw.Draw(image)
     try:
         font_sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",9)
@@ -38,10 +38,10 @@ def push(): LCD.LCD_ShowImage(image,0,0) if LCD and image else None
 def draw_ui():
     draw.rectangle((0,0,W,H), fill="#0A0000")
     draw.rectangle((0,0,W,17), fill="#8B0000")
-    draw.text((4,3), "GENERIC HASH CRACKER", font=font_sm, fill="#FF3333")
-    draw.text((4,20), f"File: {os.path.basename(selected_file) if selected_file else 'None'}", font=font_sm, fill="#FFBBBB")
-    draw.text((4,32), f"Format: {hash_format}", font=font_sm, fill="#FFBBBB")
-    draw.text((4,44), f"Status: {status}", font=font_sm, fill="#FFBBBB")
+    draw.text((4,3), "GENERIC HASH CRACKER", font=font_sm, fill=(231, 76, 60))
+    draw.text((4,20), f"File: {os.path.basename(selected_file) if selected_file else 'None'}", font=font_sm, fill=(171, 178, 185))
+    draw.text((4,32), f"Format: {hash_format}", font=font_sm, fill=(171, 178, 185))
+    draw.text((4,44), f"Status: {status}", font=font_sm, fill=(171, 178, 185))
     draw.text((4,56), f"Result: {result[:20]}", font=font_sm, fill="#88FF88" if result else "#FFBBBB")
     draw.rectangle((0,H-12,W,H), fill="#220000")
     draw.text((4,H-11), "K1=Select  K2=Crack  K3=Exit", font=font_sm, fill="#FF7777")

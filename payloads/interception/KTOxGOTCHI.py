@@ -331,11 +331,11 @@ def draw_screen():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#8B0000")
-    d.text((4, 3), "KTOxGOTCHI", font=f9, fill="#FF3333")
+    d.text((4, 3), "KTOxGOTCHI", font=f9, fill=(231, 76, 60))
     y = 20
-    d.text((4, y), f"HS: {handshake_count}", font=f9, fill="#FFBBBB"); y += 12
-    d.text((4, y), f"APs: {ap_count}", font=f9, fill="#FFBBBB"); y += 12
-    d.text((4, y), f"CLI: {client_count}", font=f9, fill="#FFBBBB"); y += 12
+    d.text((4, y), f"HS: {handshake_count}", font=f9, fill=(171, 178, 185)); y += 12
+    d.text((4, y), f"APs: {ap_count}", font=f9, fill=(171, 178, 185)); y += 12
+    d.text((4, y), f"CLI: {client_count}", font=f9, fill=(171, 178, 185)); y += 12
     face_char = faces.get(mood, faces["normal"])
     try:
         face_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 16)
@@ -344,8 +344,8 @@ def draw_screen():
     bbox = d.textbbox((0, 0), face_char, font=face_font)
     face_w = bbox[2] - bbox[0]
     face_x = (W - face_w) // 2
-    d.text((face_x, 50), face_char, font=face_font, fill="#00FF00")
-    d.text((4, H-30), console_msg[:23], font=f9, fill="#AAAAAA")
+    d.text((face_x, 50), face_char, font=face_font, fill=(30, 132, 73))
+    d.text((4, H-30), console_msg[:23], font=f9, fill=(171, 178, 185))
     d.rectangle((0, H-12, W, H), fill="#220000")
     mode_str = "AUTO" if auto_mode else "MANUAL"
     d.text((4, H-10), f"{mode_str} | K1=Toggle K2=Log K3=Exit", font=f9, fill="#FF7777")
@@ -367,10 +367,10 @@ def draw_target_list():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#8B0000")
-    d.text((4, 3), "SELECT TARGET", font=f9, fill="#FF3333")
+    d.text((4, 3), "SELECT TARGET", font=f9, fill=(231, 76, 60))
     y = 20
     for line in lines:
-        d.text((4, y), line[:23], font=f9, fill="#FFBBBB")
+        d.text((4, y), line[:23], font=f9, fill=(171, 178, 185))
         y += 12
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "UP/DN OK K3=Back", font=f9, fill="#FF7777")
@@ -398,10 +398,10 @@ def show_log():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#004466")
-    d.text((4, 3), "LOG", font=f9, fill="#FF3333")
+    d.text((4, 3), "LOG", font=f9, fill=(231, 76, 60))
     y = 20
     for line in lines[:7]:
-        d.text((4, y), line[:23], font=f9, fill="#FFBBBB")
+        d.text((4, y), line[:23], font=f9, fill=(171, 178, 185))
         y += 12
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "Any key to exit", font=f9, fill="#FF7777")
@@ -428,10 +428,10 @@ def main():
     global running, auto_mode, attack_thread, selected_idx, networks, attack_stop, console_msg
 
     if not enable_monitor_mode():
-        img = Image.new("RGB", (W, H), "black")
+        img = Image.new("RGB", (W, H), (10, 0, 0))
         d = ImageDraw.Draw(img)
         d.text((4, 40), "Monitor mode failed", font=f9, fill="red")
-        d.text((4, 55), "Check interface", font=f9, fill="white")
+        d.text((4, 55), "Check interface", font=f9, fill=(242, 243, 244))
         LCD.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

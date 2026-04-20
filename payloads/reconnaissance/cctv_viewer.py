@@ -222,13 +222,13 @@ def _run_settings_menu():
 
     while True:
         # -- Draw menu --
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
 
         # Title bar
         d.rectangle((0, 0, 127, 12), fill="#003366")
-        d.text((2, 1), "SETTINGS", font=font, fill="#00CCFF")
-        d.text((70, 1), "OK=Start", font=font, fill="#888")
+        d.text((2, 1), "SETTINGS", font=font, fill=(171, 178, 185))
+        d.text((70, 1), "OK=Start", font=font, fill=(113, 125, 126))
 
         # Menu items (show up to 5 items, scrollable)
         visible_count = 5
@@ -246,7 +246,7 @@ def _run_settings_menu():
             if is_selected:
                 # Highlight bar
                 d.rectangle((0, y, 127, y + 18), fill="#1a1a2e")
-                d.rectangle((0, y, 2, y + 18), fill="#00CCFF")
+                d.rectangle((0, y, 2, y + 18), fill=(171, 178, 185))
 
             # Label
             label_color = "#FFFFFF" if is_selected else "#888888"
@@ -821,7 +821,7 @@ def _draw_grid():
     cameras = _get("cameras")
     start = _get("cam_idx")
     count = min(4, len(cameras))
-    canvas = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    canvas = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     cell = WIDTH // 2  # 64
 
     positions = [(0, 0), (cell, 0), (0, cell), (cell, cell)]
@@ -835,13 +835,13 @@ def _draw_grid():
         if frame is not None:
             canvas.paste(frame, (px, py))
         else:
-            d.rectangle((px, py, px + cell - 1, py + cell - 1), outline="#333")
-            d.text((px + 2, py + cell // 2), "...", font=font, fill="#666")
+            d.rectangle((px, py, px + cell - 1, py + cell - 1), outline=(34, 0, 0))
+            d.text((px + 2, py + cell // 2), "...", font=font, fill=(86, 101, 115))
         # Camera label
         name = cameras[idx][0][:7]
         d.text((px + 1, py + 1), name, font=font, fill="#0F0")
 
-    d.text((2, HEIGHT - 11), "GRID  DOWN=back", font=font, fill="#888")
+    d.text((2, HEIGHT - 11), "GRID  DOWN=back", font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(canvas, 0, 0)
 
 
@@ -865,9 +865,9 @@ def _draw_lcd():
     elif _get("last_frame") is not None:
         img = _get("last_frame").copy()
     else:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((10, 55), status[:20], font=font, fill="#888")
+        d.text((10, 55), status[:20], font=font, fill=(113, 125, 126))
         LCD.LCD_ShowImage(img, 0, 0)
         return
 
@@ -877,11 +877,11 @@ def _draw_lcd():
 
         # Top bar
         d.rectangle((0, 0, 127, 12), fill="#000000")
-        d.text((2, 1), name[:14], font=font, fill="#00FF00")
-        d.text((90, 1), f"{fps}fps", font=font, fill="#FFFF00")
+        d.text((2, 1), name[:14], font=font, fill=(30, 132, 73))
+        d.text((90, 1), f"{fps}fps", font=font, fill=(212, 172, 13))
 
         if recording:
-            d.ellipse((82, 2, 88, 8), fill="#FF0000")
+            d.ellipse((82, 2, 88, 8), fill=(231, 76, 60))
 
         if zoom_idx > 0:
             d.text((70, 1), f"{ZOOM_LEVELS[zoom_idx]}x", font=font, fill="#FF8800")
@@ -893,20 +893,20 @@ def _draw_lcd():
             d.text((2, 117), f"> {idx_str}", font=font, fill="#AAA")
             if cam_idx < len(cameras):
                 url = cameras[cam_idx][1]
-                d.text((50, 117), url[-12:], font=font, fill="#666")
+                d.text((50, 117), url[-12:], font=font, fill=(86, 101, 115))
 
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_no_cameras():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 16), "CCTV VIEWER V2", font=font, fill="#00CCFF")
-    d.text((4, 36), "No cameras loaded", font=font, fill="#FF4444")
-    d.text((4, 52), "Run CCTV Scanner", font=font, fill="#888")
-    d.text((4, 64), "or add URLs to:", font=font, fill="#888")
-    d.text((4, 76), MANUAL_URLS_FILE[-22:], font=font, fill="#666")
-    d.text((4, 96), "Format:", font=font, fill="#666")
+    d.text((4, 16), "CCTV VIEWER V2", font=font, fill=(171, 178, 185))
+    d.text((4, 36), "No cameras loaded", font=font, fill=(231, 76, 60))
+    d.text((4, 52), "Run CCTV Scanner", font=font, fill=(113, 125, 126))
+    d.text((4, 64), "or add URLs to:", font=font, fill=(113, 125, 126))
+    d.text((4, 76), MANUAL_URLS_FILE[-22:], font=font, fill=(86, 101, 115))
+    d.text((4, 96), "Format:", font=font, fill=(86, 101, 115))
     d.text((4, 108), "Name|URL|user:pass", font=font, fill="#555")
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -960,11 +960,11 @@ def _toggle_recording():
 
 
 def _show_msg(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 50), line1[:21], font=font, fill="#00FF00")
+    d.text((4, 50), line1[:21], font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2[:21], font=font, fill="#888")
+        d.text((4, 65), line2[:21], font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.8)
 
@@ -974,18 +974,18 @@ def _show_msg(line1, line2=""):
 # =============================================================================
 def main():
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 8), "CCTV VIEWER V2", font=font, fill="#00CCFF")
-    d.text((4, 24), "TurboJPEG:", font=font, fill="#888")
+    d.text((4, 8), "CCTV VIEWER V2", font=font, fill=(171, 178, 185))
+    d.text((4, 24), "TurboJPEG:", font=font, fill=(113, 125, 126))
     tj_status = "YES" if _tj else "no (PIL)"
     tj_color = "#00FF00" if _tj else "#FF8800"
     d.text((75, 24), tj_status, font=font, fill=tj_color)
-    d.text((4, 44), "L/R=Cam  U/D=Zoom", font=font, fill="#666")
-    d.text((4, 56), "OK=Menu  K1=Overlay", font=font, fill="#666")
-    d.text((4, 68), "K2=Snap  K3=Exit", font=font, fill="#666")
-    d.text((4, 84), "Press OK for menu", font=font, fill="#00FF00")
-    d.text((4, 96), "K3 = skip (defaults)", font=font, fill="#666")
+    d.text((4, 44), "L/R=Cam  U/D=Zoom", font=font, fill=(86, 101, 115))
+    d.text((4, 56), "OK=Menu  K1=Overlay", font=font, fill=(86, 101, 115))
+    d.text((4, 68), "K2=Snap  K3=Exit", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "Press OK for menu", font=font, fill=(30, 132, 73))
+    d.text((4, 96), "K3 = skip (defaults)", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
 
     # Wait for user choice: OK = settings menu, KEY3 = skip with defaults
@@ -1000,9 +1000,9 @@ def main():
         time.sleep(0.05)
 
     # Show chosen settings briefly
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 4), "Config:", font=font, fill="#00CCFF")
+    d.text((4, 4), "Config:", font=font, fill=(171, 178, 185))
     res_label = _settings["cam_resolution"] or "Default"
     comp_label = str(_settings["cam_compression"]) if _settings["cam_compression"] is not None else "Default"
     d.text((4, 18), f"Cam Res: {res_label}", font=font, fill="#AAA")
@@ -1010,7 +1010,7 @@ def main():
     d.text((4, 42), f"Filter: {_settings['resize_filter']}", font=font, fill="#AAA")
     d.text((4, 54), f"Enhance: {_settings['enhance']}", font=font, fill="#AAA")
     d.text((4, 66), f"Skip: {_settings['frame_skip']}", font=font, fill="#AAA")
-    d.text((4, 84), "Loading cameras...", font=font, fill="#888")
+    d.text((4, 84), "Loading cameras...", font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.8)
 

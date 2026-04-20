@@ -411,20 +411,20 @@ def _lcd_input(prompt, max_len=40, is_password=False):
     char_idx = 0
 
     while True:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.rectangle((0, 0, 127, 13), fill="#111")
-        d.text((2, 1), prompt[:20], font=font, fill="#CC44FF")
+        d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+        d.text((2, 1), prompt[:20], font=font, fill=(231, 76, 60))
 
         display_val = "*" * len(buf) if is_password else "".join(buf)
-        d.text((2, 20), display_val[-20:], font=font, fill="white")
+        d.text((2, 20), display_val[-20:], font=font, fill=(242, 243, 244))
 
         current_char = LCD_KB_CHARS[char_idx % len(LCD_KB_CHARS)]
-        d.text((2, 38), f"Char: {current_char}", font=font, fill="#FFAA00")
-        d.rectangle((0, 54, 127, 55), fill="#333")
-        d.text((2, 60), "U/D:char OK:add", font=font, fill="#888")
-        d.text((2, 74), "RIGHT:done LEFT:del", font=font, fill="#888")
-        d.text((2, 90), f"Len: {len(buf)}/{max_len}", font=font, fill="#666")
+        d.text((2, 38), f"Char: {current_char}", font=font, fill=(212, 172, 13))
+        d.rectangle((0, 54, 127, 55), fill=(34, 0, 0))
+        d.text((2, 60), "U/D:char OK:add", font=font, fill=(113, 125, 126))
+        d.text((2, 74), "RIGHT:done LEFT:del", font=font, fill=(113, 125, 126))
+        d.text((2, 90), f"Len: {len(buf)}/{max_len}", font=font, fill=(86, 101, 115))
 
         LCD.LCD_ShowImage(img, 0, 0)
 
@@ -484,8 +484,8 @@ def _prompt_credentials():
 
 
 def _draw_header(d):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "KERBEROAST", font=font, fill="#CC44FF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "KERBEROAST", font=font, fill=(231, 76, 60))
     with lock:
         running = attack_running
     color = "#00FF00" if running else "#FF4444"
@@ -493,12 +493,12 @@ def _draw_header(d):
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_main_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d)
 
@@ -512,7 +512,7 @@ def draw_main_view():
         h_count = len(hashes_found)
 
     y = 18
-    d.text((2, y), f"Mode: {mode}", font=font, fill="#FFAA00")
+    d.text((2, y), f"Mode: {mode}", font=font, fill=(212, 172, 13))
     y += 14
 
     dc_color = "#00FF00" if detected else "#FF4444"
@@ -532,18 +532,18 @@ def draw_main_view():
     y += 14
 
     if running:
-        d.text((2, y), msg[:22], font=font, fill="#00CCFF")
+        d.text((2, y), msg[:22], font=font, fill=(171, 178, 185))
     elif h_count > 0:
-        d.text((2, y), f"Hashes: {h_count}", font=font, fill="#00FF00")
+        d.text((2, y), f"Hashes: {h_count}", font=font, fill=(30, 132, 73))
     else:
-        d.text((2, y), msg[:22], font=font, fill="#888")
+        d.text((2, y), msg[:22], font=font, fill=(113, 125, 126))
 
     _draw_footer(d, "OK:Go K1:Mode K3:Exit")
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def draw_results_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d)
 
@@ -552,18 +552,18 @@ def draw_results_view():
         sc = scroll_pos
         mode = MODES[mode_idx]
 
-    d.text((2, 16), f"{mode}: {len(hashes)} hashes", font=font, fill="#FFAA00")
+    d.text((2, 16), f"{mode}: {len(hashes)} hashes", font=font, fill=(212, 172, 13))
 
     if not hashes:
-        d.text((10, 50), "No hashes captured", font=font, fill="#666")
+        d.text((10, 50), "No hashes captured", font=font, fill=(86, 101, 115))
     else:
         visible = hashes[sc:sc + ROWS_VISIBLE]
         for i, h in enumerate(visible):
             y = 30 + i * 14
             acct = h["account"][:14]
             spn = h["spn"][:10] if h["spn"] else ""
-            d.text((2, y), f"{acct}", font=font, fill="#CC44FF")
-            d.text((80, y), spn, font=font, fill="#888")
+            d.text((2, y), f"{acct}", font=font, fill=(231, 76, 60))
+            d.text((80, y), spn, font=font, fill=(113, 125, 126))
 
     _draw_footer(d, f"U/D:Scrl K3:Back")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -573,14 +573,14 @@ def main():
     global mode_idx, scroll_pos, view_mode, status_msg
 
     # Splash screen
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((14, 12), "KERBEROAST", font=font, fill="#CC44FF")
-    d.text((4, 32), "TGS & AS-REP hash", font=font, fill="#888")
-    d.text((4, 44), "extraction tool", font=font, fill="#888")
-    d.text((4, 64), "OK = Start attack", font=font, fill="#666")
-    d.text((4, 76), "K1 = Toggle mode", font=font, fill="#666")
-    d.text((4, 88), "K3 = Exit", font=font, fill="#666")
+    d.text((14, 12), "KERBEROAST", font=font, fill=(231, 76, 60))
+    d.text((4, 32), "TGS & AS-REP hash", font=font, fill=(113, 125, 126))
+    d.text((4, 44), "extraction tool", font=font, fill=(113, 125, 126))
+    d.text((4, 64), "OK = Start attack", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K1 = Toggle mode", font=font, fill=(86, 101, 115))
+    d.text((4, 88), "K3 = Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.5)
 

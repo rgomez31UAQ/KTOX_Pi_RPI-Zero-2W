@@ -340,7 +340,7 @@ def _stop_service():
 # LCD drawing
 # ---------------------------------------------------------------------------
 def _draw_lcd():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     mode = MODES[_get("mode_idx")]
@@ -350,23 +350,23 @@ def _draw_lcd():
     scroll = _get("scroll")
 
     # Header
-    d.rectangle((0, 0, 127, 12), fill="#111")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
     d.text((2, 1), f"SMB EXFIL [{mode}]", font=font, fill="#00AAFF")
-    d.ellipse((118, 3, 124, 9), fill="#00FF00" if running else "#666")
+    d.ellipse((118, 3, 124, 9), fill=(30, 132, 73) if running else "#666")
 
     y = 14
     if mode == "Serve":
         ip = _get("pi_ip") or _get_pi_ip()
         cfg = _get("config")
-        d.text((2, y), f"IP: {ip}", font=font, fill="#AAAAAA")
+        d.text((2, y), f"IP: {ip}", font=font, fill=(171, 178, 185))
         y += 12
-        d.text((2, y), f"Share: {cfg['share_name']}", font=font, fill="#888")
+        d.text((2, y), f"Share: {cfg['share_name']}", font=font, fill=(113, 125, 126))
         y += 14
     else:
         cfg = _get("config")
-        d.text((2, y), f"Host: {cfg['remote_host']}", font=font, fill="#AAAAAA")
+        d.text((2, y), f"Host: {cfg['remote_host']}", font=font, fill=(171, 178, 185))
         y += 12
-        d.text((2, y), f"Share: {cfg['remote_share']}", font=font, fill="#888")
+        d.text((2, y), f"Share: {cfg['remote_share']}", font=font, fill=(113, 125, 126))
         y += 12
         progress = _get("upload_progress")
         if progress:
@@ -391,7 +391,7 @@ def _draw_lcd():
     d.text((2, 107), status[:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     action = "STOP" if running else "START"
     d.text((2, 117), f"OK:{action} K1:mode K3:x", font=font, fill="#AAA")
 
@@ -399,11 +399,11 @@ def _draw_lcd():
 
 
 def _show_msg(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 50), line1[:21], font=font, fill="#00FF00")
+    d.text((4, 50), line1[:21], font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2[:21], font=font, fill="#888")
+        d.text((4, 65), line2[:21], font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.2)
 
@@ -415,13 +415,13 @@ def main():
     _load_config()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 16), "SMB EXFILTRATION", font=font, fill="#00AAFF")
-    d.text((4, 32), "Serve or Upload loot", font=font, fill="#888")
-    d.text((4, 52), "OK=Start/Stop", font=font, fill="#666")
-    d.text((4, 64), "K1=Mode  K2=Config", font=font, fill="#666")
-    d.text((4, 76), "K3=Exit", font=font, fill="#666")
+    d.text((4, 32), "Serve or Upload loot", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "OK=Start/Stop", font=font, fill=(86, 101, 115))
+    d.text((4, 64), "K1=Mode  K2=Config", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

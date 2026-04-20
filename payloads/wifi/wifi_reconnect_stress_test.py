@@ -103,7 +103,7 @@ for p in PINS.values():
 
 LCD = LCD_1in44.LCD()
 LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-IMG = Image.new("RGB", (WIDTH, HEIGHT), "black")
+IMG = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
 DRAW = ImageDraw.Draw(IMG)
 try:
     FONT_TITLE = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 12)

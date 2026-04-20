@@ -348,11 +348,11 @@ def _start_collect():
 def _draw_blood_drop(d, x, y):
     d.polygon([(x+3, y), (x, y+5), (x+3, y+8), (x+6, y+5)], fill="#CC0000")
     d.ellipse((x, y+3, x+6, y+9), fill="#CC0000")
-    d.ellipse((x+1, y+4, x+3, y+6), fill="#FF3333")
+    d.ellipse((x+1, y+4, x+3, y+6), fill=(231, 76, 60))
 
 # -- LCD drawing -------------------------------------------------------------
 def _draw_lcd():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     running, status = _get("running"), _get("status")
     method, phase = _get("method"), _get("phase")
@@ -362,26 +362,26 @@ def _draw_lcd():
     d.rectangle((0, 0, 127, 12), fill="#1a0000")
     _draw_blood_drop(d, 2, 1)
     d.text((12, 1), "BLOODHOUND", font=font, fill="#FF2222")
-    d.ellipse((118, 3, 124, 9), fill="#FF0000" if running else "#444444")
+    d.ellipse((118, 3, 124, 9), fill=(231, 76, 60) if running else "#444444")
 
     y = 15
     d.text((2, y), f"DC: {(dc_ip or '(auto)')[:18]}", font=font, fill="#AAA")
     y += 11
-    d.text((2, y), f"Dom: {domain[:16]}", font=font, fill="#00CCFF")
+    d.text((2, y), f"Dom: {domain[:16]}", font=font, fill=(171, 178, 185))
     y += 11
     ms = "bh-py" if method == "bloodhound-python" else "ldap"
-    d.text((2, y), f"Method: {ms}", font=font, fill="#888")
+    d.text((2, y), f"Method: {ms}", font=font, fill=(113, 125, 126))
     y += 13
     if running and phase:
-        d.text((2, y), phase[:21], font=font, fill="#FFAA00")
+        d.text((2, y), phase[:21], font=font, fill=(212, 172, 13))
     y += 11
 
     u, g = stats.get("users", 0), stats.get("groups", 0)
     c, gp = stats.get("computers", 0), stats.get("gpos", 0)
     if u or g or c or gp:
-        d.text((2, y), f"{u} users, {g} groups", font=font, fill="#00FF88")
+        d.text((2, y), f"{u} users, {g} groups", font=font, fill=(30, 132, 73))
         y += 11
-        d.text((2, y), f"{c} computers, {gp} GPOs", font=font, fill="#00FF88")
+        d.text((2, y), f"{c} computers, {gp} GPOs", font=font, fill=(30, 132, 73))
         y += 11
     else:
         y += 22
@@ -391,16 +391,16 @@ def _draw_lcd():
 
     d.rectangle((0, 106, 127, 115), fill="#0a0a0a")
     d.text((2, 107), status[:21], font=font, fill="#FFCC00")
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK K1:meth K3:exit", font=font, fill="#AAA")
     LCD.LCD_ShowImage(img, 0, 0)
 
 def _show_msg(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 50), line1[:21], font=font, fill="#FF2222")
     if line2:
-        d.text((4, 65), line2[:21], font=font, fill="#888")
+        d.text((4, 65), line2[:21], font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.2)
 
@@ -416,15 +416,15 @@ def main():
         _set(method="ldapsearch")
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_blood_drop(d, 56, 10)
     d.text((14, 24), "BLOODHOUND", font=font, fill="#FF2222")
     d.text((10, 38), "AD Collector", font=font, fill="#AAA")
-    d.text((4, 56), "OK = Start collect", font=font, fill="#666")
-    d.text((4, 68), "K1 = Toggle method", font=font, fill="#666")
-    d.text((4, 80), "K3 = Exit", font=font, fill="#666")
-    d.text((4, 96), f"[{_get('method')}]", font=font, fill="#00CCFF")
+    d.text((4, 56), "OK = Start collect", font=font, fill=(86, 101, 115))
+    d.text((4, 68), "K1 = Toggle method", font=font, fill=(86, 101, 115))
+    d.text((4, 80), "K3 = Exit", font=font, fill=(86, 101, 115))
+    d.text((4, 96), f"[{_get('method')}]", font=font, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

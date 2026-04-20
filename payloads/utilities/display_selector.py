@@ -70,12 +70,12 @@ def _set_display_type(dtype):
 
 
 def _draw(cursor, current_type):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
     d.rectangle((0, 0, 127, 14), fill="#003366")
-    d.text((2, 1), "DISPLAY TYPE", font=font_big, fill="#00CCFF")
+    d.text((2, 1), "DISPLAY TYPE", font=font_big, fill=(171, 178, 185))
 
     # Options
     for i, (dtype, label) in enumerate(DISPLAY_OPTIONS):
@@ -85,16 +85,16 @@ def _draw(cursor, current_type):
 
         if is_selected:
             d.rectangle((2, y - 2, 125, y + 22), fill="#1a1a2e")
-            d.rectangle((2, y - 2, 4, y + 22), fill="#00CCFF")
+            d.rectangle((2, y - 2, 4, y + 22), fill=(171, 178, 185))
 
         marker = "*" if is_current else " "
         color = "#00FF00" if is_selected else "#888888"
         d.text((8, y), f"{marker} {dtype}", font=font, fill=color)
-        d.text((12, y + 11), label, font=font, fill="#666666" if not is_selected else "#AAAAAA")
+        d.text((12, y + 11), label, font=font, fill=(86, 101, 115) if not is_selected else "#AAAAAA")
 
     # Footer
     d.rectangle((0, 117, 127, 127), fill="#000000")
-    d.text((2, 118), "OK=Apply  K3=Cancel", font=font, fill="#555555")
+    d.text((2, 118), "OK=Apply  K3=Cancel", font=font, fill=(86, 101, 115))
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -125,29 +125,29 @@ def main():
                 selected_type = DISPLAY_OPTIONS[cursor][0]
                 if selected_type == current_type:
                     # Already active
-                    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                     d = ScaledDraw(img)
-                    d.text((64, 50), "Already active", font=font, fill="#FFFF00", anchor="mm")
-                    d.text((64, 70), "No change needed", font=font, fill="#888888", anchor="mm")
+                    d.text((64, 50), "Already active", font=font, fill=(212, 172, 13), anchor="mm")
+                    d.text((64, 70), "No change needed", font=font, fill=(113, 125, 126), anchor="mm")
                     LCD.LCD_ShowImage(img, 0, 0)
                     time.sleep(1.5)
                 else:
                     # Apply change
                     _set_display_type(selected_type)
-                    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                     d = ScaledDraw(img)
-                    d.text((64, 40), "Display changed!", font=font_big, fill="#00FF00", anchor="mm")
-                    d.text((64, 58), f"-> {selected_type}", font=font, fill="#FFFFFF", anchor="mm")
+                    d.text((64, 40), "Display changed!", font=font_big, fill=(30, 132, 73), anchor="mm")
+                    d.text((64, 58), f"-> {selected_type}", font=font, fill=(242, 243, 244), anchor="mm")
                     d.text((64, 80), "restart UI required", font=font, fill="#FF8800", anchor="mm")
-                    d.text((64, 100), "OK=Reboot  K3=Later", font=font, fill="#555555", anchor="mm")
+                    d.text((64, 100), "OK=Reboot  K3=Later", font=font, fill=(86, 101, 115), anchor="mm")
                     LCD.LCD_ShowImage(img, 0, 0)
 
                     while True:
                         btn2 = get_button(PINS, GPIO)
                         if btn2 == "OK":
-                            img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                             d = ScaledDraw(img)
-                            d.text((64, 64), "Restart UI...", font=font_big, fill="#FF0000", anchor="mm")
+                            d.text((64, 64), "Restart UI...", font=font_big, fill=(231, 76, 60), anchor="mm")
                             LCD.LCD_ShowImage(img, 0, 0)
                             time.sleep(1)
                             os.system("sudo systemctl restart ktox")

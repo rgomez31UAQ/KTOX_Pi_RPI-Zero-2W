@@ -331,7 +331,7 @@ def _monitor_polling():
 # LCD drawing
 # ---------------------------------------------------------------------------
 def _draw_lcd():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     auto = _get("auto_copy")
@@ -344,29 +344,29 @@ def _draw_lcd():
     log = _get("log")
 
     # Header
-    d.rectangle((0, 0, 127, 12), fill="#111")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
     auto_txt = "AUTO" if auto else "MAN"
-    d.text((2, 1), f"USB EXFIL [{auto_txt}]", font=font, fill="#FFAA00")
-    d.ellipse((118, 3, 124, 9), fill="#00FF00" if copying else "#666")
+    d.text((2, 1), f"USB EXFIL [{auto_txt}]", font=font, fill=(212, 172, 13))
+    d.ellipse((118, 3, 124, 9), fill=(30, 132, 73) if copying else "#666")
 
     y = 14
-    d.text((2, y), f"USB: {device or 'none'}", font=font, fill="#AAAAAA")
+    d.text((2, y), f"USB: {device or 'none'}", font=font, fill=(171, 178, 185))
     y += 12
 
     if copying:
-        d.text((2, y), f"Copying: {files_copied}/{total}", font=font, fill="#00CCFF")
+        d.text((2, y), f"Copying: {files_copied}/{total}", font=font, fill=(171, 178, 185))
         y += 12
         # Progress bar
         if total > 0:
             pct = files_copied / total
             bar_w = int(120 * pct)
-            d.rectangle((4, y, 124, y + 6), outline="#444")
-            d.rectangle((4, y, 4 + bar_w, y + 6), fill="#00FF00")
+            d.rectangle((4, y, 124, y + 6), outline=(34, 0, 0))
+            d.rectangle((4, y, 4 + bar_w, y + 6), fill=(30, 132, 73))
             y += 10
-        d.text((2, y), progress[:21], font=font, fill="#888")
+        d.text((2, y), progress[:21], font=font, fill=(113, 125, 126))
         y += 14
     else:
-        d.text((2, y), "Waiting for USB...", font=font, fill="#888")
+        d.text((2, y), "Waiting for USB...", font=font, fill=(113, 125, 126))
         y += 14
 
     # Log
@@ -386,7 +386,7 @@ def _draw_lcd():
     d.text((2, 107), status[:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK:copy K1:auto K3:x", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -402,15 +402,15 @@ def _show_usb_info():
 
     free = _get_free_space(MOUNT_POINT) if _get("usb_mounted") else "?"
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((2, 10), "USB Info", font=font, fill="#FFAA00")
+    d.text((2, 10), "USB Info", font=font, fill=(212, 172, 13))
     d.text((2, 28), f"Dev:  {info['device']}", font=font, fill="#AAA")
     d.text((2, 42), f"FS:   {info['fs']}", font=font, fill="#AAA")
     d.text((2, 56), f"Size: {info['size']}", font=font, fill="#AAA")
     d.text((2, 70), f"Label:{info['label']}", font=font, fill="#AAA")
     d.text((2, 84), f"Free: {free}", font=font, fill="#AAA")
-    d.text((2, 110), "Press any key...", font=font, fill="#666")
+    d.text((2, 110), "Press any key...", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
 
     while True:
@@ -425,13 +425,13 @@ def _show_usb_info():
 # ---------------------------------------------------------------------------
 def main():
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 16), "USB AUTO-COPY", font=font, fill="#FFAA00")
-    d.text((4, 32), "Loot to USB drive", font=font, fill="#888")
-    d.text((4, 52), "OK=Force copy", font=font, fill="#666")
-    d.text((4, 64), "K1=Toggle auto", font=font, fill="#666")
-    d.text((4, 76), "K2=USB info  K3=Exit", font=font, fill="#666")
+    d.text((4, 16), "USB AUTO-COPY", font=font, fill=(212, 172, 13))
+    d.text((4, 32), "Loot to USB drive", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "OK=Force copy", font=font, fill=(86, 101, 115))
+    d.text((4, 64), "K1=Toggle auto", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K2=USB info  K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

@@ -128,16 +128,16 @@ def _file_type_label(path):
 
 def _draw_browser(lcd, cwd, entries, cursor, scroll_offset, status=""):
     """Draw file browser UI."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     rel_path = cwd.replace(LOOT_ROOT, "loot") if cwd.startswith(LOOT_ROOT) else cwd
     if len(rel_path) > 16:
         rel_path = "..." + rel_path[-13:]
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((2, 1), rel_path, font=font, fill="#00ff00")
-    d.text((110, 1), "K3", font=font, fill="white")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), rel_path, font=font, fill=(30, 132, 73))
+    d.text((110, 1), "K3", font=font, fill=(242, 243, 244))
 
     y = 15
     visible = 7
@@ -145,7 +145,7 @@ def _draw_browser(lcd, cwd, entries, cursor, scroll_offset, status=""):
     end = min(len(entries), start + visible)
 
     if not entries:
-        d.text((4, 30), "(empty)", font=font, fill="#666666")
+        d.text((4, 30), "(empty)", font=font, fill=(86, 101, 115))
     else:
         for idx in range(start, end):
             entry = entries[idx]
@@ -166,66 +166,66 @@ def _draw_browser(lcd, cwd, entries, cursor, scroll_offset, status=""):
             y += 13
 
     y = 106
-    d.line((0, y, 127, y), fill="#333333")
-    d.text((2, y + 2), "OK=open <-=up", font=font, fill="#666666")
-    d.text((2, y + 13), "K1=stat K2=del", font=font, fill="#666666")
+    d.line((0, y, 127, y), fill=(34, 0, 0))
+    d.text((2, y + 2), "OK=open <-=up", font=font, fill=(86, 101, 115))
+    d.text((2, y + 13), "K1=stat K2=del", font=font, fill=(86, 101, 115))
 
     if status:
         d.rectangle((0, 50, 127, 75), fill="#222200")
-        d.text((2, 55), status[:20], font=font, fill="#ffff00")
+        d.text((2, 55), status[:20], font=font, fill=(212, 172, 13))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_preview(lcd, path, lines):
     """Draw a file preview screen."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     name = os.path.basename(path)
     if len(name) > 18:
         name = name[:15] + "..."
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((2, 1), name, font=font, fill="#00ff00")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), name, font=font, fill=(30, 132, 73))
 
     y = 16
     for line in lines:
-        d.text((2, y), line[:20], font=font, fill="#cccccc")
+        d.text((2, y), line[:20], font=font, fill=(242, 243, 244))
         y += 12
 
-    d.text((2, 116), "Any key=back", font=font, fill="#666666")
+    d.text((2, 116), "Any key=back", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_confirm(lcd, filename):
     """Draw delete confirmation dialog."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.text((10, 30), "Delete file?", font=font, fill="#ff4444")
+    d.text((10, 30), "Delete file?", font=font, fill=(231, 76, 60))
     name = filename[:18]
-    d.text((10, 48), name, font=font, fill="#aaaaaa")
-    d.text((10, 70), "OK = Yes", font=font, fill="#00ff00")
-    d.text((10, 85), "Any = Cancel", font=font, fill="#666666")
+    d.text((10, 48), name, font=font, fill=(171, 178, 185))
+    d.text((10, 70), "OK = Yes", font=font, fill=(30, 132, 73))
+    d.text((10, 85), "Any = Cancel", font=font, fill=(86, 101, 115))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_stats(lcd, path, file_count, total_size):
     """Draw stats overlay."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.text((10, 20), "Loot Stats", font=font, fill="#00ff00")
-    d.text((10, 40), f"Files: {file_count}", font=font, fill="white")
-    d.text((10, 55), f"Size:  {_fmt_size(total_size)}", font=font, fill="white")
+    d.text((10, 20), "Loot Stats", font=font, fill=(30, 132, 73))
+    d.text((10, 40), f"Files: {file_count}", font=font, fill=(242, 243, 244))
+    d.text((10, 55), f"Size:  {_fmt_size(total_size)}", font=font, fill=(242, 243, 244))
 
     rel = path.replace(LOOT_ROOT, "loot")
     if len(rel) > 18:
         rel = "..." + rel[-15:]
-    d.text((10, 75), rel, font=font, fill="#888888")
-    d.text((10, 100), "Any key=back", font=font, fill="#666666")
+    d.text((10, 75), rel, font=font, fill=(113, 125, 126))
+    d.text((10, 100), "Any key=back", font=font, fill=(86, 101, 115))
 
     lcd.LCD_ShowImage(img, 0, 0)
 

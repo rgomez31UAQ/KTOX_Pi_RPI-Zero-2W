@@ -348,8 +348,8 @@ def manual_crack():
         # Show "No handshakes" message
         img = Image.new("RGB", (W, H), "#0A0000")
         d = ImageDraw.Draw(img)
-        d.text((4, 50), "No handshakes found", font=f9, fill="#FFBBBB")
-        d.text((4, 70), "Press any key", font=f9, fill="#888")
+        d.text((4, 50), "No handshakes found", font=f9, fill=(171, 178, 185))
+        d.text((4, 70), "Press any key", font=f9, fill=(113, 125, 126))
         LCD.LCD_ShowImage(img, 0, 0)
         wait_btn(2)
         return
@@ -359,13 +359,13 @@ def manual_crack():
         img = Image.new("RGB", (W, H), "#0A0000")
         d = ImageDraw.Draw(img)
         d.rectangle((0, 0, W, 17), fill="#8B0000")
-        d.text((4, 3), "SELECT CAPTURE", font=f9, fill="#FF3333")
+        d.text((4, 3), "SELECT CAPTURE", font=f9, fill=(231, 76, 60))
         visible = caps[idx:idx+6]
         y = 20
         for fname in visible:
-            d.text((4, y), fname[:20], font=f9, fill="#FFBBBB")
+            d.text((4, y), fname[:20], font=f9, fill=(171, 178, 185))
             y += 12
-        d.text((4, H-30), f"{len(caps)} total", font=f9, fill="#AAAAAA")
+        d.text((4, H-30), f"{len(caps)} total", font=f9, fill=(171, 178, 185))
         d.rectangle((0, H-12, W, H), fill="#220000")
         d.text((4, H-10), "U/D OK K3=Back", font=f9, fill="#FF7777")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -381,8 +381,8 @@ def manual_crack():
             # Show cracking message
             img2 = Image.new("RGB", (W, H), "#0A0000")
             d2 = ImageDraw.Draw(img2)
-            d2.text((4, 50), f"Cracking {caps[idx][:12]}...", font=f9, fill="#FFFF00")
-            d2.text((4, 70), "Please wait", font=f9, fill="#888")
+            d2.text((4, 50), f"Cracking {caps[idx][:12]}...", font=f9, fill=(212, 172, 13))
+            d2.text((4, 70), "Please wait", font=f9, fill=(113, 125, 126))
             LCD.LCD_ShowImage(img2, 0, 0)
             result = subprocess.run(f"aircrack-ng -w {WORDLIST} {cap_file} 2>/dev/null", shell=True, capture_output=True, text=True)
             m = re.search(r"KEY FOUND!\s*\[\s*(.+?)\s*\]", result.stdout)
@@ -401,18 +401,18 @@ def manual_crack():
                 # Show password
                 img3 = Image.new("RGB", (W, H), "#0A0000")
                 d3 = ImageDraw.Draw(img3)
-                d3.text((4, 40), f"Password found!", font=f9, fill="#00FF00")
-                d3.text((4, 55), f"{password[:20]}", font=f9, fill="#FFBBBB")
-                d3.text((4, H-20), "Press any key", font=f9, fill="#888")
+                d3.text((4, 40), f"Password found!", font=f9, fill=(30, 132, 73))
+                d3.text((4, 55), f"{password[:20]}", font=f9, fill=(171, 178, 185))
+                d3.text((4, H-20), "Press any key", font=f9, fill=(113, 125, 126))
                 LCD.LCD_ShowImage(img3, 0, 0)
                 wait_btn(2)
             else:
                 set_mood("lost")
                 img3 = Image.new("RGB", (W, H), "#0A0000")
                 d3 = ImageDraw.Draw(img3)
-                d3.text((4, 50), "No password found", font=f9, fill="#FF3333")
-                d3.text((4, 70), "Try better wordlist", font=f9, fill="#888")
-                d3.text((4, H-20), "Press any key", font=f9, fill="#888")
+                d3.text((4, 50), "No password found", font=f9, fill=(231, 76, 60))
+                d3.text((4, 70), "Try better wordlist", font=f9, fill=(113, 125, 126))
+                d3.text((4, H-20), "Press any key", font=f9, fill=(113, 125, 126))
                 LCD.LCD_ShowImage(img3, 0, 0)
                 wait_btn(2)
             break
@@ -425,17 +425,17 @@ def show_whitelist():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#8B0000")
-    d.text((4, 3), "WHITELIST", font=f9, fill="#FF3333")
+    d.text((4, 3), "WHITELIST", font=f9, fill=(231, 76, 60))
     y = 20
-    d.text((4, y), f"MACs: {len(whitelist_macs)}", font=f9, fill="#FFBBBB"); y+=12
+    d.text((4, y), f"MACs: {len(whitelist_macs)}", font=f9, fill=(171, 178, 185)); y+=12
     for mac in list(whitelist_macs)[:5]:
-        d.text((6, y), mac[:17], font=f9, fill="#AAAAAA"); y+=10
+        d.text((6, y), mac[:17], font=f9, fill=(171, 178, 185)); y+=10
     if len(whitelist_macs) > 5:
-        d.text((6, y), "...", font=f9, fill="#AAAAAA"); y+=10
+        d.text((6, y), "...", font=f9, fill=(171, 178, 185)); y+=10
     y += 5
-    d.text((4, y), f"SSIDs: {len(whitelist_ssids)}", font=f9, fill="#FFBBBB"); y+=12
+    d.text((4, y), f"SSIDs: {len(whitelist_ssids)}", font=f9, fill=(171, 178, 185)); y+=12
     for ssid in list(whitelist_ssids)[:5]:
-        d.text((6, y), ssid[:15], font=f9, fill="#AAAAAA"); y+=10
+        d.text((6, y), ssid[:15], font=f9, fill=(171, 178, 185)); y+=10
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "Edit config file", font=f9, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -446,8 +446,8 @@ def reset_stats():
     # Confirm
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
-    d.text((4, 50), "Reset lifetime stats?", font=f9, fill="#FF3333")
-    d.text((4, 70), "OK to confirm, K3 cancel", font=f9, fill="#888")
+    d.text((4, 50), "Reset lifetime stats?", font=f9, fill=(231, 76, 60))
+    d.text((4, 70), "OK to confirm, K3 cancel", font=f9, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     btn = wait_btn(2)
     if btn == "OK":
@@ -461,7 +461,7 @@ def reset_stats():
         # Show done
         img2 = Image.new("RGB", (W, H), "#0A0000")
         d2 = ImageDraw.Draw(img2)
-        d2.text((4, 50), "Stats reset", font=f9, fill="#00FF00")
+        d2.text((4, 50), "Stats reset", font=f9, fill=(30, 132, 73))
         LCD.LCD_ShowImage(img2, 0, 0)
         wait_btn(1)
 
@@ -965,7 +965,7 @@ def draw_face():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#8B0000")
-    d.text((4,3), "KTOxGOTCHI", font=f9, fill="#FF3333")
+    d.text((4,3), "KTOxGOTCHI", font=f9, fill=(231, 76, 60))
     # Face
     face_char = faces.get(mood, faces["normal"])
     if _blink and mood == "normal":
@@ -984,7 +984,7 @@ def draw_face():
     fw = bbox[2] - bbox[0]
     fx = (W - fw) // 2
     d.text((fx, 20), face_char, font=face_font, fill=face_color)
-    d.line([(0, 41), (W, 41)], fill="#333")
+    d.line([(0, 41), (W, 41)], fill=(34, 0, 0))
     y = 43
     with lock:
         aps = len(session_aps)
@@ -996,15 +996,15 @@ def draw_face():
         last = last_capture_ssid
     total_pwnd = hs + hhs + pm
     lt_total = lifetime_handshakes + lifetime_half_hs + lifetime_pmkid
-    d.text((2, y), f"AP:{aps}  CLI:{cli}", font=f9, fill="#FFBBBB"); y += 12
-    d.text((2, y), f"PWND:{total_pwnd}  LT:{lt_total}", font=f9, fill="#00FF00" if total_pwnd else "#888"); y += 12
-    d.text((2, y), f"CRACKED:{cracked_count}", font=f9, fill="#FFFF00"); y += 12
+    d.text((2, y), f"AP:{aps}  CLI:{cli}", font=f9, fill=(171, 178, 185)); y += 12
+    d.text((2, y), f"PWND:{total_pwnd}  LT:{lt_total}", font=f9, fill=(30, 132, 73) if total_pwnd else "#888"); y += 12
+    d.text((2, y), f"CRACKED:{cracked_count}", font=f9, fill=(212, 172, 13)); y += 12
     if last:
-        d.text((2, y), f">{last[:20]}", font=f9, fill="#00FF00"); y += 12
+        d.text((2, y), f">{last[:20]}", font=f9, fill=(30, 132, 73)); y += 12
     elapsed = int(time.time() - start_time)
     uptime = f"{elapsed//3600:02d}:{(elapsed%3600)//60:02d}:{elapsed%60:02d}"
-    d.text((2, y), f"UP:{uptime}", font=f9, fill="#888")
-    d.text((4, H-30), f"Mode: {'AUTO' if auto_attack else 'MANUAL'}", font=f9, fill="#AAAAAA")
+    d.text((2, y), f"UP:{uptime}", font=f9, fill=(113, 125, 126))
+    d.text((4, H-30), f"Mode: {'AUTO' if auto_attack else 'MANUAL'}", font=f9, fill=(171, 178, 185))
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "K1=View K2=Menu K3=Exit", font=f9, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -1013,16 +1013,16 @@ def draw_stats():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#8B0000")
-    d.text((4,3), "STATS", font=f9, fill="#FF3333")
+    d.text((4,3), "STATS", font=f9, fill=(231, 76, 60))
     y = 20
     with lock:
-        d.text((4, y), f"Full HS: {session_handshakes}", font=f9, fill="#FFBBBB"); y += 12
-        d.text((4, y), f"Half HS: {session_half_hs}", font=f9, fill="#FFBBBB"); y += 12
-        d.text((4, y), f"PMKID: {session_pmkid}", font=f9, fill="#FFBBBB"); y += 12
-        d.text((4, y), f"Deauths: {session_deauths}", font=f9, fill="#FFBBBB"); y += 12
-        d.text((4, y), f"Peers: {len(peers_detected)}", font=f9, fill="#FFBBBB"); y += 12
-    d.text((4, H-30), "Lifetime totals:", font=f9, fill="#AAAAAA"); y = H-18
-    d.text((4, y), f"HS:{lifetime_handshakes} H:{lifetime_half_hs} P:{lifetime_pmkid}", font=f9, fill="#888")
+        d.text((4, y), f"Full HS: {session_handshakes}", font=f9, fill=(171, 178, 185)); y += 12
+        d.text((4, y), f"Half HS: {session_half_hs}", font=f9, fill=(171, 178, 185)); y += 12
+        d.text((4, y), f"PMKID: {session_pmkid}", font=f9, fill=(171, 178, 185)); y += 12
+        d.text((4, y), f"Deauths: {session_deauths}", font=f9, fill=(171, 178, 185)); y += 12
+        d.text((4, y), f"Peers: {len(peers_detected)}", font=f9, fill=(171, 178, 185)); y += 12
+    d.text((4, H-30), "Lifetime totals:", font=f9, fill=(171, 178, 185)); y = H-18
+    d.text((4, y), f"HS:{lifetime_handshakes} H:{lifetime_half_hs} P:{lifetime_pmkid}", font=f9, fill=(113, 125, 126))
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "K1=Back K3=Exit", font=f9, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -1031,18 +1031,18 @@ def draw_captures(scroll):
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#8B0000")
-    d.text((4,3), "CAPTURES", font=f9, fill="#FF3333")
+    d.text((4,3), "CAPTURES", font=f9, fill=(231, 76, 60))
     files = [f for f in os.listdir(HANDSHAKE_DIR) if f.endswith(".cap")]
     files.sort(reverse=True)
     if files:
         visible = files[scroll:scroll+6]
         y = 20
         for fname in visible:
-            d.text((4, y), fname[:20], font=f9, fill="#FFBBBB")
+            d.text((4, y), fname[:20], font=f9, fill=(171, 178, 185))
             y += 12
-        d.text((4, H-30), f"{len(files)} total", font=f9, fill="#AAAAAA")
+        d.text((4, H-30), f"{len(files)} total", font=f9, fill=(171, 178, 185))
     else:
-        d.text((4, 40), "No captures yet", font=f9, fill="#888")
+        d.text((4, 40), "No captures yet", font=f9, fill=(113, 125, 126))
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "U/D:Scroll K1:Back K3:Exit", font=f9, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -1064,10 +1064,10 @@ def draw_target_list():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#8B0000")
-    d.text((4, 3), "SELECT TARGET", font=f9, fill="#FF3333")
+    d.text((4, 3), "SELECT TARGET", font=f9, fill=(231, 76, 60))
     y = 20
     for line in lines:
-        d.text((4, y), line[:23], font=f9, fill="#FFBBBB")
+        d.text((4, y), line[:23], font=f9, fill=(171, 178, 185))
         y += 12
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "UP/DN OK K3=Back", font=f9, fill="#FF7777")
@@ -1078,7 +1078,7 @@ def draw_settings():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#8B0000")
-    d.text((4, 3), "SETTINGS", font=f9, fill="#FF3333")
+    d.text((4, 3), "SETTINGS", font=f9, fill=(231, 76, 60))
     y = 20
     for i, opt in enumerate(settings_options):
         prefix = "> " if i == settings_idx else "  "
@@ -1093,7 +1093,7 @@ def draw_settings():
             line = f"{prefix}{opt}: {status}"
         else:
             line = f"{prefix}{opt}"
-        d.text((4, y), line[:22], font=f9, fill="#FFBBBB" if i == settings_idx else "#AAAAAA")
+        d.text((4, y), line[:22], font=f9, fill=(171, 178, 185) if i == settings_idx else "#AAAAAA")
         y += 12
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "U/D OK K3=Back", font=f9, fill="#FF7777")
@@ -1108,10 +1108,10 @@ def main():
     global capture_event
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (W, H), "black")
+        img = Image.new("RGB", (W, H), (10, 0, 0))
         d = ImageDraw.Draw(img)
         d.text((4, 40), "scapy not installed", font=f9, fill="red")
-        d.text((4, 55), "sudo pip install scapy", font=f9, fill="white")
+        d.text((4, 55), "sudo pip install scapy", font=f9, fill=(242, 243, 244))
         LCD.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         return
@@ -1120,19 +1120,19 @@ def main():
     load_config()
     iface = select_interface()
     if not iface:
-        img = Image.new("RGB", (W, H), "black")
+        img = Image.new("RGB", (W, H), (10, 0, 0))
         d = ImageDraw.Draw(img)
         d.text((4, 40), "No WiFi interface", font=f9, fill="red")
-        d.text((4, 55), "Check adapter", font=f9, fill="white")
+        d.text((4, 55), "Check adapter", font=f9, fill=(242, 243, 244))
         LCD.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         return
     original_mac = get_mac(iface)
 
     # Enable monitor mode
-    img = Image.new("RGB", (W, H), "black")
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((4, 50), f"Monitor: {iface}...", font=f9, fill="#FFAA00")
+    d.text((4, 50), f"Monitor: {iface}...", font=f9, fill=(212, 172, 13))
     LCD.LCD_ShowImage(img, 0, 0)
     mon_iface = monitor_up(iface)
     if not mon_iface:

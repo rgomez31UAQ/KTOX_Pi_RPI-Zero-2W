@@ -76,7 +76,7 @@ signal.signal(signal.SIGTERM, cleanup)
 
 # --- UI Drawing Functions ---
 def draw_message(lines, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = 40
     for line in lines:
@@ -88,12 +88,12 @@ def draw_message(lines, color="yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_file_browser_ui():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
     with ui_lock:
-        d.text((5, 5), f"Path: {os.path.basename(current_path)[:10]}", font=FONT_TITLE, fill="#00FF00")
-        d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+        d.text((5, 5), f"Path: {os.path.basename(current_path)[:10]}", font=FONT_TITLE, fill=(30, 132, 73))
+        d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
         visible_items = file_list[display_offset:]
         y_pos = 25
@@ -110,24 +110,24 @@ def draw_file_browser_ui():
             d.text((5, y_pos), display_name[:COLS], font=FONT, fill=color)
             y_pos += 11
     
-    d.text((5, 115), "L/R=Nav | OK=Prop | K1=Del | K2=Ren | K3=Exit", font=FONT, fill="cyan")
+    d.text((5, 115), "L/R=Nav | OK=Prop | K1=Del | K2=Ren | K3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_properties_ui(item_name, properties):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
-    d.text((5, 5), f"Properties: {item_name[:10]}", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), f"Properties: {item_name[:10]}", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     y_pos = 25
     for key, value in properties.items():
-        d.text((5, y_pos), f"{key}: {value}", font=FONT, fill="white")
+        d.text((5, y_pos), f"{key}: {value}", font=FONT, fill=(242, 243, 244))
         y_pos += 11
         if y_pos > HEIGHT - 15:
             break
     
-    d.text((5, 115), "OK=Back | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 115), "OK=Back | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 # --- File System Functions ---
@@ -220,16 +220,16 @@ def handle_text_input_logic(initial_text, prompt):
     char_set = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+. "
 
     while running:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), prompt, font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), prompt, font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
         display_text = list(current_input)
         if cursor_pos < len(display_text):
             display_text[cursor_pos] = '_'
-        d.text((5, 40), "".join(display_text[:COLS]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | L/R=Move | OK=Save | K3=Cancel", font=FONT, fill="cyan")
+        d.text((5, 40), "".join(display_text[:COLS]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | L/R=Move | OK=Save | K3=Cancel", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         last_button_press_time = 0

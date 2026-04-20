@@ -78,10 +78,10 @@ class Display:
                 print(f"LCD: {e}")
 
     def show(self, title, lines, col="#ff2200"):
-        img  = Image.new("RGB", (W, H), "black")
+        img  = Image.new("RGB", (W, H), (10, 0, 0))
         draw = ImageDraw.Draw(img)
         draw.rectangle((0, 0, W, 14), fill="#cc0000")
-        draw.text((3, 2), title[:20], fill="white", font=font(9))
+        draw.text((3, 2), title[:20], fill=(242, 243, 244), font=font(9))
         y = 18
         for line in (lines or []):
             draw.text((3, y), str(line)[:21], fill=col, font=font(8))

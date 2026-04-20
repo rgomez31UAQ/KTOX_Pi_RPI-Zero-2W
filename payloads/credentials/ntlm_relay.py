@@ -389,20 +389,20 @@ def export_hashes():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#CC44FF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(231, 76, 60))
     with lock:
         active = responder_running
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_targets_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "NTLM RELAY")
 
@@ -411,25 +411,25 @@ def draw_targets_view():
         sc = scroll_pos
         svc = SERVICE_TYPES[service_idx]
 
-    d.text((2, 15), f"{msg[:16]}  [{svc}]", font=font, fill="#FFAA00")
+    d.text((2, 15), f"{msg[:16]}  [{svc}]", font=font, fill=(212, 172, 13))
 
     if not hosts:
-        d.text((10, 50), "No hosts found", font=font, fill="#666")
-        d.text((10, 64), "OK to scan + start", font=font, fill="#666")
+        d.text((10, 50), "No hosts found", font=font, fill=(86, 101, 115))
+        d.text((10, 64), "OK to scan + start", font=font, fill=(86, 101, 115))
     else:
         visible = hosts[sc:sc + ROWS_VISIBLE]
         for i, host in enumerate(visible):
             y = 28 + i * 12
             color = "#FFFF00" if i == 0 else "#CCCCCC"
             d.text((2, y), f"{host['ip'][:15]}", font=font, fill=color)
-            d.text((96, y), f"{host['mac'][-5:]}", font=font, fill="#888")
+            d.text((96, y), f"{host['mac'][-5:]}", font=font, fill=(113, 125, 126))
 
     _draw_footer(d, "OK:Start K1:Svc K3:X")
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def draw_running_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "NTLM RELAY")
 
@@ -445,25 +445,25 @@ def draw_running_view():
     color = "#00FF00" if running else "#FF4444"
     d.text((2, y), msg[:22], font=font, fill=color)
     y += 16
-    d.text((2, y), f"Service: {svc}", font=font, fill="white")
+    d.text((2, y), f"Service: {svc}", font=font, fill=(242, 243, 244))
     y += 14
-    d.text((2, y), f"Hashes: {hash_count}", font=font, fill="#FFAA00")
+    d.text((2, y), f"Hashes: {hash_count}", font=font, fill=(212, 172, 13))
     y += 14
-    d.text((2, y), f"Relay: {successes}/{attempts}", font=font, fill="#00CCFF")
+    d.text((2, y), f"Relay: {successes}/{attempts}", font=font, fill=(171, 178, 185))
 
     if hash_count > 0:
         y += 16
         last = captured_hashes[-1]
-        d.text((2, y), f"User: {last['user'][:18]}", font=font, fill="#CC44FF")
+        d.text((2, y), f"User: {last['user'][:18]}", font=font, fill=(231, 76, 60))
         y += 12
-        d.text((2, y), f"Type: {last['type']}", font=font, fill="#888")
+        d.text((2, y), f"Type: {last['type']}", font=font, fill=(113, 125, 126))
 
     _draw_footer(d, "K2:Export OK:Stop K3:X")
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def draw_hashes_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "CAPTURED HASHES")
 
@@ -472,13 +472,13 @@ def draw_hashes_view():
         sc = scroll_pos
 
     if not hashes:
-        d.text((10, 50), "No hashes yet", font=font, fill="#666")
+        d.text((10, 50), "No hashes yet", font=font, fill=(86, 101, 115))
     else:
         visible = hashes[sc:sc + 5]
         for i, h in enumerate(visible):
             y = 18 + i * 20
-            d.text((2, y), f"{h['user'][:14]} [{h['type']}]", font=font, fill="#CC44FF")
-            d.text((2, y + 10), f"  {h['hash'][:20]}", font=font, fill="#888")
+            d.text((2, y), f"{h['user'][:14]} [{h['type']}]", font=font, fill=(231, 76, 60))
+            d.text((2, y + 10), f"  {h['hash'][:20]}", font=font, fill=(113, 125, 126))
 
     _draw_footer(d, f"{len(hashes)} hashes  K3:Back")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -494,14 +494,14 @@ def main():
     _iface = _detect_default_iface()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((12, 16), "NTLM RELAY", font=font, fill="#CC44FF")
-    d.text((4, 36), "Responder + hash", font=font, fill="#888")
-    d.text((4, 48), "capture & relay", font=font, fill="#888")
-    d.text((4, 66), f"Iface: {_iface}", font=font, fill="#666")
-    d.text((4, 82), "OK=Start K1=Service", font=font, fill="#666")
-    d.text((4, 94), "K2=Export K3=Exit", font=font, fill="#666")
+    d.text((12, 16), "NTLM RELAY", font=font, fill=(231, 76, 60))
+    d.text((4, 36), "Responder + hash", font=font, fill=(113, 125, 126))
+    d.text((4, 48), "capture & relay", font=font, fill=(113, 125, 126))
+    d.text((4, 66), f"Iface: {_iface}", font=font, fill=(86, 101, 115))
+    d.text((4, 82), "OK=Start K1=Service", font=font, fill=(86, 101, 115))
+    d.text((4, 94), "K2=Export K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.5)
 

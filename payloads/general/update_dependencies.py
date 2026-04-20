@@ -70,7 +70,7 @@ def cleanup(*_):
 # --- UI Drawing ---
 def draw_ui(screen_state="confirm"):
     with UI_LOCK:
-        image = Image.new("RGB", (128, 128), "BLACK")
+        image = Image.new("RGB", (128, 128), (10, 0, 0))
         draw = ImageDraw.Draw(image)
         try:
             font_title = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
@@ -79,20 +79,20 @@ def draw_ui(screen_state="confirm"):
             font_title = ImageFont.load_default()
             font_small = ImageFont.load_default()
 
-        draw.text((5, 5), "Dependency Updater", font=font_title, fill="CYAN")
-        draw.line([(0, 22), (128, 22)], fill="CYAN", width=1)
+        draw.text((5, 5), "Dependency Updater", font=font_title, fill=(171, 178, 185))
+        draw.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
         if screen_state == "confirm":
-            draw.text((5, 25), "Will install:", font=font_small, fill="WHITE")
-            draw.text((10, 40), f"APT: {', '.join(APT_PACKAGES)}", font=font_small, fill="YELLOW")
-            draw.text((10, 65), f"PIP: {', '.join(PIP_PACKAGES)}", font=font_small, fill="YELLOW")
-            draw.text((5, 100), "OK=Start | KEY3=Cancel", font=font_small, fill="LIME")
+            draw.text((5, 25), "Will install:", font=font_small, fill=(242, 243, 244))
+            draw.text((10, 40), f"APT: {', '.join(APT_PACKAGES)}", font=font_small, fill=(212, 172, 13))
+            draw.text((10, 65), f"PIP: {', '.join(PIP_PACKAGES)}", font=font_small, fill=(212, 172, 13))
+            draw.text((5, 100), "OK=Start | KEY3=Cancel", font=font_small, fill=(231, 76, 60))
         
         elif screen_state == "installing":
-            draw.text((5, 25), "Installing...", font=font_small, fill="WHITE")
+            draw.text((5, 25), "Installing...", font=font_small, fill=(242, 243, 244))
             y = 40
             for line in INSTALL_OUTPUT_LINES[-8:]:
-                draw.text((5, y), line, font=font_small, fill="YELLOW")
+                draw.text((5, y), line, font=font_small, fill=(212, 172, 13))
                 y += 10
             draw.text((5, 115), "KEY3 to Exit", font=font_small, fill="ORANGE")
 

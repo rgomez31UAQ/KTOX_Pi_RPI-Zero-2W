@@ -288,9 +288,9 @@ def _format_bytes(b):
 
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
-    draw.text((2, 2), "NETWORK TAP", fill="CYAN", font=font)
+    draw.text((2, 2), "NETWORK TAP", fill=(171, 178, 185), font=font)
 
     dm = DISPLAY_MODES[display_mode_idx]
     with lock:
@@ -307,15 +307,15 @@ def _draw_screen():
     indicator = "REC" if cap else "IDLE"
     ind_color = "RED" if cap else "GRAY"
     draw.text((90, 2), indicator, fill=ind_color, font=font)
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
 
     if dm == "overview":
-        draw.text((2, 28), f"Pkts:  {tp}", fill="WHITE", font=font)
-        draw.text((2, 42), f"Bytes: {_format_bytes(tb)}", fill="WHITE", font=font)
-        draw.text((2, 56), f"PPS:   {pps}", fill="GREEN", font=font)
-        draw.text((2, 70), f"BPS:   {_format_bytes(bps)}", fill="GREEN", font=font)
-        draw.text((2, 84), f"Bridge: {BRIDGE}", fill="GRAY", font=font)
-        draw.text((2, 98), f"Mode: {dm}", fill="GRAY", font=font)
+        draw.text((2, 28), f"Pkts:  {tp}", fill=(242, 243, 244), font=font)
+        draw.text((2, 42), f"Bytes: {_format_bytes(tb)}", fill=(242, 243, 244), font=font)
+        draw.text((2, 56), f"PPS:   {pps}", fill=(30, 132, 73), font=font)
+        draw.text((2, 70), f"BPS:   {_format_bytes(bps)}", fill=(30, 132, 73), font=font)
+        draw.text((2, 84), f"Bridge: {BRIDGE}", fill=(86, 101, 115), font=font)
+        draw.text((2, 98), f"Mode: {dm}", fill=(86, 101, 115), font=font)
 
     elif dm == "protocols":
         y = 28
@@ -337,12 +337,12 @@ def _draw_screen():
         for pair, bcount in pairs[sp:sp + ROWS_VISIBLE]:
             label = f"{pair[0].split('.')[-1]}<>{pair[1].split('.')[-1]}"
             draw.text((2, y), f"{label} {_format_bytes(bcount)}"[:22],
-                      fill="WHITE", font=font)
+                      fill=(242, 243, 244), font=font)
             y += 14
         if not pairs:
-            draw.text((2, 56), "No traffic yet", fill="GRAY", font=font)
+            draw.text((2, 56), "No traffic yet", fill=(86, 101, 115), font=font)
 
-    draw.text((2, 116), "OK=cap K1=view K3=exit", fill="GRAY", font=font)
+    draw.text((2, 116), "OK=cap K1=view K3=exit", fill=(86, 101, 115), font=font)
     LCD.LCD_ShowImage(img, 0, 0)
 
 
@@ -404,9 +404,9 @@ def main():
             _capture_proc.terminate()
         _teardown_bridge()
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "Bridge removed", fill="YELLOW", font=font)
+            d.text((10, 50), "Bridge removed", fill=(212, 172, 13), font=font)
             d.text((10, 66), "Tap stopped", fill="RED", font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:

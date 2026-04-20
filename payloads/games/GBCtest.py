@@ -98,7 +98,7 @@ def _run_emulator(rom_path):
 
     frame_count = 0
     RENDER_EVERY = 4 
-    _canvas = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
+    _canvas = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     
     # Calculate scaling for the 1.44" LCD
     _ratio = min(WIDTH / 160, HEIGHT / 144)

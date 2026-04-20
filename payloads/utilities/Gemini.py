@@ -78,7 +78,7 @@ def draw_screen(lines, title="GEMINI CHAT", title_color="#8B0000", text_color="#
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill=title_color)
-    d.text((4, 3), title[:20], font=f9, fill="#FF3333" if title_color == "#8B0000" else "white")
+    d.text((4, 3), title[:20], font=f9, fill=(231, 76, 60) if title_color == "#8B0000" else "white")
     y = 20
     for line in lines[:7]:
         d.text((4, y), line[:23], font=f9, fill=text_color)
@@ -115,10 +115,10 @@ def draw_keyboard(input_text, selected_row, selected_col):
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#004466")
-    d.text((4, 3), "KEYBOARD", font=f9, fill="#FF3333")
-    d.rectangle((2, 19, W-2, 27), fill="#222222")
+    d.text((4, 3), "KEYBOARD", font=f9, fill=(231, 76, 60))
+    d.rectangle((2, 19, W-2, 27), fill=(10, 0, 0))
     display_text = input_text[-20:] if len(input_text) > 20 else input_text
-    d.text((4, 20), display_text, font=f9, fill="#FFFF00")
+    d.text((4, 20), display_text, font=f9, fill=(212, 172, 13))
     for r, row in enumerate(KEYBOARD_ROWS):
         y = ROW_Y[r]
         for c, ch in enumerate(row):
@@ -127,7 +127,7 @@ def draw_keyboard(input_text, selected_row, selected_col):
                 d.rectangle((x-1, y-1, x+CELL_W-1, y+7), fill="#FF8800")
                 d.text((x, y), ch, font=f9, fill="#000000")
             else:
-                d.text((x, y), ch, font=f9, fill="#FFFFFF")
+                d.text((x, y), ch, font=f9, fill=(242, 243, 244))
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "OK=add  K1=send  K2=del  K3=cancel", font=f9, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)

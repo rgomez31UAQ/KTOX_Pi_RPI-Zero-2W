@@ -362,10 +362,10 @@ def _export_log():
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
-    draw.text((2, 2), "ARP MITM", fill="CYAN", font=font)
+    draw.text((2, 2), "ARP MITM", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -380,7 +380,7 @@ def _draw_screen():
         atk = attack_running
         conn_list = list(connections)
 
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
 
     if vm == "hosts":
         y = 28
@@ -391,27 +391,27 @@ def _draw_screen():
             line = f"{prefix}{h['ip']}"
             draw.text((2, y), line[:22], fill=color, font=font)
             y += 14
-        draw.text((2, 116), "OK=select UP/DN=scroll", fill="GRAY", font=font)
+        draw.text((2, 116), "OK=select UP/DN=scroll", fill=(86, 101, 115), font=font)
 
     elif vm == "attack":
         draw.text((2, 28), f"Target: {t_ip}", fill="RED", font=font)
-        draw.text((2, 42), f"GW:     {g_ip}", fill="YELLOW", font=font)
-        draw.text((2, 56), f"Pkts:   {pf}", fill="WHITE", font=font)
-        draw.text((2, 70), f"Conns:  {len(conn_list)}", fill="WHITE", font=font)
+        draw.text((2, 42), f"GW:     {g_ip}", fill=(212, 172, 13), font=font)
+        draw.text((2, 56), f"Pkts:   {pf}", fill=(242, 243, 244), font=font)
+        draw.text((2, 70), f"Conns:  {len(conn_list)}", fill=(242, 243, 244), font=font)
         dns_label = "ON" if dns_on else "OFF"
         dns_color = "GREEN" if dns_on else "GRAY"
         draw.text((2, 84), f"DNS:    {dns_label}", fill=dns_color, font=font)
-        draw.text((2, 100), "K1=DNS K2=export", fill="GRAY", font=font)
-        draw.text((2, 116), "K3=exit+restore ARP", fill="GRAY", font=font)
+        draw.text((2, 100), "K1=DNS K2=export", fill=(86, 101, 115), font=font)
+        draw.text((2, 116), "K3=exit+restore ARP", fill=(86, 101, 115), font=font)
 
     elif vm == "connections":
         y = 28
         visible = conn_list[sp:sp + ROWS_VISIBLE]
         for c in visible:
             line = f"{c['src']}:{c['sport']}->{c['dport']}"
-            draw.text((2, y), line[:22], fill="WHITE", font=font)
+            draw.text((2, y), line[:22], fill=(242, 243, 244), font=font)
             y += 14
-        draw.text((2, 116), "OK=back UP/DN=scroll", fill="GRAY", font=font)
+        draw.text((2, 116), "OK=back UP/DN=scroll", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -600,9 +600,9 @@ def main():
             _stop_attack()
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
-            draw.text((10, 50), "ARP restored", fill="YELLOW", font=font)
+            draw.text((10, 50), "ARP restored", fill=(212, 172, 13), font=font)
             draw.text((10, 66), "MITM stopped", fill="RED", font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:

@@ -290,13 +290,13 @@ def _export_loot():
 
 def _draw_frame(lcd, font_obj):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "WHOIS LOOKUP", font=font_obj, fill="#00CCFF")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if looking_up else "#444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "WHOIS LOOKUP", font=font_obj, fill=(171, 178, 185))
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if looking_up else "#444")
 
     with lock:
         msg = status_msg
@@ -304,8 +304,8 @@ def _draw_frame(lcd, font_obj):
         sel = selected
         res = dict(results)
 
-    d.text((2, 16), msg[:24], font=font_obj, fill="#AAAAAA")
-    d.text((2, 28), f"IPs: {len(ips)}  Looked up: {len(res)}", font=font_obj, fill="#888")
+    d.text((2, 16), msg[:24], font=font_obj, fill=(171, 178, 185))
+    d.text((2, 28), f"IPs: {len(ips)}  Looked up: {len(res)}", font=font_obj, fill=(113, 125, 126))
 
     if ips:
         # Show IP list with results
@@ -332,17 +332,17 @@ def _draw_frame(lcd, font_obj):
             if info:
                 y_detail = 42 + ROWS_VISIBLE * ROW_H + 2
                 if info["hostname"]:
-                    d.text((2, y_detail), info["hostname"][:24], font=font_obj, fill="#00FF88")
+                    d.text((2, y_detail), info["hostname"][:24], font=font_obj, fill=(30, 132, 73))
                     y_detail += 10
                 if info["org"]:
-                    d.text((2, y_detail), info["org"][:24], font=font_obj, fill="#FFAA00")
+                    d.text((2, y_detail), info["org"][:24], font=font_obj, fill=(212, 172, 13))
     else:
-        d.text((2, 50), "KEY1: Load from loot", font=font_obj, fill="#666")
-        d.text((2, 65), "Or wait for scan data", font=font_obj, fill="#666")
+        d.text((2, 50), "KEY1: Load from loot", font=font_obj, fill=(86, 101, 115))
+        d.text((2, 65), "Or wait for scan data", font=font_obj, fill=(86, 101, 115))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "OK:Lkup K1:Load K3:Quit", font=font_obj, fill="#888")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "OK:Lkup K1:Load K3:Quit", font=font_obj, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 

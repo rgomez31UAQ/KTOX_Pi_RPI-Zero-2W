@@ -212,20 +212,20 @@ def start_transfer(fpath):
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(171, 178, 185))
     with lock:
         active = transferring
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_main():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "ICMP TUNNEL")
 
@@ -240,18 +240,18 @@ def draw_main():
         dst = target_ip
 
     enc_str = "XOR" if enc else "RAW"
-    d.text((2, 15), f"T:{dst[:15]} [{enc_str}]", font=font, fill="#888")
+    d.text((2, 15), f"T:{dst[:15]} [{enc_str}]", font=font, fill=(113, 125, 126))
 
     if active:
-        d.text((2, 28), status[:22], font=font, fill="#FFAA00")
+        d.text((2, 28), status[:22], font=font, fill=(212, 172, 13))
         progress = cs / tc if tc > 0 else 0
         bar_w = int(100 * progress)
-        d.rectangle((14, 42, 114, 50), outline="#444")
-        d.rectangle((14, 42, 14 + bar_w, 50), fill="#00AA44")
-        d.text((2, 54), f"{bs}B sent", font=font, fill="#CCCCCC")
-        d.text((2, 66), f"Pkt {cs}/{tc}", font=font, fill="#CCCCCC")
+        d.rectangle((14, 42, 114, 50), outline=(34, 0, 0))
+        d.rectangle((14, 42, 14 + bar_w, 50), fill=(30, 132, 73))
+        d.text((2, 54), f"{bs}B sent", font=font, fill=(242, 243, 244))
+        d.text((2, 66), f"Pkt {cs}/{tc}", font=font, fill=(242, 243, 244))
     elif not file_list:
-        d.text((10, 45), "No loot files found", font=font, fill="#666")
+        d.text((10, 45), "No loot files found", font=font, fill=(86, 101, 115))
     else:
         visible = file_list[sc:sc + ROWS_VISIBLE - 1]
         for i, entry in enumerate(visible):
@@ -267,11 +267,11 @@ def draw_main():
 
 
 def _show_message(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 50), line1, font=font, fill="#00FF00")
+    d.text((10, 50), line1, font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2, font=font, fill="#888")
+        d.text((4, 65), line2, font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -284,13 +284,13 @@ def main():
     global scroll_pos, target_idx, target_ip, encrypt_on
     global stop_flag, file_list
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 20), "ICMP TUNNEL", font=font, fill="#00CCFF")
-    d.text((4, 40), "Covert channel via", font=font, fill="#888")
-    d.text((4, 52), "ICMP echo payloads", font=font, fill="#888")
-    d.text((4, 72), "OK=Send  K1=Encrypt", font=font, fill="#666")
-    d.text((4, 84), "K2=Target  K3=Exit", font=font, fill="#666")
+    d.text((4, 20), "ICMP TUNNEL", font=font, fill=(171, 178, 185))
+    d.text((4, 40), "Covert channel via", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "ICMP echo payloads", font=font, fill=(113, 125, 126))
+    d.text((4, 72), "OK=Send  K1=Encrypt", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "K2=Target  K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 

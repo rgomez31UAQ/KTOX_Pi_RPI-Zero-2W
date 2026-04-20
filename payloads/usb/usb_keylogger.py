@@ -498,12 +498,12 @@ def _uptime_str():
 
 def _draw_main_view():
     """Render main logging status to LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "USB KEYLOGGER", font=font, fill="#FF4444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "USB KEYLOGGER", font=font, fill=(231, 76, 60))
     with lock:
         active = logging_active
         gc = gadget_configured
@@ -520,20 +520,20 @@ def _draw_main_view():
         count = keystroke_count
         last3 = list(last_keys)
 
-    d.text((2, 28), msg[:22], font=font, fill="#FFAA00")
+    d.text((2, 28), msg[:22], font=font, fill=(212, 172, 13))
 
     # Keystroke count
-    d.text((2, 42), f"Keys: {count}", font=font, fill="#00FF00")
+    d.text((2, 42), f"Keys: {count}", font=font, fill=(30, 132, 73))
 
     # Uptime
-    d.text((2, 54), f"Uptime: {_uptime_str()}", font=font, fill="#888")
+    d.text((2, 54), f"Uptime: {_uptime_str()}", font=font, fill=(113, 125, 126))
 
     # Last 3 keys
     last_str = " ".join(last3) if last3 else "(none)"
-    d.text((2, 68), f"Last: {last_str[:18]}", font=font, fill="#CCCCCC")
+    d.text((2, 68), f"Last: {last_str[:18]}", font=font, fill=(242, 243, 244))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     label = "OK:Stop" if active else "OK:Start"
     d.text((2, 117), f"{label} K1:Hist K3:X", font=font, fill="#AAA")
 
@@ -542,11 +542,11 @@ def _draw_main_view():
 
 def _draw_history_view():
     """Render last 50 keystrokes scrollable list."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "KEY HISTORY", font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "KEY HISTORY", font=font, fill=(171, 178, 185))
 
     with lock:
         snapshot = list(key_history)
@@ -561,17 +561,17 @@ def _draw_history_view():
     visible = recent[scroll:scroll + ROWS_VISIBLE]
     y = 16
     for ts, label in visible:
-        d.text((2, y), f"{ts} {label[:10]}", font=font, fill="#CCCCCC")
+        d.text((2, y), f"{ts} {label[:10]}", font=font, fill=(242, 243, 244))
         y += 13
 
     if not visible:
-        d.text((10, 50), "No keystrokes yet", font=font, fill="#666")
+        d.text((10, 50), "No keystrokes yet", font=font, fill=(86, 101, 115))
 
     # Scroll indicator
     if total > ROWS_VISIBLE:
-        d.text((100, 117), f"{scroll + 1}/{total}", font=font, fill="#666")
+        d.text((100, 117), f"{scroll + 1}/{total}", font=font, fill=(86, 101, 115))
 
-    d.rectangle((0, 116, 99, 127), fill="#111")
+    d.rectangle((0, 116, 99, 127), fill=(10, 0, 0))
     d.text((2, 117), "UP/DN:Scrl K1:Back", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -591,13 +591,13 @@ def main():
         status_msg = "Gadget ready" if gadget_ok else "Gadget N/A"
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 16), "USB KEYLOGGER", font=font, fill="#FF4444")
-    d.text((4, 36), "Transparent HID proxy", font=font, fill="#888")
-    d.text((4, 48), "Keyboard -> Pi -> Target", font=font, fill="#888")
-    d.text((4, 66), "OK=Start  K1=History", font=font, fill="#666")
-    d.text((4, 78), "K2=Export K3=Exit", font=font, fill="#666")
+    d.text((8, 16), "USB KEYLOGGER", font=font, fill=(231, 76, 60))
+    d.text((4, 36), "Transparent HID proxy", font=font, fill=(113, 125, 126))
+    d.text((4, 48), "Keyboard -> Pi -> Target", font=font, fill=(113, 125, 126))
+    d.text((4, 66), "OK=Start  K1=History", font=font, fill=(86, 101, 115))
+    d.text((4, 78), "K2=Export K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.5)
 

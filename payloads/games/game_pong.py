@@ -40,13 +40,13 @@ WIDTH, HEIGHT = LCD.width, LCD.height
 _GAME_W, _GAME_H = 128, 128
 font = ImageFont.load_default()
 
-# Colors (green theme)
-COL_BG = (0, 0, 0)
-COL_PADDLE = (0, 255, 0)
-COL_BALL = (0, 255, 0)
-COL_NET = (0, 80, 0)
-COL_SCORE = (0, 200, 0)
-COL_TEXT = (0, 255, 0)
+# Colors (KTOX dark-red theme)
+COL_BG     = (10,  0,   0)   # KTOX BG
+COL_PADDLE = (242, 243, 244) # WHITE
+COL_BALL   = (231, 76,  60)  # EMBER
+COL_NET    = (86,  101, 115) # DIM
+COL_SCORE  = (171, 178, 185) # ASH
+COL_TEXT   = (242, 243, 244) # WHITE
 
 # Game constants
 PADDLE_W = 3
@@ -188,7 +188,7 @@ def _draw_game(lcd, state):
     d = ImageDraw.Draw(img)
 
     # Score bar
-    d.rectangle((0, 0, 127, 11), fill=(0, 20, 0))
+    d.rectangle((0, 0, 127, 11), fill=(34, 0, 0))
     score_text = f"{state['player_score']}  -  {state['ai_score']}"
     d.text((40, SCORE_Y), score_text, font=font, fill=COL_SCORE)
 
@@ -213,15 +213,15 @@ def _draw_game(lcd, state):
     # Paused overlay
     if state["paused"] and not state["game_over"]:
         d.text((38, 55), "PAUSED", font=font, fill=COL_TEXT)
-        d.text((28, 70), "OK to start", font=font, fill=(0, 150, 0))
+        d.text((28, 70), "OK to start", font=font, fill=(113, 125, 126))
 
     # Game over overlay
     if state["game_over"]:
         winner = "You WIN!" if state["player_score"] >= 9 else "AI Wins!"
-        d.rectangle((20, 40, 108, 90), fill=(0, 30, 0))
+        d.rectangle((20, 40, 108, 90), fill=(34, 0, 0))
         d.text((35, 45), "GAME OVER", font=font, fill=COL_TEXT)
         d.text((38, 60), winner, font=font, fill=COL_TEXT)
-        d.text((28, 78), "K1=reset K3=quit", font=font, fill=(0, 150, 0))
+        d.text((28, 78), "K1=reset K3=quit", font=font, fill=(113, 125, 126))
 
     if _GAME_W != WIDTH or _GAME_H != HEIGHT:
         img = img.resize((WIDTH, HEIGHT), Image.NEAREST)

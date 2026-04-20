@@ -498,11 +498,11 @@ def _draw_lcd():
     """Render current state on LCD."""
     st = _get_state()
     cfg = st["config"]
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "REV SSH", font=font, fill="#00AAFF")
     status = st["tunnel_status"]
     status_color = STATUS_COLORS.get(status, "#888")
@@ -511,12 +511,12 @@ def _draw_lcd():
 
     # Uptime
     uptime_str = _format_uptime(st["uptime_start"])
-    d.text((2, 16), f"Up: {uptime_str}", font=font, fill="#888")
+    d.text((2, 16), f"Up: {uptime_str}", font=font, fill=(113, 125, 126))
 
     # Remote endpoint summary
     endpoint = f"{cfg['remote_user']}@{cfg['remote_host']}"
-    d.text((2, 28), endpoint[:21], font=font, fill="#AAAAAA")
-    d.text((2, 40), f"R:{cfg['remote_port']} -> L:{cfg['local_forward_port']}", font=font, fill="#AAAAAA")
+    d.text((2, 28), endpoint[:21], font=font, fill=(171, 178, 185))
+    d.text((2, 40), f"R:{cfg['remote_port']} -> L:{cfg['local_forward_port']}", font=font, fill=(171, 178, 185))
 
     # Config fields
     y_start = 54
@@ -538,18 +538,18 @@ def _draw_lcd():
 
         if bg:
             d.rectangle((0, y, 127, y + 10), fill=bg)
-        d.text((2, y), f"{label}:", font=font, fill="#888888")
+        d.text((2, y), f"{label}:", font=font, fill=(113, 125, 126))
         d.text((50, y), value, font=font, fill=fg)
 
         if is_selected:
-            d.text((120, y), "<>", font=font, fill="#FFAA00")
+            d.text((120, y), "<>", font=font, fill=(212, 172, 13))
 
     # Message line
     d.rectangle((0, 106, 127, 115), fill="#0A0A0A")
     d.text((2, 106), st["last_message"][:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     action = "STOP" if st["tunnel_running"] else "START"
     d.text((2, 117), f"OK:{action} K1:Test K3:Quit", font=font, fill="#AAA")
 
@@ -563,14 +563,14 @@ def main():
     _load_config()
 
     # Show splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 20), "REVERSE SSH", font=font, fill="#00AAFF")
-    d.text((4, 36), "Persistent Tunnel", font=font, fill="#888")
-    d.text((4, 56), "OK=Start/Stop", font=font, fill="#666")
-    d.text((4, 68), "U/D=Field L/R=Edit", font=font, fill="#666")
-    d.text((4, 80), "K1=Test K2=Keygen", font=font, fill="#666")
-    d.text((4, 92), "K3=Exit", font=font, fill="#666")
+    d.text((4, 36), "Persistent Tunnel", font=font, fill=(113, 125, 126))
+    d.text((4, 56), "OK=Start/Stop", font=font, fill=(86, 101, 115))
+    d.text((4, 68), "U/D=Field L/R=Edit", font=font, fill=(86, 101, 115))
+    d.text((4, 80), "K1=Test K2=Keygen", font=font, fill=(86, 101, 115))
+    d.text((4, 92), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 

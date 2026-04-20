@@ -106,12 +106,12 @@ def _scan_nearby_macs():
 
 def _draw_main(lcd, interfaces, macs, selected, status_msg=""):
     """Draw main interface list with MACs."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((2, 1), "MAC Randomizer", font=font, fill="#00ff00")
-    d.text((100, 1), "K3", font=font, fill="white")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "MAC Randomizer", font=font, fill=(30, 132, 73))
+    d.text((100, 1), "K3", font=font, fill=(242, 243, 244))
 
     y = 16
     for idx, iface in enumerate(interfaces):
@@ -128,21 +128,21 @@ def _draw_main(lcd, interfaces, macs, selected, status_msg=""):
         mac_str = macs.get(iface, "N/A")
         if len(mac_str) > 17:
             mac_str = mac_str[:17]
-        d.text((8, y), mac_str, font=font, fill="#aaaaaa" if exists else "#444444")
+        d.text((8, y), mac_str, font=font, fill=(171, 178, 185) if exists else "#444444")
         y += 13
 
-    d.line((0, y, 127, y), fill="#333333")
+    d.line((0, y, 127, y), fill=(34, 0, 0))
     y += 3
 
-    d.text((2, y), "OK=rand K1=restore", font=font, fill="#666666")
+    d.text((2, y), "OK=rand K1=restore", font=font, fill=(86, 101, 115))
     y += 11
-    d.text((2, y), "K2=clone", font=font, fill="#666666")
+    d.text((2, y), "K2=clone", font=font, fill=(86, 101, 115))
     y += 13
 
     if status_msg:
         lines = [status_msg[i:i + 20] for i in range(0, len(status_msg), 20)]
         for line in lines[:3]:
-            d.text((2, y), line, font=font, fill="#ffff00")
+            d.text((2, y), line, font=font, fill=(212, 172, 13))
             y += 11
 
     lcd.LCD_ShowImage(img, 0, 0)
@@ -150,12 +150,12 @@ def _draw_main(lcd, interfaces, macs, selected, status_msg=""):
 
 def _draw_clone_menu(lcd, entries, selected, title="Clone MAC"):
     """Draw list of nearby devices to clone."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((2, 1), title, font=font, fill="#00ff00")
-    d.text((100, 1), "K3", font=font, fill="white")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(30, 132, 73))
+    d.text((100, 1), "K3", font=font, fill=(242, 243, 244))
 
     y = 16
     visible_count = 8
@@ -169,13 +169,13 @@ def _draw_clone_menu(lcd, entries, selected, title="Clone MAC"):
         d.text((2, y), text[:20], font=font, fill=color)
         y += 12
 
-    d.text((2, 116), "OK=select K3=back", font=font, fill="#666666")
+    d.text((2, 116), "OK=select K3=back", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_status(lcd, msg, color="#00ff00"):
     """Show a temporary status message."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     lines = [msg[i:i + 18] for i in range(0, len(msg), 18)]
     y = 40

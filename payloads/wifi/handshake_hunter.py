@@ -311,13 +311,13 @@ def _export_loot():
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "HANDSHAKE HUNTER", font=font, fill="#FF0044")
     active = phase in ("scanning", "client_scan", "attacking")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#444")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#444")
 
     with lock:
         msg = status_msg
@@ -326,7 +326,7 @@ def _draw_frame(lcd, font):
         cur_phase = phase
         hs = handshake_count
 
-    d.text((2, 16), msg[:24], font=font, fill="#AAAAAA")
+    d.text((2, 16), msg[:24], font=font, fill=(171, 178, 185))
 
     if cur_phase in ("ap_select",):
         visible = aps[scroll:scroll + ROWS_VISIBLE]
@@ -337,10 +337,10 @@ def _draw_frame(lcd, font):
             line = f"{prefix}{ap['essid'][:14]}"
             color = "#00FF00" if idx == selected_idx else "#CCCCCC"
             d.text((2, y), line, font=font, fill=color)
-            d.text((100, y), f"ch{ap['channel']}", font=font, fill="#666")
+            d.text((100, y), f"ch{ap['channel']}", font=font, fill=(86, 101, 115))
 
     elif cur_phase in ("client_select",):
-        d.text((2, 28), f"Clients: {len(clients)}", font=font, fill="#888")
+        d.text((2, 28), f"Clients: {len(clients)}", font=font, fill=(113, 125, 126))
         visible = clients[scroll:scroll + ROWS_VISIBLE]
         for i, cl in enumerate(visible):
             y = 40 + i * ROW_H
@@ -351,23 +351,23 @@ def _draw_frame(lcd, font):
             d.text((2, y), f"{prefix}{mac_short}", font=font, fill=color)
 
     elif cur_phase == "attacking":
-        d.text((2, 50), "Deauth + Capture", font=font, fill="#FFAA00")
+        d.text((2, 50), "Deauth + Capture", font=font, fill=(212, 172, 13))
 
     elif cur_phase == "done":
-        d.text((2, 40), f"Handshakes: {hs}", font=font, fill="#00FF00")
+        d.text((2, 40), f"Handshakes: {hs}", font=font, fill=(30, 132, 73))
         with lock:
             ep = len(eapol_pkts)
-        d.text((2, 55), f"EAPOL pkts: {ep}", font=font, fill="#888")
+        d.text((2, 55), f"EAPOL pkts: {ep}", font=font, fill=(113, 125, 126))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if cur_phase == "ap_select":
-        d.text((2, 117), "OK:Sel K1:Scan K3:Quit", font=font, fill="#888")
+        d.text((2, 117), "OK:Sel K1:Scan K3:Quit", font=font, fill=(113, 125, 126))
     elif cur_phase == "client_select":
-        d.text((2, 117), "OK:Deauth K1:Scan K3:Q", font=font, fill="#888")
+        d.text((2, 117), "OK:Deauth K1:Scan K3:Q", font=font, fill=(113, 125, 126))
     elif cur_phase == "done":
-        d.text((2, 117), "K2:Export K1:Scan K3:Q", font=font, fill="#888")
+        d.text((2, 117), "K2:Export K1:Scan K3:Q", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "K1:Scan K3:Exit", font=font, fill="#888")
+        d.text((2, 117), "K1:Scan K3:Exit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -391,9 +391,9 @@ def main():
     font = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font, fill="#FF0000")
+        d.text((4, 50), "scapy not found!", font=font, fill=(231, 76, 60))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()
@@ -401,9 +401,9 @@ def main():
 
     usb_iface = find_monitor_capable_interface()
     if not usb_iface:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "No USB WiFi dongle", font=font, fill="#FF0000")
+        d.text((4, 50), "No USB WiFi dongle", font=font, fill=(231, 76, 60))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()
@@ -411,9 +411,9 @@ def main():
 
     mon_iface = activate_monitor_mode(usb_iface)
     if not mon_iface:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "Monitor mode fail", font=font, fill="#FF0000")
+        d.text((4, 50), "Monitor mode fail", font=font, fill=(231, 76, 60))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

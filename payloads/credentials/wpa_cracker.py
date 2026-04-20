@@ -90,12 +90,12 @@ def browse_file(start_path="/", extensions=None, prompt="Select file:"):
             return []
 
     def draw_browser(entries, sel, sc, path):
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         draw = ImageDraw.Draw(img)
         # Header
         draw.rectangle((0,0,127,16), fill="#004466")
         header = path if len(path) < 20 else "..." + path[-17:]
-        draw.text((2,2), header[:20], font=font_sm, fill="cyan")
+        draw.text((2,2), header[:20], font=font_sm, fill=(171, 178, 185))
         # List
         y = 20
         for i in range(rows_per_page):
@@ -114,8 +114,8 @@ def browse_file(start_path="/", extensions=None, prompt="Select file:"):
             draw.text((4, y), name, font=font_sm, fill=color)
             y += 11
         # Footer
-        draw.rectangle((0, HEIGHT-12, WIDTH, HEIGHT), fill="#111111")
-        draw.text((2, HEIGHT-10), "UP/DOWN OK=sel K3=back", font=font_sm, fill="#AAAAAA")
+        draw.rectangle((0, HEIGHT-12, WIDTH, HEIGHT), fill=(10, 0, 0))
+        draw.text((2, HEIGHT-10), "UP/DOWN OK=sel K3=back", font=font_sm, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
     def wait_button():
@@ -130,10 +130,10 @@ def browse_file(start_path="/", extensions=None, prompt="Select file:"):
         entries = get_entries(current_path)
         if not entries:
             # Empty folder: show message, allow back
-            img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ImageDraw.Draw(img)
             draw.text((4,50), "Empty folder", font=font_sm, fill="red")
-            draw.text((4,70), "KEY3 to go back", font=font_sm, fill="gray")
+            draw.text((4,70), "KEY3 to go back", font=font_sm, fill=(86, 101, 115))
             LCD.LCD_ShowImage(img, 0, 0)
             while True:
                 btn = wait_button()
@@ -397,33 +397,33 @@ def fmt_keys(count):
     return str(count)
 
 def draw_header(draw, title):
-    draw.rectangle((0,0,127,13), fill="#111")
+    draw.rectangle((0,0,127,13), fill=(10, 0, 0))
     draw.text((2,1), title, font=font_sm, fill="#00AAFF")
     with lock:
         active = phase == "cracking"
-    draw.ellipse((118,3,122,7), fill="#00FF00" if active else "#444")
+    draw.ellipse((118,3,122,7), fill=(30, 132, 73) if active else "#444")
 
 def draw_footer(draw, text):
-    draw.rectangle((0,116,127,127), fill="#111")
-    draw.text((2,117), text[:24], font=font_sm, fill="#888")
+    draw.rectangle((0,116,127,127), fill=(10, 0, 0))
+    draw.text((2,117), text[:24], font=font_sm, fill=(113, 125, 126))
 
 def draw_browser_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ImageDraw.Draw(img)
     draw_header(draw, "WPA CRACKER")
-    draw.text((2,16), status_msg[:24], font=font_sm, fill="#AAAAAA")
-    draw.text((2,28), "Press OK to select file", font=font_sm, fill="#888")
+    draw.text((2,16), status_msg[:24], font=font_sm, fill=(171, 178, 185))
+    draw.text((2,28), "Press OK to select file", font=font_sm, fill=(113, 125, 126))
     draw_footer(draw, "K3:Exit")
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_wordlist_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ImageDraw.Draw(img)
     draw_header(draw, "WPA CRACKER")
     if target_file:
-        draw.text((2,16), f"Target: {target_file['name'][:18]}", font=font_sm, fill="#FFAA00")
-        draw.text((2,28), f"Type: {target_file['ftype']}", font=font_sm, fill="#888")
-    draw.text((2,44), "Select wordlist:", font=font_sm, fill="#AAAAAA")
+        draw.text((2,16), f"Target: {target_file['name'][:18]}", font=font_sm, fill=(212, 172, 13))
+        draw.text((2,28), f"Type: {target_file['ftype']}", font=font_sm, fill=(113, 125, 126))
+    draw.text((2,44), "Select wordlist:", font=font_sm, fill=(171, 178, 185))
     with lock:
         wl = wordlists
         sel = selected_idx
@@ -436,7 +436,7 @@ def draw_wordlist_view():
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_cracking_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ImageDraw.Draw(img)
     draw_header(draw, "WPA CRACKER")
     with lock:
@@ -447,16 +447,16 @@ def draw_cracking_view():
         key = found_key
         cur_phase = phase
     if target_file:
-        draw.text((2,16), f"{target_file['name'][:22]}", font=font_sm, fill="#888")
+        draw.text((2,16), f"{target_file['name'][:22]}", font=font_sm, fill=(113, 125, 126))
     color = "#00FF00" if key else ("#FFAA00" if cur_phase == "cracking" else "#FF4444")
     draw.text((2,30), msg[:22], font=font_sm, fill=color)
-    draw.text((2,46), f"Time: {fmt_elapsed(elapsed)}", font=font_sm, fill="white")
-    draw.text((2,58), f"Keys: {fmt_keys(tested)}", font=font_sm, fill="#AAAAAA")
+    draw.text((2,46), f"Time: {fmt_elapsed(elapsed)}", font=font_sm, fill=(242, 243, 244))
+    draw.text((2,58), f"Keys: {fmt_keys(tested)}", font=font_sm, fill=(171, 178, 185))
     if spd:
-        draw.text((2,70), f"Speed: {spd[:16]}", font=font_sm, fill="#AAAAAA")
+        draw.text((2,70), f"Speed: {spd[:16]}", font=font_sm, fill=(171, 178, 185))
     if key:
-        draw.text((2,86), "PASSWORD:", font=font_sm, fill="#888")
-        draw.text((2,98), key[:22], font=font_sm, fill="#00FF00")
+        draw.text((2,86), "PASSWORD:", font=font_sm, fill=(113, 125, 126))
+        draw.text((2,98), key[:22], font=font_sm, fill=(30, 132, 73))
     if cur_phase == "cracking":
         draw_footer(draw, "K1:Stop K3:Exit")
     else:

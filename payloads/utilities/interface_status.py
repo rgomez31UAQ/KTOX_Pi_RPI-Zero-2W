@@ -94,30 +94,30 @@ def _split_ip_lines(ip):
 
 
 def draw(lcd, left, right):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     font = scaled_font()
 
     # Header
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((4, 1), "Interface Status", font=font, fill="white")
-    d.text((92, 1), "KEY3", font=font, fill="white")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((4, 1), "Interface Status", font=font, fill=(242, 243, 244))
+    d.text((92, 1), "KEY3", font=font, fill=(242, 243, 244))
 
     # Divider (shift for swapped columns)
-    d.line((63, 12, 63, 127), fill="#333333")
+    d.line((63, 12, 63, 127), fill=(34, 0, 0))
 
     # Left column (eth1)
     lx = 3
     y = 16
     for line in left:
-        d.text((lx, y), line[:10], font=font, fill="white")
+        d.text((lx, y), line[:10], font=font, fill=(242, 243, 244))
         y += 12
 
     # Right column (eth0)
     rx = 67
     y = 16
     for line in right:
-        d.text((rx, y), line[:10], font=font, fill="white")
+        d.text((rx, y), line[:10], font=font, fill=(242, 243, 244))
         y += 12
 
     lcd.LCD_ShowImage(img, 0, 0)

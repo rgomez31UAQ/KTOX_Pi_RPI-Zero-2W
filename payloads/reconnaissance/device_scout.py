@@ -555,25 +555,25 @@ def _persist_thread():
 # ===================================================================
 
 def _header(d, font, view_name):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "SCOUT", font=font, fill="#00FF00")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "SCOUT", font=font, fill=(30, 132, 73))
     if hasattr(d, "textbbox"):
         tw = d.textbbox((0, 0), view_name, font=font)[2]
     else:
         tw, _ = d.textsize(view_name, font=font)
-    d.text((125 - tw, 1), view_name, font=font, fill="white")
-    d.ellipse((108, 3, 112, 7), fill="#00FF00" if running else "#FF0000")
+    d.text((125 - tw, 1), view_name, font=font, fill=(242, 243, 244))
+    d.ellipse((108, 3, 112, 7), fill=(30, 132, 73) if running else "#FF0000")
 
 
 def _footer(d, font, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def _draw_persist_bar(d, x, y, ratio, alert):
     """Draw a small 16x6 persistence bar at (x, y)."""
     w, h = 16, 6
-    d.rectangle((x, y + 3, x + w - 1, y + h + 2), outline="#444")
+    d.rectangle((x, y + 3, x + w - 1, y + h + 2), outline=(34, 0, 0))
     filled = int(ratio * (w - 2))
     if filled > 0:
         color = "#FF4444" if alert else "#00FF00"
@@ -611,14 +611,14 @@ def _draw_device_list(d, font, devs, y0, alert_color=False):
         _draw_persist_bar(d, 102, y, info["persistence"], info["alert"])
         # Alert marker
         if info["alert"]:
-            d.text((120, y), "!", font=font, fill="#FF0000")
+            d.text((120, y), "!", font=font, fill=(231, 76, 60))
 
     # Scroll indicator
     total = len(devs)
     if total > ROWS_VISIBLE:
         bar_h = max(4, int(ROWS_VISIBLE / total * 88))
         bar_y = y0 + int(scroll / total * 88)
-        d.rectangle((126, bar_y, 127, bar_y + bar_h), fill="#444")
+        d.rectangle((126, bar_y, 127, bar_y + bar_h), fill=(34, 0, 0))
 
 
 def _draw_devices_view(d, font):
@@ -626,7 +626,7 @@ def _draw_devices_view(d, font):
     devs = _sorted_devices(alert_only=False)
     if not devs:
         msg = "Scanning..." if running else "Press KEY1"
-        d.text((25, 55), msg, font=font, fill="#666")
+        d.text((25, 55), msg, font=font, fill=(86, 101, 115))
     else:
         _draw_device_list(d, font, devs, 15)
 
@@ -640,8 +640,8 @@ def _draw_alerts_view(d, font):
     """ALERTS view: only flagged devices."""
     devs = _sorted_devices(alert_only=True)
     if not devs:
-        d.text((20, 45), "All clear", font=font, fill="#00FF00")
-        d.text((12, 60), "No trackers found", font=font, fill="#666")
+        d.text((20, 45), "All clear", font=font, fill=(30, 132, 73))
+        d.text((12, 60), "No trackers found", font=font, fill=(86, 101, 115))
     else:
         _draw_device_list(d, font, devs, 15, alert_color=True)
 
@@ -679,11 +679,11 @@ def _draw_stats_view(d, font):
         f"Alerts: {n_alert} active",
     ]
     for line in lines:
-        d.text((4, y), line, font=font, fill="#CCCCCC")
+        d.text((4, y), line, font=font, fill=(242, 243, 244))
         y += 12
 
     if top_info and top_info["persistence"] > 0:
-        d.text((4, y + 4), "Most persistent:", font=font, fill="#888")
+        d.text((4, y + 4), "Most persistent:", font=font, fill=(113, 125, 126))
         name = (top_info["name"] or top_mac[-8:])[:14]
         score = top_info["persistence"]
         color = "#FF4444" if top_info["alert"] else "#FFAA00"
@@ -695,7 +695,7 @@ def _draw_stats_view(d, font):
 
 def draw_frame(lcd, font):
     """Render one frame to the LCD."""
-    img = Image.new("RGB", (W, H), "black")
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
     view = VIEWS[view_idx]
@@ -775,15 +775,15 @@ def main():
     font = ImageFont.load_default()
 
     # Splash screen
-    img = Image.new("RGB", (W, H), "black")
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((12, 20), "DEVICE SCOUT", font=font, fill="#00FF00")
-    d.text((4, 42), "Anti-surveillance", font=font, fill="#888")
-    d.text((4, 54), "tracker detector", font=font, fill="#888")
-    d.text((4, 72), "KEY1  Start / Stop", font=font, fill="#666")
-    d.text((4, 84), "KEY2  Exit", font=font, fill="#666")
-    d.text((4, 96), "KEY3  Export data", font=font, fill="#666")
-    d.text((4, 108), "L/R Views  U/D Scroll", font=font, fill="#666")
+    d.text((12, 20), "DEVICE SCOUT", font=font, fill=(30, 132, 73))
+    d.text((4, 42), "Anti-surveillance", font=font, fill=(113, 125, 126))
+    d.text((4, 54), "tracker detector", font=font, fill=(113, 125, 126))
+    d.text((4, 72), "KEY1  Start / Stop", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "KEY2  Exit", font=font, fill=(86, 101, 115))
+    d.text((4, 96), "KEY3  Export data", font=font, fill=(86, 101, 115))
+    d.text((4, 108), "L/R Views  U/D Scroll", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
     try:
@@ -815,10 +815,10 @@ def main():
             elif btn == "KEY3":
                 path = export_data()
                 # Brief confirmation on LCD
-                img2 = Image.new("RGB", (W, H), "black")
+                img2 = Image.new("RGB", (W, H), (10, 0, 0))
                 d2 = ImageDraw.Draw(img2)
-                d2.text((10, 50), "Data exported!", font=font, fill="#00FF00")
-                d2.text((4, 65), path[-22:], font=font, fill="#888")
+                d2.text((10, 50), "Data exported!", font=font, fill=(30, 132, 73))
+                d2.text((4, 65), path[-22:], font=font, fill=(113, 125, 126))
                 lcd.LCD_ShowImage(img2, 0, 0)
                 time.sleep(1.5)
 

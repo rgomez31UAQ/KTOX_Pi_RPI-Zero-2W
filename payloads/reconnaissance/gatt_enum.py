@@ -334,21 +334,21 @@ def export_loot():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), title, font=font, fill="#AA44FF")
     with lock:
         active = scanning or connecting
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_devices_view():
     """Render BLE device list."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "GATT ENUM")
 
@@ -358,10 +358,10 @@ def draw_devices_view():
         sel = selected_idx
         sc = scroll_pos
 
-    d.text((2, 15), status[:22], font=font, fill="#888")
+    d.text((2, 15), status[:22], font=font, fill=(113, 125, 126))
 
     if not devs:
-        d.text((15, 55), "KEY1: Scan for BLE", font=font, fill="#666")
+        d.text((15, 55), "KEY1: Scan for BLE", font=font, fill=(86, 101, 115))
     else:
         visible = devs[sc:sc + ROWS_VISIBLE - 1]
         for i, dev in enumerate(visible):
@@ -397,7 +397,7 @@ def _build_gatt_lines():
 
 def draw_gatt_view():
     """Render GATT service/characteristic tree."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "GATT TREE")
 
@@ -406,11 +406,11 @@ def draw_gatt_view():
         target = gatt_target[-8:] if gatt_target else ""
         sc = gatt_scroll
 
-    d.text((2, 15), f"{target} {status[:14]}", font=font, fill="#888")
+    d.text((2, 15), f"{target} {status[:14]}", font=font, fill=(113, 125, 126))
 
     lines = _build_gatt_lines()
     if not lines:
-        d.text((15, 55), "No GATT data yet", font=font, fill="#666")
+        d.text((15, 55), "No GATT data yet", font=font, fill=(86, 101, 115))
     else:
         visible = lines[sc:sc + ROWS_VISIBLE - 1]
         for i, line in enumerate(visible):
@@ -421,7 +421,7 @@ def draw_gatt_view():
         if total > ROWS_VISIBLE - 1:
             bar_h = max(4, int((ROWS_VISIBLE - 1) / total * 88))
             bar_y = 28 + int(sc / total * 88) if total > 0 else 28
-            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill="#444")
+            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill=(34, 0, 0))
 
     _draw_footer(d, "LEFT:Back K2:Export")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -429,11 +429,11 @@ def draw_gatt_view():
 
 def _show_message(line1, line2=""):
     """Show a brief overlay message."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 50), line1, font=font, fill="#00FF00")
+    d.text((10, 50), line1, font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2, font=font, fill="#888")
+        d.text((4, 65), line2, font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -446,15 +446,15 @@ def main():
     global selected_idx, scroll_pos, gatt_scroll, view
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((8, 20), "BLE GATT ENUM", font=font, fill="#AA44FF")
-    d.text((4, 40), "Service & char", font=font, fill="#888")
-    d.text((4, 52), "enumeration tool", font=font, fill="#888")
-    d.text((4, 72), "KEY1  Scan BLE", font=font, fill="#666")
-    d.text((4, 84), "OK    Connect", font=font, fill="#666")
-    d.text((4, 96), "KEY2  Export", font=font, fill="#666")
-    d.text((4, 108), "KEY3  Exit", font=font, fill="#666")
+    d.text((4, 40), "Service & char", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "enumeration tool", font=font, fill=(113, 125, 126))
+    d.text((4, 72), "KEY1  Scan BLE", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "OK    Connect", font=font, fill=(86, 101, 115))
+    d.text((4, 96), "KEY2  Export", font=font, fill=(86, 101, 115))
+    d.text((4, 108), "KEY3  Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 

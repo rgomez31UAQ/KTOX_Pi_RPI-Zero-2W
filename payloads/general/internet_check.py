@@ -100,7 +100,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def show_message(lines, color="lime"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40
@@ -113,22 +113,22 @@ def show_message(lines, color="lime"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main", results=None, summary=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
-    d.text((5, 5), "Internet Check", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "Internet Check", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if screen_state == "main":
         y_pos = 25
         if results:
             for line in results:
-                d.text((5, y_pos), line, font=FONT, fill="white")
+                d.text((5, y_pos), line, font=FONT, fill=(242, 243, 244))
                 y_pos += 12
         else:
-            d.text((5, y_pos), "Press OK to run", font=FONT, fill="white")
+            d.text((5, y_pos), "Press OK to run", font=FONT, fill=(242, 243, 244))
             y_pos += 12
-            d.text((5, y_pos), f"Hosts: {', '.join(HOSTS_TO_CHECK)[:16]}...", font=FONT, fill="white")
+            d.text((5, y_pos), f"Hosts: {', '.join(HOSTS_TO_CHECK)[:16]}...", font=FONT, fill=(242, 243, 244))
             
         if summary:
             color = "lime" if "OK" in summary else "red"
@@ -137,14 +137,14 @@ def draw_ui(screen_state="main", results=None, summary=""):
             x = (WIDTH - w) // 2
             d.text((x, 90), summary, font=FONT_BIG, fill=color)
 
-        d.text((5, 115), "OK=Re-run | KEY1=Edit Hosts | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 115), "OK=Re-run | KEY1=Edit Hosts | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "hosts_input":
-        d.text((5, 30), "Enter Hosts (CSV):", font=FONT, fill="white")
+        d.text((5, 30), "Enter Hosts (CSV):", font=FONT, fill=(242, 243, 244))
         display_hosts = list(current_hosts_input)
         if hosts_input_cursor_pos < len(display_hosts):
             display_hosts[hosts_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_hosts[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_hosts[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 

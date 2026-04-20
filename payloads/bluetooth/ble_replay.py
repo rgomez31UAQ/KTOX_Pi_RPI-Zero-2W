@@ -74,10 +74,10 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_ui(status_msg=None, message_lines=None):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "BLE Replay Attack", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
+    d.text((5, 5), "BLE Replay Attack", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
     
     if message_lines:
         if isinstance(message_lines, str):
@@ -87,15 +87,15 @@ def draw_ui(status_msg=None, message_lines=None):
             bbox = d.textbbox((0, 0), line, font=FONT)
             w = bbox[2] - bbox[0]
             x = (WIDTH - w) // 2
-            d.text((x, y_offset), line, font=FONT, fill="yellow")
+            d.text((x, y_offset), line, font=FONT, fill=(212, 172, 13))
             y_offset += 12
     elif status_msg:
         y_pos = 30
         for line in status_msg.split('\n'):
-            d.text((5, y_pos), line, font=FONT, fill="yellow")
+            d.text((5, y_pos), line, font=FONT, fill=(212, 172, 13))
             y_pos += 12
     
-    d.text((5, 110), "OK=Replay | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 110), "OK=Replay | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def run_attack():

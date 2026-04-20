@@ -52,7 +52,7 @@ def stop_client():
 
 # --- DRAWING ---
 def draw_display(draw, menu_items, selected_index, status):
-    draw.rectangle([(0, 0), (128, 128)], fill="BLACK")
+    draw.rectangle([(0, 0), (128, 128)], fill=(10, 0, 0))
     font = ImageFont.load_default()
     
     def draw_centered(text, y, fill):
@@ -66,10 +66,10 @@ def draw_display(draw, menu_items, selected_index, status):
 
     y = 50
     for i, item in enumerate(menu_items):
-        fill = "WHITE"
+        fill = (242, 243, 244)
         if i == selected_index:
             draw.rectangle([(0, y - 2), (128, y + 12)], fill="BLUE")
-            fill = "YELLOW"
+            fill = (212, 172, 13)
         draw_centered(item, y, fill)
         y += 20
     
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
         LCD.LCD_Clear()
         
-        image = Image.new("RGB", (128, 128), "BLACK")
+        image = Image.new("RGB", (128, 128), (10, 0, 0))
         draw = ImageDraw.Draw(image)
         
         # --- State Variables ---

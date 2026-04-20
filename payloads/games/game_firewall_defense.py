@@ -196,10 +196,10 @@ def _draw_server(d, x0, y0):
     for r in range(ROWS):
         y = y0 + r * CELL
         # Server unit
-        d.rectangle((0, y+1, x0, y+CELL-1), fill=(0, 50, 0))
-        d.rectangle((0, y+2, x0-1, y+CELL-2), fill=(0, 80, 0))
+        d.rectangle((0, y+1, x0, y+CELL-1), fill=(34, 0, 0))
+        d.rectangle((0, y+2, x0-1, y+CELL-2), fill=(86, 101, 115))
         # LED
-        d.point((1, y + CELL//2), fill=(0, 255, 0))
+        d.point((1, y + CELL//2), fill=(231, 76, 60))
 
 def _draw_circuit_bg(d, gx0, gy0):
     """Draw faint circuit board pattern on non-path cells."""
@@ -211,10 +211,10 @@ def _draw_circuit_bg(d, gx0, gy0):
             y = gy0 + r * CELL
             # Subtle circuit traces
             if (c + r) % 3 == 0:
-                d.point((x+5, y+5), fill=(0, 15, 0))
-                d.line((x+5, y+3, x+5, y+7), fill=(0, 12, 0))
+                d.point((x+5, y+5), fill=(10, 0, 0))
+                d.line((x+5, y+3, x+5, y+7), fill=(34, 0, 0))
             if (c * 7 + r * 3) % 5 == 0:
-                d.line((x+2, y+5, x+8, y+5), fill=(0, 12, 0))
+                d.line((x+2, y+5, x+8, y+5), fill=(34, 0, 0))
 
 # ═══════════════════════════════════════════════════════════════
 # EFFECTS
@@ -413,11 +413,11 @@ def _update(s):
 # RENDER
 # ═══════════════════════════════════════════════════════════════
 def _draw(lcd, s):
-    img = Image.new("RGB", (_GW, _GH), (0, 0, 0))
+    img = Image.new("RGB", (_GW, _GH), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
     # ── HUD ──
-    d.rectangle((0, 0, _GW, HUD_H - 1), fill=(0, 15, 0))
+    d.rectangle((0, 0, _GW, HUD_H - 1), fill=(10, 0, 0))
     d.line((0, HUD_H - 1, _GW, HUD_H - 1), fill=(0, 60, 0))
     # Health bar
     hp_pct = max(0, s["hp"]) / 20
@@ -506,7 +506,7 @@ def _draw(lcd, s):
 
     # ── Bottom bar ──
     by0 = _GH - BAR_H
-    d.rectangle((0, by0, _GW, _GH), fill=(0, 15, 0))
+    d.rectangle((0, by0, _GW, _GH), fill=(10, 0, 0))
     d.line((0, by0, _GW, by0), fill=(0, 60, 0))
     td = TOWERS[s["tt"]]
     # Tower preview
@@ -540,7 +540,7 @@ def _draw(lcd, s):
         d.text((25, 38), "BREACH!", font=font, fill=(255, 0, 0))
         d.text((20, 50), "NETWORK OFFLINE", font=font, fill=(255, 50, 50))
         d.text((30, 63), f"Waves: {s['wave']-1}", font=font, fill=(0, 200, 255))
-        d.text((30, 73), f"Kills: {s['kills']}", font=font, fill=(0, 255, 0))
+        d.text((30, 73), f"Kills: {s['kills']}", font=font, fill=(231, 76, 60))
         d.text((18, 82), "OK=retry  K3=quit", font=font, fill=(100, 100, 100))
 
     # Resize for LCD

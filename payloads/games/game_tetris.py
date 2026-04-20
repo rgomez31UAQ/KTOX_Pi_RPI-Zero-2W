@@ -113,16 +113,16 @@ def clear_lines(board):
 
 
 def draw(lcd, board, shape, sx, sy, color, score):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = ImageFont.load_default()
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((4, 1), "TETRIS", font=font, fill="white")
-    d.text((78, 1), f"S:{score}", font=font, fill="white")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((4, 1), "TETRIS", font=font, fill=(242, 243, 244))
+    d.text((78, 1), f"S:{score}", font=font, fill=(242, 243, 244))
 
     # Board
-    d.rectangle((OX - 1, OY - 1, OX + BOARD_W * CELL, OY + BOARD_H * CELL), outline="#444")
+    d.rectangle((OX - 1, OY - 1, OX + BOARD_W * CELL, OY + BOARD_H * CELL), outline=(34, 0, 0))
     for y in range(BOARD_H):
         for x in range(BOARD_W):
             val = board[y][x]
@@ -209,12 +209,12 @@ def main():
                     sx, sy = 3, -2
                     if not can_place(board, shape, sx, sy):
                         # Game over
-                        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                         d = ImageDraw.Draw(img)
                         font = ImageFont.load_default()
-                        d.text((20, 45), "GAME OVER", font=font, fill="white")
-                        d.text((12, 62), "KEY1=Restart", font=font, fill="white")
-                        d.text((20, 78), "KEY3=Exit", font=font, fill="white")
+                        d.text((20, 45), "GAME OVER", font=font, fill=(242, 243, 244))
+                        d.text((12, 62), "KEY1=Restart", font=font, fill=(242, 243, 244))
+                        d.text((20, 78), "KEY3=Exit", font=font, fill=(242, 243, 244))
                         lcd.LCD_ShowImage(img, 0, 0)
                         while True:
                             btn = get_button({"KEY1": KEY1, "KEY3": KEY3}, GPIO)

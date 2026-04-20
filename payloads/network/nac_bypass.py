@@ -336,10 +336,10 @@ def _export_data():
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
-    draw.text((2, 2), "NAC Bypass", fill="CYAN", font=font)
+    draw.text((2, 2), "NAC Bypass", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -353,23 +353,23 @@ def _draw_screen():
         lines = list(log_lines)
 
     if vm == "status":
-        draw.text((2, 16), f"St: {st}", fill="WHITE", font=font)
-        draw.text((2, 28), f"MAC: {mac[:17]}", fill="GREEN", font=font)
-        draw.text((2, 40), f"IP:  {ip}", fill="GREEN", font=font)
-        draw.text((2, 52), f"Bridge: {bs}", fill="YELLOW", font=font)
-        draw.text((2, 64), f"Pkts: {pf}", fill="WHITE", font=font)
+        draw.text((2, 16), f"St: {st}", fill=(242, 243, 244), font=font)
+        draw.text((2, 28), f"MAC: {mac[:17]}", fill=(30, 132, 73), font=font)
+        draw.text((2, 40), f"IP:  {ip}", fill=(30, 132, 73), font=font)
+        draw.text((2, 52), f"Bridge: {bs}", fill=(212, 172, 13), font=font)
+        draw.text((2, 64), f"Pkts: {pf}", fill=(242, 243, 244), font=font)
         inj_label = "ON" if inj else "OFF"
         draw.text((2, 76), f"Inject: {inj_label}", fill="RED" if inj else "GRAY", font=font)
-        draw.text((2, 92), "OK=start UP/DN=scroll", fill="GRAY", font=font)
-        draw.text((2, 104), "K1=inject K2=export", fill="GRAY", font=font)
-        draw.text((2, 116), "K3=exit", fill="GRAY", font=font)
+        draw.text((2, 92), "OK=start UP/DN=scroll", fill=(86, 101, 115), font=font)
+        draw.text((2, 104), "K1=inject K2=export", fill=(86, 101, 115), font=font)
+        draw.text((2, 116), "K3=exit", fill=(86, 101, 115), font=font)
     else:
         visible = lines[sp:sp + ROWS_VISIBLE]
         y = 16
         for line in visible:
-            draw.text((2, y), line[:21], fill="WHITE", font=font)
+            draw.text((2, y), line[:21], fill=(242, 243, 244), font=font)
             y += 14
-        draw.text((2, 116), "OK=back UP/DN=scroll", fill="GRAY", font=font)
+        draw.text((2, 116), "OK=back UP/DN=scroll", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -481,7 +481,7 @@ def main():
             _teardown_bridge()
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((10, 56), "NAC Bypass stopped", fill="RED", font=font)
             LCD.LCD_ShowImage(img, 0, 0)

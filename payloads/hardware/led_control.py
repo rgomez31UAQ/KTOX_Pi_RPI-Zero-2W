@@ -245,12 +245,12 @@ def _update_custom_pattern():
 # ---------------------------------------------------------------------------
 
 def _draw_main(lcd, cursor, editing_custom):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), "LED CONTROL", font=font, fill="#00ccff")
-    d.text((108, 1), "K3", font=font, fill="#888")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "LED CONTROL", font=font, fill=(171, 178, 185))
+    d.text((108, 1), "K3", font=font, fill=(113, 125, 126))
 
     y = 16
 
@@ -268,7 +268,7 @@ def _draw_main(lcd, cursor, editing_custom):
     # Active pattern
     with lock:
         active_name = PATTERNS[active_pattern_idx]["name"]
-    d.text((2, y), f"Active: {active_name}", font=font, fill="#ffaa00")
+    d.text((2, y), f"Active: {active_name}", font=font, fill=(212, 172, 13))
     y += 14
 
     # Pattern list
@@ -286,8 +286,8 @@ def _draw_main(lcd, cursor, editing_custom):
     # Custom timing edit
     if editing_custom and cursor == len(PATTERNS) - 1:
         y += 2
-        d.text((2, y), f"On: {custom_on_time:.1f}s Off: {custom_off_time:.1f}s", font=font, fill="#00ccff")
-        d.text((2, y + 12), "L/R:on  ^v:off  OK:set", font=font, fill="#888")
+        d.text((2, y), f"On: {custom_on_time:.1f}s Off: {custom_off_time:.1f}s", font=font, fill=(171, 178, 185))
+        d.text((2, y + 12), "L/R:on  ^v:off  OK:set", font=font, fill=(113, 125, 126))
 
     # Manual override indicators
     with lock:
@@ -297,8 +297,8 @@ def _draw_main(lcd, cursor, editing_custom):
         override_y = 100
         d.text((2, override_y), "Manual override active", font=font, fill="#ff8800")
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "OK:apply K1:ACT K2:PWR", font=font, fill="#666")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "OK:apply K1:ACT K2:PWR", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 

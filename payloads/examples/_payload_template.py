@@ -41,11 +41,11 @@ font = ImageFont.load_default()
 
 
 def draw(lines):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = 4
     for line in lines:
-        d.text((4, y), line[:18], font=font, fill="white")
+        d.text((4, y), line[:18], font=font, fill=(242, 243, 244))
         y += 12
     LCD.LCD_ShowImage(img, 0, 0)
 

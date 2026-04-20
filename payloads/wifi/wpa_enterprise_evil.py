@@ -574,10 +574,10 @@ def _export_creds():
 
 def _draw_screen():
     """Render state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
-    draw.text((2, 2), "WPA-Ent Evil Twin", fill="CYAN", font=font)
+    draw.text((2, 2), "WPA-Ent Evil Twin", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -589,7 +589,7 @@ def _draw_screen():
         cli = clients_connected
         atk = attack_running
 
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
 
     if vm == "scan":
         y = 28
@@ -601,26 +601,26 @@ def _draw_screen():
             line = f"{prefix}{ssid} ch{ap['channel']}"
             draw.text((2, y), line[:22], fill=color, font=font)
             y += 14
-        draw.text((2, 116), "OK=select K1=scan", fill="GRAY", font=font)
+        draw.text((2, 116), "OK=select K1=scan", fill=(86, 101, 115), font=font)
 
     elif vm == "attack":
-        draw.text((2, 28), f"Clients: {cli}", fill="GREEN", font=font)
+        draw.text((2, 28), f"Clients: {cli}", fill=(30, 132, 73), font=font)
         draw.text((2, 42), f"Creds:   {len(creds)}", fill="RED" if creds else "GRAY", font=font)
         y = 58
         for c in creds[-4:]:
             line = f"{c['type'][:6]} {c['identity'][:12]}"
-            draw.text((2, y), line, fill="GREEN", font=font)
+            draw.text((2, y), line, fill=(30, 132, 73), font=font)
             y += 12
-        draw.text((2, 116), "K2=creds K3=exit", fill="GRAY", font=font)
+        draw.text((2, 116), "K2=creds K3=exit", fill=(86, 101, 115), font=font)
 
     elif vm == "creds":
         y = 28
         visible = creds[sp:sp + ROWS_VISIBLE]
         for c in visible:
             line = f"{c['ts'][11:16]} {c['type'][:4]} {c['identity'][:10]}"
-            draw.text((2, y), line[:22], fill="GREEN", font=font)
+            draw.text((2, y), line[:22], fill=(30, 132, 73), font=font)
             y += 14
-        draw.text((2, 116), "OK=back UP/DN=scroll", fill="GRAY", font=font)
+        draw.text((2, 116), "OK=back UP/DN=scroll", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -718,7 +718,7 @@ def main():
             _stop_attack()
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((10, 56), "Evil Twin stopped", fill="RED", font=font)
             LCD.LCD_ShowImage(img, 0, 0)

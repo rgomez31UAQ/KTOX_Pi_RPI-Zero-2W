@@ -333,19 +333,19 @@ def _read_card():
 # Drawing
 
 def _draw_main(lcd, status, uid, ctype, sectors, scr):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), "NFC READER", font=font, fill="#00ccff")
-    d.text((108, 1), "K3", font=font, fill="#888")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "NFC READER", font=font, fill=(171, 178, 185))
+    d.text((108, 1), "K3", font=font, fill=(113, 125, 126))
 
     y = 16
-    d.text((2, y), status[:22], font=font, fill="#ffaa00"); y += 13
+    d.text((2, y), status[:22], font=font, fill=(212, 172, 13)); y += 13
 
     if uid is not None:
         uid_hex = uid.hex().upper()
-        d.text((2, y), f"UID: {uid_hex[:16]}", font=font, fill="#00ff00"); y += 12
+        d.text((2, y), f"UID: {uid_hex[:16]}", font=font, fill=(30, 132, 73)); y += 12
         d.text((2, y), f"Type: {ctype[:18]}", font=font, fill="#ccc"); y += 14
 
         if sectors:
@@ -363,14 +363,14 @@ def _draw_main(lcd, status, uid, ctype, sectors, scr):
                         preview = blk[:6].hex().upper()
                     else:
                         preview = str(blk)[:12]
-                    d.text((70, y), preview[:10], font=font, fill="#888")
+                    d.text((70, y), preview[:10], font=font, fill=(113, 125, 126))
                 y += 12
     else:
-        d.text((4, 50), "Press OK to read", font=font, fill="#666")
-        d.text((4, 64), "K1 to scan I2C", font=font, fill="#888")
+        d.text((4, 50), "Press OK to read", font=font, fill=(86, 101, 115))
+        d.text((4, 64), "K1 to scan I2C", font=font, fill=(113, 125, 126))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "OK:read K1:scan K2:exp", font=font, fill="#666")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "OK:read K1:scan K2:exp", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 
@@ -380,10 +380,10 @@ def main():
     global _running, scroll, status_msg, pn532
 
     if not SMBUS_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "smbus not found!", font=font, fill="#ff0000")
-        d.text((4, 65), "pip install smbus2", font=font, fill="#888")
+        d.text((4, 50), "smbus not found!", font=font, fill=(231, 76, 60))
+        d.text((4, 65), "pip install smbus2", font=font, fill=(113, 125, 126))
         LCD.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         LCD.LCD_Clear()

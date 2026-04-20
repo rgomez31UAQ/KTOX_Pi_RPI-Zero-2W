@@ -81,7 +81,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_message(message, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     bbox = d.textbbox((0, 0), message, font=FONT_TITLE)
     w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
@@ -91,10 +91,10 @@ def draw_message(message, color="yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_config_ui(params, selected_index, screen_state="config"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "VLAN Hopper Config", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "VLAN Hopper Config", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if screen_state == "config":
         y_pos = 25
@@ -104,14 +104,14 @@ def draw_config_ui(params, selected_index, screen_state="config"):
             d.text((5, y_pos), f"{key}: {params[key]}", font=FONT, fill=color)
             y_pos += 15
             
-        d.text((5, 110), "OK=Edit | KEY1=Launch", font=FONT, fill="cyan")
+        d.text((5, 110), "OK=Edit | KEY1=Launch", font=FONT, fill=(171, 178, 185))
     elif screen_state == "ip_input":
-        d.text((5, 30), "Enter Target IP:", font=FONT, fill="white")
+        d.text((5, 30), "Enter Target IP:", font=FONT, fill=(242, 243, 244))
         display_ip = list(current_ip_input)
         if ip_input_cursor_pos < len(display_ip):
             display_ip[ip_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_ip), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Digit | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_ip), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Digit | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 

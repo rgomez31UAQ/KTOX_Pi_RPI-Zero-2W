@@ -106,7 +106,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_message(lines: List[str], color="yellow") -> None:
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
     y_offset = (HEIGHT - len(lines) * 15) // 2 # Center vertically
@@ -120,15 +120,15 @@ def draw_message(lines: List[str], color="yellow") -> None:
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_device_list(devices: List[Tuple[str, str]], selected_index: int):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
     title = f"BT Scan ({len(devices)})"
-    d.text((5, 5), title, font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), title, font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if not devices:
-        d.text((10, 50), "No devices found", font=FONT, fill="white")
+        d.text((10, 50), "No devices found", font=FONT, fill=(242, 243, 244))
     else:
         start_index = max(0, selected_index - 2)
         end_index = min(len(devices), start_index + 6)
@@ -139,11 +139,11 @@ def draw_device_list(devices: List[Tuple[str, str]], selected_index: int):
             display_name = name if name else "N/A"
             line = f"{mac} {display_name[:10]}"
             
-            fill = "yellow" if i == selected_index else "white"
+            fill = (212, 172, 13) if i == selected_index else "white"
             d.text((5, y_pos), line, font=FONT, fill=fill)
             y_pos += 15
 
-    d.text((5, 110), "UP/DOWN | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 110), "UP/DOWN | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 SCAN_SECONDS = 10
@@ -280,7 +280,7 @@ if __name__ == "__main__":
         try:
             LCD = LCD_1in44.LCD()
             LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-            img = Image.new("RGB", (128, 128), "black")
+            img = Image.new("RGB", (128, 128), (10, 0, 0))
             d = ImageDraw.Draw(img)
             FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
             d.text((10, 40), "ERROR:\nRoot privileges\nrequired.", font=FONT_TITLE, fill="red")

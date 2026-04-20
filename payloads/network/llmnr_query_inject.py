@@ -208,13 +208,13 @@ def _sniffer_thread():
 
 def _draw_frame(lcd, font_obj):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "LLMNR/NBT INJECT", font=font_obj, fill="#FF6600")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if injecting else "#444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "LLMNR/NBT INJECT", font=font_obj, fill=(231, 76, 60))
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if injecting else "#444")
 
     with lock:
         proto = PROTOCOLS[protocol_idx]
@@ -222,25 +222,25 @@ def _draw_frame(lcd, font_obj):
         resps = responses_detected
         msg = status_msg
 
-    d.text((2, 16), f"Proto: {proto}", font=font_obj, fill="#FFAA00")
-    d.text((2, 28), f"Queries: {sent}", font=font_obj, fill="#AAAAAA")
-    d.text((2, 38), f"Responses: {resps}", font=font_obj, fill="#00FF88")
-    d.text((2, 48), msg[:24], font=font_obj, fill="#888")
+    d.text((2, 16), f"Proto: {proto}", font=font_obj, fill=(212, 172, 13))
+    d.text((2, 28), f"Queries: {sent}", font=font_obj, fill=(171, 178, 185))
+    d.text((2, 38), f"Responses: {resps}", font=font_obj, fill=(30, 132, 73))
+    d.text((2, 48), msg[:24], font=font_obj, fill=(113, 125, 126))
 
     # Hostname list
-    d.text((2, 62), "Hostnames:", font=font_obj, fill="#666")
+    d.text((2, 62), "Hostnames:", font=font_obj, fill=(86, 101, 115))
     visible = HOSTNAMES[scroll:scroll + ROWS_VISIBLE]
     for i, name in enumerate(visible):
         y = 74 + i * ROW_H
         marker = ">" if (scroll + i) == (scroll) else " "
-        d.text((2, y), f"{marker}{name}", font=font_obj, fill="#CCCCCC")
+        d.text((2, y), f"{marker}{name}", font=font_obj, fill=(242, 243, 244))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if injecting:
-        d.text((2, 117), "OK:Stop  K3:Exit", font=font_obj, fill="#888")
+        d.text((2, 117), "OK:Stop  K3:Exit", font=font_obj, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Go K1:Proto K3:Quit", font=font_obj, fill="#888")
+        d.text((2, 117), "OK:Go K1:Proto K3:Quit", font=font_obj, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -262,10 +262,10 @@ def main():
     font_obj = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font_obj, fill="#FF0000")
-        d.text((4, 65), "pip install scapy", font=font_obj, fill="#888")
+        d.text((4, 50), "scapy not found!", font=font_obj, fill=(231, 76, 60))
+        d.text((4, 65), "pip install scapy", font=font_obj, fill=(113, 125, 126))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

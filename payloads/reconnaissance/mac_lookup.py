@@ -481,21 +481,21 @@ def export_loot():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#FFAA00")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(212, 172, 13))
     with lock:
         active = busy
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_screen():
     """Render the MAC lookup list."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "MAC LOOKUP")
 
@@ -504,24 +504,24 @@ def draw_screen():
         status = status_msg
         sc = scroll_pos
 
-    d.text((2, 15), status[:22], font=font, fill="#888")
+    d.text((2, 15), status[:22], font=font, fill=(113, 125, 126))
 
     if not entries:
-        d.text((10, 50), "OK: ARP scan", font=font, fill="#666")
-        d.text((10, 62), "K1: Load from loot", font=font, fill="#666")
+        d.text((10, 50), "OK: ARP scan", font=font, fill=(86, 101, 115))
+        d.text((10, 62), "K1: Load from loot", font=font, fill=(86, 101, 115))
     else:
         visible = entries[sc:sc + ROWS_VISIBLE - 1]
         for i, entry in enumerate(visible):
             y = 27 + i * ROW_H
             mac_short = entry["mac"][-8:]  # last 8 chars
             vendor = entry["vendor"][:11]
-            d.text((1, y), f"{mac_short} {vendor}", font=font, fill="#CCCCCC")
+            d.text((1, y), f"{mac_short} {vendor}", font=font, fill=(242, 243, 244))
 
         total = len(entries)
         if total > ROWS_VISIBLE - 1:
             bar_h = max(4, int((ROWS_VISIBLE - 1) / total * 88))
             bar_y = 27 + int(sc / total * 88) if total > 0 else 27
-            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill="#444")
+            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill=(34, 0, 0))
 
     _draw_footer(d, f"Total:{len(entries)} K3:Exit")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -529,11 +529,11 @@ def draw_screen():
 
 def _show_message(line1, line2=""):
     """Show a brief overlay message."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 50), line1, font=font, fill="#00FF00")
+    d.text((10, 50), line1, font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2, font=font, fill="#888")
+        d.text((4, 65), line2, font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -549,14 +549,14 @@ def main():
     _load_oui_db()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 20), "MAC OUI LOOKUP", font=font, fill="#FFAA00")
-    d.text((4, 40), f"OUI DB: {len(oui_db)} entries", font=font, fill="#888")
-    d.text((4, 60), "OK    ARP scan", font=font, fill="#666")
-    d.text((4, 72), "KEY1  Load from loot", font=font, fill="#666")
-    d.text((4, 84), "KEY2  Export JSON", font=font, fill="#666")
-    d.text((4, 96), "KEY3  Exit", font=font, fill="#666")
+    d.text((8, 20), "MAC OUI LOOKUP", font=font, fill=(212, 172, 13))
+    d.text((4, 40), f"OUI DB: {len(oui_db)} entries", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "OK    ARP scan", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "KEY1  Load from loot", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "KEY2  Export JSON", font=font, fill=(86, 101, 115))
+    d.text((4, 96), "KEY3  Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 

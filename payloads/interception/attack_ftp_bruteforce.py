@@ -142,13 +142,13 @@ def stop_attack_process():
         hydra_process = None
 
 def draw_ui(screen_state="main", message_lines=None):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
     # Header
-    d.text((5, 5), "FTP Brute-Force", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
-    d.text((5, 115), f"IF: {NETWORK_INTERFACE}", font=FONT, fill="gray") # Display interface
+    d.text((5, 5), "FTP Brute-Force", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
+    d.text((5, 115), f"IF: {NETWORK_INTERFACE}", font=FONT, fill=(86, 101, 115)) # Display interface
 
     if message_lines:
         if isinstance(message_lines, str):
@@ -158,16 +158,16 @@ def draw_ui(screen_state="main", message_lines=None):
             bbox = d.textbbox((0, 0), line, font=FONT)
             w = bbox[2] - bbox[0]
             x = (LCD_1in44.LCD_WIDTH - w) // 2 # Use LCD_WIDTH
-            d.text((x, y_offset), line, font=FONT, fill="yellow")
+            d.text((x, y_offset), line, font=FONT, fill=(212, 172, 13))
             y_offset += 12
     elif screen_state == "main":
         if found_creds:
-            d.text((10, 40), "SUCCESS!", font=FONT_TITLE, fill="lime")
-            d.text((10, 60), found_creds, font=FONT, fill="white")
+            d.text((10, 40), "SUCCESS!", font=FONT_TITLE, fill=(231, 76, 60))
+            d.text((10, 60), found_creds, font=FONT, fill=(242, 243, 244))
         else:
-            d.text((10, 60), status_msg, font=FONT, fill="yellow")
+            d.text((10, 60), status_msg, font=FONT, fill=(212, 172, 13))
             
-        d.text((5, 100), "OK=Start | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 100), "OK=Start | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -183,19 +183,19 @@ def handle_ip_input_logic(initial_ip):
     
     while running:
         # Draw the UI for IP input
-        img = Image.new("RGB", (128, 128), "black")
+        img = Image.new("RGB", (128, 128), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), "Enter Target IP", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), "Enter Target IP", font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
         
         # Display the current input
-        d.text((5, 40), f"IP: {input_ip}", font=FONT, fill="white")
+        d.text((5, 40), f"IP: {input_ip}", font=FONT, fill=(242, 243, 244))
         
         # Display the character selection
-        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill="yellow")
+        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill=(212, 172, 13))
         
-        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill="cyan")
-        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill="cyan")
+        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill=(171, 178, 185))
+        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         btn = None

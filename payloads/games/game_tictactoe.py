@@ -27,13 +27,13 @@ WIDTH, HEIGHT = LCD.width, LCD.height
 _GAME_W, _GAME_H = 128, 128
 font = ImageFont.load_default()
 
-COL_BG = (0, 0, 0)
-COL_GRID = (0, 120, 0)
-COL_X = (0, 255, 0)
-COL_O = (255, 0, 0)
-COL_CURSOR = (0, 180, 0)
-COL_TEXT = (0, 255, 0)
-COL_DIM = (60, 60, 60)
+COL_BG     = (10,  0,   0)   # KTOX BG
+COL_GRID   = (86,  101, 115) # DIM
+COL_X      = (231, 76,  60)  # EMBER (player X)
+COL_O      = (171, 178, 185) # ASH   (AI O)
+COL_CURSOR = (212, 172, 13)  # YELLOW
+COL_TEXT   = (242, 243, 244) # WHITE
+COL_DIM    = (86,  101, 115) # DIM
 
 CELL_SIZE = 36
 GRID_OFFSET_X = (_GAME_W - CELL_SIZE * 3) // 2

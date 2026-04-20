@@ -547,20 +547,20 @@ def _get_connected_clients():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#FF6600")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(231, 76, 60))
     with lock:
         active = ap_running or monitoring
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_probes_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "KARMA AP")
 
@@ -569,12 +569,12 @@ def draw_probes_view():
         mon = monitoring
         sc = scroll_pos
 
-    d.text((2, 15), msg[:22], font=font, fill="#FFAA00")
+    d.text((2, 15), msg[:22], font=font, fill=(212, 172, 13))
 
     ssids = _get_sorted_ssids()
     if not ssids:
-        d.text((10, 50), "No probes yet", font=font, fill="#666")
-        d.text((10, 64), "K1 to start monitoring", font=font, fill="#666")
+        d.text((10, 50), "No probes yet", font=font, fill=(86, 101, 115))
+        d.text((10, 64), "K1 to start monitoring", font=font, fill=(86, 101, 115))
     else:
         visible = ssids[sc:sc + ROWS_VISIBLE]
         for i, (ssid, count) in enumerate(visible):
@@ -591,7 +591,7 @@ def draw_probes_view():
 
 
 def draw_attack_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "KARMA AP")
 
@@ -602,23 +602,23 @@ def draw_attack_view():
 
     clients = _get_connected_clients()
     y = 18
-    d.text((2, y), msg[:22], font=font, fill="#00FF00" if running else "#FF4444")
+    d.text((2, y), msg[:22], font=font, fill=(30, 132, 73) if running else "#FF4444")
     y += 16
-    d.text((2, y), f"Clients: {len(clients)}", font=font, fill="white")
+    d.text((2, y), f"Clients: {len(clients)}", font=font, fill=(242, 243, 244))
     y += 14
-    d.text((2, y), f"Creds: {cred_count}", font=font, fill="#FFAA00")
+    d.text((2, y), f"Creds: {cred_count}", font=font, fill=(212, 172, 13))
 
     if cred_count > 0:
         y += 14
         last = credentials[-1]
-        d.text((2, y), f"Last: {last['email'][:18]}", font=font, fill="#00CCFF")
+        d.text((2, y), f"Last: {last['email'][:18]}", font=font, fill=(171, 178, 185))
 
     _draw_footer(d, "K2:Clients OK:Stop K3:X")
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def draw_clients_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "CLIENTS")
 
@@ -627,13 +627,13 @@ def draw_clients_view():
         sc = scroll_pos
 
     if not clients:
-        d.text((10, 50), "No clients", font=font, fill="#666")
+        d.text((10, 50), "No clients", font=font, fill=(86, 101, 115))
     else:
         visible = clients[sc:sc + 6]
         for i, cl in enumerate(visible):
             y = 18 + i * 16
-            d.text((2, y), f"{cl['ip']}", font=font, fill="#00CCFF")
-            d.text((2, y + 10), f"  {cl['mac']}", font=font, fill="#888")
+            d.text((2, y), f"{cl['ip']}", font=font, fill=(171, 178, 185))
+            d.text((2, y + 10), f"  {cl['mac']}", font=font, fill=(113, 125, 126))
 
     _draw_footer(d, f"{len(clients)} clients  K3:Back")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -652,15 +652,15 @@ def main():
             status_msg = "No USB WiFi dongle!"
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((16, 16), "KARMA AP", font=font, fill="#FF6600")
-    d.text((4, 36), "Capture probe requests", font=font, fill="#888")
-    d.text((4, 48), "& create rogue AP", font=font, fill="#888")
+    d.text((16, 16), "KARMA AP", font=font, fill=(231, 76, 60))
+    d.text((4, 36), "Capture probe requests", font=font, fill=(113, 125, 126))
+    d.text((4, 48), "& create rogue AP", font=font, fill=(113, 125, 126))
     iface_txt = _iface if _iface else "NONE"
-    d.text((4, 66), f"Iface: {iface_txt}", font=font, fill="#666")
-    d.text((4, 82), "K1=Monitor OK=LaunchAP", font=font, fill="#666")
-    d.text((4, 94), "K2=Clients K3=Exit", font=font, fill="#666")
+    d.text((4, 66), f"Iface: {iface_txt}", font=font, fill=(86, 101, 115))
+    d.text((4, 82), "K1=Monitor OK=LaunchAP", font=font, fill=(86, 101, 115))
+    d.text((4, 94), "K2=Clients K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.5)
 

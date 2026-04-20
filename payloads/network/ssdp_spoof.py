@@ -342,12 +342,12 @@ def _export_loot():
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "SSDP SPOOF", font=font, fill="#FF00AA")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if spoofing else "#444")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if spoofing else "#444")
 
     with lock:
         msg = status_msg
@@ -356,27 +356,27 @@ def _draw_frame(lcd, font):
         rs = responses_sent
         creds = list(credentials)
 
-    d.text((2, 16), f"Dev: {device['name']}", font=font, fill="#FFAA00")
-    d.text((2, 26), msg[:24], font=font, fill="#AAAAAA")
+    d.text((2, 16), f"Dev: {device['name']}", font=font, fill=(212, 172, 13))
+    d.text((2, 26), msg[:24], font=font, fill=(171, 178, 185))
     d.text((2, 36), f"Queries:{qs} Resp:{rs} Creds:{len(creds)}",
-           font=font, fill="#888")
+           font=font, fill=(113, 125, 126))
 
     # Credential list
     if creds:
-        d.text((2, 48), "Captured:", font=font, fill="#00FF00")
+        d.text((2, 48), "Captured:", font=font, fill=(30, 132, 73))
         visible = creds[scroll:scroll + ROWS_VISIBLE]
         for i, cred in enumerate(visible):
             y = 58 + i * ROW_H
             line = f"{cred['ip']} {cred['username'][:8]}"
-            d.text((2, y), line[:24], font=font, fill="#CCCCCC")
+            d.text((2, y), line[:24], font=font, fill=(242, 243, 244))
     else:
-        d.text((2, 58), "No credentials yet", font=font, fill="#666")
+        d.text((2, 58), "No credentials yet", font=font, fill=(86, 101, 115))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if spoofing:
-        d.text((2, 117), "OK:Stop K3:Exit", font=font, fill="#888")
+        d.text((2, 117), "OK:Stop K3:Exit", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Start K1:Dev K3:Quit", font=font, fill="#888")
+        d.text((2, 117), "OK:Start K1:Dev K3:Quit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 

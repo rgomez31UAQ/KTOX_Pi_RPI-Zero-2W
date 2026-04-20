@@ -328,7 +328,7 @@ def _filtered_creds():
 # LCD drawing
 # ---------------------------------------------------------------------------
 def _draw_lcd():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     scroll = _get("scroll")
@@ -337,21 +337,21 @@ def _draw_lcd():
     filt = PROTOCOLS[_get("filter_idx")]
 
     # Header
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), "CRED DASHBOARD", font=font, fill="#FF4444")
-    d.ellipse((118, 3, 124, 9), fill="#00FF00" if scanning else "#666")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "CRED DASHBOARD", font=font, fill=(231, 76, 60))
+    d.ellipse((118, 3, 124, 9), fill=(30, 132, 73) if scanning else "#666")
 
     filtered = _filtered_creds()
     total = len(_get("creds"))
 
     # Stats bar
     y = 14
-    d.text((2, y), f"Total: {total}  Filter: {filt}", font=font, fill="#AAAAAA")
+    d.text((2, y), f"Total: {total}  Filter: {filt}", font=font, fill=(171, 178, 185))
     y += 13
 
     if not filtered:
-        d.text((4, y + 20), "No credentials found", font=font, fill="#666")
-        d.text((4, y + 34), "OK=Refresh", font=font, fill="#666")
+        d.text((4, y + 20), "No credentials found", font=font, fill=(86, 101, 115))
+        d.text((4, y + 34), "OK=Refresh", font=font, fill=(86, 101, 115))
     else:
         visible = 6
         for i in range(scroll, min(scroll + visible, len(filtered))):
@@ -367,7 +367,7 @@ def _draw_lcd():
             d.text((32, y), c["user"][:14], font=font, fill=fg)
             y += 10
             secret_display = c["secret"][:20]
-            d.text((4, y), secret_display, font=font, fill="#888")
+            d.text((4, y), secret_display, font=font, fill=(113, 125, 126))
             y += 12
 
     # Status
@@ -375,18 +375,18 @@ def _draw_lcd():
     d.text((2, 107), status[:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK K1:flt K2:csv K3:x", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def _show_msg(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 50), line1[:21], font=font, fill="#00FF00")
+    d.text((4, 50), line1[:21], font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2[:21], font=font, fill="#888")
+        d.text((4, 65), line2[:21], font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.2)
 
@@ -396,13 +396,13 @@ def _show_msg(line1, line2=""):
 # ---------------------------------------------------------------------------
 def main():
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 16), "CRED DASHBOARD", font=font, fill="#FF4444")
-    d.text((4, 32), "Credential aggregator", font=font, fill="#888")
-    d.text((4, 52), "OK=Refresh  K1=Filter", font=font, fill="#666")
-    d.text((4, 64), "K2=Export CSV", font=font, fill="#666")
-    d.text((4, 76), "K3=Exit", font=font, fill="#666")
+    d.text((4, 16), "CRED DASHBOARD", font=font, fill=(231, 76, 60))
+    d.text((4, 32), "Credential aggregator", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "OK=Refresh  K1=Filter", font=font, fill=(86, 101, 115))
+    d.text((4, 64), "K2=Export CSV", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

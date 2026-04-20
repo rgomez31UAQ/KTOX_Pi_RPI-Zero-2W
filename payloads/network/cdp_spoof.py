@@ -450,10 +450,10 @@ def _export_neighbors():
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
-    draw.text((2, 2), "CDP/LLDP SPOOF", fill="CYAN", font=font)
+    draw.text((2, 2), "CDP/LLDP SPOOF", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -465,8 +465,8 @@ def _draw_screen():
 
     color_mode = "GREEN" if spf else "YELLOW"
     draw.text((2, 14), f"Mode: {mode}", fill=color_mode, font=font)
-    draw.text((2, 26), f"Sent: {fs}  Nbrs: {len(nbr_list)}", fill="WHITE", font=font)
-    draw.text((2, 38), st[:22], fill="GRAY", font=font)
+    draw.text((2, 26), f"Sent: {fs}  Nbrs: {len(nbr_list)}", fill=(242, 243, 244), font=font)
+    draw.text((2, 38), st[:22], fill=(86, 101, 115), font=font)
 
     # Neighbor list
     y = 52
@@ -474,17 +474,17 @@ def _draw_screen():
     for n in visible:
         src_tag = f"[{n.get('source', '?')[0]}]"
         line = f"{src_tag} {n.get('name', '?')[:16]}"
-        draw.text((2, y), line, fill="WHITE", font=font)
+        draw.text((2, y), line, fill=(242, 243, 244), font=font)
         y += 14
 
     if not visible:
-        draw.text((2, 52), "No neighbors yet", fill="GRAY", font=font)
+        draw.text((2, 52), "No neighbors yet", fill=(86, 101, 115), font=font)
 
     # Footer
     if spf:
-        draw.text((2, 116), "OK:Stop K1:Mode K3:Quit", fill="GRAY", font=font)
+        draw.text((2, 116), "OK:Stop K1:Mode K3:Quit", fill=(86, 101, 115), font=font)
     else:
-        draw.text((2, 116), "OK:Start K1:Mode K3:Quit", fill="GRAY", font=font)
+        draw.text((2, 116), "OK:Start K1:Mode K3:Quit", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -499,10 +499,10 @@ def main():
 
     try:
         if not SCAPY_OK:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((4, 50), "scapy not found!", font=font, fill="RED")
-            draw.text((4, 65), "pip install scapy", font=font, fill="GRAY")
+            draw.text((4, 65), "pip install scapy", font=font, fill=(86, 101, 115))
             LCD.LCD_ShowImage(img, 0, 0)
             time.sleep(3)
             GPIO.cleanup()
@@ -569,9 +569,9 @@ def main():
         spoofing = False
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
-            draw.text((10, 50), "CDP Spoof stopped", fill="YELLOW", font=font)
+            draw.text((10, 50), "CDP Spoof stopped", fill=(212, 172, 13), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

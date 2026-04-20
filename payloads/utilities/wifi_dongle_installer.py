@@ -449,7 +449,7 @@ def show(lines: list, title: str = "WiFi Installer",
     lines    : list of (text, color) or plain str -> white
     progress : 0-100 draws a progress bar; -1 = no bar
     """
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d   = ScaledDraw(img)
 
     d.rectangle((0, 0, 127, 14), fill="#0d1b2a")
@@ -458,9 +458,9 @@ def show(lines: list, title: str = "WiFi Installer",
     y_start = 16
     if progress >= 0:
         bar_w = int((WIDTH - 6) * min(progress, 100) / 100)
-        d.rectangle((3, 16, 125, 23), outline="#333333")
+        d.rectangle((3, 16, 125, 23), outline=(34, 0, 0))
         if bar_w > 0:
-            d.rectangle((3, 16, 3 + bar_w, 23), fill="#00FF88")
+            d.rectangle((3, 16, 3 + bar_w, 23), fill=(30, 132, 73))
         y_start = 26
 
     y = y_start

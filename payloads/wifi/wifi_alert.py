@@ -414,8 +414,8 @@ def _draw_screen():
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "WiFi ALERT", font=font, fill="#FF4444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "WiFi ALERT", font=font, fill=(231, 76, 60))
     with lock:
         active = monitoring
     color = "#00FF00" if active else "#FF0000"
@@ -429,9 +429,9 @@ def _draw_screen():
         log_count = len(alert_log)
 
     y = 16
-    d.text((2, y), msg[:22], font=font, fill="#888")
+    d.text((2, y), msg[:22], font=font, fill=(113, 125, 126))
     y += 12
-    d.text((2, y), f"Alerts: {log_count}", font=font, fill="#FFAA00")
+    d.text((2, y), f"Alerts: {log_count}", font=font, fill=(212, 172, 13))
     y += 14
 
     # Watchlist
@@ -444,7 +444,7 @@ def _draw_screen():
         ts_str = info.get("last_ts", "never")
         tag = "SEEN" if seen else "MISS"
         tag_color = "#00FF00" if seen else "#FF4444"
-        d.text((2, y), f"{label}", font=font, fill="#CCCCCC")
+        d.text((2, y), f"{label}", font=font, fill=(242, 243, 244))
         d.text((90, y), tag, font=font, fill=tag_color)
         y += ROW_H
 
@@ -452,7 +452,7 @@ def _draw_screen():
         d.text((2, y), "No targets", font=font, fill="#555")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     lbl = "OK:Stop" if active else "OK:Start"
     d.text((2, 117), f"{lbl} K1:Add K3:X", font=font, fill="#AAA")
 
@@ -467,14 +467,14 @@ def main():
     _load_config()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 10), "WiFi ALERT", font=font, fill="#FF4444")
-    d.text((4, 28), "Airspace watchlist", font=font, fill="#888")
-    d.text((4, 44), "monitor with alerts.", font=font, fill="#888")
-    d.text((4, 64), "OK=Start  K1=Add APs", font=font, fill="#666")
-    d.text((4, 76), "K2=Export  K3=Exit", font=font, fill="#666")
-    d.text((4, 92), f"Targets: {len(watchlist)}", font=font, fill="#FFAA00")
+    d.text((8, 10), "WiFi ALERT", font=font, fill=(231, 76, 60))
+    d.text((4, 28), "Airspace watchlist", font=font, fill=(113, 125, 126))
+    d.text((4, 44), "monitor with alerts.", font=font, fill=(113, 125, 126))
+    d.text((4, 64), "OK=Start  K1=Add APs", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K2=Export  K3=Exit", font=font, fill=(86, 101, 115))
+    d.text((4, 92), f"Targets: {len(watchlist)}", font=font, fill=(212, 172, 13))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

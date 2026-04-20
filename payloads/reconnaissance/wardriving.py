@@ -198,7 +198,7 @@ class WardrivingScanner:
             self.log(f"Drawing text to LCD: '{text}'")
             
             # EXACT COPY of example_show_buttons.py draw() function
-            img = Image.new("RGB", (self.WIDTH, self.HEIGHT), "black")
+            img = Image.new("RGB", (self.WIDTH, self.HEIGHT), (10, 0, 0))
             d = ImageDraw.Draw(img)
 
             # Measure text size (Pillow ≥ 9.2 offers textbbox())
@@ -212,7 +212,7 @@ class WardrivingScanner:
             pos = ((self.WIDTH - w) // 2, (self.HEIGHT - h) // 2)
 
             # Draw the text and push the image to the LCD
-            d.text(pos, text, font=self.font, fill="#00FF00")
+            d.text(pos, text, font=self.font, fill=(30, 132, 73))
             self.LCD.LCD_ShowImage(img, 0, 0)
             self.log("LCD draw completed successfully")
             
@@ -1141,7 +1141,7 @@ class WardrivingScanner:
             lines.append("[KEY2] Exit")
             
             # EXACT COPY of example_show_buttons.py draw() function
-            img = Image.new("RGB", (self.WIDTH, self.HEIGHT), "black")
+            img = Image.new("RGB", (self.WIDTH, self.HEIGHT), (10, 0, 0))
             d = ImageDraw.Draw(img)
             
             # Display multiple lines
@@ -1161,7 +1161,7 @@ class WardrivingScanner:
                 x = (self.WIDTH - w) // 2
                 
                 # Draw the text (EXACT from example_show_buttons.py)
-                d.text((x, y), line, font=self.font, fill="#00FF00")
+                d.text((x, y), line, font=self.font, fill=(30, 132, 73))
                 y += 12
             
             # Push image to LCD (EXACT from example_show_buttons.py)

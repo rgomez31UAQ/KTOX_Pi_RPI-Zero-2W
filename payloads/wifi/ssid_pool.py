@@ -299,7 +299,7 @@ def _remove_selected():
 # ── Drawing ──────────────────────────────────────────────────────────────────
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     with lock:
@@ -314,28 +314,28 @@ def _draw_screen():
         ci = add_char_idx
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "SSID POOL", font=font, fill="#FF9800")
     color = "#00FF00" if active else "#FF0000"
     d.ellipse((118, 3, 126, 11), fill=color)
 
     y = 15
-    d.text((2, y), f"{msg[:14]} Tx:{sent}", font=font, fill="#888")
+    d.text((2, y), f"{msg[:14]} Tx:{sent}", font=font, fill=(113, 125, 126))
     y += 13
 
     if in_add:
         # Add-SSID input mode
-        d.text((2, y), "Add SSID:", font=font, fill="#FFAA00")
+        d.text((2, y), "Add SSID:", font=font, fill=(212, 172, 13))
         y += 12
-        d.text((2, y), buf + "_", font=font, fill="#FFFFFF")
+        d.text((2, y), buf + "_", font=font, fill=(242, 243, 244))
         y += 14
-        d.text((2, y), f"Char: {CHARSET[ci]}", font=font, fill="#00FF00")
+        d.text((2, y), f"Char: {CHARSET[ci]}", font=font, fill=(30, 132, 73))
         y += 12
-        d.text((2, y), "UP/DN=char OK=add", font=font, fill="#666")
+        d.text((2, y), "UP/DN=char OK=add", font=font, fill=(86, 101, 115))
         y += 12
-        d.text((2, y), "RIGHT=confirm", font=font, fill="#666")
+        d.text((2, y), "RIGHT=confirm", font=font, fill=(86, 101, 115))
         y += 12
-        d.text((2, y), "LEFT=backspace", font=font, fill="#666")
+        d.text((2, y), "LEFT=backspace", font=font, fill=(86, 101, 115))
     else:
         # SSID list
         end = min(sp + ROWS_VISIBLE, len(entries))
@@ -350,7 +350,7 @@ def _draw_screen():
             d.text((2, y), "No SSIDs", font=font, fill="#555")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if in_add:
         d.text((2, 117), "K3=Cancel", font=font, fill="#AAA")
     else:
@@ -369,13 +369,13 @@ def main():
     _load_config()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((8, 10), "SSID POOL", font=font, fill="#FF9800")
-    d.text((4, 28), "Beacon flood with", font=font, fill="#888")
-    d.text((4, 40), "multiple fake SSIDs.", font=font, fill="#888")
-    d.text((4, 60), "OK=Start  K1=Add", font=font, fill="#666")
-    d.text((4, 72), "K2=Remove K3=Exit", font=font, fill="#666")
+    d.text((4, 28), "Beacon flood with", font=font, fill=(113, 125, 126))
+    d.text((4, 40), "multiple fake SSIDs.", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "OK=Start  K1=Add", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "K2=Remove K3=Exit", font=font, fill=(86, 101, 115))
     with lock:
         cnt = len(ssid_list)
     d.text((4, 90), f"SSIDs loaded: {cnt}", font=font, fill="#FF9800")

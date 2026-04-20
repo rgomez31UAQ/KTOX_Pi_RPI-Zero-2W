@@ -528,8 +528,8 @@ def _create_type_payload(text):
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(171, 178, 185))
     with lock:
         active = injecting
         tm = test_mode
@@ -538,12 +538,12 @@ def _draw_header(d, title):
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_main_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "HID INJECTOR")
 
@@ -560,18 +560,18 @@ def draw_main_view():
     gadget_color = "#00FF00" if gc else "#FF4444"
     d.text((2, 15), f"Gadget: {'OK' if gc else 'N/A'}", font=font, fill=gadget_color)
     if tm:
-        d.text((80, 15), "TEST", font=font, fill="#FFFF00")
+        d.text((80, 15), "TEST", font=font, fill=(212, 172, 13))
 
     if active:
-        d.text((2, 28), msg[:22], font=font, fill="#FFAA00")
+        d.text((2, 28), msg[:22], font=font, fill=(212, 172, 13))
         # Progress bar
-        d.rectangle((4, 44, 124, 52), outline="#444")
+        d.rectangle((4, 44, 124, 52), outline=(34, 0, 0))
         bar_w = int(120 * prog / 100)
-        d.rectangle((4, 44, 4 + bar_w, 52), fill="#00AA44")
-        d.text((2, 56), f"Line {cl}/{tl}  {prog}%", font=font, fill="#CCCCCC")
+        d.rectangle((4, 44, 4 + bar_w, 52), fill=(30, 132, 73))
+        d.text((2, 56), f"Line {cl}/{tl}  {prog}%", font=font, fill=(242, 243, 244))
     elif not scripts:
-        d.text((10, 50), "No scripts found", font=font, fill="#666")
-        d.text((10, 64), "K1 to create one", font=font, fill="#666")
+        d.text((10, 50), "No scripts found", font=font, fill=(86, 101, 115))
+        d.text((10, 64), "K1 to create one", font=font, fill=(86, 101, 115))
     else:
         visible = scripts[sc:sc + ROWS_VISIBLE]
         for i, fname in enumerate(visible):
@@ -610,14 +610,14 @@ def main():
         status_msg = "Gadget ready" if gadget_ok else "Gadget N/A (test ok)"
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 16), "HID INJECTOR", font=font, fill="#00CCFF")
-    d.text((4, 36), "USB keyboard emulator", font=font, fill="#888")
-    d.text((4, 48), "DuckyScript payloads", font=font, fill="#888")
-    d.text((4, 66), f"Scripts: {len(scripts)}", font=font, fill="#666")
-    d.text((4, 82), "OK=Run  K1=Create", font=font, fill="#666")
-    d.text((4, 94), "K2=Test K3=Exit", font=font, fill="#666")
+    d.text((8, 16), "HID INJECTOR", font=font, fill=(171, 178, 185))
+    d.text((4, 36), "USB keyboard emulator", font=font, fill=(113, 125, 126))
+    d.text((4, 48), "DuckyScript payloads", font=font, fill=(113, 125, 126))
+    d.text((4, 66), f"Scripts: {len(scripts)}", font=font, fill=(86, 101, 115))
+    d.text((4, 82), "OK=Run  K1=Create", font=font, fill=(86, 101, 115))
+    d.text((4, 94), "K2=Test K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.5)
 

@@ -284,9 +284,9 @@ def _restore_arp():
 # ---------------------------------------------------------------------------
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
-    draw.text((2, 2), "PROXY ARP", fill="CYAN", font=font)
+    draw.text((2, 2), "PROXY ARP", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -301,19 +301,19 @@ def _draw_screen():
     draw.text((90, 2), indicator, fill=ind_color, font=font)
 
     mode = "SELECT" if sm else "ALL"
-    draw.text((2, 14), f"ARP:{aa} Mode:{mode}", fill="WHITE", font=font)
+    draw.text((2, 14), f"ARP:{aa} Mode:{mode}", fill=(242, 243, 244), font=font)
 
     y = 28
     host_list = sorted(rh.items(), key=lambda x: x[1], reverse=True)
     for ip, cnt in host_list[sp:sp + ROWS_VISIBLE]:
-        draw.text((2, y), f"{ip:<15} {cnt:>4}", fill="GREEN", font=font)
+        draw.text((2, y), f"{ip:<15} {cnt:>4}", fill=(30, 132, 73), font=font)
         y += 14
 
     if not host_list:
-        draw.text((2, 56), "No hosts redirected", fill="GRAY", font=font)
+        draw.text((2, 56), "No hosts redirected", fill=(86, 101, 115), font=font)
 
-    draw.text((2, 100), f"GW: {gateway_ip}", fill="GRAY", font=font)
-    draw.text((2, 116), "OK=go K1=sel K3=exit", fill="GRAY", font=font)
+    draw.text((2, 100), f"GW: {gateway_ip}", fill=(86, 101, 115), font=font)
+    draw.text((2, 116), "OK=go K1=sel K3=exit", fill=(86, 101, 115), font=font)
     LCD.LCD_ShowImage(img, 0, 0)
 
 
@@ -326,7 +326,7 @@ def main():
     global status_msg, my_iface, my_mac, my_ip, gateway_ip, gateway_mac, subnet
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -396,9 +396,9 @@ def main():
             _disable_ip_forward()
             _restore_arp()
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "ARP restored", fill="YELLOW", font=font)
+            d.text((10, 50), "ARP restored", fill=(212, 172, 13), font=font)
             d.text((10, 66), "Proxy stopped", fill="RED", font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:

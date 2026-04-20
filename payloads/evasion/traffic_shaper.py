@@ -281,13 +281,13 @@ def _measure_baseline():
 
 def _draw_frame(lcd, font_obj):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "TRAFFIC SHAPER", font=font_obj, fill="#00CCFF")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if shaping_active else "#444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "TRAFFIC SHAPER", font=font_obj, fill=(171, 178, 185))
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if shaping_active else "#444")
 
     with lock:
         msg = status_msg
@@ -300,31 +300,31 @@ def _draw_frame(lcd, font_obj):
         showing_proto = show_proto_stats
 
     if showing_proto:
-        d.text((2, 16), "Protocol Stats:", font=font_obj, fill="#FFAA00")
+        d.text((2, 16), "Protocol Stats:", font=font_obj, fill=(212, 172, 13))
         for i, line in enumerate(ps[:7]):
-            d.text((2, 28 + i * 12), line[:24], font=font_obj, fill="#CCCCCC")
+            d.text((2, 28 + i * 12), line[:24], font=font_obj, fill=(242, 243, 244))
     else:
         # Latency
         lat_color = "#00FF00" if lat < 50 else "#FFAA00" if lat < 150 else "#FF0000"
         d.text((2, 16), f"Latency: {lat:.1f}ms", font=font_obj, fill=lat_color)
         if base_lat > 0:
-            d.text((2, 28), f"Baseline: {base_lat:.1f}ms", font=font_obj, fill="#888")
+            d.text((2, 28), f"Baseline: {base_lat:.1f}ms", font=font_obj, fill=(113, 125, 126))
 
         # Bandwidth
-        d.text((2, 40), f"BW Limit: {bw} Mbps", font=font_obj, fill="#FFAA00")
+        d.text((2, 40), f"BW Limit: {bw} Mbps", font=font_obj, fill=(212, 172, 13))
         auto_tag = " [AUTO]" if auto else ""
-        d.text((2, 52), f"Interface: {iface}{auto_tag}", font=font_obj, fill="#888")
+        d.text((2, 52), f"Interface: {iface}{auto_tag}", font=font_obj, fill=(113, 125, 126))
 
         # Queue stats
-        d.text((2, 66), "Queue:", font=font_obj, fill="#666")
-        d.text((2, 78), f"Pkts: {qs['sent']}  Drop: {qs['dropped']}", font=font_obj, fill="#AAAAAA")
-        d.text((2, 88), f"Overlim: {qs['overlimits']}", font=font_obj, fill="#AAAAAA")
+        d.text((2, 66), "Queue:", font=font_obj, fill=(86, 101, 115))
+        d.text((2, 78), f"Pkts: {qs['sent']}  Drop: {qs['dropped']}", font=font_obj, fill=(171, 178, 185))
+        d.text((2, 88), f"Overlim: {qs['overlimits']}", font=font_obj, fill=(171, 178, 185))
 
-        d.text((2, 102), msg[:24], font=font_obj, fill="#888")
+        d.text((2, 102), msg[:24], font=font_obj, fill=(113, 125, 126))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "OK:Shp U/D:BW K3:Quit", font=font_obj, fill="#888")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "OK:Shp U/D:BW K3:Quit", font=font_obj, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 

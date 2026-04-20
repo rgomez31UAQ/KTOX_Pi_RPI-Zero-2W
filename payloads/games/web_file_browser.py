@@ -307,18 +307,18 @@ def main():
     try:
         while True:
             # ── Draw ──
-            img  = Image.new("RGB", (128,128), "black")
+            img  = Image.new("RGB", (128,128), (10, 0, 0))
             draw = ImageDraw.Draw(img)
 
             # Header
             hdr_color = (0,160,50) if running else (120,0,0)
             draw.rectangle([(0,0),(128,18)], fill=hdr_color)
-            draw.text((4,3), "WEB FILE EXPLORER", font=font_sm, fill="black")
+            draw.text((4,3), "WEB FILE EXPLORER", font=font_sm, fill=(10, 0, 0))
 
             # Status
             y = 25
-            draw.text((4,y), f"IP:   {ip}", font=font_sm, fill="white"); y+=14
-            draw.text((4,y), f"Port: {HTTP_PORT}", font=font_sm, fill="white"); y+=14
+            draw.text((4,y), f"IP:   {ip}", font=font_sm, fill=(242, 243, 244)); y+=14
+            draw.text((4,y), f"Port: {HTTP_PORT}", font=font_sm, fill=(242, 243, 244)); y+=14
 
             status_col = (0,255,70) if running else (255,70,70)
             status_txt = "RUNNING" if running else "STOPPED"

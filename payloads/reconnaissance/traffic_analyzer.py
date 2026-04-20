@@ -76,10 +76,10 @@ wifi_manager = WiFiManager()
 LOOT_DIR = os.path.join(KTOX_ROOT, 'loot', 'Traffic_Analyzer')
 
 def draw_ui_interface_selection(interfaces, current_selection):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, iface in enumerate(interfaces):
@@ -87,7 +87,7 @@ def draw_ui_interface_selection(interfaces, current_selection):
         d.text((5, y_pos), iface, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def select_interface_menu():
@@ -144,7 +144,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def show_message(lines, color="lime"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = 40
     for line in lines:
@@ -156,36 +156,36 @@ def show_message(lines, color="lime"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
-    d.text((5, 5), f"Traffic Analyzer ({ETH_INTERFACE})", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), f"Traffic Analyzer ({ETH_INTERFACE})", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if screen_state == "main":
         with ui_lock:
-            d.text((5, 25), f"Total Packets: {packet_count}", font=FONT, fill="white")
+            d.text((5, 25), f"Total Packets: {packet_count}", font=FONT, fill=(242, 243, 244))
             
             proto_str_1 = f"T:{protocol_counts['TCP']} U:{protocol_counts['UDP']}"
             proto_str_2 = f"I:{protocol_counts['ICMP']} A:{protocol_counts['ARP']}"
-            d.text((5, 40), proto_str_1, font=FONT, fill="cyan")
-            d.text((5, 50), proto_str_2, font=FONT, fill="cyan")
+            d.text((5, 40), proto_str_1, font=FONT, fill=(171, 178, 185))
+            d.text((5, 50), proto_str_2, font=FONT, fill=(171, 178, 185))
 
-            d.text((5, 65), "Top Talkers:", font=FONT, fill="yellow")
+            d.text((5, 65), "Top Talkers:", font=FONT, fill=(212, 172, 13))
             y_pos = 75
             top_5 = ip_counts.most_common(4)
             for ip, count in top_5:
-                d.text((8, y_pos), f"{ip}", font=FONT, fill="white")
+                d.text((8, y_pos), f"{ip}", font=FONT, fill=(242, 243, 244))
                 y_pos += 10
 
         d.text((5, 115), "KEY1=Edit Iface | KEY3=Exit", font=FONT, fill="orange")
     elif screen_state == "iface_input":
-        d.text((5, 30), "Enter Interface:", font=FONT, fill="white")
+        d.text((5, 30), "Enter Interface:", font=FONT, fill=(242, 243, 244))
         display_iface = list(current_interface_input)
         if interface_input_cursor_pos < len(display_iface):
             display_iface[interface_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_iface[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_iface[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -287,7 +287,7 @@ if __name__ == "__main__":
         if "NO-CARRIER" in subprocess.check_output(f"ip link show {ETH_INTERFACE}", shell=True).decode():
             draw_ui("main")
             time.sleep(1)
-            d = ImageDraw.Draw(Image.new("RGB", (WIDTH, HEIGHT), "black"))
+            d = ImageDraw.Draw(Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0)))
             d.text((10, 60), f"{ETH_INTERFACE} Disconnected", font=FONT_TITLE, fill="red")
             LCD.LCD_ShowImage(d.im, 0, 0)
             time.sleep(3)

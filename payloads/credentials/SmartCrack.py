@@ -31,7 +31,7 @@ def init_hw():
     LCD = LCD_1in44.LCD()
     LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
     LCD.LCD_Clear()
-    image = Image.new("RGB", (W, H), "black")
+    image = Image.new("RGB", (W, H), (10, 0, 0))
     draw = ImageDraw.Draw(image)
     try:
         font_sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",9)
@@ -44,11 +44,11 @@ def push(): LCD.LCD_ShowImage(image,0,0) if LCD and image else None
 def draw_ui():
     draw.rectangle((0,0,W,H), fill="#0A0000")
     draw.rectangle((0,0,W,17), fill="#8B0000")
-    draw.text((4,3), "HYBRID CRACKER", font=font_sm, fill="#FF3333")
-    draw.text((4,20), f"Hash: {current_hash[:16]}" if current_hash else "No hash loaded", font=font_sm, fill="#FFBBBB")
-    draw.text((4,32), f"Type: {hash_type}", font=font_sm, fill="#FFBBBB")
-    draw.text((4,44), f"Status: {status}", font=font_sm, fill="#FFBBBB")
-    draw.text((4,56), f"Progress: {progress[:16]}", font=font_sm, fill="#FFBBBB")
+    draw.text((4,3), "HYBRID CRACKER", font=font_sm, fill=(231, 76, 60))
+    draw.text((4,20), f"Hash: {current_hash[:16]}" if current_hash else "No hash loaded", font=font_sm, fill=(171, 178, 185))
+    draw.text((4,32), f"Type: {hash_type}", font=font_sm, fill=(171, 178, 185))
+    draw.text((4,44), f"Status: {status}", font=font_sm, fill=(171, 178, 185))
+    draw.text((4,56), f"Progress: {progress[:16]}", font=font_sm, fill=(171, 178, 185))
     y = 72
     for line in cracked[-4:]:
         draw.text((4,y), line[:20], font=font_sm, fill="#88FF88")
@@ -59,9 +59,9 @@ def draw_ui():
 
 def load_hash():
     global current_hash, hash_type, cracked, cracking, status
-    draw.rectangle((0,0,W,H), fill="black")
-    draw.text((4,20), "Enter MD5/NTLM hash:", font=font_sm, fill="white")
-    draw.text((4,40), "Or paste from file", font=font_sm, fill="white")
+    draw.rectangle((0,0,W,H), fill=(10, 0, 0))
+    draw.text((4,20), "Enter MD5/NTLM hash:", font=font_sm, fill=(242, 243, 244))
+    draw.text((4,40), "Or paste from file", font=font_sm, fill=(242, 243, 244))
     push()
     time.sleep(2)
     #  On‑screen keyboard logic (omitted for brevity – use same as ReconDrone)

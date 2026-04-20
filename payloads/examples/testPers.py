@@ -61,7 +61,7 @@ def init_hw():
         LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
         LCD.LCD_Clear()
 
-        _image = Image.new("RGB", (W, H), "black")
+        _image = Image.new("RGB", (W, H), (10, 0, 0))
         _draw = ImageDraw.Draw(_image)
         try:
             _font_sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 9)
@@ -79,7 +79,7 @@ def push():
 def draw_menu():
     _draw.rectangle((0,0,W,H), fill="#0A0000")
     _draw.rectangle((0,0,W,17), fill="#8B0000")
-    _draw.text((4,3), "KTOX PERSUADER", font=_font_sm, fill="#FF3333")
+    _draw.text((4,3), "KTOX PERSUADER", font=_font_sm, fill=(231, 76, 60))
 
     start = 0   # simple scroll for now
     for i in range(VISIBLE_LINES):
@@ -94,7 +94,7 @@ def draw_menu():
 def draw_phish_screen(lines, title="PERSUADER"):
     _draw.rectangle((0,0,W,H), fill="#0A0000")
     _draw.rectangle((0,0,W,17), fill="#8B0000")
-    _draw.text((4,3), title, font=_font_sm, fill="#FF3333")
+    _draw.text((4,3), title, font=_font_sm, fill=(231, 76, 60))
 
     y = 22
     for line in lines[:8]:
@@ -104,7 +104,7 @@ def draw_phish_screen(lines, title="PERSUADER"):
 
     if phish_running:
         ghost = "👻" * ((int(time.time()) % 3) + 1)
-        _draw.text((5, 105), ghost + " Capturing...", font=_font_sm, fill="#FFAA00")
+        _draw.text((5, 105), ghost + " Capturing...", font=_font_sm, fill=(212, 172, 13))
 
     _draw.rectangle((0,117,W,128), fill="#220000")
     _draw.text((4,118), "K1=Stop  K3=Back", font=_font_sm, fill="#FF7777")

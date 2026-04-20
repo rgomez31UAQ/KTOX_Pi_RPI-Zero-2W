@@ -42,13 +42,13 @@ FONT_MD = load_font(11)
 
 # ── Display helpers ───────────────────────────────────────────────────────────
 
-def centered(draw, text, y, font, fill="WHITE"):
+def centered(draw, text, y, font, fill=(242, 243, 244)):
     bbox = draw.textbbox((0, 0), text, font=font)
     w    = bbox[2] - bbox[0]
     draw.text(((128 - w) // 2, y), text, font=font, fill=fill)
 
 def show_status(lcd, image, draw, title, lines, color="WHITE"):
-    draw.rectangle([(0, 0), (128, 128)], fill="BLACK")
+    draw.rectangle([(0, 0), (128, 128)], fill=(10, 0, 0))
     # Header
     draw.rectangle([(0, 0), (128, 14)], fill="#640000")
     centered(draw, title, 2, FONT_MD, "WHITE")
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         lcd.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
         lcd.LCD_Clear()
 
-        image = Image.new("RGB", (128, 128), "BLACK")
+        image = Image.new("RGB", (128, 128), (10, 0, 0))
         draw  = ImageDraw.Draw(image)
 
         show_status(lcd, image, draw, "NET RECON",

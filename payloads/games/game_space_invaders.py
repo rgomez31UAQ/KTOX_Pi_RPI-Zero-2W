@@ -235,21 +235,21 @@ def _alien_shoot(state):
 
 def draw_game(state):
     """Render the full game frame."""
-    img = Image.new("RGB", (_GAME_W, _GAME_H), "black")
+    img = Image.new("RGB", (_GAME_W, _GAME_H), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
     d.rectangle((0, 0, 127, 11), fill="#001100")
-    d.text((2, 1), f"SCORE:{state['score']}", font=font, fill="#00FF00")
+    d.text((2, 1), f"SCORE:{state['score']}", font=font, fill=(30, 132, 73))
     lives_str = "L:" + "*" * state["lives"]
-    d.text((85, 1), lives_str, font=font, fill="#00FF00")
+    d.text((85, 1), lives_str, font=font, fill=(30, 132, 73))
 
     for alien in state["aliens"]:
         if not alien["alive"]:
             continue
         ax, ay = alien["x"], alien["y"]
-        d.rectangle((ax, ay, ax + ALIEN_W, ay + ALIEN_H), fill="#00CC00")
-        d.point((ax + 2, ay + 2), fill="#00FF00")
-        d.point((ax + ALIEN_W - 2, ay + 2), fill="#00FF00")
+        d.rectangle((ax, ay, ax + ALIEN_W, ay + ALIEN_H), fill=(30, 132, 73))
+        d.point((ax + 2, ay + 2), fill=(30, 132, 73))
+        d.point((ax + ALIEN_W - 2, ay + 2), fill=(30, 132, 73))
         d.line([(ax + 1, ay + ALIEN_H - 2), (ax + ALIEN_W - 1, ay + ALIEN_H - 2)],
                fill="#004400")
 
@@ -258,28 +258,28 @@ def draw_game(state):
             d.point((px, py), fill="#006600")
 
     sx = state["ship_x"]
-    d.rectangle((sx, SHIP_Y, sx + SHIP_W, SHIP_Y + SHIP_H), fill="#00FF00")
+    d.rectangle((sx, SHIP_Y, sx + SHIP_W, SHIP_Y + SHIP_H), fill=(30, 132, 73))
     d.polygon(
         [(sx + SHIP_W // 2, SHIP_Y - 3), (sx + 2, SHIP_Y), (sx + SHIP_W - 2, SHIP_Y)],
-        fill="#00FF00",
+        fill=(30, 132, 73),
     )
 
     for b in state["player_bullets"]:
-        d.rectangle((b["x"] - 1, b["y"], b["x"] + 1, b["y"] + 3), fill="#00FF00")
+        d.rectangle((b["x"] - 1, b["y"], b["x"] + 1, b["y"] + 3), fill=(30, 132, 73))
 
     for b in state["alien_bullets"]:
-        d.rectangle((b["x"] - 1, b["y"], b["x"] + 1, b["y"] + 3), fill="#FF0000")
+        d.rectangle((b["x"] - 1, b["y"], b["x"] + 1, b["y"] + 3), fill=(231, 76, 60))
 
     if state["game_over"]:
-        d.rectangle((10, 45, 118, 75), fill="#000000", outline="#FF0000")
-        d.text((20, 50), "GAME OVER", font=font, fill="#FF0000")
-        d.text((15, 62), f"Score: {state['score']}", font=font, fill="#00FF00")
-        d.text((12, 72), "K1:Restart K3:Exit", font=font, fill="#888")
+        d.rectangle((10, 45, 118, 75), fill="#000000", outline=(231, 76, 60))
+        d.text((20, 50), "GAME OVER", font=font, fill=(231, 76, 60))
+        d.text((15, 62), f"Score: {state['score']}", font=font, fill=(30, 132, 73))
+        d.text((12, 72), "K1:Restart K3:Exit", font=font, fill=(113, 125, 126))
     elif state["victory"]:
-        d.rectangle((10, 45, 118, 75), fill="#000000", outline="#00FF00")
-        d.text((22, 50), "VICTORY!", font=font, fill="#00FF00")
-        d.text((15, 62), f"Score: {state['score']}", font=font, fill="#00FF00")
-        d.text((12, 72), "K1:Restart K3:Exit", font=font, fill="#888")
+        d.rectangle((10, 45, 118, 75), fill="#000000", outline=(30, 132, 73))
+        d.text((22, 50), "VICTORY!", font=font, fill=(30, 132, 73))
+        d.text((15, 62), f"Score: {state['score']}", font=font, fill=(30, 132, 73))
+        d.text((12, 72), "K1:Restart K3:Exit", font=font, fill=(113, 125, 126))
 
     if _GAME_W != WIDTH or _GAME_H != HEIGHT:
         img = img.resize((WIDTH, HEIGHT), Image.NEAREST)
@@ -293,9 +293,9 @@ def draw_game(state):
 def main():
     state = _make_state()
 
-    img = Image.new("RGB", (_GAME_W, _GAME_H), "black")
+    img = Image.new("RGB", (_GAME_W, _GAME_H), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((10, 25), "SPACE INVADERS", font=font, fill="#00FF00")
+    d.text((10, 25), "SPACE INVADERS", font=font, fill=(30, 132, 73))
     d.text((10, 50), "L/R=Move  OK=Fire", font=font, fill="#006600")
     d.text((10, 62), "K1=Restart", font=font, fill="#006600")
     d.text((10, 74), "K3=Exit", font=font, fill="#006600")

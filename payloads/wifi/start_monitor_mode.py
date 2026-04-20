@@ -94,7 +94,7 @@ def _show(lines, title_color=(255, 255, 0), body_color=(0, 220, 0)):
     if not (_lcd and _font):
         return
     try:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ImageDraw.Draw(img)
         d.rectangle((0, 0, WIDTH, 12), fill=(20, 20, 20))
         d.text((2, 1), "MONITOR MODE", font=_font, fill=(0, 200, 255))

@@ -476,7 +476,7 @@ def _toggle_item(item_id):
 
 def _draw_screen():
     """Render the stealth mode interface."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     with lock:
@@ -488,10 +488,10 @@ def _draw_screen():
     # Big status banner
     if active:
         d.rectangle((0, 0, 127, 20), fill="#003300")
-        d.text((14, 4), "STEALTH ON", font=font, fill="#00FF00")
+        d.text((14, 4), "STEALTH ON", font=font, fill=(30, 132, 73))
     else:
         d.rectangle((0, 0, 127, 20), fill="#330000")
-        d.text((12, 4), "STEALTH OFF", font=font, fill="#FF4444")
+        d.text((12, 4), "STEALTH OFF", font=font, fill=(231, 76, 60))
 
     # Checklist
     visible_items = ITEMS[sc:sc + ROWS_VISIBLE]
@@ -512,15 +512,15 @@ def _draw_screen():
 
     # Scroll indicators
     if sc > 0:
-        d.text((118, 24), "^", font=font, fill="#666")
+        d.text((118, 24), "^", font=font, fill=(86, 101, 115))
     if sc + ROWS_VISIBLE < len(ITEMS):
-        d.text((118, 24 + (ROWS_VISIBLE - 1) * 13), "v", font=font, fill="#666")
+        d.text((118, 24 + (ROWS_VISIBLE - 1) * 13), "v", font=font, fill=(86, 101, 115))
 
     # Status message
-    d.text((2, 104), msg[:22], font=font, fill="#FFAA00")
+    d.text((2, 104), msg[:22], font=font, fill=(212, 172, 13))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK:Toggle K1:Item K3:X", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -534,14 +534,14 @@ def main():
     global scroll_pos, status_msg
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 16), "STEALTH MODE", font=font, fill="#00FF00")
-    d.text((4, 36), "Minimize Pi footprint", font=font, fill="#888")
-    d.text((4, 48), "LEDs, WiFi, MAC, logs", font=font, fill="#888")
-    d.text((4, 66), "OK=Toggle all", font=font, fill="#666")
-    d.text((4, 78), "K1=Toggle item", font=font, fill="#666")
-    d.text((4, 90), "UP/DN=Scroll K3=Exit", font=font, fill="#666")
+    d.text((8, 16), "STEALTH MODE", font=font, fill=(30, 132, 73))
+    d.text((4, 36), "Minimize Pi footprint", font=font, fill=(113, 125, 126))
+    d.text((4, 48), "LEDs, WiFi, MAC, logs", font=font, fill=(113, 125, 126))
+    d.text((4, 66), "OK=Toggle all", font=font, fill=(86, 101, 115))
+    d.text((4, 78), "K1=Toggle item", font=font, fill=(86, 101, 115))
+    d.text((4, 90), "UP/DN=Scroll K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.5)
 

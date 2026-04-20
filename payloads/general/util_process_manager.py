@@ -68,7 +68,7 @@ signal.signal(signal.SIGTERM, cleanup)
 
 # --- UI Drawing Functions ---
 def draw_message(lines, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = 40
     for line in lines:
@@ -80,13 +80,13 @@ def draw_message(lines, color="yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_process_list_ui(current_selection_index):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
     with ui_lock:
         sort_label = "CPU" if sort_by_cpu else "MEM"
-        d.text((5, 5), f"Processes (Sort: {sort_label})", font=FONT_TITLE, fill="#00FF00")
-        d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+        d.text((5, 5), f"Processes (Sort: {sort_label})", font=FONT_TITLE, fill=(30, 132, 73))
+        d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
         visible_processes = processes[display_offset:]
         y_pos = 25
@@ -103,7 +103,7 @@ def draw_process_list_ui(current_selection_index):
             d.text((5, y_pos), line, font=FONT, fill=color)
             y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Scroll | L/R=Sort | OK=Action | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Scroll | L/R=Sort | OK=Action | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 # --- Process Management Functions ---
