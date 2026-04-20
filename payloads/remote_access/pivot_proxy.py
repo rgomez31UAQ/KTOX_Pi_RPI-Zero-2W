@@ -290,11 +290,11 @@ def _format_bytes(n):
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "SOCKS5 PROXY", font=font, fill="#9933FF")
     indicator = "#00FF00" if proxy_active else "#444"
     d.ellipse((118, 3, 122, 7), fill=indicator)
@@ -309,22 +309,22 @@ def _draw_frame(lcd, font):
     if show_ips:
         # Show IP addresses
         ips = _get_all_ips()
-        d.text((2, 16), "Pi IP Addresses:", font=font, fill="#AAAAAA")
+        d.text((2, 16), "Pi IP Addresses:", font=font, fill=(171, 178, 185))
         y = 30
         if not ips:
-            d.text((2, y), "No interfaces up", font=font, fill="#FF0000")
+            d.text((2, y), "No interfaces up", font=font, fill=(231, 76, 60))
         else:
             for iface, ip in ips.items():
-                d.text((2, y), f"{iface}: {ip}", font=font, fill="#CCCCCC")
+                d.text((2, y), f"{iface}: {ip}", font=font, fill=(242, 243, 244))
                 y += 12
-        d.text((2, 104), "Press any to return", font=font, fill="#888")
+        d.text((2, 104), "Press any to return", font=font, fill=(113, 125, 126))
     else:
         # Main view
         status = "LISTENING" if proxy_active else "STOPPED"
-        d.text((2, 16), f"Port: {port}  [{status}]", font=font, fill="#AAAAAA")
+        d.text((2, 16), f"Port: {port}  [{status}]", font=font, fill=(171, 178, 185))
         d.text((2, 28), f"Clients:{clients} Active:{active_count}",
-               font=font, fill="#AAAAAA")
-        d.text((2, 38), f"Transferred: {_format_bytes(xfer)}", font=font, fill="#888")
+               font=font, fill=(171, 178, 185))
+        d.text((2, 38), f"Transferred: {_format_bytes(xfer)}", font=font, fill=(113, 125, 126))
 
         # Connection list
         active_conns = [c for c in conn_list if c["active"]]
@@ -340,11 +340,11 @@ def _draw_frame(lcd, font):
             d.text((2, y), f"{dst} {bcount}", font=font, fill=color)
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if proxy_active:
-        d.text((2, 117), "OK:Stop K1:IPs K3:Quit", font=font, fill="#888")
+        d.text((2, 117), "OK:Stop K1:IPs K3:Quit", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Start LR:Port K3:Q", font=font, fill="#888")
+        d.text((2, 117), "OK:Start LR:Port K3:Q", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -367,14 +367,14 @@ def main():
     font = scaled_font()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 16), "SOCKS5 PIVOT PROXY", font=font, fill="#9933FF")
-    d.text((4, 36), "TCP tunnel through Pi", font=font, fill="#888")
-    d.text((4, 56), "OK     Start/stop", font=font, fill="#666")
-    d.text((4, 68), "L/R    Adjust port", font=font, fill="#666")
-    d.text((4, 80), "KEY1   Show IPs", font=font, fill="#666")
-    d.text((4, 92), "KEY3   Exit", font=font, fill="#666")
+    d.text((4, 36), "TCP tunnel through Pi", font=font, fill=(113, 125, 126))
+    d.text((4, 56), "OK     Start/stop", font=font, fill=(86, 101, 115))
+    d.text((4, 68), "L/R    Adjust port", font=font, fill=(86, 101, 115))
+    d.text((4, 80), "KEY1   Show IPs", font=font, fill=(86, 101, 115))
+    d.text((4, 92), "KEY3   Exit", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 

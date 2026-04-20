@@ -306,7 +306,7 @@ def _export_data():
 # ---------------------------------------------------------------------------
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
     draw.text((2, 2), "HSRP TAKEOVER", fill="RED", font=font)
 
@@ -321,7 +321,7 @@ def _draw_screen():
     mode = "SNIFF" if so else ("ACTIVE" if ta else "IDLE")
     mode_color = "GREEN" if ta else ("CYAN" if so else "GRAY")
     draw.text((90, 2), mode, fill=mode_color, font=font)
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
 
     y = 28
     group_ids = sorted(grps.keys())
@@ -336,12 +336,12 @@ def _draw_screen():
         y += 14
 
     if not group_ids:
-        draw.text((2, 56), "No HSRP groups found", fill="GRAY", font=font)
+        draw.text((2, 56), "No HSRP groups found", fill=(86, 101, 115), font=font)
 
     if ta:
-        draw.text((2, 100), f"Hello sent: {hs}", fill="GREEN", font=font)
+        draw.text((2, 100), f"Hello sent: {hs}", fill=(30, 132, 73), font=font)
 
-    draw.text((2, 116), "OK=take K1=sniff K3=ex", fill="GRAY", font=font)
+    draw.text((2, 116), "OK=take K1=sniff K3=ex", fill=(86, 101, 115), font=font)
     LCD.LCD_ShowImage(img, 0, 0)
 
 
@@ -354,7 +354,7 @@ def main():
     global scroll_pos, status_msg, my_ip, my_iface
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -429,10 +429,10 @@ def main():
         takeover_active = False
         _disable_ip_forward()
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "HSRP stopped", fill="YELLOW", font=font)
-            d.text((10, 66), f"Hellos: {hello_sent}", fill="WHITE", font=font)
+            d.text((10, 50), "HSRP stopped", fill=(212, 172, 13), font=font)
+            d.text((10, 66), f"Hellos: {hello_sent}", fill=(242, 243, 244), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

@@ -450,11 +450,11 @@ def _format_eta(seconds):
 def _draw_lcd():
     """Render current state on LCD."""
     st = _get_state()
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "BLE EXFIL", font=font, fill="#8844FF")
     ble_color = "#00FF00" if st["ble_available"] else "#FF0000"
     d.ellipse((105, 3, 113, 11), fill=ble_color)
@@ -462,31 +462,31 @@ def _draw_lcd():
 
     # TX interval display
     interval_label = TX_INTERVAL_LABELS[st["tx_interval_idx"]]
-    d.text((2, 16), f"TX: {interval_label}", font=font, fill="#888")
+    d.text((2, 16), f"TX: {interval_label}", font=font, fill=(113, 125, 126))
 
     # Active transfer display
     if st["exfil_active"] or st["status"] in ("Complete", "Aborted", "Error"):
-        d.text((2, 28), f"F: {st['current_file'][:17]}", font=font, fill="#AAAAAA")
+        d.text((2, 28), f"F: {st['current_file'][:17]}", font=font, fill=(171, 178, 185))
 
         # Progress bar
         bar_y = 40
-        d.rectangle((2, bar_y, 125, bar_y + 10), outline="#444")
+        d.rectangle((2, bar_y, 125, bar_y + 10), outline=(34, 0, 0))
         bar_w = int(123 * st["progress_pct"] / 100)
         if bar_w > 0:
             bar_color = "#8844FF" if st["status"] != "Error" else "#AA0000"
             d.rectangle((2, bar_y, 2 + bar_w, bar_y + 10), fill=bar_color)
         pct_text = f"{st['progress_pct']:.0f}%"
-        d.text((52, bar_y + 1), pct_text, font=font, fill="white")
+        d.text((52, bar_y + 1), pct_text, font=font, fill=(242, 243, 244))
 
         # Chunk counter
-        d.text((2, 54), f"Chunks: {st['chunks_sent']}/{st['total_chunks']}", font=font, fill="#888")
+        d.text((2, 54), f"Chunks: {st['chunks_sent']}/{st['total_chunks']}", font=font, fill=(113, 125, 126))
 
         # ETA
         eta_str = _format_eta(st["eta_seconds"])
-        d.text((2, 66), f"ETA: {eta_str}", font=font, fill="#888")
+        d.text((2, 66), f"ETA: {eta_str}", font=font, fill=(113, 125, 126))
 
         # File size
-        d.text((70, 54), _format_size(st["bytes_total"]), font=font, fill="#888")
+        d.text((70, 54), _format_size(st["bytes_total"]), font=font, fill=(113, 125, 126))
 
     # File list
     files = st["files"]
@@ -510,9 +510,9 @@ def _draw_lcd():
             size_display = _format_size(f["size"])
             fg = "#FFFFFF" if is_sel else "#666666"
             d.text((2, y), name_display, font=font, fill=fg)
-            d.text((100, y), size_display, font=font, fill="#888")
+            d.text((100, y), size_display, font=font, fill=(113, 125, 126))
     else:
-        d.text((10, 50), "No loot files", font=font, fill="#666")
+        d.text((10, 50), "No loot files", font=font, fill=(86, 101, 115))
 
     # Status / message
     d.rectangle((0, 106, 127, 115), fill="#0A0A0A")
@@ -523,7 +523,7 @@ def _draw_lcd():
     d.text((2, 106), msg[:21], font=font, fill=status_color)
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK:TX K1:Intv K3:Quit", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -541,16 +541,16 @@ def main():
         ble_ok = _enable_ble()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 16), "BLE EXFIL", font=font, fill="#8844FF")
-    d.text((4, 32), "Stealth BLE adverts", font=font, fill="#888")
+    d.text((4, 32), "Stealth BLE adverts", font=font, fill=(113, 125, 126))
     ble_splash_color = "#00FF00" if ble_ok else "#FF0000"
     d.text((4, 48), f"BLE: {'OK' if ble_ok else 'NOT FOUND'}", font=font, fill=ble_splash_color)
-    d.text((4, 64), "OK=Start  U/D=Select", font=font, fill="#666")
-    d.text((4, 76), "K1=TX interval", font=font, fill="#666")
-    d.text((4, 88), "K3=Exit", font=font, fill="#666")
-    d.text((4, 104), f"Mfr ID: 0x{MANUFACTURER_ID:04X}", font=font, fill="#444")
+    d.text((4, 64), "OK=Start  U/D=Select", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K1=TX interval", font=font, fill=(86, 101, 115))
+    d.text((4, 88), "K3=Exit", font=font, fill=(86, 101, 115))
+    d.text((4, 104), f"Mfr ID: 0x{MANUFACTURER_ID:04X}", font=font, fill=(34, 0, 0))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 

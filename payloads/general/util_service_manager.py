@@ -102,7 +102,7 @@ signal.signal(signal.SIGTERM, cleanup)
 
 # --- UI Drawing Functions ---
 def draw_message(lines, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = 40
     for line in lines:
@@ -114,11 +114,11 @@ def draw_message(lines, color="yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_service_list_ui(current_selection_index):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
-    d.text((5, 5), "Service Manager", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "Service Manager", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     with ui_lock:
         visible_services = services[display_offset:]
@@ -135,15 +135,15 @@ def draw_service_list_ui(current_selection_index):
             d.text((70, y_pos), s['status'][:7], font=FONT, fill=status_color) # Color status
             y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Scroll | OK=Action | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Scroll | OK=Action | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_service_action_ui(service_name, actions, current_selection):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
-    d.text((5, 5), f"Actions for {service_name[:10]}", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), f"Actions for {service_name[:10]}", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     y_pos = 25
     for i, action in enumerate(actions):
@@ -151,7 +151,7 @@ def draw_service_action_ui(service_name, actions, current_selection):
         d.text((5, y_pos), action, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=Confirm | KEY3=Cancel", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=Confirm | KEY3=Cancel", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 # --- Service Management Functions ---

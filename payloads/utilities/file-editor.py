@@ -572,7 +572,7 @@ def draw(lines, title="FILE EDITOR", title_color="#8B0000", text_color="#FFBBBB"
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill=title_color)
-    d.text((4, 3), title[:20], font=f9, fill="#FF3333")
+    d.text((4, 3), title[:20], font=f9, fill=(231, 76, 60))
     y = 20
     for line in lines[:7]:
         d.text((4, y), line[:23], font=f9, fill=text_color)

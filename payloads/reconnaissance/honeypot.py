@@ -627,7 +627,7 @@ class HoneypotLCD:
 
         # Clear to known state once after init
         try:
-            self.lcd.LCD_ShowImage(Image.new("RGB", (self.W, self.H), "black"), 0, 0)
+            self.lcd.LCD_ShowImage(Image.new("RGB", (self.W, self.H), (10, 0, 0)), 0, 0)
             hp.debug("LCD first black frame drawn")
         except Exception as e:
             hp.debug(f"LCD first frame failed: {e}")
@@ -708,7 +708,7 @@ class HoneypotLCD:
         self.running = True
         try:
             # Initial splash using the same drawing path as frames
-            splash = Image.new("RGB", (self.W, self.H), "black")
+            splash = Image.new("RGB", (self.W, self.H), (10, 0, 0))
             d = ScaledDraw(splash)
             self._text(d, 2, 4, "HONEYPOT", self.font_large, "#00FF00")
             self._text(d, 2, 20, self.hp.fingerprints.get("label", "Ubuntu"))
@@ -726,7 +726,7 @@ class HoneypotLCD:
 
             while self.running and self.hp.running:
                 touched = self._poll_inputs()
-                img = Image.new("RGB", (self.W, self.H), "black")
+                img = Image.new("RGB", (self.W, self.H), (10, 0, 0))
                 draw = ScaledDraw(img)
                 try:
                     if self.mode == 0:

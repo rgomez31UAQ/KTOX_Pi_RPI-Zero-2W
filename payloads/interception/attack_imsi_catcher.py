@@ -58,10 +58,10 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_ui(screen_state="main", message_lines=None):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "IMSI Catcher", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "IMSI Catcher", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if message_lines:
         if isinstance(message_lines, str):
@@ -71,15 +71,15 @@ def draw_ui(screen_state="main", message_lines=None):
             bbox = d.textbbox((0, 0), line, font=FONT)
             w = bbox[2] - bbox[0]
             x = (128 - w) // 2
-            d.text((x, y_offset), line, font=FONT, fill="yellow")
+            d.text((x, y_offset), line, font=FONT, fill=(212, 172, 13))
             y_offset += 12
     elif screen_state == "main":
-        d.text((5, 30), "Press OK to start the", font=FONT, fill="white")
-        d.text((5, 45), "IMSI catcher.", font=FONT, fill="white")
-        d.text((5, 100), "OK=Start", font=FONT, fill="cyan")
-        d.text((5, 110), "KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 30), "Press OK to start the", font=FONT, fill=(242, 243, 244))
+        d.text((5, 45), "IMSI catcher.", font=FONT, fill=(242, 243, 244))
+        d.text((5, 100), "OK=Start", font=FONT, fill=(171, 178, 185))
+        d.text((5, 110), "KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "attacking":
-        d.text((5, 50), "Running attack...", font=FONT_TITLE, fill="yellow")
+        d.text((5, 50), "Running attack...", font=FONT_TITLE, fill=(212, 172, 13))
 
     LCD.LCD_ShowImage(img, 0, 0)
 

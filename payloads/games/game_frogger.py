@@ -30,17 +30,17 @@ font = ImageFont.load_default()
 CELL = 8
 COLS, ROWS = 16, 16
 
-COL_BG = (0, 0, 0)
-COL_FROG = (0, 200, 0)
-COL_FROG_DARK = (0, 120, 0)
-COL_ROAD = (40, 40, 40)
-COL_WATER = (0, 0, 140)
-COL_LOG = (139, 90, 43)
-COL_HOME = (0, 100, 0)
-COL_HOME_FILLED = (0, 255, 0)
-COL_SAFE = (0, 60, 0)
-COL_TEXT = (0, 255, 0)
-CAR_COLS = [(255, 0, 0), (255, 255, 255), (255, 255, 0), (255, 100, 0)]
+COL_BG          = (10,  0,   0)   # KTOX BG
+COL_FROG        = (30,  132, 73)  # GOOD (dark green)
+COL_FROG_DARK   = (20,  80,  45)  # darker green
+COL_ROAD        = (50,  5,   5)   # dark road
+COL_WATER       = (34,  0,   0)   # FOOTER
+COL_LOG         = (146, 43,  33)  # RUST
+COL_HOME        = (86,  101, 115) # DIM
+COL_HOME_FILLED = (30,  132, 73)  # GOOD
+COL_SAFE        = (34,  0,   0)   # FOOTER
+COL_TEXT        = (242, 243, 244) # WHITE
+CAR_COLS = [(192, 57, 43), (171, 178, 185), (212, 172, 13), (231, 76, 60)]
 
 # Row layout (0=top, 15=bottom):
 # Row 0:  home slots

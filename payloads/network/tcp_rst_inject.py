@@ -189,7 +189,7 @@ def _kill_all():
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
     draw.text((2, 2), "TCP RST INJECT", fill="RED", font=font)
@@ -201,8 +201,8 @@ def _draw_screen():
         sp = scroll_pos
         si = selected_idx
 
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
-    draw.text((80, 2), f"RST:{rsts}", fill="YELLOW", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
+    draw.text((80, 2), f"RST:{rsts}", fill=(212, 172, 13), font=font)
 
     y = 28
     visible = keys[sp:sp + ROWS_VISIBLE]
@@ -215,9 +215,9 @@ def _draw_screen():
         y += 14
 
     if not keys:
-        draw.text((2, 56), "No connections yet", fill="GRAY", font=font)
+        draw.text((2, 56), "No connections yet", fill=(86, 101, 115), font=font)
 
-    draw.text((2, 116), "OK=kill K1=ref K2=all", fill="GRAY", font=font)
+    draw.text((2, 116), "OK=kill K1=ref K2=all", fill=(86, 101, 115), font=font)
     LCD.LCD_ShowImage(img, 0, 0)
 
 
@@ -229,7 +229,7 @@ def main():
     global app_running, scroll_pos, selected_idx, status_msg
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -307,9 +307,9 @@ def main():
     finally:
         app_running = False
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "RST Inject stopped", fill="YELLOW", font=font)
+            d.text((10, 50), "RST Inject stopped", fill=(212, 172, 13), font=font)
             d.text((10, 66), f"Total RST: {rst_sent}", fill="RED", font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:

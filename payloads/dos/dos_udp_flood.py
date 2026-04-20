@@ -106,7 +106,7 @@ def save_loot_snapshot():
         print(f"Error saving loot: {e}", file=sys.stderr)
 
 def show_message(lines, color="lime"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40
@@ -119,23 +119,23 @@ def show_message(lines, color="lime"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main", status: str = ""):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "UDP Flood", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
+    d.text((5, 5), "UDP Flood", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
     
     if screen_state == "main":
-        d.text((5, 30), "Target IP:", font=FONT, fill="white")
-        d.text((5, 45), TARGET_IP, font=FONT_TITLE, fill="yellow")
-        d.text((5, 65), "Target Port:", font=FONT, fill="white")
-        d.text((5, 80), TARGET_PORT, font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "OK=Start | KEY1=Edit IP | KEY2=Edit Port | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 30), "Target IP:", font=FONT, fill=(242, 243, 244))
+        d.text((5, 45), TARGET_IP, font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 65), "Target Port:", font=FONT, fill=(242, 243, 244))
+        d.text((5, 80), TARGET_PORT, font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "OK=Start | KEY1=Edit IP | KEY2=Edit Port | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "attacking":
         status_color = "lime" if status == "ACTIVE" else "red"
         d.text((30, 35), status, font=FONT_STATUS, fill=status_color)
-        d.text((5, 60), "Packets Sent:", font=FONT, fill="white")
-        d.text((15, 75), str(packet_count), font=FONT_TITLE, fill="yellow")
-        d.text((5, 110), "OK=Stop | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 60), "Packets Sent:", font=FONT, fill=(242, 243, 244))
+        d.text((15, 75), str(packet_count), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 110), "OK=Stop | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -151,19 +151,19 @@ def handle_ip_input_logic(initial_ip):
     
     while running:
         # Draw the UI for IP input
-        img = Image.new("RGB", (128, 128), "black")
+        img = Image.new("RGB", (128, 128), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), "Enter Target IP", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), "Enter Target IP", font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
         
         # Display the current input
-        d.text((5, 40), f"IP: {input_ip}", font=FONT, fill="white")
+        d.text((5, 40), f"IP: {input_ip}", font=FONT, fill=(242, 243, 244))
         
         # Display the character selection
-        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill="yellow")
+        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill=(212, 172, 13))
         
-        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill="cyan")
-        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill="cyan")
+        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill=(171, 178, 185))
+        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         btn = None
@@ -215,19 +215,19 @@ def handle_port_input_logic(initial_port):
     
     while running:
         # Draw the UI for port input
-        img = Image.new("RGB", (128, 128), "black")
+        img = Image.new("RGB", (128, 128), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), "Enter Target Port", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), "Enter Target Port", font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
         
         # Display the current input
-        d.text((5, 40), f"Port: {input_port}", font=FONT, fill="white")
+        d.text((5, 40), f"Port: {input_port}", font=FONT, fill=(242, 243, 244))
         
         # Display the character selection
-        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill="yellow")
+        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill=(212, 172, 13))
         
-        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill="cyan")
-        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill="cyan")
+        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill=(171, 178, 185))
+        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         btn = None

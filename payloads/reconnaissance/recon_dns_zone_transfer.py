@@ -73,10 +73,10 @@ domain_input_cursor_pos = 0
 wifi_manager = WiFiManager()
 
 def draw_ui_interface_selection(interfaces, current_selection):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, iface in enumerate(interfaces):
@@ -84,7 +84,7 @@ def draw_ui_interface_selection(interfaces, current_selection):
         d.text((5, y_pos), iface, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def select_interface_menu():
@@ -125,7 +125,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def show_message(lines, color="lime"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40
@@ -138,34 +138,34 @@ def show_message(lines, color="lime"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "DNS Zone Transfer", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "DNS Zone Transfer", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if screen_state == "main":
         with ui_lock:
-            d.text((5, 25), f"Domain: {TARGET_DOMAIN[:16]}...", font=FONT, fill="white")
+            d.text((5, 25), f"Domain: {TARGET_DOMAIN[:16]}...", font=FONT, fill=(242, 243, 244))
             if "Press" in status_msg or "Finding" in status_msg or "Testing" in status_msg:
-                d.text((5, 45), status_msg, font=FONT, fill="yellow")
+                d.text((5, 45), status_msg, font=FONT, fill=(212, 172, 13))
             elif "SUCCESS" in status_msg:
-                d.text((5, 45), status_msg, font=FONT_TITLE, fill="lime")
-                d.text((5, 60), f"Saved {len(results)} records", font=FONT, fill="white")
+                d.text((5, 45), status_msg, font=FONT_TITLE, fill=(231, 76, 60))
+                d.text((5, 60), f"Saved {len(results)} records", font=FONT, fill=(242, 243, 244))
             else:
                 d.text((5, 45), status_msg, font=FONT_TITLE, fill="red")
 
-        d.text((5, 115), "OK=Start | KEY1=Edit Domain | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 115), "OK=Start | KEY1=Edit Domain | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "domain_input":
-        d.text((5, 30), "Enter Domain:", font=FONT, fill="white")
+        d.text((5, 30), "Enter Domain:", font=FONT, fill=(242, 243, 244))
         display_domain = list(current_domain_input)
         if domain_input_cursor_pos < len(display_domain):
             display_domain[domain_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_domain[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_domain[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     elif screen_state == "scanning":
-        d.text((5, 25), f"Domain: {TARGET_DOMAIN[:16]}...", font=FONT, fill="white")
-        d.text((5, 45), status_msg, font=FONT, fill="yellow")
-        d.text((5, 115), "KEY3=Stop", font=FONT, fill="cyan")
+        d.text((5, 25), f"Domain: {TARGET_DOMAIN[:16]}...", font=FONT, fill=(242, 243, 244))
+        d.text((5, 45), status_msg, font=FONT, fill=(212, 172, 13))
+        d.text((5, 115), "KEY3=Stop", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 

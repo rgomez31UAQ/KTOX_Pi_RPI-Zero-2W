@@ -91,7 +91,7 @@ def step(grid):
 
 
 def draw(lcd, grid, running, gen, alive, cx, cy):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
     # Header

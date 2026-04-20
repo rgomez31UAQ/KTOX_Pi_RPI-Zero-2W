@@ -198,7 +198,7 @@ def human_time(secs: int) -> str:
 
 def draw_buffer(lines: list[str], partial: str = ""):
     global LAST_IMAGE, LAST_DRAW, MARQ_IDX, MARQ_LAST
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     # Header bar (2 rows)
     elapsed = human_time(time.time() - START_TIME) if START_TIME else "00:00"
@@ -214,7 +214,7 @@ def draw_buffer(lines: list[str], partial: str = ""):
     else:
         s2 = status_text
     d.text((0, 0), header1.ljust(MONO_COLS)[:MONO_COLS], font=FONT_MONO, fill="#AAAAFF")
-    d.text((0, MONO_CHAR_H), s2.ljust(MONO_COLS)[:MONO_COLS], font=FONT_MONO, fill="#CCCCCC")
+    d.text((0, MONO_CHAR_H), s2.ljust(MONO_COLS)[:MONO_COLS], font=FONT_MONO, fill=(242, 243, 244))
     # Content lines beneath header
     visible_rows = MONO_ROWS - HEADER_ROWS
     visible = lines[-(visible_rows-1):] + [partial]
@@ -229,7 +229,7 @@ def draw_buffer(lines: list[str], partial: str = ""):
 def draw_message(lines, color="white"):
     if isinstance(lines, str):
         lines = [lines]
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = (HEIGHT - len(lines)*14)//2
     for ln in lines:
@@ -269,14 +269,14 @@ def open_settings_menu():
     idx = COLORS.index(TERM_COLOR) if TERM_COLOR in COLORS else 0
     last = 0.0
     while True:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((36, 6), "Settings", font=FONT_TITLE, fill="white")
-        d.line([(6, 22), (122, 22)], fill="#333", width=1)
-        d.text((10, 40), f"Font: {TERM_FONT_SIZE}px", font=FONT_TITLE, fill="white")
+        d.text((36, 6), "Settings", font=FONT_TITLE, fill=(242, 243, 244))
+        d.line([(6, 22), (122, 22)], fill=(34, 0, 0), width=1)
+        d.text((10, 40), f"Font: {TERM_FONT_SIZE}px", font=FONT_TITLE, fill=(242, 243, 244))
         d.text((10, 60), f"Color: {COLORS[idx]}", font=FONT_TITLE, fill=COLORS[idx])
-        d.text((8, 100), "UP/DOWN size  LEFT/RIGHT color", font=ImageFont.load_default(), fill="#888")
-        d.text((8, 112), "OK=Save  KEY3/LEFT=Back", font=ImageFont.load_default(), fill="#888")
+        d.text((8, 100), "UP/DOWN size  LEFT/RIGHT color", font=ImageFont.load_default(), fill=(113, 125, 126))
+        d.text((8, 112), "OK=Save  KEY3/LEFT=Back", font=ImageFont.load_default(), fill=(113, 125, 126))
         LCD.LCD_ShowImage(img, 0, 0)
         now = time.time()
         if GPIO.input(PINS['UP']) == 0 and now - last > 0.18:
@@ -445,21 +445,21 @@ if __name__ == '__main__':
         last = 0.0
         while True:
             # Draw menu
-            img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ImageDraw.Draw(img)
-            d.text((24, 6), "tiny_wifite", font=FONT_TITLE, fill="white")
-            d.line([(6, 22), (122, 22)], fill="#333", width=1)
+            d.text((24, 6), "tiny_wifite", font=FONT_TITLE, fill=(242, 243, 244))
+            d.line([(6, 22), (122, 22)], fill=(34, 0, 0), width=1)
             y = 32
             for i, iface in enumerate(options):
                 if i == sel:
                     d.rectangle([(8, y-2), (120, y+12)], fill="#003366")
-                    fill = "#FFFF00"
+                    fill = (212, 172, 13)
                 else:
-                    fill = "white"
+                    fill = (242, 243, 244)
                 d.text((14, y), iface, font=FONT_TITLE, fill=fill)
                 y += 18
-            d.text((8, 110), "UP/DOWN select  OK confirm  LEFT exit", font=ImageFont.load_default(), fill="#888")
-            d.text((8, 118), "KEY1=Settings", font=ImageFont.load_default(), fill="#888")
+            d.text((8, 110), "UP/DOWN select  OK confirm  LEFT exit", font=ImageFont.load_default(), fill=(113, 125, 126))
+            d.text((8, 118), "KEY1=Settings", font=ImageFont.load_default(), fill=(113, 125, 126))
             LCD.LCD_ShowImage(img, 0, 0)
             # Handle input
             now = time.time()
@@ -523,12 +523,12 @@ if __name__ == '__main__':
             val = 1
             last = 0.0
             while True:
-                img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                 d = ImageDraw.Draw(img)
-                d.text((14, 8), "Select target #", font=FONT_TITLE, fill="white")
-                d.text((14, 32), f"Value: {val}", font=FONT_TITLE, fill="yellow")
-                d.text((8, 100), "KEY1=-1 KEY2=+1  UP/DOWN=±5", font=FONT_MONO, fill="#888")
-                d.text((8, 112), "OK=Send  LEFT=Cancel", font=FONT_MONO, fill="#888")
+                d.text((14, 8), "Select target #", font=FONT_TITLE, fill=(242, 243, 244))
+                d.text((14, 32), f"Value: {val}", font=FONT_TITLE, fill=(212, 172, 13))
+                d.text((8, 100), "KEY1=-1 KEY2=+1  UP/DOWN=±5", font=FONT_MONO, fill=(113, 125, 126))
+                d.text((8, 112), "OK=Send  LEFT=Cancel", font=FONT_MONO, fill=(113, 125, 126))
                 LCD.LCD_ShowImage(img, 0, 0)
                 now = time.time()
                 if GPIO.input(PINS['KEY1']) == 0 and now-last>0.15:
@@ -558,13 +558,13 @@ if __name__ == '__main__':
 
         # KEY2 long-press quick help overlay
         def show_help():
-            img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ImageDraw.Draw(img)
-            d.text((8, 8), "tiny_wifite help", font=FONT_TITLE, fill="white")
+            d.text((8, 8), "tiny_wifite help", font=FONT_TITLE, fill=(242, 243, 244))
             y=28
             lines=["OK/RIGHT: Enter","LEFT/KEY3: Stop (^C)","UP/DOWN: Navigate","KEY1: '1'  KEY2: '2'","KEY2 (hold): Help","KEY1 (hold): Settings"]
             for ln in lines:
-                d.text((8,y), ln, font=FONT_MONO, fill="cyan"); y+=MONO_CHAR_H+2
+                d.text((8,y), ln, font=FONT_MONO, fill=(171, 178, 185)); y+=MONO_CHAR_H+2
             LCD.LCD_ShowImage(img,0,0)
             # wait for any release and tap
             timeout=time.time()+5
@@ -589,10 +589,10 @@ if __name__ == '__main__':
             except Exception:
                 pass
             # Display short overlay while waiting for targets prompt
-            img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ImageDraw.Draw(img)
-            d.text((8, 8), "Stopping scan...", font=FONT_TITLE, fill="yellow")
-            d.text((8, 28), "Opening selector", font=FONT_MONO, fill="#888")
+            d.text((8, 8), "Stopping scan...", font=FONT_TITLE, fill=(212, 172, 13))
+            d.text((8, 28), "Opening selector", font=FONT_MONO, fill=(113, 125, 126))
             LCD.LCD_ShowImage(img, 0, 0)
             t0 = time.time()
             while time.time() - t0 < 1.5:
@@ -635,9 +635,9 @@ if __name__ == '__main__':
                 else:
                     # Short tap: temporary raw overlay of last lines
                     IN_OVERLAY = True
-                    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                     d = ImageDraw.Draw(img)
-                    d.text((8, 6), "Raw tail", font=FONT_TITLE, fill="white")
+                    d.text((8, 6), "Raw tail", font=FONT_TITLE, fill=(242, 243, 244))
                     tail = (scrollback + ([current_line] if current_line else []))[-10:]
                     y = 24
                     for ln in tail:
@@ -658,10 +658,10 @@ if __name__ == '__main__':
                     time.sleep(0.05)
                 if time.time()-t1 >= 1.0:
                     # Confirm overlay
-                    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                     d = ImageDraw.Draw(img)
-                    d.text((12, 8), "Stop wifite?", font=FONT_TITLE, fill="white")
-                    d.text((10, 40), "OK=Yes  LEFT=No", font=FONT_MONO, fill="#888")
+                    d.text((12, 8), "Stop wifite?", font=FONT_TITLE, fill=(242, 243, 244))
+                    d.text((10, 40), "OK=Yes  LEFT=No", font=FONT_MONO, fill=(113, 125, 126))
                     LCD.LCD_ShowImage(img, 0, 0)
                     # wait choice
                     choice = None
@@ -685,10 +685,10 @@ if __name__ == '__main__':
         try:
             elapsed_child = time.time() - child_started
             if elapsed_child < 2.0:
-                img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                 d = ImageDraw.Draw(img)
                 d.text((10, 8), "wifite exited quickly", font=FONT_TITLE, fill="red")
-                d.text((8, 30), "Check install/iface/perms", font=FONT_MONO, fill="#888")
+                d.text((8, 30), "Check install/iface/perms", font=FONT_MONO, fill=(113, 125, 126))
                 # show last few lines
                 tail = (scrollback + ([current_line] if current_line else []))[-6:]
                 y = 50

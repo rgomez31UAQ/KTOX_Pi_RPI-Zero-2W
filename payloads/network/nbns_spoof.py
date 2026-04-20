@@ -288,9 +288,9 @@ def _export_data():
 # ---------------------------------------------------------------------------
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
-    draw.text((2, 2), "NBNS SPOOF", fill="CYAN", font=font)
+    draw.text((2, 2), "NBNS SPOOF", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -306,7 +306,7 @@ def _draw_screen():
     ind_color = "GREEN" if active else "RED"
     draw.text((90, 2), indicator, fill=ind_color, font=font)
 
-    draw.text((2, 14), f"Q:{qc} R:{rs} U:{uh}", fill="WHITE", font=font)
+    draw.text((2, 14), f"Q:{qc} R:{rs} U:{uh}", fill=(242, 243, 244), font=font)
 
     ar_label = "AUTO" if ar else "MANUAL"
     ar_color = "GREEN" if ar else "YELLOW"
@@ -322,9 +322,9 @@ def _draw_screen():
         y += 14
 
     if not q_list:
-        draw.text((2, 56), "Waiting for queries", fill="GRAY", font=font)
+        draw.text((2, 56), "Waiting for queries", fill=(86, 101, 115), font=font)
 
-    draw.text((2, 116), "OK=go K1=auto K3=exit", fill="GRAY", font=font)
+    draw.text((2, 116), "OK=go K1=auto K3=exit", fill=(86, 101, 115), font=font)
     LCD.LCD_ShowImage(img, 0, 0)
 
 
@@ -337,7 +337,7 @@ def main():
     global status_msg, my_ip
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -389,9 +389,9 @@ def main():
         app_running = False
         spoof_active = False
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "NBNS Spoof stopped", fill="YELLOW", font=font)
+            d.text((10, 50), "NBNS Spoof stopped", fill=(212, 172, 13), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

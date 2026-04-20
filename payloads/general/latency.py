@@ -192,7 +192,7 @@ for pin in PINS.values():
 LCD = LCD_1in44.LCD()
 LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
 
-canvas = Image.new("RGB", (WIDTH, HEIGHT), "black")
+canvas = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
 draw = ImageDraw.Draw(canvas)
 def _font(size: int):
     try:
@@ -232,7 +232,7 @@ def draw_targets(targets: list[Target]) -> None:
         last = t.last_rtt()
         jit = t.jitter_ms()
         loss = t.loss_pct()
-        draw.text((2, y0), f"{t.label}", font=font_medium, fill="#FFFFFF")
+        draw.text((2, y0), f"{t.label}", font=font_medium, fill=(242, 243, 244))
         rtt_text = f"{last:.0f}ms" if last is not None else "--"
         jit_text = f"J{jit:.0f}" if jit is not None else "J--"
         loss_text = f"L{loss:.0f}%" if loss > 0 else "L0%"
@@ -254,7 +254,7 @@ def draw_targets(targets: list[Target]) -> None:
             x1 = x0 + max(1, px_w - 1)
             if v is None:
                 # draw a faint dot for loss
-                draw.line((x0, base_y, x1, base_y), fill="#333333")
+                draw.line((x0, base_y, x1, base_y), fill=(34, 0, 0))
             else:
                 h = int((v / vmax) * (row_h - 12))
                 h = max(1, min(h, row_h - 12))

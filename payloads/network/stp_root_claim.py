@@ -273,14 +273,14 @@ def _attack_thread(iface_name, src_mac):
 
 def _draw_frame(lcd, font_obj):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     mode_label = "RSTP" if rstp_mode else "STP"
     d.text((2, 1), f"STP ROOT ({mode_label})", font=font_obj, fill="#FF3300")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if attacking else "#444")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if attacking else "#444")
 
     with lock:
         msg = status_msg
@@ -293,33 +293,33 @@ def _draw_frame(lcd, font_obj):
 
     if showing_sw:
         # Show detected switches view
-        d.text((2, 16), f"Detected: {len(switches)}", font=font_obj, fill="#FFAA00")
+        d.text((2, 16), f"Detected: {len(switches)}", font=font_obj, fill=(212, 172, 13))
         visible = switches[scroll:scroll + 7]
         for i, sw in enumerate(visible):
             y = 28 + i * ROW_H
             line = f"{sw['mac'][-8:]} P:{sw['priority']}"
-            d.text((2, y), line, font=font_obj, fill="#CCCCCC")
+            d.text((2, y), line, font=font_obj, fill=(242, 243, 244))
     else:
         # Normal view
-        d.text((2, 16), "Current Root:", font=font_obj, fill="#666")
+        d.text((2, 16), "Current Root:", font=font_obj, fill=(86, 101, 115))
         if r_mac:
-            d.text((2, 28), f"Pri: {r_pri}", font=font_obj, fill="#FFAA00")
-            d.text((2, 38), f"MAC: {r_mac[-8:]}", font=font_obj, fill="#AAAAAA")
-            d.text((2, 48), f"Cost: {r_cost}", font=font_obj, fill="#888")
+            d.text((2, 28), f"Pri: {r_pri}", font=font_obj, fill=(212, 172, 13))
+            d.text((2, 38), f"MAC: {r_mac[-8:]}", font=font_obj, fill=(171, 178, 185))
+            d.text((2, 48), f"Cost: {r_cost}", font=font_obj, fill=(113, 125, 126))
         else:
-            d.text((2, 28), "Sniffing...", font=font_obj, fill="#888")
+            d.text((2, 28), "Sniffing...", font=font_obj, fill=(113, 125, 126))
 
-        d.text((2, 62), "Our Attack:", font=font_obj, fill="#666")
-        d.text((2, 74), "Priority: 0 (lowest)", font=font_obj, fill="#00FF88")
-        d.text((2, 84), f"BPDUs sent: {sent}", font=font_obj, fill="#AAAAAA")
-        d.text((2, 96), msg[:24], font=font_obj, fill="#888")
+        d.text((2, 62), "Our Attack:", font=font_obj, fill=(86, 101, 115))
+        d.text((2, 74), "Priority: 0 (lowest)", font=font_obj, fill=(30, 132, 73))
+        d.text((2, 84), f"BPDUs sent: {sent}", font=font_obj, fill=(171, 178, 185))
+        d.text((2, 96), msg[:24], font=font_obj, fill=(113, 125, 126))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if attacking:
-        d.text((2, 117), "OK:Stop  K3:Exit", font=font_obj, fill="#888")
+        d.text((2, 117), "OK:Stop  K3:Exit", font=font_obj, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Go K1:Mode K3:Quit", font=font_obj, fill="#888")
+        d.text((2, 117), "OK:Go K1:Mode K3:Quit", font=font_obj, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -341,10 +341,10 @@ def main():
     font_obj = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font_obj, fill="#FF0000")
-        d.text((4, 65), "pip install scapy", font=font_obj, fill="#888")
+        d.text((4, 50), "scapy not found!", font=font_obj, fill=(231, 76, 60))
+        d.text((4, 65), "pip install scapy", font=font_obj, fill=(113, 125, 126))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

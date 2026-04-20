@@ -75,7 +75,7 @@ def init_hw():
         LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
         LCD.LCD_Clear()
 
-        _image = Image.new("RGB", (W, H), "black")
+        _image = Image.new("RGB", (W, H), (10, 0, 0))
         _draw = ImageDraw.Draw(_image)
 
         for path in ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -100,9 +100,9 @@ def push():
 
 # ── Drawing with Dark Red Theme ──────────────────────────────────────────────
 def draw_menu():
-    _draw.rectangle((0, 0, W, H), fill="black")
+    _draw.rectangle((0, 0, W, H), fill=(10, 0, 0))
     _draw.rectangle((0, 0, W, 16), fill=(80, 0, 0))          # Dark red header
-    _draw.text((3, 2), "KTOx OSINT", font=_font_sm, fill="#FF4444")  # Bright red
+    _draw.text((3, 2), "KTOx OSINT", font=_font_sm, fill=(231, 76, 60))  # Bright red
 
     start = _scroll_offset
     for i in range(VISIBLE_LINES):
@@ -114,16 +114,16 @@ def draw_menu():
 
     # Scroll indicator
     if len(MENU) > VISIBLE_LINES:
-        _draw.text((118, 110), "▼", font=_font_sm, fill="#FF4444" if _scroll_offset < len(MENU)-VISIBLE_LINES else "#444444")
+        _draw.text((118, 110), "▼", font=_font_sm, fill=(231, 76, 60) if _scroll_offset < len(MENU)-VISIBLE_LINES else "#444444")
 
     _draw.rectangle((0, H-11, W, H), fill="#220000")
     _draw.text((3, H-10), "UP/DN scroll  K1=select", font=_font_sm, fill="#FF8888")
     push()
 
 def draw_result(lines, title="Result"):
-    _draw.rectangle((0, 0, W, H), fill="black")
+    _draw.rectangle((0, 0, W, H), fill=(10, 0, 0))
     _draw.rectangle((0, 0, W, 16), fill=(80, 0, 0))
-    _draw.text((3, 2), title[:20], font=_font_sm, fill="#FF4444")
+    _draw.text((3, 2), title[:20], font=_font_sm, fill=(231, 76, 60))
 
     y = 19
     for line in lines[:9]:
@@ -139,9 +139,9 @@ def on_screen_keyboard(prompt="Enter:"):
     input_text = ""
     char_idx = 0
     while RUNNING:
-        _draw.rectangle((0,0,W,H), fill="black")
+        _draw.rectangle((0,0,W,H), fill=(10, 0, 0))
         _draw.rectangle((0,0,W,16), fill=(80,0,0))
-        _draw.text((3,2), prompt[:20], font=_font_sm, fill="#FF4444")
+        _draw.text((3,2), prompt[:20], font=_font_sm, fill=(231, 76, 60))
 
         shown = input_text[-18:] if len(input_text) > 18 else input_text
         _draw.rectangle((0,18,W,34), fill="#220000")

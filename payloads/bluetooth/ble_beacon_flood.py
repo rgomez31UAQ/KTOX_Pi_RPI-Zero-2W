@@ -324,12 +324,12 @@ def export_loot():
 
 def draw_screen():
     """Render the current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "BLE FLOOD", font=font, fill="#FF4444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "BLE FLOOD", font=font, fill=(231, 76, 60))
     with lock:
         active = flooding
         sent = beacons_sent
@@ -345,22 +345,22 @@ def draw_screen():
 
     # Mode and count
     y = 18
-    d.text((2, y), f"Mode: {mode}", font=font, fill="white")
+    d.text((2, y), f"Mode: {mode}", font=font, fill=(242, 243, 244))
     y += 14
-    d.text((2, y), f"Sent: {sent}", font=font, fill="#00FF00")
+    d.text((2, y), f"Sent: {sent}", font=font, fill=(30, 132, 73))
     y += 14
-    d.text((2, y), f"UUID: {uuid_short}", font=font, fill="#888")
+    d.text((2, y), f"UUID: {uuid_short}", font=font, fill=(113, 125, 126))
     y += 12
-    d.text((2, y), f"Maj: {major}  Min: {minor}", font=font, fill="#888")
+    d.text((2, y), f"Maj: {major}  Min: {minor}", font=font, fill=(113, 125, 126))
     y += 12
-    d.text((2, y), f"URL: {url[:18]}", font=font, fill="#888")
+    d.text((2, y), f"URL: {url[:18]}", font=font, fill=(113, 125, 126))
 
     if err:
         y += 14
-        d.text((2, y), f"Err: {err[:20]}", font=font, fill="#FF4444")
+        d.text((2, y), f"Err: {err[:20]}", font=font, fill=(231, 76, 60))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     status = "OK:Stop" if active else "OK:Start"
     d.text((2, 117), f"{status} K1:Mode K3:Exit", font=font, fill="#AAA")
 
@@ -375,15 +375,15 @@ def main():
     global mode_idx
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 20), "BLE BEACON FLOOD", font=font, fill="#FF4444")
-    d.text((4, 40), "Fake iBeacon &", font=font, fill="#888")
-    d.text((4, 52), "Eddystone-URL adverts", font=font, fill="#888")
-    d.text((4, 72), "OK    Start / Stop", font=font, fill="#666")
-    d.text((4, 84), "KEY1  Cycle mode", font=font, fill="#666")
-    d.text((4, 96), "KEY2  Randomise", font=font, fill="#666")
-    d.text((4, 108), "KEY3  Exit", font=font, fill="#666")
+    d.text((8, 20), "BLE BEACON FLOOD", font=font, fill=(231, 76, 60))
+    d.text((4, 40), "Fake iBeacon &", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "Eddystone-URL adverts", font=font, fill=(113, 125, 126))
+    d.text((4, 72), "OK    Start / Stop", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "KEY1  Cycle mode", font=font, fill=(86, 101, 115))
+    d.text((4, 96), "KEY2  Randomise", font=font, fill=(86, 101, 115))
+    d.text((4, 108), "KEY3  Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 

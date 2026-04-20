@@ -200,7 +200,7 @@ def draw_buffer(lines: list, partial: str = ""):
     visible = lines[-(ROWS - 1):] + [partial]
     y = 0
     for line in visible:
-        d.text((0, y), line[:COLS], font=font, fill="#FF4444")
+        d.text((0, y), line[:COLS], font=font, fill=(231, 76, 60))
         y += CHAR_H
     LCD.LCD_ShowImage(img, 0, 0)
 

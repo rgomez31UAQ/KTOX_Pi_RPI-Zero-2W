@@ -327,16 +327,16 @@ def _fmt_elapsed(secs):
 
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#FF6600")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(231, 76, 60))
     with lock:
         active = phase == "cracking"
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#444")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#444")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), text[:24], font=font, fill="#888")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), text[:24], font=font, fill=(113, 125, 126))
 
 
 # ---------------------------------------------------------------------------
@@ -344,7 +344,7 @@ def _draw_footer(d, text):
 # ---------------------------------------------------------------------------
 
 def _draw_files_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "NTLM CRACKER")
 
@@ -354,11 +354,11 @@ def _draw_files_view():
         sc = scroll_pos
         sel = selected_idx
 
-    d.text((2, 16), msg[:24], font=font, fill="#AAAAAA")
-    d.text((2, 28), f"Files: {len(files)}", font=font, fill="#888")
+    d.text((2, 16), msg[:24], font=font, fill=(171, 178, 185))
+    d.text((2, 28), f"Files: {len(files)}", font=font, fill=(113, 125, 126))
 
     if not files:
-        d.text((8, 55), "No hash files found", font=font, fill="#666")
+        d.text((8, 55), "No hash files found", font=font, fill=(86, 101, 115))
     else:
         visible = files[sc:sc + ROWS_VISIBLE]
         for i, hf in enumerate(visible):
@@ -368,7 +368,7 @@ def _draw_files_view():
             name = hf["name"][:14]
             color = "#00FF00" if idx == sel else "#CCCCCC"
             d.text((2, y), f"{prefix}{name}", font=font, fill=color)
-            d.text((104, y), f"{hf['count']}", font=font, fill="#888")
+            d.text((104, y), f"{hf['count']}", font=font, fill=(113, 125, 126))
 
     _draw_footer(d, "OK:Sel K1:Show K3:Quit")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -379,7 +379,7 @@ def _draw_files_view():
 # ---------------------------------------------------------------------------
 
 def _draw_modes_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "NTLM CRACKER")
 
@@ -391,20 +391,20 @@ def _draw_modes_view():
     # Show selected file info
     if files:
         sel_file = files[min(file_sel, len(files) - 1)]
-        d.text((2, 16), f"File: {sel_file['name'][:20]}", font=font, fill="#FFAA00")
+        d.text((2, 16), f"File: {sel_file['name'][:20]}", font=font, fill=(212, 172, 13))
         d.text((2, 28), f"Format: {sel_file['fmt']} ({sel_file['count']} hashes)",
-               font=font, fill="#888")
+               font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 16), "Select attack mode:", font=font, fill="#FFAA00")
+        d.text((2, 16), "Select attack mode:", font=font, fill=(212, 172, 13))
 
-    d.text((2, 42), "Attack mode:", font=font, fill="#AAAAAA")
+    d.text((2, 42), "Attack mode:", font=font, fill=(171, 178, 185))
 
     for i, mode in enumerate(ATTACK_MODES):
         y = 54 + i * ROW_H
         prefix = ">" if i == sel else " "
         color = "#00FF00" if i == sel else "#CCCCCC"
         d.text((2, y), f"{prefix}{mode['name']}", font=font, fill=color)
-        d.text((72, y), mode["desc"][:10], font=font, fill="#666")
+        d.text((72, y), mode["desc"][:10], font=font, fill=(86, 101, 115))
 
     _draw_footer(d, "OK:Start UP/DN:Sel K3:X")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -415,7 +415,7 @@ def _draw_modes_view():
 # ---------------------------------------------------------------------------
 
 def _draw_cracking_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "NTLM CRACKER")
 
@@ -430,14 +430,14 @@ def _draw_cracking_view():
     color = "#00FF00" if running else "#FFAA00"
     d.text((2, 18), msg[:22], font=font, fill=color)
 
-    d.text((2, 34), f"Elapsed: {_fmt_elapsed(elapsed)}", font=font, fill="white")
-    d.text((2, 48), f"Cracked: {count}", font=font, fill="#FFAA00")
+    d.text((2, 34), f"Elapsed: {_fmt_elapsed(elapsed)}", font=font, fill=(242, 243, 244))
+    d.text((2, 48), f"Cracked: {count}", font=font, fill=(212, 172, 13))
 
     if last:
-        d.text((2, 66), "Last found:", font=font, fill="#888")
-        d.text((2, 78), last[:22], font=font, fill="#00FF00")
+        d.text((2, 66), "Last found:", font=font, fill=(113, 125, 126))
+        d.text((2, 78), last[:22], font=font, fill=(30, 132, 73))
     else:
-        d.text((2, 66), "Waiting for results...", font=font, fill="#666")
+        d.text((2, 66), "Waiting for results...", font=font, fill=(86, 101, 115))
 
     if running:
         _draw_footer(d, "K1:Show K3:Exit")
@@ -452,7 +452,7 @@ def _draw_cracking_view():
 # ---------------------------------------------------------------------------
 
 def _draw_results_view(show_lines):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "CRACKED PASSWORDS")
 
@@ -460,13 +460,13 @@ def _draw_results_view(show_lines):
         sc = scroll_pos
 
     if not show_lines:
-        d.text((8, 50), "No cracked passwords", font=font, fill="#666")
+        d.text((8, 50), "No cracked passwords", font=font, fill=(86, 101, 115))
     else:
-        d.text((2, 16), f"Total: {len(show_lines)}", font=font, fill="#FFAA00")
+        d.text((2, 16), f"Total: {len(show_lines)}", font=font, fill=(212, 172, 13))
         visible = show_lines[sc:sc + ROWS_VISIBLE]
         for i, line in enumerate(visible):
             y = 30 + i * ROW_H
-            d.text((2, y), line[:22], font=font, fill="#00FF00")
+            d.text((2, y), line[:22], font=font, fill=(30, 132, 73))
 
     _draw_footer(d, "UP/DN:Scroll K3:Back")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -481,11 +481,11 @@ def main():
     global status_msg, hash_files
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 16), "NTLM CRACKER", font=font, fill="#FF6600")
-    d.text((4, 36), "John the Ripper", font=font, fill="#888")
-    d.text((4, 52), "Scanning for hashes...", font=font, fill="#666")
+    d.text((10, 16), "NTLM CRACKER", font=font, fill=(231, 76, 60))
+    d.text((4, 36), "John the Ripper", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "Scanning for hashes...", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
 
     # Scan for hash files

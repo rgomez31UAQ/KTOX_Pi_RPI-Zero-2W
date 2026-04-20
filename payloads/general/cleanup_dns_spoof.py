@@ -64,7 +64,7 @@ def draw(lines, color="lime"):
     if isinstance(lines, str):
         lines = [lines]
     
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
     y_offset = (HEIGHT - len(lines) * 15) // 2 # Center vertically

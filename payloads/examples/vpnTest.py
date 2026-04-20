@@ -32,7 +32,7 @@ def init_hw():
         LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
         LCD.LCD_Clear()
 
-        _image = Image.new("RGB", (128, 128), "black")
+        _image = Image.new("RGB", (128, 128), (10, 0, 0))
         _draw = ImageDraw.Draw(_image)
         _font_sm = ImageFont.load_default()  # safe fallback
         try:
@@ -50,10 +50,10 @@ def push():
 def draw(lines, header="KTOX VPN"):
     _draw.rectangle((0,0,128,128), fill="#0A0000")
     _draw.rectangle((0,0,128,18), fill="#8B0000")
-    _draw.text((5,3), header, fill="#FF3333")
+    _draw.text((5,3), header, fill=(231, 76, 60))
     y = 25
     for line in lines:
-        _draw.text((5, y), line[:20], fill="#FFBBBB")
+        _draw.text((5, y), line[:20], fill=(171, 178, 185))
         y += 12
     _draw.rectangle((0,117,128,128), fill="#220000")
     _draw.text((5,118), "K1=Toggle  K3=Exit", fill="#FF7777")

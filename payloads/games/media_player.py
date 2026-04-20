@@ -33,10 +33,10 @@ def draw_screen(lines, title="VIDEO", title_color="#8B0000"):
     img = Image.new("RGB", (W,H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill=title_color)
-    d.text((4,3), title[:20], font=font, fill="#FF3333")
+    d.text((4,3), title[:20], font=font, fill=(231, 76, 60))
     y = 20
     for line in lines[:6]:
-        d.text((4,y), line[:23], font=font, fill="#FFBBBB")
+        d.text((4,y), line[:23], font=font, fill=(171, 178, 185))
         y += 12
     d.rectangle((0,H-12,W,H), fill="#220000")
     d.text((4,H-10), "UP/DN OK LEFT K2=BT K3=exit", font=font, fill="#FF7777")

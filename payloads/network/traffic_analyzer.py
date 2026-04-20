@@ -278,11 +278,11 @@ def _fmt_bytes(b):
 
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
     view = VIEWS[view_idx]
-    draw.text((2, 2), "TRAFFIC", fill="CYAN", font=font)
+    draw.text((2, 2), "TRAFFIC", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -296,13 +296,13 @@ def _draw_screen():
         top_c = sorted(conn_bytes.items(), key=lambda x: x[1], reverse=True)[:20]
         d_log = list(dns_log)
 
-    draw.text((60, 2), f"[{view[:4]}]", fill="YELLOW", font=font)
+    draw.text((60, 2), f"[{view[:4]}]", fill=(212, 172, 13), font=font)
     indicator = "REC" if cap else "---"
     draw.text((100, 2), indicator, fill="RED" if cap else "GRAY", font=font)
 
     if view == "dashboard":
-        draw.text((2, 16), f"PPS: {pps:<6} BPS: {_fmt_bytes(bps)}", fill="GREEN", font=font)
-        draw.text((2, 28), f"Pkts: {tp}  Bytes: {_fmt_bytes(tb)}", fill="WHITE", font=font)
+        draw.text((2, 16), f"PPS: {pps:<6} BPS: {_fmt_bytes(bps)}", fill=(30, 132, 73), font=font)
+        draw.text((2, 28), f"Pkts: {tp}  Bytes: {_fmt_bytes(tb)}", fill=(242, 243, 244), font=font)
 
         # Protocol bars
         y = 42
@@ -315,23 +315,23 @@ def _draw_screen():
             pct = int(cnt * 60 / max(tp, 1))
             draw.text((2, y), f"{name:<5}", fill=c, font=font)
             draw.rectangle((42, y + 2, 42 + min(pct, 80), y + 10), fill=c)
-            draw.text((105, y), str(cnt)[:5], fill="GRAY", font=font)
+            draw.text((105, y), str(cnt)[:5], fill=(86, 101, 115), font=font)
             y += 14
 
     elif view == "connections":
-        draw.text((2, 16), st[:22], fill="WHITE", font=font)
+        draw.text((2, 16), st[:22], fill=(242, 243, 244), font=font)
         y = 28
         for key, bcount in top_c[sp:sp + ROWS_VISIBLE]:
             src_short = key[0].split(".")[-1]
             dst_short = key[2].split(".")[-1]
             line = f"{src_short}:{key[1]}->{dst_short}:{key[3]} {_fmt_bytes(bcount)}"
-            draw.text((2, y), line[:22], fill="WHITE", font=font)
+            draw.text((2, y), line[:22], fill=(242, 243, 244), font=font)
             y += 14
         if not top_c:
-            draw.text((2, 56), "No connections", fill="GRAY", font=font)
+            draw.text((2, 56), "No connections", fill=(86, 101, 115), font=font)
 
     elif view == "dns":
-        draw.text((2, 16), f"DNS queries: {len(d_log)}", fill="WHITE", font=font)
+        draw.text((2, 16), f"DNS queries: {len(d_log)}", fill=(242, 243, 244), font=font)
         y = 28
         visible = d_log[-(sp + ROWS_VISIBLE):][-ROWS_VISIBLE:]
         for entry in visible:
@@ -339,12 +339,12 @@ def _draw_screen():
             # Shorten domain
             parts = q.split(".")
             short = ".".join(parts[-2:]) if len(parts) > 2 else q
-            draw.text((2, y), f"{entry['ts'][3:]} {short}"[:22], fill="CYAN", font=font)
+            draw.text((2, y), f"{entry['ts'][3:]} {short}"[:22], fill=(171, 178, 185), font=font)
             y += 14
         if not d_log:
-            draw.text((2, 56), "No DNS queries", fill="GRAY", font=font)
+            draw.text((2, 56), "No DNS queries", fill=(86, 101, 115), font=font)
 
-    draw.text((2, 116), "L/R=view K2=exp K3=ex", fill="GRAY", font=font)
+    draw.text((2, 116), "L/R=view K2=exp K3=ex", fill=(86, 101, 115), font=font)
     LCD.LCD_ShowImage(img, 0, 0)
 
 
@@ -357,7 +357,7 @@ def main():
     global total_packets, total_bytes
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -428,9 +428,9 @@ def main():
         app_running = False
         capture_running = False
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "Analyzer stopped", fill="YELLOW", font=font)
+            d.text((10, 50), "Analyzer stopped", fill=(212, 172, 13), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

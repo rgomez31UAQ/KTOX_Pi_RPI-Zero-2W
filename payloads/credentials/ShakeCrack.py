@@ -84,11 +84,11 @@ def browse_file(start_path="/", extensions=None):
             return []
 
     def draw(entries, sel, sc, path):
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ImageDraw.Draw(img)
         d.rectangle((0,0,127,16), fill="#004466")
         header = path if len(path) < 20 else "..." + path[-17:]
-        d.text((2,2), header[:20], font=font_sm, fill="cyan")
+        d.text((2,2), header[:20], font=font_sm, fill=(171, 178, 185))
         y = 20
         for i in range(rows):
             idx = sc + i
@@ -105,7 +105,7 @@ def browse_file(start_path="/", extensions=None):
                 name = "/" + name
             d.text((4, y), name, font=font_sm, fill=color)
             y += 11
-        d.rectangle((0, HEIGHT-12, WIDTH, HEIGHT), fill="#111")
+        d.rectangle((0, HEIGHT-12, WIDTH, HEIGHT), fill=(10, 0, 0))
         d.text((2, HEIGHT-10), "UP/DOWN OK=sel K3=back", font=font_sm, fill="#AAA")
         LCD.LCD_ShowImage(img, 0, 0)
 
@@ -120,10 +120,10 @@ def browse_file(start_path="/", extensions=None):
     while True:
         entries = get_entries(current_path)
         if not entries:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ImageDraw.Draw(img)
             d.text((4,50), "Empty folder", font=font_sm, fill="red")
-            d.text((4,70), "KEY3 to go back", font=font_sm, fill="gray")
+            d.text((4,70), "KEY3 to go back", font=font_sm, fill=(86, 101, 115))
             LCD.LCD_ShowImage(img, 0, 0)
             while True:
                 btn = wait_button()
@@ -337,13 +337,13 @@ def draw_main():
     img = Image.new("RGB", (WIDTH, HEIGHT), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,127,17), fill="#8B0000")
-    d.text((4,3), "WPA CRACKER", font=font_sm, fill="#FF3333")
-    d.text((4,20), f"File: {os.path.basename(selected_file) if selected_file else 'None'}", font=font_sm, fill="#FFBBBB")
-    d.text((4,32), f"Type: {file_type if file_type else '-'}", font=font_sm, fill="#FFBBBB")
-    d.text((4,44), f"Wordlist: {os.path.basename(wordlist_path) if wordlist_path else 'None'}", font=font_sm, fill="#FFBBBB")
-    d.text((4,56), f"Status: {status}", font=font_sm, fill="#FFBBBB")
+    d.text((4,3), "WPA CRACKER", font=font_sm, fill=(231, 76, 60))
+    d.text((4,20), f"File: {os.path.basename(selected_file) if selected_file else 'None'}", font=font_sm, fill=(171, 178, 185))
+    d.text((4,32), f"Type: {file_type if file_type else '-'}", font=font_sm, fill=(171, 178, 185))
+    d.text((4,44), f"Wordlist: {os.path.basename(wordlist_path) if wordlist_path else 'None'}", font=font_sm, fill=(171, 178, 185))
+    d.text((4,56), f"Status: {status}", font=font_sm, fill=(171, 178, 185))
     if cracking:
-        d.text((4,68), f"Keys: {keys_tested}  Time: {elapsed}s", font=font_sm, fill="#AAAAAA")
+        d.text((4,68), f"Keys: {keys_tested}  Time: {elapsed}s", font=font_sm, fill=(171, 178, 185))
     if result:
         d.text((4,84), f"KEY: {result[:16]}", font=font_sm, fill="#88FF88")
     d.rectangle((0, HEIGHT-12, WIDTH, HEIGHT), fill="#220000")
@@ -356,7 +356,7 @@ def draw_wordlist_menu(wl_list, sel_idx):
     img = Image.new("RGB", (WIDTH, HEIGHT), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,127,17), fill="#8B0000")
-    d.text((4,3), "SELECT WORDLIST", font=font_sm, fill="#FF3333")
+    d.text((4,3), "SELECT WORDLIST", font=font_sm, fill=(231, 76, 60))
     y = 24
     for i, (name, _) in enumerate(wl_list):
         color = "#FF5555" if i == sel_idx else "#FFAAAA"

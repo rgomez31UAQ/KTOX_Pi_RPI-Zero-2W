@@ -54,10 +54,10 @@ def draw_screen(lines, title="BT AUDIO", title_color="#8B0000"):
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill=title_color)
-    d.text((4,3), title[:20], font=f9, fill="#FF3333")
+    d.text((4,3), title[:20], font=f9, fill=(231, 76, 60))
     y = 20
     for line in lines[:7]:
-        d.text((4,y), line[:23], font=f9, fill="#FFBBBB")
+        d.text((4,y), line[:23], font=f9, fill=(171, 178, 185))
         y += 12
     d.rectangle((0,H-12,W,H), fill="#220000")
     d.text((4,H-10), "UP/DN OK K2=scan K3=exit", font=f9, fill="#FF7777")

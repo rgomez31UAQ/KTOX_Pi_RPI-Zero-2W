@@ -1023,7 +1023,7 @@ def main():
     try:
         while True:
             now = time.time()
-            img = Image.new("RGB", (128,128), "black")
+            img = Image.new("RGB", (128,128), (10, 0, 0))
             draw = ImageDraw.Draw(img)
 
             if show_qr:
@@ -1038,9 +1038,9 @@ def main():
                     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",9)
                 except:
                     font = ImageFont.load_default()
-                draw.text((4,3), "KTOxFLIX", fill="black", font=font)
-                draw.text((4,30), f"IP: {ip}", fill="white", font=font)
-                draw.text((4,50), "PORT 80: LIB", fill="cyan", font=font)
+                draw.text((4,3), "KTOxFLIX", fill=(10, 0, 0), font=font)
+                draw.text((4,30), f"IP: {ip}", fill=(242, 243, 244), font=font)
+                draw.text((4,50), "PORT 80: LIB", fill=(171, 178, 185), font=font)
                 draw.text((4,65), "PORT 8888: UP", fill="red", font=font)
                 draw.text((4,113), "K1:QR  K3:EXIT", fill=(150,150,150), font=font)
 

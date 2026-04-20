@@ -214,11 +214,11 @@ def disable_monitor_mode(iface):
     run_cmd("systemctl restart NetworkManager")
 
 def show_message(msg, sub=""):
-    img = Image.new("RGB", (W, H), "black")
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     draw = ImageDraw.Draw(img)
-    draw.text((10, 50), msg, font=FONT_MD, fill="#00FF00")
+    draw.text((10, 50), msg, font=FONT_MD, fill=(30, 132, 73))
     if sub:
-        draw.text((4, 65), sub, font=FONT_SM, fill="#888")
+        draw.text((4, 65), sub, font=FONT_SM, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(2)
 
@@ -405,20 +405,20 @@ def export_loot():
 # Drawing helpers
 # ----------------------------------------------------------------------
 def draw_header(draw, active):
-    draw.rectangle((0, 0, W-1, 13), fill="#111")
-    draw.text((2, 1), "FLOCK RADAR", font=FONT_MD, fill="#FF6600")
-    draw.ellipse((W-12, 2, W-4, 10), fill="#00FF00" if active else "#FF0000")
+    draw.rectangle((0, 0, W-1, 13), fill=(10, 0, 0))
+    draw.text((2, 1), "FLOCK RADAR", font=FONT_MD, fill=(231, 76, 60))
+    draw.ellipse((W-12, 2, W-4, 10), fill=(30, 132, 73) if active else "#FF0000")
 
 def draw_footer(draw, text):
-    draw.rectangle((0, H-12, W-1, H-1), fill="#111")
+    draw.rectangle((0, H-12, W-1, H-1), fill=(10, 0, 0))
     draw.text((2, H-10), text[:24], font=FONT_SM, fill="#AAA")
 
 def show_message(line1, line2=""):
-    img = Image.new("RGB", (W, H), "black")
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     draw = ImageDraw.Draw(img)
-    draw.text((10, 50), line1, font=FONT_MD, fill="#00FF00")
+    draw.text((10, 50), line1, font=FONT_MD, fill=(30, 132, 73))
     if line2:
-        draw.text((4, 65), line2, font=FONT_SM, fill="#888")
+        draw.text((4, 65), line2, font=FONT_SM, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -426,7 +426,7 @@ def show_message(line1, line2=""):
 # List view
 # ----------------------------------------------------------------------
 def draw_list_view():
-    img = Image.new("RGB", (W, H), "black")
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     draw = ImageDraw.Draw(img)
     with lock:
         devices = list(detected_devices.items())
@@ -434,10 +434,10 @@ def draw_list_view():
         sel = selected_idx
         sc = scroll_pos
     draw_header(draw, True)
-    draw.text((2, 15), f"Devices:{len(devices)}  Flocks:{len(flock_list)}", font=FONT_SM, fill="#888")
+    draw.text((2, 15), f"Devices:{len(devices)}  Flocks:{len(flock_list)}", font=FONT_SM, fill=(113, 125, 126))
     if not flock_list:
-        draw.text((6, 40), "No flocks detected", font=FONT_SM, fill="#666")
-        draw.text((6, 52), "Waiting for data...", font=FONT_SM, fill="#666")
+        draw.text((6, 40), "No flocks detected", font=FONT_SM, fill=(86, 101, 115))
+        draw.text((6, 52), "Waiting for data...", font=FONT_SM, fill=(86, 101, 115))
     else:
         visible = flock_list[sc:sc+5]
         y = 28
@@ -451,18 +451,18 @@ def draw_list_view():
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_flock_detail(flock):
-    img = Image.new("RGB", (W, H), "black")
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     draw = ImageDraw.Draw(img)
-    draw.rectangle((0, 0, W-1, 13), fill="#111")
-    draw.text((2, 1), f"FLOCK ({flock['size']} dev)", font=FONT_MD, fill="#FF6600")
+    draw.rectangle((0, 0, W-1, 13), fill=(10, 0, 0))
+    draw.text((2, 1), f"FLOCK ({flock['size']} dev)", font=FONT_MD, fill=(231, 76, 60))
     draw.text((2, 16), f"Score: {flock['score']}%", font=FONT_SM, fill="#AAA")
     members = flock["members"]
     y = 30
     for mac in members[:6]:
-        draw.text((2, y), mac[-15:], font=FONT_SM, fill="#00CCFF")
+        draw.text((2, y), mac[-15:], font=FONT_SM, fill=(171, 178, 185))
         y += 12
     if len(members) > 6:
-        draw.text((2, y), f"+{len(members)-6} more", font=FONT_SM, fill="#888")
+        draw.text((2, y), f"+{len(members)-6} more", font=FONT_SM, fill=(113, 125, 126))
     draw_footer(draw, "Any key: back")
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -470,7 +470,7 @@ def draw_flock_detail(flock):
 # Radar view (adapted from WiFi radar)
 # ----------------------------------------------------------------------
 def draw_radar_frame():
-    img = Image.new("RGB", (W, H), (0,0,0))
+    img = Image.new("RGB", (W, H), (10, 0, 0))
     draw = ImageDraw.Draw(img)
 
     # Concentric rings

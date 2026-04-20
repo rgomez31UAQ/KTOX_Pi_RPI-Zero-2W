@@ -69,14 +69,14 @@ FONT_BIG = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
 
 def draw(lines: List[str]) -> None:
     """Clear the LCD and write *lines* (≤5)."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     y = 4
     for ln in lines[:5]:
         bbox = d.textbbox((0, 0), ln, font=FONT)
         w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
         x = (WIDTH - w) // 2
-        d.text((x, y), ln, font=FONT, fill="#00FF00")
+        d.text((x, y), ln, font=FONT, fill=(30, 132, 73))
         y += h + 4
     LCD.LCD_ShowImage(img, 0, 0)
 

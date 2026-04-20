@@ -82,7 +82,7 @@ font = ImageFont.load_default()           # tiny fixed‑width font
 def draw(text: str) -> None:
     """Clear the screen and draw *text* centred in bright green."""
     # 4.1 – create a black canvas
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
     # 4.2 – measure text size (Pillow ≥ 9.2 offers textbbox())
@@ -96,7 +96,7 @@ def draw(text: str) -> None:
     pos = ((WIDTH - w) // 2, (HEIGHT - h) // 2)
 
     # 4.4 – draw the text and push the image to the LCD
-    d.text(pos, text, font=font, fill="#00FF00")
+    d.text(pos, text, font=font, fill=(30, 132, 73))
     LCD.LCD_ShowImage(img, 0, 0)
 
 # ---------------------------------------------------------------------------

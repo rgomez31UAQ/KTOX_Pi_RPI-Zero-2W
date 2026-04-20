@@ -282,22 +282,22 @@ def _export_json():
 # ---------------------------------------------------------------------------
 def _draw_list():
     """Draw scrollable host list."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), "SUBNET MAPPER", font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "SUBNET MAPPER", font=font, fill=(171, 178, 185))
     scanning = _get("scanning")
-    d.ellipse((118, 3, 124, 9), fill="#00FF00" if scanning else "#666")
+    d.ellipse((118, 3, 124, 9), fill=(30, 132, 73) if scanning else "#666")
 
     hosts = _get("hosts")
     scroll = _get("scroll")
     status = _get("status")
 
     if not hosts:
-        d.text((4, 40), status[:21], font=font, fill="#888")
-        d.text((4, 56), "OK: Start scan", font=font, fill="#666")
+        d.text((4, 40), status[:21], font=font, fill=(113, 125, 126))
+        d.text((4, 56), "OK: Start scan", font=font, fill=(86, 101, 115))
         _draw_footer(d)
         LCD.LCD_ShowImage(img, 0, 0)
         return
@@ -315,7 +315,7 @@ def _draw_list():
         line1 = f"{h['ip']}"
         line2 = f" {h['mac'][:8]} P:{port_count} {h['os']}"
         d.text((2, y), line1[:21], font=font, fill=fg_ip)
-        d.text((2, y + 10), line2[:21], font=font, fill="#888")
+        d.text((2, y + 10), line2[:21], font=font, fill=(113, 125, 126))
         y += 21
 
     # Status bar
@@ -328,7 +328,7 @@ def _draw_list():
 
 def _draw_detail():
     """Draw detailed port list for selected host."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     hosts = _get("hosts")
@@ -340,43 +340,43 @@ def _draw_detail():
         return
 
     h = hosts[idx]
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), f"{h['ip']}", font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), f"{h['ip']}", font=font, fill=(171, 178, 185))
 
     y = 14
-    d.text((2, y), f"MAC: {h['mac']}", font=font, fill="#AAAAAA")
+    d.text((2, y), f"MAC: {h['mac']}", font=font, fill=(171, 178, 185))
     y += 12
-    d.text((2, y), f"OS:  {h['os']}  TTL:{h['ttl']}", font=font, fill="#AAAAAA")
+    d.text((2, y), f"OS:  {h['os']}  TTL:{h['ttl']}", font=font, fill=(171, 178, 185))
     y += 14
 
-    d.text((2, y), "Open ports:", font=font, fill="#00FF88")
+    d.text((2, y), "Open ports:", font=font, fill=(30, 132, 73))
     y += 12
 
     ports = h["ports"]
     if not ports:
-        d.text((4, y), "(none found)", font=font, fill="#666")
+        d.text((4, y), "(none found)", font=font, fill=(86, 101, 115))
     else:
         visible = 6
         for i in range(ds, min(ds + visible, len(ports))):
-            d.text((4, y), ports[i], font=font, fill="#CCCCCC")
+            d.text((4, y), ports[i], font=font, fill=(242, 243, 244))
             y += 11
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "LEFT:back U/D:scroll", font=font, fill="#AAA")
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_footer(d):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK K1:re K2:exp K3:x", font=font, fill="#AAA")
 
 
 def _show_msg(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 50), line1[:21], font=font, fill="#00FF00")
+    d.text((4, 50), line1[:21], font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2[:21], font=font, fill="#888")
+        d.text((4, 65), line2[:21], font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.2)
 
@@ -386,13 +386,13 @@ def _show_msg(line1, line2=""):
 # ---------------------------------------------------------------------------
 def main():
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 20), "SUBNET MAPPER", font=font, fill="#00CCFF")
-    d.text((4, 36), "ARP + SYN scan", font=font, fill="#888")
-    d.text((4, 56), "OK=Scan  RIGHT=Detail", font=font, fill="#666")
-    d.text((4, 68), "K1=Rescan K2=Export", font=font, fill="#666")
-    d.text((4, 80), "K3=Exit", font=font, fill="#666")
+    d.text((4, 20), "SUBNET MAPPER", font=font, fill=(171, 178, 185))
+    d.text((4, 36), "ARP + SYN scan", font=font, fill=(113, 125, 126))
+    d.text((4, 56), "OK=Scan  RIGHT=Detail", font=font, fill=(86, 101, 115))
+    d.text((4, 68), "K1=Rescan K2=Export", font=font, fill=(86, 101, 115))
+    d.text((4, 80), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

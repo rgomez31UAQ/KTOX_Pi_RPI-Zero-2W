@@ -180,7 +180,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_message(message: str, color: str = "yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     bbox = d.textbbox((0, 0), message, font=FONT_TITLE)
     w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
@@ -190,10 +190,10 @@ def draw_message(message: str, color: str = "yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui_main(params, selected_index):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "WiFi Rogue AP", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "WiFi Rogue AP", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     y_pos = 25
     param_keys = list(params.keys())
@@ -202,15 +202,15 @@ def draw_ui_main(params, selected_index):
         d.text((5, y_pos), f"{key}: {params[key]}", font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 80), status_msg, font=FONT, fill="yellow")
-    d.text((5, 115), "OK=Edit | KEY2=Start | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 80), status_msg, font=FONT, fill=(212, 172, 13))
+    d.text((5, 115), "OK=Edit | KEY2=Start | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui_interface_selection(interfaces, current_selection):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, iface in enumerate(interfaces):
@@ -218,7 +218,7 @@ def draw_ui_interface_selection(interfaces, current_selection):
         d.text((5, y_pos), iface, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def select_interface_menu():
@@ -273,16 +273,16 @@ def handle_text_input_logic(initial_text, prompt, char_set):
     ssid_input_cursor_pos = len(initial_text) - 1
     
     while running:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), f"Enter {prompt}:", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), f"Enter {prompt}:", font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
         display_text = list(current_input_ref)
         if ssid_input_cursor_pos < len(display_text):
             display_text[ssid_input_cursor_pos] = '_'
-        d.text((5, 40), "".join(display_text[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 40), "".join(display_text[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         last_button_press_time = 0
@@ -404,7 +404,7 @@ if __name__ == '__main__':
         try:
             LCD = LCD_1in44.LCD()
             LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-            img = Image.new("RGB", (128, 128), "black")
+            img = Image.new("RGB", (128, 128), (10, 0, 0))
             d = ImageDraw.Draw(img)
             FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
             d.text((10, 40), "ERROR:\nRoot privileges\nrequired.", font=FONT_TITLE, fill="red")

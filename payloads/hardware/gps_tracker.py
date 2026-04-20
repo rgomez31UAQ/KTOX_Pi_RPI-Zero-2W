@@ -263,70 +263,70 @@ def _speed_kmh(knots):
     return knots * 1.852
 
 def _draw_coords(lcd, fix, logging, entries, scr, status):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#111")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
     rec_color = "#ff2222" if logging else "#444"
     d.ellipse((118, 3, 122, 7), fill=rec_color)
-    d.text((2, 1), "GPS TRACKER", font=font, fill="#00ccff")
+    d.text((2, 1), "GPS TRACKER", font=font, fill=(171, 178, 185))
 
     y = 16
-    d.text((2, y), status[:22], font=font, fill="#ffaa00"); y += 13
+    d.text((2, y), status[:22], font=font, fill=(212, 172, 13)); y += 13
 
     if fix.valid:
-        d.text((2, y), f"Lat: {fix.latitude:11.6f}", font=font, fill="#00ff00"); y += 12
-        d.text((2, y), f"Lon: {fix.longitude:11.6f}", font=font, fill="#00ff00"); y += 12
+        d.text((2, y), f"Lat: {fix.latitude:11.6f}", font=font, fill=(30, 132, 73)); y += 12
+        d.text((2, y), f"Lon: {fix.longitude:11.6f}", font=font, fill=(30, 132, 73)); y += 12
         d.text((2, y), f"Alt: {fix.altitude:.1f}m", font=font, fill="#ccc"); y += 12
         d.text((2, y), f"Spd: {_speed_kmh(fix.speed_knots):.1f}km/h", font=font, fill="#ccc"); y += 12
-        d.text((2, y), f"Sat: {fix.satellites}  Q: {fix.fix_quality}", font=font, fill="#888"); y += 14
+        d.text((2, y), f"Sat: {fix.satellites}  Q: {fix.fix_quality}", font=font, fill=(113, 125, 126)); y += 14
     else:
-        d.text((4, 40), "Waiting for fix...", font=font, fill="#666")
-        d.text((4, 55), f"Sats: {fix.satellites}", font=font, fill="#888")
+        d.text((4, 40), "Waiting for fix...", font=font, fill=(86, 101, 115))
+        d.text((4, 55), f"Sats: {fix.satellites}", font=font, fill=(113, 125, 126))
         y = 75
 
-    d.text((2, y), f"Log: {len(entries)} pts", font=font, fill="#888")
+    d.text((2, y), f"Log: {len(entries)} pts", font=font, fill=(113, 125, 126))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "OK:log K1:mode K2:gpx", font=font, fill="#666")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "OK:log K1:mode K2:gpx", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 def _draw_grid(lcd, fix, entries):
     """Simple map grid showing recent positions."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), "GPS MAP GRID", font=font, fill="#00ccff")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "GPS MAP GRID", font=font, fill=(171, 178, 185))
     cx, cy, gs = 64, 68, 50
     for i in range(-gs, gs + 1, 25):
-        d.line((cx + i, cy - gs, cx + i, cy + gs), fill="#222")
-        d.line((cx - gs, cy + i, cx + gs, cy + i), fill="#222")
+        d.line((cx + i, cy - gs, cx + i, cy + gs), fill=(10, 0, 0))
+        d.line((cx - gs, cy + i, cx + gs, cy + i), fill=(10, 0, 0))
     if entries and fix.valid:
         scale = 50000
         for e in entries[-30:]:
             dx = int((e[2] - fix.longitude) * scale)
             dy = -int((e[1] - fix.latitude) * scale)
-            d.point((cx + max(-gs, min(gs, dx)), cy + max(-gs, min(gs, dy))), fill="#00ff00")
+            d.point((cx + max(-gs, min(gs, dx)), cy + max(-gs, min(gs, dy))), fill=(30, 132, 73))
         d.rectangle((cx - 2, cy - 2, cx + 2, cy + 2), fill="#ff2222")
     else:
-        d.text((20, 60), "No data", font=font, fill="#666")
-    d.text((2, 110), f"Pts: {len(entries)}", font=font, fill="#888")
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "OK:log K1:mode K2:gpx", font=font, fill="#666")
+        d.text((20, 60), "No data", font=font, fill=(86, 101, 115))
+    d.text((2, 110), f"Pts: {len(entries)}", font=font, fill=(113, 125, 126))
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "OK:log K1:mode K2:gpx", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 def _draw_log(lcd, entries, scr):
     """Show scrollable log entries."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), f"LOG ({len(entries)} pts)", font=font, fill="#00ccff")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), f"LOG ({len(entries)} pts)", font=font, fill=(171, 178, 185))
 
     y = 16
     visible = 7
     if not entries:
-        d.text((4, 50), "No entries yet", font=font, fill="#666")
+        d.text((4, 50), "No entries yet", font=font, fill=(86, 101, 115))
     else:
         end = min(len(entries), scr + visible)
         for i in range(scr, end):
@@ -335,8 +335,8 @@ def _draw_log(lcd, entries, scr):
             d.text((2, y), f"{ts} {e[1]:.4f},{e[2]:.4f}", font=font, fill="#ccc")
             y += 13
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "^v:scroll K1:mode", font=font, fill="#666")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "^v:scroll K1:mode", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 DISPLAY_MODES = ["coords", "grid", "log"]
@@ -345,10 +345,10 @@ def main():
     global _running, logging_active, log_entries, status_msg
 
     if not SERIAL_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "pyserial not found!", font=font, fill="#ff0000")
-        d.text((4, 65), "pip install pyserial", font=font, fill="#888")
+        d.text((4, 50), "pyserial not found!", font=font, fill=(231, 76, 60))
+        d.text((4, 65), "pip install pyserial", font=font, fill=(113, 125, 126))
         LCD.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         LCD.LCD_Clear()

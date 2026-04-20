@@ -310,13 +310,13 @@ def _export_loot():
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "SNMP WALKER", font=font, fill="#00FF88")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "SNMP WALKER", font=font, fill=(30, 132, 73))
     active = phase in ("scanning", "bruting", "walking")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#444")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#444")
 
     with lock:
         msg = status_msg
@@ -325,21 +325,21 @@ def _draw_frame(lcd, font):
         result_list = list(results.items())
         prog = brute_progress
 
-    d.text((2, 16), msg[:24], font=font, fill="#AAAAAA")
+    d.text((2, 16), msg[:24], font=font, fill=(171, 178, 185))
 
     if cur_phase == "bruting":
         # Progress bar
         bar_x, bar_y, bar_w, bar_h = 4, 28, 120, 8
-        d.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), outline="#444")
+        d.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), outline=(34, 0, 0))
         fill_w = int(prog / 100 * (bar_w - 2))
         if fill_w > 0:
             d.rectangle((bar_x + 1, bar_y + 1, bar_x + 1 + fill_w, bar_y + bar_h - 1),
-                        fill="#00FF88")
-        d.text((2, 40), f"Progress: {prog}%", font=font, fill="#888")
+                        fill=(30, 132, 73))
+        d.text((2, 40), f"Progress: {prog}%", font=font, fill=(113, 125, 126))
 
     if cur_phase in ("idle", "done") and host_list:
         d.text((2, 28), f"Hosts: {len(host_list)} Cracked: {len(result_list)}",
-               font=font, fill="#888")
+               font=font, fill=(113, 125, 126))
 
     # Results display
     if result_list:
@@ -359,13 +359,13 @@ def _draw_frame(lcd, font):
         visible = host_list[scroll:scroll + ROWS_VISIBLE]
         for i, h in enumerate(visible):
             y = 42 + i * ROW_H
-            d.text((2, y), h["ip"], font=font, fill="#CCCCCC")
+            d.text((2, y), h["ip"], font=font, fill=(242, 243, 244))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if cur_phase in ("idle", "done"):
-        d.text((2, 117), "OK:Start K1:Scan K3:Q", font=font, fill="#888")
+        d.text((2, 117), "OK:Start K1:Scan K3:Q", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "Working... K3:Exit", font=font, fill="#888")
+        d.text((2, 117), "Working... K3:Exit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -388,9 +388,9 @@ def main():
     font = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font, fill="#FF0000")
+        d.text((4, 50), "scapy not found!", font=font, fill=(231, 76, 60))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

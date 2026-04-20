@@ -163,7 +163,7 @@ for pin in PINS.values():
 LCD = LCD_1in44.LCD()
 LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
 
-canvas = Image.new("RGB", (WIDTH, HEIGHT), "black")
+canvas = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
 draw = ImageDraw.Draw(canvas)
 def _font(size: int):
     try:
@@ -193,7 +193,7 @@ def wait_release(btn: str | None) -> None:
 
 
 def splash(lines: list[str], color: str = "#AACCFF") -> None:
-    draw.rectangle((0, 0, WIDTH, HEIGHT), fill="black")
+    draw.rectangle((0, 0, WIDTH, HEIGHT), fill=(10, 0, 0))
     y = 8
     for ln in lines:
         draw.text((4, y), ln[:20], font=font_med, fill=color)
@@ -207,23 +207,23 @@ def installing_splash(lines: list[str]) -> None:
 
 
 def summary(single: bool, res: dict | None = None) -> None:
-    draw.rectangle((0, 0, WIDTH, HEIGHT), fill="black")
-    draw.text((4, 4), "WAN Speed Test", font=font_big, fill="#FFFFFF")
-    draw.text((4, 20), f"Mode: {'Single' if single else 'Multi'}", font=font_small, fill="#CCCCCC")
+    draw.rectangle((0, 0, WIDTH, HEIGHT), fill=(10, 0, 0))
+    draw.text((4, 4), "WAN Speed Test", font=font_big, fill=(242, 243, 244))
+    draw.text((4, 20), f"Mode: {'Single' if single else 'Multi'}", font=font_small, fill=(242, 243, 244))
     if res:
         isp = res.get('isp') or ""
         srv = res.get('server_name') or ""
         loc = res.get('server_location') or ""
-        draw.text((4, 34), f"ISP: {isp[:16]}", font=font_small, fill="#CCCCCC")
-        draw.text((4, 46), f"Srv: {srv[:16]}", font=font_small, fill="#CCCCCC")
-        draw.text((4, 58), f"Loc: {loc[:16]}", font=font_small, fill="#CCCCCC")
+        draw.text((4, 34), f"ISP: {isp[:16]}", font=font_small, fill=(242, 243, 244))
+        draw.text((4, 46), f"Srv: {srv[:16]}", font=font_small, fill=(242, 243, 244))
+        draw.text((4, 58), f"Loc: {loc[:16]}", font=font_small, fill=(242, 243, 244))
 
         ping = res.get('ping_ms'); jit = res.get('jitter_ms')
         draw.text((4, 74), f"Ping: {ping:.0f} ms  J:{(jit or 0):.0f}", font=font_med, fill="#FFEE66")
         draw.text((4, 90), f"Down: {res.get('download_mbps'):.1f} Mbps", font=font_med, fill="#66FF99")
         draw.text((4, 106), f"Up:   {res.get('upload_mbps'):.1f} Mbps", font=font_med, fill="#66CCFF")
     else:
-        draw.text((4, 46), "OK=Run  KEY1=Mode  KEY3=Exit", font=font_small, fill="#AAAAAA")
+        draw.text((4, 46), "OK=Run  KEY1=Mode  KEY3=Exit", font=font_small, fill=(171, 178, 185))
     LCD.LCD_ShowImage(canvas, 0, 0)
 
 

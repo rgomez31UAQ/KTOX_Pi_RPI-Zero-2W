@@ -43,7 +43,7 @@ def init_hw():
         LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
         LCD.LCD_Clear()
 
-        _image = Image.new("RGB", (128, 128), "black")
+        _image = Image.new("RGB", (128, 128), (10, 0, 0))
         _draw = ImageDraw.Draw(_image)
 
         for path in ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -69,7 +69,7 @@ def push():
 def draw_screen(lines, header="KTOX VPN"):
     _draw.rectangle((0,0,128,128), fill="#0A0000")
     _draw.rectangle((0,0,128,17), fill="#8B0000")
-    _draw.text((4,3), header, font=_font_sm, fill="#FF3333")
+    _draw.text((4,3), header, font=_font_sm, fill=(231, 76, 60))
 
     y = 22
     for line in lines[:8]:

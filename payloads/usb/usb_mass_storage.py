@@ -310,13 +310,13 @@ def _monitor_thread():
 
 def _draw_frame(lcd, font_obj):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "USB MASS STORAGE", font=font_obj, fill="#FF9900")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if gadget_active else "#444")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if gadget_active else "#444")
 
     with lock:
         msg = status_msg
@@ -326,32 +326,32 @@ def _draw_frame(lcd, font_obj):
         showing_log = show_log
 
     if showing_log:
-        d.text((2, 16), "Access Log:", font=font_obj, fill="#FFAA00")
+        d.text((2, 16), "Access Log:", font=font_obj, fill=(212, 172, 13))
         visible = log[scroll:scroll + 7]
         if not visible:
-            d.text((2, 30), "No access detected", font=font_obj, fill="#666")
+            d.text((2, 30), "No access detected", font=font_obj, fill=(86, 101, 115))
         for i, entry in enumerate(visible):
-            d.text((2, 28 + i * 12), entry[:24], font=font_obj, fill="#CCCCCC")
+            d.text((2, 28 + i * 12), entry[:24], font=font_obj, fill=(242, 243, 244))
     else:
         d.text((2, 16), f"Status: {'ACTIVE' if gadget_active else 'IDLE'}",
-               font=font_obj, fill="#00FF88" if gadget_active else "#888")
-        d.text((2, 28), f"Image: {IMAGE_SIZE_MB}MB FAT32", font=font_obj, fill="#AAAAAA")
-        d.text((2, 40), f"Template: {template}", font=font_obj, fill="#FFAA00")
-        d.text((2, 52), f"Files loaded: {loaded}", font=font_obj, fill="#888")
+               font=font_obj, fill=(30, 132, 73) if gadget_active else "#888")
+        d.text((2, 28), f"Image: {IMAGE_SIZE_MB}MB FAT32", font=font_obj, fill=(171, 178, 185))
+        d.text((2, 40), f"Template: {template}", font=font_obj, fill=(212, 172, 13))
+        d.text((2, 52), f"Files loaded: {loaded}", font=font_obj, fill=(113, 125, 126))
 
         udc = _find_udc()
         udc_label = udc[:16] if udc else "none"
-        d.text((2, 66), f"UDC: {udc_label}", font=font_obj, fill="#666")
-        d.text((2, 78), f"Log entries: {len(log)}", font=font_obj, fill="#666")
+        d.text((2, 66), f"UDC: {udc_label}", font=font_obj, fill=(86, 101, 115))
+        d.text((2, 78), f"Log entries: {len(log)}", font=font_obj, fill=(86, 101, 115))
 
-        d.text((2, 96), msg[:24], font=font_obj, fill="#888")
+        d.text((2, 96), msg[:24], font=font_obj, fill=(113, 125, 126))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if gadget_active:
-        d.text((2, 117), "OK:Stop K2:Log K3:Quit", font=font_obj, fill="#888")
+        d.text((2, 117), "OK:Stop K2:Log K3:Quit", font=font_obj, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Go K1:Tmpl K3:Quit", font=font_obj, fill="#888")
+        d.text((2, 117), "OK:Go K1:Tmpl K3:Quit", font=font_obj, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -374,10 +374,10 @@ def main():
 
     # Check for configfs
     if not os.path.isdir(CONFIGFS_BASE):
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 40), "configfs not found", font=font_obj, fill="#FF0000")
-        d.text((4, 55), "modprobe libcomposite", font=font_obj, fill="#888")
+        d.text((4, 40), "configfs not found", font=font_obj, fill=(231, 76, 60))
+        d.text((4, 55), "modprobe libcomposite", font=font_obj, fill=(113, 125, 126))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

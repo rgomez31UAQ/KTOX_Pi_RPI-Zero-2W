@@ -567,11 +567,11 @@ def _force_reexfil():
 def _draw_lcd():
     """Render current state on LCD."""
     st = _get_state()
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "AUTO EXFIL", font=font, fill="#FF4400")
     running = st["daemon_running"]
     status_color = "#00FF00" if running else "#FF4444"
@@ -582,11 +582,11 @@ def _draw_lcd():
     d.text((2, 16), f"Channel: {channel_label}", font=font, fill="#00AAFF")
 
     # Stats
-    d.text((2, 28), f"Status: {st['status'][:13]}", font=font, fill="#AAAAAA")
-    d.text((2, 40), f"Exfiltrated: {st['exfil_count']}", font=font, fill="#888")
+    d.text((2, 28), f"Status: {st['status'][:13]}", font=font, fill=(171, 178, 185))
+    d.text((2, 40), f"Exfiltrated: {st['exfil_count']}", font=font, fill=(113, 125, 126))
 
     if st["last_file"]:
-        d.text((2, 52), f"Last: {st['last_file'][:16]}", font=font, fill="#888")
+        d.text((2, 52), f"Last: {st['last_file'][:16]}", font=font, fill=(113, 125, 126))
 
     # Log display
     log_lines = st["log_lines"]
@@ -595,7 +595,7 @@ def _draw_lcd():
     max_visible = 3
 
     if log_lines:
-        d.rectangle((0, log_y_start - 2, 127, log_y_start - 1), fill="#333")
+        d.rectangle((0, log_y_start - 2, 127, log_y_start - 1), fill=(34, 0, 0))
         visible_start = max(0, len(log_lines) - max_visible - log_scroll)
         visible_end = visible_start + max_visible
 
@@ -617,7 +617,7 @@ def _draw_lcd():
     d.text((2, 106), st["last_message"][:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     action = "STOP" if running else "START"
     d.text((2, 117), f"OK:{action} K1:Ch K3:Quit", font=font, fill="#AAA")
 
@@ -631,14 +631,14 @@ def main():
     _load_config()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 16), "AUTO LOOT EXFIL", font=font, fill="#FF4400")
-    d.text((4, 32), "File watch daemon", font=font, fill="#888")
-    d.text((4, 52), "OK=Start/Stop", font=font, fill="#666")
-    d.text((4, 64), "K1=Channel  U/D=Log", font=font, fill="#666")
-    d.text((4, 76), "K2=Re-exfil all", font=font, fill="#666")
-    d.text((4, 88), "K3=Exit", font=font, fill="#666")
+    d.text((4, 32), "File watch daemon", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "OK=Start/Stop", font=font, fill=(86, 101, 115))
+    d.text((4, 64), "K1=Channel  U/D=Log", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K2=Re-exfil all", font=font, fill=(86, 101, 115))
+    d.text((4, 88), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 

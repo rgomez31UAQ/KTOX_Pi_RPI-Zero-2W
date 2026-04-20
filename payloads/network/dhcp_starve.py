@@ -183,13 +183,13 @@ def _attack_thread():
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "DHCP STARVE", font=font, fill="#FF8800")
-    d.ellipse((118, 3, 122, 7), fill="#FF0000" if running else "#444")
+    d.ellipse((118, 3, 122, 7), fill=(231, 76, 60) if running else "#444")
 
     with lock:
         sent = packets_sent
@@ -199,11 +199,11 @@ def _draw_frame(lcd, font):
     iface = target_iface or "none"
     subnet = target_subnet
 
-    d.text((4, 20), f"Iface: {iface}", font=font, fill="#AAAAAA")
-    d.text((4, 34), f"Subnet: {subnet[:18]}", font=font, fill="#AAAAAA")
-    d.text((4, 52), f"Leases: {leases}", font=font, fill="#00FF00")
-    d.text((4, 66), f"Pkts sent: {sent}", font=font, fill="#CCCCCC")
-    d.text((4, 80), f"Speed: {speed}", font=font, fill="#FFAA00")
+    d.text((4, 20), f"Iface: {iface}", font=font, fill=(171, 178, 185))
+    d.text((4, 34), f"Subnet: {subnet[:18]}", font=font, fill=(171, 178, 185))
+    d.text((4, 52), f"Leases: {leases}", font=font, fill=(30, 132, 73))
+    d.text((4, 66), f"Pkts sent: {sent}", font=font, fill=(242, 243, 244))
+    d.text((4, 80), f"Speed: {speed}", font=font, fill=(212, 172, 13))
 
     if running:
         tick = int(time.time() * 4) % 4
@@ -211,9 +211,9 @@ def _draw_frame(lcd, font):
         d.text((110, 66), bars[tick], font=font, fill="#FF8800")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     status = "OK:Stop" if running else "OK:Start"
-    d.text((2, 117), f"{status} K1:Spd K3:Quit", font=font, fill="#888")
+    d.text((2, 117), f"{status} K1:Spd K3:Quit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -236,10 +236,10 @@ def main():
     font = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font, fill="#FF0000")
-        d.text((4, 65), "pip install scapy", font=font, fill="#888")
+        d.text((4, 50), "scapy not found!", font=font, fill=(231, 76, 60))
+        d.text((4, 65), "pip install scapy", font=font, fill=(113, 125, 126))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()
@@ -251,14 +251,14 @@ def main():
         target_subnet = _detect_subnet(target_iface)
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((8, 20), "DHCP STARVATION", font=font, fill="#FF8800")
-    d.text((4, 40), "Exhaust DHCP leases", font=font, fill="#888")
-    d.text((4, 58), f"Iface: {target_iface or 'none'}", font=font, fill="#666")
-    d.text((4, 72), "OK    Start / Stop", font=font, fill="#666")
-    d.text((4, 84), "KEY1  Toggle speed", font=font, fill="#666")
-    d.text((4, 96), "KEY3  Exit", font=font, fill="#666")
+    d.text((4, 40), "Exhaust DHCP leases", font=font, fill=(113, 125, 126))
+    d.text((4, 58), f"Iface: {target_iface or 'none'}", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "OK    Start / Stop", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "KEY1  Toggle speed", font=font, fill=(86, 101, 115))
+    d.text((4, 96), "KEY3  Exit", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -286,9 +286,9 @@ def main():
                             target=_attack_thread, daemon=True
                         ).start()
                     else:
-                        img2 = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                        img2 = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                         d2 = ScaledDraw(img2)
-                        d2.text((4, 50), "No interface up!", font=font, fill="#FF0000")
+                        d2.text((4, 50), "No interface up!", font=font, fill=(231, 76, 60))
                         lcd.LCD_ShowImage(img2, 0, 0)
                         time.sleep(1.5)
                 time.sleep(0.3)

@@ -55,7 +55,7 @@ def draw_screen(lines, title="PWNAGOTCHI", title_color="#8B0000", text_color="#F
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill=title_color)
-    d.text((4,3), title[:20], font=f9, fill="#FF3333")
+    d.text((4,3), title[:20], font=f9, fill=(231, 76, 60))
     y = 20
     for line in lines[:7]:
         d.text((4,y), line[:23], font=f9, fill=text_color)
@@ -196,14 +196,14 @@ def update_display():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0,0,W,17), fill="#8B0000")
-    d.text((4,3), "PWNAGOTCHI", font=f9, fill="#FF3333")
+    d.text((4,3), "PWNAGOTCHI", font=f9, fill=(231, 76, 60))
     # Stats
     y = 20
-    d.text((4,y), f"HS: {handshake_count}  AP: {ap_count}", font=f9, fill="#FFBBBB")
+    d.text((4,y), f"HS: {handshake_count}  AP: {ap_count}", font=f9, fill=(171, 178, 185))
     y += 12
-    d.text((4,y), f"Uptime: {uptime}s", font=f9, fill="#FFBBBB")
+    d.text((4,y), f"Uptime: {uptime}s", font=f9, fill=(171, 178, 185))
     y += 12
-    d.text((4,y), f"Deauth: {'ON' if deauth_mode else 'OFF'}", font=f9, fill="#FFBBBB")
+    d.text((4,y), f"Deauth: {'ON' if deauth_mode else 'OFF'}", font=f9, fill=(171, 178, 185))
     # Character
     draw_character(d, mood)
     # Footer

@@ -269,9 +269,9 @@ def _export_results(target_ip):
 # ---------------------------------------------------------------------------
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
-    draw.text((2, 2), "PORT SCANNER", fill="CYAN", font=font)
+    draw.text((2, 2), "PORT SCANNER", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -283,9 +283,9 @@ def _draw_screen():
         prog = scan_progress
         total = scan_total
 
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
     mode_label = SCAN_MODES[scan_mode_idx]
-    draw.text((80, 2), mode_label, fill="YELLOW", font=font)
+    draw.text((80, 2), mode_label, fill=(212, 172, 13), font=font)
 
     if vm == "hosts":
         y = 28
@@ -295,25 +295,25 @@ def _draw_screen():
             color = "YELLOW" if real_i == si else "WHITE"
             draw.text((2, y), f"{prefix}{h['ip']}"[:22], fill=color, font=font)
             y += 14
-        draw.text((2, 116), "OK=scan K1=mode K3=exit", fill="GRAY", font=font)
+        draw.text((2, 116), "OK=scan K1=mode K3=exit", fill=(86, 101, 115), font=font)
 
     elif vm == "scanning":
         pct = int(prog * 100 / total) if total else 0
-        draw.rectangle((10, 60, 118, 72), outline="WHITE")
+        draw.rectangle((10, 60, 118, 72), outline=(242, 243, 244))
         bar_w = int(106 * pct / 100)
         if bar_w > 0:
-            draw.rectangle((11, 61, 11 + bar_w, 71), fill="GREEN")
-        draw.text((40, 46), f"{pct}%", fill="WHITE", font=font)
-        draw.text((2, 80), f"{prog}/{total} ports", fill="GRAY", font=font)
+            draw.rectangle((11, 61, 11 + bar_w, 71), fill=(30, 132, 73))
+        draw.text((40, 46), f"{pct}%", fill=(242, 243, 244), font=font)
+        draw.text((2, 80), f"{prog}/{total} ports", fill=(86, 101, 115), font=font)
 
     elif vm == "results":
         y = 28
         for port, svc in op[sp:sp + ROWS_VISIBLE]:
-            draw.text((2, y), f"{port:>5} {svc}"[:22], fill="GREEN", font=font)
+            draw.text((2, y), f"{port:>5} {svc}"[:22], fill=(30, 132, 73), font=font)
             y += 14
         if not op:
-            draw.text((2, 56), "No open ports", fill="GRAY", font=font)
-        draw.text((2, 116), "K2=export K3=exit", fill="GRAY", font=font)
+            draw.text((2, 56), "No open ports", fill=(86, 101, 115), font=font)
+        draw.text((2, 116), "K2=export K3=exit", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -327,7 +327,7 @@ def main():
     global view_mode, status_msg
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -397,9 +397,9 @@ def main():
     finally:
         app_running = False
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 56), "Scanner closed", fill="YELLOW", font=font)
+            d.text((10, 56), "Scanner closed", fill=(212, 172, 13), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

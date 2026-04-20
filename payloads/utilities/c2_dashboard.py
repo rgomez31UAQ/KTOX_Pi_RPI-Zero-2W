@@ -221,26 +221,26 @@ def _auto_refresh():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, view_name):
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), f"C2: {view_name}", font=font, fill="#00ccff")
-    d.text((108, 1), "K3", font=font, fill="#888")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), f"C2: {view_name}", font=font, fill=(171, 178, 185))
+    d.text((108, 1), "K3", font=font, fill=(113, 125, 126))
 
 
 def _draw_footer(d, hint):
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), hint, font=font, fill="#666")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), hint, font=font, fill=(86, 101, 115))
 
 
 def _draw_overview(lcd, snap):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "Overview")
 
     y = 16
-    d.text((2, y), f"Uptime: {snap.uptime}", font=font, fill="#00ff00"); y += 13
-    d.text((2, y), f"Payloads: {len(snap.payloads)} running", font=font, fill="white"); y += 13
-    d.text((2, y), f"Loot: {snap.total_loot} files", font=font, fill="white"); y += 13
-    d.text((2, y), f"New (5m): {snap.recent_loot}", font=font, fill="#ffaa00"); y += 13
+    d.text((2, y), f"Uptime: {snap.uptime}", font=font, fill=(30, 132, 73)); y += 13
+    d.text((2, y), f"Payloads: {len(snap.payloads)} running", font=font, fill=(242, 243, 244)); y += 13
+    d.text((2, y), f"Loot: {snap.total_loot} files", font=font, fill=(242, 243, 244)); y += 13
+    d.text((2, y), f"New (5m): {snap.recent_loot}", font=font, fill=(212, 172, 13)); y += 13
 
     y += 4
     d.text((2, y), "Services:", font=font, fill="#aaa"); y += 12
@@ -256,13 +256,13 @@ def _draw_overview(lcd, snap):
 
 
 def _draw_payloads(lcd, snap, scroll, cursor):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "Payloads")
 
     plist = snap.payloads
     if not plist:
-        d.text((4, 50), "No running payloads", font=font, fill="#666")
+        d.text((4, 50), "No running payloads", font=font, fill=(86, 101, 115))
     else:
         y = 16
         visible = 7
@@ -279,13 +279,13 @@ def _draw_payloads(lcd, snap, scroll, cursor):
 
 
 def _draw_loot(lcd, snap, scroll):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "Loot")
 
     items = list(snap.loot_stats.items())
     if not items:
-        d.text((4, 50), "No loot found", font=font, fill="#666")
+        d.text((4, 50), "No loot found", font=font, fill=(86, 101, 115))
     else:
         y = 16
         visible = 7
@@ -295,26 +295,26 @@ def _draw_loot(lcd, snap, scroll):
             d.text((2, y), f" {name[:14]}: {count}", font=font, fill="#ccc")
             y += 13
 
-    d.text((2, 104), f"Total: {snap.total_loot}", font=font, fill="#00ff00")
+    d.text((2, 104), f"Total: {snap.total_loot}", font=font, fill=(30, 132, 73))
     _draw_footer(d, "^v:scroll  OK:ref")
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_network(lcd, snap, scroll):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "Network")
 
     ifaces = snap.interfaces
     if not ifaces:
-        d.text((4, 50), "No interfaces", font=font, fill="#666")
+        d.text((4, 50), "No interfaces", font=font, fill=(86, 101, 115))
     else:
         y = 16
         visible = 4
         end = min(len(ifaces), scroll + visible)
         for i in range(scroll, end):
             ifc = ifaces[i]
-            d.text((2, y), ifc["iface"], font=font, fill="#00ccff"); y += 12
+            d.text((2, y), ifc["iface"], font=font, fill=(171, 178, 185)); y += 12
             d.text((6, y), ifc["ip"], font=font, fill="#ccc"); y += 14
 
     _draw_footer(d, "^v:scroll  OK:ref")

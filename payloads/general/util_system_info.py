@@ -67,17 +67,17 @@ def get_info():
     return info
 
 def draw_ui(info):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "System Information", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "System Information", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
     
     y_pos = 30
     for key, value in info.items():
-        d.text((5, y_pos), f"{key}: {value}", font=FONT, fill="white")
+        d.text((5, y_pos), f"{key}: {value}", font=FONT, fill=(242, 243, 244))
         y_pos += 15
         
-    d.text((5, 115), "Press KEY3 to Exit", font=FONT, fill="yellow")
+    d.text((5, 115), "Press KEY3 to Exit", font=FONT, fill=(212, 172, 13))
     LCD.LCD_ShowImage(img, 0, 0)
 
 if __name__ == '__main__':

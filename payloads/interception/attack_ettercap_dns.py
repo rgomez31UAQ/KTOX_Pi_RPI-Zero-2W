@@ -116,7 +116,7 @@ def draw(lines, color="lime"):
     if isinstance(lines, str):
         lines = [lines]
     
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
     y_offset = (HEIGHT - len(lines) * 15) // 2 # Center vertically
@@ -336,7 +336,7 @@ if __name__ == '__main__':
         try:
             LCD = LCD_1in44.LCD()
             LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-            img = Image.new("RGB", (128, 128), "black")
+            img = Image.new("RGB", (128, 128), (10, 0, 0))
             d = ImageDraw.Draw(img)
             FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
             d.text((10, 40), "ERROR:\nRoot privileges\nrequired.", font=FONT_TITLE, fill="red")

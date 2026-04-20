@@ -442,8 +442,8 @@ def start_scan():
 
 def _draw_header(d, title):
     """Render the header bar with title and activity indicator."""
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(171, 178, 185))
     with lock:
         active = busy
     indicator_color = "#00FF00" if active else "#FF0000"
@@ -452,7 +452,7 @@ def _draw_header(d, title):
 
 def _draw_footer(d, text):
     """Render the footer bar."""
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
@@ -462,12 +462,12 @@ def _draw_scrollbar(d, offset, total, area_top=28, area_height=88):
         return
     bar_h = max(4, int(ROWS_VISIBLE / total * area_height))
     bar_y = area_top + int(offset / total * area_height) if total > 0 else area_top
-    d.rectangle((126, bar_y, 127, bar_y + bar_h), fill="#444")
+    d.rectangle((126, bar_y, 127, bar_y + bar_h), fill=(34, 0, 0))
 
 
 def draw_hosts_view():
     """Render the hosts list view."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "SMB CRAWLER")
 
@@ -476,19 +476,19 @@ def draw_hosts_view():
         host_list = list(hosts)
         sc = scroll_pos
 
-    d.text((2, 15), status[:22], font=font, fill="#888")
+    d.text((2, 15), status[:22], font=font, fill=(113, 125, 126))
 
     if not host_list:
-        d.text((10, 45), "OK: Start scan", font=font, fill="#666")
-        d.text((10, 57), "K1: Toggle view", font=font, fill="#666")
-        d.text((10, 69), "K3: Exit", font=font, fill="#666")
+        d.text((10, 45), "OK: Start scan", font=font, fill=(86, 101, 115))
+        d.text((10, 57), "K1: Toggle view", font=font, fill=(86, 101, 115))
+        d.text((10, 69), "K3: Exit", font=font, fill=(86, 101, 115))
     else:
         visible = host_list[sc:sc + ROWS_VISIBLE]
         for i, h in enumerate(visible):
             y = 28 + i * ROW_H
             share_count = len(h["shares"])
             line = f"{h['ip']} [{share_count}s]"
-            d.text((1, y), line[:22], font=font, fill="#CCCCCC")
+            d.text((1, y), line[:22], font=font, fill=(242, 243, 244))
         _draw_scrollbar(d, sc, len(host_list))
 
     _draw_footer(d, f"Hosts:{len(host_list)} K3:Exit")
@@ -497,7 +497,7 @@ def draw_hosts_view():
 
 def draw_shares_view():
     """Render the shares list view."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "SMB SHARES")
 
@@ -506,10 +506,10 @@ def draw_shares_view():
         share_list = list(all_shares)
         sc = scroll_pos
 
-    d.text((2, 15), status[:22], font=font, fill="#888")
+    d.text((2, 15), status[:22], font=font, fill=(113, 125, 126))
 
     if not share_list:
-        d.text((10, 50), "No shares found", font=font, fill="#666")
+        d.text((10, 50), "No shares found", font=font, fill=(86, 101, 115))
     else:
         visible = share_list[sc:sc + ROWS_VISIBLE]
         for i, s in enumerate(visible):
@@ -517,7 +517,7 @@ def draw_shares_view():
             host_short = s["host"].split(".")[-1]
             flag = "*" if s["sensitive_count"] > 0 else " "
             line = f"{flag}.{host_short}/{s['name']} {s['file_count']}f"
-            d.text((1, y), line[:22], font=font, fill="#CCCCCC")
+            d.text((1, y), line[:22], font=font, fill=(242, 243, 244))
         _draw_scrollbar(d, sc, len(share_list))
 
     _draw_footer(d, f"Shares:{len(share_list)} K1:View")
@@ -526,7 +526,7 @@ def draw_shares_view():
 
 def draw_files_view():
     """Render the files list view (sensitive files highlighted)."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "SMB FILES")
 
@@ -535,10 +535,10 @@ def draw_files_view():
         file_list = list(all_files)
         sc = scroll_pos
 
-    d.text((2, 15), status[:22], font=font, fill="#888")
+    d.text((2, 15), status[:22], font=font, fill=(113, 125, 126))
 
     if not file_list:
-        d.text((10, 50), "No files found", font=font, fill="#666")
+        d.text((10, 50), "No files found", font=font, fill=(86, 101, 115))
     else:
         visible = file_list[sc:sc + ROWS_VISIBLE]
         for i, f in enumerate(visible):
@@ -567,14 +567,14 @@ def main():
     global scroll_pos, current_view, stop_flag
 
     # Splash screen
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 20), "SMB CRAWLER", font=font, fill="#00CCFF")
-    d.text((4, 38), "Share enumeration &", font=font, fill="#888")
-    d.text((4, 50), "sensitive file finder", font=font, fill="#888")
-    d.text((4, 70), "OK    Start scan", font=font, fill="#666")
-    d.text((4, 82), "KEY1  Toggle view", font=font, fill="#666")
-    d.text((4, 94), "KEY3  Exit", font=font, fill="#666")
+    d.text((8, 20), "SMB CRAWLER", font=font, fill=(171, 178, 185))
+    d.text((4, 38), "Share enumeration &", font=font, fill=(113, 125, 126))
+    d.text((4, 50), "sensitive file finder", font=font, fill=(113, 125, 126))
+    d.text((4, 70), "OK    Start scan", font=font, fill=(86, 101, 115))
+    d.text((4, 82), "KEY1  Toggle view", font=font, fill=(86, 101, 115))
+    d.text((4, 94), "KEY3  Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 

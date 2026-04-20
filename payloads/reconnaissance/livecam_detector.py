@@ -1065,25 +1065,25 @@ class LiveCamDetector(WardrivingScanner):
             lines.append("[KEY1] Start/Stop")
             lines.append("[KEY2] Exit")
 
-            img = Image.new("RGB", (self.WIDTH, self.HEIGHT), "black")
+            img = Image.new("RGB", (self.WIDTH, self.HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
             
             # UNMISTAKABLE CLOUD HEADER
             # Bright red bar with yellow border
-            d.rectangle((0, 0, 127, 12), fill="#FF0000", outline="#FFFF00", width=1)
+            d.rectangle((0, 0, 127, 12), fill=(231, 76, 60), outline=(212, 172, 13), width=1)
             # Larger font for "CLOUD"
             try:
                 header_font = scaled_font(size=12)
             except:
                 header_font = self.font
-            d.text((64, 6), "LIVE CAM", font=header_font, fill="#FFFFFF", anchor="mm")
+            d.text((64, 6), "LIVE CAM", font=header_font, fill=(242, 243, 244), anchor="mm")
             
             y = 14
             for line in lines:
                 if y > 113:
                     break
                 # Left‑aligned text
-                d.text((2, y), line, font=self.font, fill="#00FF00")
+                d.text((2, y), line, font=self.font, fill=(30, 132, 73))
                 y += 12
             
             self.LCD.LCD_ShowImage(img, 0, 0)

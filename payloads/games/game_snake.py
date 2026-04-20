@@ -61,10 +61,10 @@ WIDTH, HEIGHT = 128, 128
 CELL = 8                      # size of a grid cell in pixels → 16×16 board
 GRID_W, GRID_H = WIDTH // CELL, HEIGHT // CELL
 
-COL_BG   = (0, 0, 0)          # black
-COL_SNAKE = (0, 255, 0)        # bright green
-COL_FOOD  = (255, 0, 0)        # red
-COL_TEXT  = (255, 255, 255)    # white
+COL_BG    = (10,  0,   0)   # KTOX BG
+COL_SNAKE = (192, 57,  43)  # BLOOD
+COL_FOOD  = (212, 172, 13)  # YELLOW
+COL_TEXT  = (242, 243, 244) # WHITE
 
 font = ImageFont.load_default()
 

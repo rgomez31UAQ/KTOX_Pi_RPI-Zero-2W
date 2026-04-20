@@ -204,15 +204,15 @@ def _node_label(info, ip):
 
 def draw_topology():
     """Render network topology on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 11), fill="#111")
-    d.text((2, 1), "NET MAP", font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 11), fill=(10, 0, 0))
+    d.text((2, 1), "NET MAP", font=font, fill=(171, 178, 185))
     with lock:
         active = busy
         status = status_msg
-    d.ellipse((118, 2, 122, 6), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 2, 122, 6), fill=(30, 132, 73) if active else "#FF0000")
 
     with lock:
         host_list = sorted(hosts.items(), key=lambda kv: kv[1]["is_gw"], reverse=True)
@@ -221,9 +221,9 @@ def draw_topology():
         z = zoom
 
     if not host_list:
-        d.text((10, 45), "OK: Scan network", font=font, fill="#666")
-        d.text((10, 57), status[:20], font=font, fill="#888")
-        d.rectangle((0, 116, 127, 127), fill="#111")
+        d.text((10, 45), "OK: Scan network", font=font, fill=(86, 101, 115))
+        d.text((10, 57), status[:20], font=font, fill=(113, 125, 126))
+        d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
         d.text((2, 117), "K3:Exit", font=font, fill="#AAA")
         LCD.LCD_ShowImage(img, 0, 0)
         return
@@ -249,9 +249,9 @@ def draw_topology():
         gip, ginfo = gw_entry
         rx = int(gw_x - node_w // 2)
         ry = int(gw_y)
-        d.rectangle((rx, ry, rx + node_w, ry + node_h), fill="#FF6600", outline="#FF9900")
+        d.rectangle((rx, ry, rx + node_w, ry + node_h), fill=(231, 76, 60), outline="#FF9900")
         lbl = _node_label(ginfo, gip)
-        d.text((rx + 2, ry + 1), lbl[:6], font=font, fill="black")
+        d.text((rx + 2, ry + 1), lbl[:6], font=font, fill=(10, 0, 0))
 
     for idx, (ip, info) in enumerate(others):
         col = idx % cols
@@ -263,16 +263,16 @@ def draw_topology():
             continue
 
         if gw_entry:
-            d.line([(gw_x, int(gw_y + node_h)), (nx + node_w // 2, ny)], fill="#333")
+            d.line([(gw_x, int(gw_y + node_h)), (nx + node_w // 2, ny)], fill=(34, 0, 0))
 
         port_count = len(info.get("ports", []))
         fill_color = "#00AA44" if port_count > 3 else "#006688" if port_count > 0 else "#333366"
         d.rectangle((nx, ny, nx + node_w, ny + node_h), fill=fill_color, outline="#668888")
 
         lbl = _node_label(info, ip)
-        d.text((nx + 1, ny + 1), lbl[:6], font=font, fill="white")
+        d.text((nx + 1, ny + 1), lbl[:6], font=font, fill=(242, 243, 244))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     mode_txt = LABEL_MODES[label_mode_idx].upper()
     d.text((2, 117), f"Z:{z} {mode_txt} [{len(host_list)}]", font=font, fill="#AAA")
 
@@ -309,11 +309,11 @@ def export_text_map():
 
 
 def _show_message(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 50), line1, font=font, fill="#00FF00")
+    d.text((10, 50), line1, font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2, font=font, fill="#888")
+        d.text((4, 65), line2, font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -325,13 +325,13 @@ def _show_message(line1, line2=""):
 def main():
     global scroll_y, zoom, label_mode_idx, stop_flag
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 20), "NETWORK MAPPER", font=font, fill="#00CCFF")
-    d.text((4, 40), "Visual topology", font=font, fill="#888")
-    d.text((4, 60), "OK=Refresh  K1=Labels", font=font, fill="#666")
-    d.text((4, 72), "L/R=Zoom  K2=Export", font=font, fill="#666")
-    d.text((4, 84), "K3=Exit", font=font, fill="#666")
+    d.text((4, 20), "NETWORK MAPPER", font=font, fill=(171, 178, 185))
+    d.text((4, 40), "Visual topology", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "OK=Refresh  K1=Labels", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "L/R=Zoom  K2=Export", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 

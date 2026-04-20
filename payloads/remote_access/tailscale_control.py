@@ -126,40 +126,40 @@ def _truncate(s, n):
 
 
 def draw(lcd, lines, message=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = ImageFont.load_default()
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((4, 1), "Tailscale", font=font, fill="white")
-    d.text((84, 1), "1UP 2DN", font=font, fill="white")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((4, 1), "Tailscale", font=font, fill=(242, 243, 244))
+    d.text((84, 1), "1UP 2DN", font=font, fill=(242, 243, 244))
 
     y = 16
     for line in lines:
-        d.text((4, y), _truncate(line, 20), font=font, fill="white")
+        d.text((4, y), _truncate(line, 20), font=font, fill=(242, 243, 244))
         y += 12
 
     if message:
-        d.rectangle((0, 112, 127, 127), fill="#1a1a1a")
-        d.text((2, 115), _truncate(message, 21), font=font, fill="white")
+        d.rectangle((0, 112, 127, 127), fill=(10, 0, 0))
+        d.text((2, 115), _truncate(message, 21), font=font, fill=(242, 243, 244))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
 def draw_error(lcd, title, lines):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = ImageFont.load_default()
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((4, 1), _truncate(title, 16), font=font, fill="white")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((4, 1), _truncate(title, 16), font=font, fill=(242, 243, 244))
 
     y = 18
     for line in lines:
-        d.text((4, y), _truncate(line, 20), font=font, fill="white")
+        d.text((4, y), _truncate(line, 20), font=font, fill=(242, 243, 244))
         y += 12
 
-    d.rectangle((0, 112, 127, 127), fill="#1a1a1a")
-    d.text((2, 115), "KEY3 exit", font=font, fill="white")
+    d.rectangle((0, 112, 127, 127), fill=(10, 0, 0))
+    d.text((2, 115), "KEY3 exit", font=font, fill=(242, 243, 244))
     lcd.LCD_ShowImage(img, 0, 0)
 
 

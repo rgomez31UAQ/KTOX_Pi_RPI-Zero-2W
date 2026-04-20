@@ -80,12 +80,12 @@ def get_ip_for_url() -> str:
         return "127.0.0.1"
 
 def draw_info(https_url: str, http_url: str):
-    img = Image.new('RGB', (WIDTH, HEIGHT), 'black')
+    img = Image.new('RGB', (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     
     # Header
     d.rectangle((0, 0, 128, 20), fill='#00A321')
-    d.text((4, 2), "WebUI Active", font=bold, fill='black')
+    d.text((4, 2), "WebUI Active", font=bold, fill=(10, 0, 0))
     
     # Content
     y = 28

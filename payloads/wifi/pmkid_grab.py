@@ -303,14 +303,14 @@ def _export_loot():
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "PMKID GRABBER", font=font, fill="#FF6600")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "PMKID GRABBER", font=font, fill=(231, 76, 60))
     active = phase in ("scanning", "capturing")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#444")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#444")
 
     with lock:
         msg = status_msg
@@ -318,11 +318,11 @@ def _draw_frame(lcd, font):
         caps = list(captured)
         cur_phase = phase
 
-    d.text((2, 16), msg[:24], font=font, fill="#AAAAAA")
+    d.text((2, 16), msg[:24], font=font, fill=(171, 178, 185))
 
     if cur_phase in ("selecting", "done"):
         # Show AP list
-        d.text((2, 28), f"APs:{len(aps)} Cap:{len(caps)}", font=font, fill="#888")
+        d.text((2, 28), f"APs:{len(aps)} Cap:{len(caps)}", font=font, fill=(113, 125, 126))
         visible = aps[scroll:scroll + ROWS_VISIBLE]
         for i, ap in enumerate(visible):
             y = 40 + i * ROW_H
@@ -331,19 +331,19 @@ def _draw_frame(lcd, font):
             line = f"{prefix}{ap['essid'][:14]}"
             color = "#00FF00" if idx == selected_idx else "#CCCCCC"
             d.text((2, y), line, font=font, fill=color)
-            d.text((100, y), f"ch{ap['channel']}", font=font, fill="#666")
+            d.text((100, y), f"ch{ap['channel']}", font=font, fill=(86, 101, 115))
     elif cur_phase == "capturing":
-        d.text((2, 50), "Capturing...", font=font, fill="#FFAA00")
-        d.text((2, 65), "Please wait", font=font, fill="#888")
+        d.text((2, 50), "Capturing...", font=font, fill=(212, 172, 13))
+        d.text((2, 65), "Please wait", font=font, fill=(113, 125, 126))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if cur_phase == "selecting":
-        d.text((2, 117), "OK:Sel K1:Scan K3:Quit", font=font, fill="#888")
+        d.text((2, 117), "OK:Sel K1:Scan K3:Quit", font=font, fill=(113, 125, 126))
     elif cur_phase == "done":
-        d.text((2, 117), "K2:Export K1:Scan K3:Q", font=font, fill="#888")
+        d.text((2, 117), "K2:Export K1:Scan K3:Q", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "K1:Scan K3:Exit", font=font, fill="#888")
+        d.text((2, 117), "K1:Scan K3:Exit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -366,9 +366,9 @@ def main():
     font = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font, fill="#FF0000")
+        d.text((4, 50), "scapy not found!", font=font, fill=(231, 76, 60))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()
@@ -376,9 +376,9 @@ def main():
 
     usb_iface = find_monitor_capable_interface()
     if not usb_iface:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "No USB WiFi dongle", font=font, fill="#FF0000")
+        d.text((4, 50), "No USB WiFi dongle", font=font, fill=(231, 76, 60))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()
@@ -386,9 +386,9 @@ def main():
 
     mon_iface = activate_monitor_mode(usb_iface)
     if not mon_iface:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "Monitor mode fail", font=font, fill="#FF0000")
+        d.text((4, 50), "Monitor mode fail", font=font, fill=(231, 76, 60))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

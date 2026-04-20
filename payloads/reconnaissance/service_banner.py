@@ -387,21 +387,21 @@ def export_loot():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(171, 178, 185))
     with lock:
         active = busy
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_results_view():
     """Render the banner results list."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "BANNERS")
 
@@ -410,11 +410,11 @@ def draw_results_view():
         status = status_msg
         sc = scroll_pos
 
-    d.text((2, 15), status[:22], font=font, fill="#888")
+    d.text((2, 15), status[:22], font=font, fill=(113, 125, 126))
 
     if not res:
-        d.text((10, 45), "OK: Scan all hosts", font=font, fill="#666")
-        d.text((10, 57), "K1: Pick single host", font=font, fill="#666")
+        d.text((10, 45), "OK: Scan all hosts", font=font, fill=(86, 101, 115))
+        d.text((10, 57), "K1: Pick single host", font=font, fill=(86, 101, 115))
     else:
         visible = res[sc:sc + ROWS_VISIBLE - 1]
         for i, entry in enumerate(visible):
@@ -424,13 +424,13 @@ def draw_results_view():
             svc = entry["service"][:6]
             banner_preview = entry["banner"][:8].replace("\n", " ").replace("\r", "")
             line = f".{host_short}:{port} {svc} {banner_preview}"
-            d.text((1, y), line[:22], font=font, fill="#CCCCCC")
+            d.text((1, y), line[:22], font=font, fill=(242, 243, 244))
 
         total = len(res)
         if total > ROWS_VISIBLE - 1:
             bar_h = max(4, int((ROWS_VISIBLE - 1) / total * 88))
             bar_y = 28 + int(sc / total * 88) if total > 0 else 28
-            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill="#444")
+            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill=(34, 0, 0))
 
     _draw_footer(d, f"Found:{len(res)} K3:Exit")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -438,7 +438,7 @@ def draw_results_view():
 
 def draw_host_picker():
     """Render the single-host selection view."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "PICK HOST")
 
@@ -446,11 +446,11 @@ def draw_host_picker():
         hosts = list(known_hosts)
         hs = host_scroll
 
-    d.text((2, 15), f"{len(hosts)} hosts found", font=font, fill="#888")
+    d.text((2, 15), f"{len(hosts)} hosts found", font=font, fill=(113, 125, 126))
 
     if not hosts:
-        d.text((10, 50), "No hosts known", font=font, fill="#666")
-        d.text((10, 62), "Press OK to scan all", font=font, fill="#666")
+        d.text((10, 50), "No hosts known", font=font, fill=(86, 101, 115))
+        d.text((10, 62), "Press OK to scan all", font=font, fill=(86, 101, 115))
     else:
         visible = hosts[hs:hs + ROWS_VISIBLE - 1]
         for i, host in enumerate(visible):
@@ -466,11 +466,11 @@ def draw_host_picker():
 
 def _show_message(line1, line2=""):
     """Show a brief overlay message."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 50), line1, font=font, fill="#00FF00")
+    d.text((10, 50), line1, font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2, font=font, fill="#888")
+        d.text((4, 65), line2, font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -483,15 +483,15 @@ def main():
     global scroll_pos, host_scroll, host_pick_mode, stop_flag
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 20), "SERVICE BANNERS", font=font, fill="#00CCFF")
-    d.text((4, 40), "Port scan & banner", font=font, fill="#888")
-    d.text((4, 52), "grab on common ports", font=font, fill="#888")
-    d.text((4, 72), "OK    Scan all hosts", font=font, fill="#666")
-    d.text((4, 84), "KEY1  Pick one host", font=font, fill="#666")
-    d.text((4, 96), "KEY2  Export JSON", font=font, fill="#666")
-    d.text((4, 108), "KEY3  Exit", font=font, fill="#666")
+    d.text((4, 20), "SERVICE BANNERS", font=font, fill=(171, 178, 185))
+    d.text((4, 40), "Port scan & banner", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "grab on common ports", font=font, fill=(113, 125, 126))
+    d.text((4, 72), "OK    Scan all hosts", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "KEY1  Pick one host", font=font, fill=(86, 101, 115))
+    d.text((4, 96), "KEY2  Export JSON", font=font, fill=(86, 101, 115))
+    d.text((4, 108), "KEY3  Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 

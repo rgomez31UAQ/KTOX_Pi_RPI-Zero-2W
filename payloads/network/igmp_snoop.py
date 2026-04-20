@@ -260,9 +260,9 @@ def _export_data():
 # ---------------------------------------------------------------------------
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
-    draw.text((2, 2), "IGMP SNOOP", fill="CYAN", font=font)
+    draw.text((2, 2), "IGMP SNOOP", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -273,8 +273,8 @@ def _draw_screen():
         vm = view_mode
         grps = dict(groups)
 
-    draw.text((80, 2), f"R:{tr}", fill="YELLOW", font=font)
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
+    draw.text((80, 2), f"R:{tr}", fill=(212, 172, 13), font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
 
     if vm == "groups":
         y = 28
@@ -289,21 +289,21 @@ def _draw_screen():
             y += 14
 
         if not gl:
-            draw.text((2, 56), "No groups seen", fill="GRAY", font=font)
-        draw.text((2, 116), "OK=go K1=mbrs K3=exit", fill="GRAY", font=font)
+            draw.text((2, 56), "No groups seen", fill=(86, 101, 115), font=font)
+        draw.text((2, 116), "OK=go K1=mbrs K3=exit", fill=(86, 101, 115), font=font)
 
     elif vm == "members":
         sel_addr = gl[si] if 0 <= si < len(gl) else ""
-        draw.text((2, 28), f"Group: {sel_addr}", fill="YELLOW", font=font)
-        draw.text((2, 42), f"Label: {_label_group(sel_addr)}", fill="CYAN", font=font)
+        draw.text((2, 28), f"Group: {sel_addr}", fill=(212, 172, 13), font=font)
+        draw.text((2, 42), f"Label: {_label_group(sel_addr)}", fill=(171, 178, 185), font=font)
         members = sorted(grps.get(sel_addr, set()))
         y = 56
         for m in members[sp:sp + 4]:
-            draw.text((2, y), m[:22], fill="WHITE", font=font)
+            draw.text((2, y), m[:22], fill=(242, 243, 244), font=font)
             y += 14
         if not members:
-            draw.text((2, 56), "No members", fill="GRAY", font=font)
-        draw.text((2, 116), "OK=back UP/DN=scroll", fill="GRAY", font=font)
+            draw.text((2, 56), "No members", fill=(86, 101, 115), font=font)
+        draw.text((2, 116), "OK=back UP/DN=scroll", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -317,7 +317,7 @@ def main():
     global view_mode, status_msg
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -387,10 +387,10 @@ def main():
         app_running = False
         sniff_active = False
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "IGMP Snoop stopped", fill="YELLOW", font=font)
-            d.text((10, 66), f"Groups: {len(group_list)}", fill="WHITE", font=font)
+            d.text((10, 50), "IGMP Snoop stopped", fill=(212, 172, 13), font=font)
+            d.text((10, 66), f"Groups: {len(group_list)}", fill=(242, 243, 244), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

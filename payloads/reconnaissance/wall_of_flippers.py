@@ -609,7 +609,7 @@ class Ui:
         if self.lcd is None:
             self._draw_console()
             return
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ImageDraw.Draw(img)
         with state_lock:
             screen = state.current_screen
@@ -649,7 +649,7 @@ class Ui:
             d.text((89, 2), _short(status, 7), font=self.font_small, fill="#E8F8E8")
 
     def _footer(self, d, txt: str) -> None:
-        d.rectangle((0, HEIGHT - 11, WIDTH, HEIGHT), fill="#111111")
+        d.rectangle((0, HEIGHT - 11, WIDTH, HEIGHT), fill=(10, 0, 0))
         limit = 18 if settings.badge_mode else 26
         d.text((1, HEIGHT - 10), _short(txt, limit), font=self.font_small, fill="#A0A0A0")
 
@@ -670,7 +670,7 @@ class Ui:
 
         if state.new_events:
             e = state.new_events[0]
-            d.text((3, 70), _short(e["name"], 19), font=self.font_small, fill="#FFFFFF")
+            d.text((3, 70), _short(e["name"], 19), font=self.font_small, fill=(242, 243, 244))
             d.text((3, 80), _short(f"{_mac_tail(e['mac'])} {e['det']}", 22), font=self.font_small, fill="#7FD9FF")
             d.text((3, 92), _short(f"Last: {_age_text(int(e['t']))}", 19), font=self.font_small, fill="#98BCCA")
         else:
@@ -709,7 +709,7 @@ class Ui:
             caret = ">" if sel else " "
             left = f"{caret}{flag} {_short(rec.name.replace('Flipper ', ''), 8)}"
             right = f"{str(status):>4} {_short(_mac_tail(rec.mac), 8)}"
-            d.text((2, y), left, font=self.font_small, fill="#FFFFFF" if sel else "#D6D6D6")
+            d.text((2, y), left, font=self.font_small, fill=(242, 243, 244) if sel else "#D6D6D6")
             d.text((58, y), _short(right, 13), font=self.font_small, fill="#9FD3FF")
             y += 11
         self._footer(d, "OK detail  UP/DN select")
@@ -721,7 +721,7 @@ class Ui:
             d.text((4, 32), "No device selected", font=self.font_small, fill="#A8A8A8")
             self._footer(d, "LEFT back")
             return
-        d.text((2, 16), _short(rec.name, 20), font=self.font_med, fill="#FFFFFF")
+        d.text((2, 16), _short(rec.name, 20), font=self.font_med, fill=(242, 243, 244))
         d.text((2, 28), _short(rec.mac.upper(), 20), font=self.font_small, fill="#88CCFF")
         d.text((2, 40), f"RSSI:{rec.rssi} Type:{rec.dtype}", font=self.font_small, fill="#CFCFCF")
         d.text((2, 52), f"Det:{_short(rec.detection, 15)}", font=self.font_small, fill="#CFCFCF")

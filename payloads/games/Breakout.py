@@ -154,11 +154,11 @@ def draw_screen(draw: ImageDraw.ImageDraw, paddle: Paddle, ball: Ball, bricks: L
         draw.rectangle(brick, fill=color)
 
     # Paddle
-    draw.rectangle(paddle.rect, fill="#FFFFFF")
+    draw.rectangle(paddle.rect, fill=(242, 243, 244))
     # Ball
-    draw.rectangle(ball.rect, fill="#FFFFFF")
+    draw.rectangle(ball.rect, fill=(242, 243, 244))
     # Score
-    draw.text((2, 0), f"Score: {score}", font=FONT, fill="#FFFFFF")
+    draw.text((2, 0), f"Score: {score}", font=FONT, fill=(242, 243, 244))
 
 
 def intersect(rect1, rect2) -> bool:
@@ -240,7 +240,7 @@ def main():
             ball.vx = ball.vy = 0  # freeze ball
 
         # -------------------------------- Render -------------------------------
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ImageDraw.Draw(img)
         draw_screen(d, paddle, ball, bricks, score)
         LCD.LCD_ShowImage(img, 0, 0)

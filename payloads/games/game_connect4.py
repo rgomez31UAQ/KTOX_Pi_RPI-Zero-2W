@@ -42,17 +42,17 @@ _GAME_W, _GAME_H = 128, 128
 font = ImageFont.load_default()
 
 # ---------------------------------------------------------------------------
-# Colours
+# Colours (KTOX dark-red theme)
 # ---------------------------------------------------------------------------
-COL_BG = (0, 0, 0)
-COL_BOARD = (0, 0, 140)
-COL_EMPTY = (40, 40, 40)
-COL_PLAYER = (0, 255, 0)
-COL_AI = (255, 0, 0)
-COL_CURSOR = (0, 200, 0)
-COL_TEXT = (0, 255, 0)
-COL_DIM = (0, 120, 0)
-COL_WIN = (255, 255, 0)
+COL_BG     = (10,  0,   0)   # KTOX BG
+COL_BOARD  = (34,  0,   0)   # FOOTER (dark board)
+COL_EMPTY  = (86,  101, 115) # DIM
+COL_PLAYER = (192, 57,  43)  # BLOOD (player discs)
+COL_AI     = (171, 178, 185) # ASH  (AI discs)
+COL_CURSOR = (231, 76,  60)  # EMBER
+COL_TEXT   = (242, 243, 244) # WHITE
+COL_DIM    = (113, 125, 126) # STEEL
+COL_WIN    = (212, 172, 13)  # YELLOW
 
 # ---------------------------------------------------------------------------
 # Board constants

@@ -342,15 +342,15 @@ def draw_main_screen():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#8B0000")
-    d.text((4, 3), "RF SCANNER", font=f9, fill="#FF3333")
+    d.text((4, 3), "RF SCANNER", font=f9, fill=(231, 76, 60))
     y = 20
-    d.text((4, y), f"Peak: {current_peak_freq:.2f} MHz", font=f9, fill="#FFBBBB"); y += 12
-    d.text((4, y), f"dB: {current_peak_db:.1f}", font=f9, fill="#FFBBBB"); y += 12
+    d.text((4, y), f"Peak: {current_peak_freq:.2f} MHz", font=f9, fill=(171, 178, 185)); y += 12
+    d.text((4, y), f"dB: {current_peak_db:.1f}", font=f9, fill=(171, 178, 185)); y += 12
     if trigger_active:
-        d.text((4, y), f"TRIGGER: {trigger_freq:.2f} MHz", font=f9, fill="#00FF00"); y += 12
-        d.text((4, y), f"dB: {trigger_db:.1f}", font=f9, fill="#00FF00"); y += 12
+        d.text((4, y), f"TRIGGER: {trigger_freq:.2f} MHz", font=f9, fill=(30, 132, 73)); y += 12
+        d.text((4, y), f"dB: {trigger_db:.1f}", font=f9, fill=(30, 132, 73)); y += 12
     else:
-        d.text((4, y), "Status: " + status_text, font=f9, fill="#AAAAAA"); y += 12
+        d.text((4, y), "Status: " + status_text, font=f9, fill=(171, 178, 185)); y += 12
     d.text((4, H-30), "K1=Report K2=Settings", font=f9, fill="#FF7777")
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "OK=Start/Stop K3=Exit", font=f9, fill="#FF7777")
@@ -373,10 +373,10 @@ def draw_settings_menu(cfg, selected, page=0):
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#004466")
-    d.text((4, 3), "SETTINGS", font=f9, fill="#FF3333")
+    d.text((4, 3), "SETTINGS", font=f9, fill=(231, 76, 60))
     y = 20
     for line in lines[:7]:
-        d.text((4, y), line[:23], font=f9, fill="#FFBBBB")
+        d.text((4, y), line[:23], font=f9, fill=(171, 178, 185))
         y += 12
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "K3=Back", font=f9, fill="#FF7777")
@@ -392,10 +392,10 @@ def draw_ranges_menu(cfg, selected_range, selected_field):
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#004466")
-    d.text((4, 3), "RANGES", font=f9, fill="#FF3333")
+    d.text((4, 3), "RANGES", font=f9, fill=(231, 76, 60))
     y = 20
     for line in lines[:7]:
-        d.text((4, y), line[:23], font=f9, fill="#FFBBBB")
+        d.text((4, y), line[:23], font=f9, fill=(171, 178, 185))
         y += 12
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -409,10 +409,10 @@ def show_report():
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill="#004466")
-    d.text((4, 3), "REPORT", font=f9, fill="#FF3333")
+    d.text((4, 3), "REPORT", font=f9, fill=(231, 76, 60))
     y = 20
     for line in lines[:7]:
-        d.text((4, y), line[:23], font=f9, fill="#FFBBBB")
+        d.text((4, y), line[:23], font=f9, fill=(171, 178, 185))
         y += 12
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "Any key to exit", font=f9, fill="#FF7777")

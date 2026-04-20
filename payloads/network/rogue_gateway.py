@@ -573,7 +573,7 @@ def _export_data():
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
     draw.text((2, 2), "ROGUE GATEWAY", fill="RED", font=font)
@@ -592,7 +592,7 @@ def _draw_screen():
     atk_color = "GREEN" if atk else "GRAY"
     draw.text((80, 2), atk_label, fill=atk_color, font=font)
 
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
 
     # Vector status
     y = 28
@@ -630,17 +630,17 @@ def _draw_screen():
 
     visible = unique_victims[sp:sp + ROWS_VISIBLE]
     for entry in visible:
-        draw.text((2, y), entry[:22], fill="WHITE", font=font)
+        draw.text((2, y), entry[:22], fill=(242, 243, 244), font=font)
         y += 12
 
     if not visible and atk:
-        draw.text((2, 76), "Scanning targets...", fill="GRAY", font=font)
+        draw.text((2, 76), "Scanning targets...", fill=(86, 101, 115), font=font)
 
     # Footer
     if atk:
-        draw.text((2, 116), "OK:Stop K1:Vec K3:Quit", fill="GRAY", font=font)
+        draw.text((2, 116), "OK:Stop K1:Vec K3:Quit", fill=(86, 101, 115), font=font)
     else:
-        draw.text((2, 116), "OK:Start K1:Vec K3:Quit", fill="GRAY", font=font)
+        draw.text((2, 116), "OK:Start K1:Vec K3:Quit", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -655,10 +655,10 @@ def main():
 
     try:
         if not SCAPY_OK:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((4, 50), "scapy not found!", font=font, fill="RED")
-            draw.text((4, 65), "pip install scapy", font=font, fill="GRAY")
+            draw.text((4, 65), "pip install scapy", font=font, fill=(86, 101, 115))
             LCD.LCD_ShowImage(img, 0, 0)
             time.sleep(3)
             GPIO.cleanup()
@@ -729,11 +729,11 @@ def main():
             _stop_all()
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
-            draw.text((10, 44), "Rogue GW stopped", fill="YELLOW", font=font)
-            draw.text((10, 58), "ARP restored", fill="GREEN", font=font)
-            draw.text((10, 72), "Cleanup done", fill="WHITE", font=font)
+            draw.text((10, 44), "Rogue GW stopped", fill=(212, 172, 13), font=font)
+            draw.text((10, 58), "ARP restored", fill=(30, 132, 73), font=font)
+            draw.text((10, 72), "Cleanup done", fill=(242, 243, 244), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

@@ -100,7 +100,7 @@ def lcd_status(title, lines):
     draw = ImageDraw.Draw(img)
 
     draw.rectangle((0, 0, W, 16), fill=HEADER)
-    draw.text((4, 2), title[:20], fill="#FFFFFF", font=FONT_MD)
+    draw.text((4, 2), title[:20], fill=(242, 243, 244), font=FONT_MD)
 
     y = 20
     for line in lines[:8]:
@@ -176,7 +176,7 @@ def draw_waterfall():
     draw = ImageDraw.Draw(img)
 
     draw.rectangle((0, 0, W, 16), fill=HEADER)
-    draw.text((4, 2), "SDR WATERFALL", fill="#FFFFFF", font=FONT_MD)
+    draw.text((4, 2), "SDR WATERFALL", fill=(242, 243, 244), font=FONT_MD)
 
     # Draw waterfall bars
     if spectrum_buffer:

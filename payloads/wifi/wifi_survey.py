@@ -387,7 +387,7 @@ def _sorted_clients():
 # ── Drawing ──────────────────────────────────────────────────────────────────
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     with lock:
@@ -400,13 +400,13 @@ def _draw_screen():
         n_cls = len(client_db)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), f"Survey: {view}", font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), f"Survey: {view}", font=font, fill=(171, 178, 185))
     color = "#00FF00" if active else "#FF0000"
     d.ellipse((118, 3, 126, 11), fill=color)
 
     y = 15
-    d.text((2, y), f"APs:{n_aps} Cls:{n_cls} [{msg[:10]}]", font=font, fill="#888")
+    d.text((2, y), f"APs:{n_aps} Cls:{n_cls} [{msg[:10]}]", font=font, fill=(113, 125, 126))
     y += 13
 
     if view == "APs":
@@ -419,7 +419,7 @@ def _draw_screen():
             sig = ap["signal"]
             nc = len(ap["clients"])
             txt = f"{ssid} c{ch} {sig}dB {nc}c"
-            d.text((2, y), txt[:22], font=font, fill="#CCCCCC")
+            d.text((2, y), txt[:22], font=font, fill=(242, 243, 244))
             y += ROW_H
         if not aps:
             d.text((2, y), "No APs yet", font=font, fill="#555")
@@ -433,7 +433,7 @@ def _draw_screen():
             ap = c["ap_bssid"][-8:] if c["ap_bssid"] else "none"
             probes = len(c["probed"])
             txt = f"{mac_short} -> {ap} P:{probes}"
-            d.text((2, y), txt[:22], font=font, fill="#CCCCCC")
+            d.text((2, y), txt[:22], font=font, fill=(242, 243, 244))
             y += ROW_H
         if not cls:
             d.text((2, y), "No clients yet", font=font, fill="#555")
@@ -448,13 +448,13 @@ def _draw_screen():
                 cnt = ch_data.get(ch, 0)
                 bar_h = int((cnt / max_val) * 60) if max_val else 0
                 x = 2 + (ch - 1) * (bar_w + 1)
-                d.rectangle((x, 100 - bar_h, x + bar_w - 1, 100), fill="#00CCFF")
-                d.text((x, 102), str(ch), font=font, fill="#888")
+                d.rectangle((x, 100 - bar_h, x + bar_w - 1, 100), fill=(171, 178, 185))
+                d.text((x, 102), str(ch), font=font, fill=(113, 125, 126))
         else:
             d.text((2, y), "No channel data", font=font, fill="#555")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     lbl = "OK:Stop" if active else "OK:Go"
     d.text((2, 117), f"{lbl} K1:Sort K3:X", font=font, fill="#AAA")
 
@@ -466,14 +466,14 @@ def _draw_screen():
 def main():
     global view_idx, sort_idx, scroll_pos, status_msg
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 10), "WiFi SURVEY", font=font, fill="#00CCFF")
-    d.text((4, 28), "PineAP-style recon", font=font, fill="#888")
-    d.text((4, 44), "dashboard.", font=font, fill="#888")
-    d.text((4, 64), "OK=Start L/R=View", font=font, fill="#666")
-    d.text((4, 76), "K1=Sort  K2=Export", font=font, fill="#666")
-    d.text((4, 88), "K3=Exit", font=font, fill="#666")
+    d.text((8, 10), "WiFi SURVEY", font=font, fill=(171, 178, 185))
+    d.text((4, 28), "PineAP-style recon", font=font, fill=(113, 125, 126))
+    d.text((4, 44), "dashboard.", font=font, fill=(113, 125, 126))
+    d.text((4, 64), "OK=Start L/R=View", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K1=Sort  K2=Export", font=font, fill=(86, 101, 115))
+    d.text((4, 88), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

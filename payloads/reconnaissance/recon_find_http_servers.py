@@ -76,10 +76,10 @@ wifi_manager = WiFiManager()
 LOOT_DIR = os.path.join(KTOX_ROOT, 'loot', 'HTTP_Servers')
 
 def draw_ui_interface_selection(interfaces, current_selection):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, iface in enumerate(interfaces):
@@ -87,7 +87,7 @@ def draw_ui_interface_selection(interfaces, current_selection):
         d.text((5, y_pos), iface, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def select_interface_menu():
@@ -128,7 +128,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def show_message(lines, color="lime"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40
@@ -141,19 +141,19 @@ def show_message(lines, color="lime"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Find HTTP Servers", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "Find HTTP Servers", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if screen_state == "main":
         with ui_lock:
-            d.text((5, 25), f"Interface: {ETH_INTERFACE}", font=FONT, fill="white")
-            d.text((5, 40), f"Ports: {', '.join(map(str, HTTP_PORTS))[:16]}...", font=FONT, fill="white")
+            d.text((5, 25), f"Interface: {ETH_INTERFACE}", font=FONT, fill=(242, 243, 244))
+            d.text((5, 40), f"Ports: {', '.join(map(str, HTTP_PORTS))[:16]}...", font=FONT, fill=(242, 243, 244))
             if "Scanning" in status_msg or "Press" in status_msg:
-                d.text((5, 55), status_msg, font=FONT, fill="yellow")
+                d.text((5, 55), status_msg, font=FONT, fill=(212, 172, 13))
             else:
-                d.text((5, 55), f"Servers Found: {len(http_servers)}", font=FONT, fill="yellow")
+                d.text((5, 55), f"Servers Found: {len(http_servers)}", font=FONT, fill=(212, 172, 13))
                 start_index = max(0, selected_index - 2)
                 end_index = min(len(http_servers), start_index + 4)
                 y_pos = 70
@@ -162,21 +162,21 @@ def draw_ui(screen_state="main"):
                     d.text((10, y_pos), http_servers[i], font=FONT, fill=color)
                     y_pos += 11
 
-        d.text((5, 115), "OK=Scan | KEY1=Edit Iface | KEY2=Edit Ports | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 115), "OK=Scan | KEY1=Edit Iface | KEY2=Edit Ports | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "iface_input":
-        d.text((5, 30), "Enter Interface:", font=FONT, fill="white")
+        d.text((5, 30), "Enter Interface:", font=FONT, fill=(242, 243, 244))
         display_iface = list(current_interface_input)
         if interface_input_cursor_pos < len(display_iface):
             display_iface[interface_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_iface[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_iface[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     elif screen_state == "ports_input":
-        d.text((5, 30), "Enter Ports (CSV):", font=FONT, fill="white")
+        d.text((5, 30), "Enter Ports (CSV):", font=FONT, fill=(242, 243, 244))
         display_ports = list(current_ports_input)
         if ports_input_cursor_pos < len(display_ports):
             display_ports[ports_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_ports[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_ports[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 

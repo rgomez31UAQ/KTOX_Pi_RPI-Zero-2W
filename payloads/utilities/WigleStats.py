@@ -680,20 +680,20 @@ signal.signal(signal.SIGTERM, _signal_stop)
 
 
 def _draw_header(draw: ImageDraw.ImageDraw, page_index: int) -> None:
-    draw.rectangle((0, 0, 127, 11), fill="white")
-    draw.text((3, 2), f"WiGLE {PAGES[page_index]}", font=FONT, fill="black")
-    draw.text((103, 2), f"{page_index + 1}/3", font=FONT, fill="black")
+    draw.rectangle((0, 0, 127, 11), fill=(242, 243, 244))
+    draw.text((3, 2), f"WiGLE {PAGES[page_index]}", font=FONT, fill=(10, 0, 0))
+    draw.text((103, 2), f"{page_index + 1}/3", font=FONT, fill=(10, 0, 0))
 
 
 def _draw_footer(draw: ImageDraw.ImageDraw, status: str, source: str) -> None:
-    draw.line((0, 113, 127, 113), fill="white")
-    draw.text((2, 116), _fit_text(status, 80), font=FONT, fill="white")
-    draw.text((68, 116), "K1=Refresh", font=FONT, fill="white")
+    draw.line((0, 113, 127, 113), fill=(242, 243, 244))
+    draw.text((2, 116), _fit_text(status, 80), font=FONT, fill=(242, 243, 244))
+    draw.text((68, 116), "K1=Refresh", font=FONT, fill=(242, 243, 244))
 
 
 def _draw_centered(draw: ImageDraw.ImageDraw, y: int, text: str) -> None:
     width = _text_width(FONT, text)
-    draw.text((max(0, (WIDTH - width) // 2), y), text, font=FONT, fill="white")
+    draw.text((max(0, (WIDTH - width) // 2), y), text, font=FONT, fill=(242, 243, 244))
 
 
 def _draw_error_state(draw: ImageDraw.ImageDraw, error_code: str) -> None:
@@ -725,7 +725,7 @@ def _draw_overview(draw: ImageDraw.ImageDraw, snapshot: Dict[str, Any]) -> None:
     ]
     y = 16
     for line in lines:
-        draw.text((4, y), _fit_text(line, 120), font=FONT, fill="white")
+        draw.text((4, y), _fit_text(line, 120), font=FONT, fill=(242, 243, 244))
         y += 12
 
 
@@ -744,7 +744,7 @@ def _draw_group_page(draw: ImageDraw.ImageDraw, snapshot: Dict[str, Any]) -> Non
 
     y = 16
     for line in lines[:8]:
-        draw.text((4, y), _fit_text(line, 120), font=FONT, fill="white")
+        draw.text((4, y), _fit_text(line, 120), font=FONT, fill=(242, 243, 244))
         y += 12
 
 
@@ -776,11 +776,11 @@ def _draw_uploads_page(
     marker_x = 121 - _text_width(FONT_SMALL, selected_marker)
     label_width = max(56, marker_x - 10)
 
-    draw.rectangle((3, 15, 124, 49), outline="white")
-    draw.text((6, 18), _scroll_text(latest_label, label_width, selected_upload_index, FONT_BIG), font=FONT_BIG, fill="white")
-    draw.text((marker_x, 20), selected_marker, font=FONT_SMALL, fill="white")
-    draw.text((6, 31), _fit_text(f"{latest_status} {latest_percent}", 114, FONT), font=FONT, fill="white")
-    draw.text((6, 41), _fit_text(latest_update, 114, FONT_SMALL), font=FONT_SMALL, fill="white")
+    draw.rectangle((3, 15, 124, 49), outline=(242, 243, 244))
+    draw.text((6, 18), _scroll_text(latest_label, label_width, selected_upload_index, FONT_BIG), font=FONT_BIG, fill=(242, 243, 244))
+    draw.text((marker_x, 20), selected_marker, font=FONT_SMALL, fill=(242, 243, 244))
+    draw.text((6, 31), _fit_text(f"{latest_status} {latest_percent}", 114, FONT), font=FONT, fill=(242, 243, 244))
+    draw.text((6, 41), _fit_text(latest_update, 114, FONT_SMALL), font=FONT_SMALL, fill=(242, 243, 244))
 
     y = 54
     for index, item in enumerate(visible):
@@ -792,14 +792,14 @@ def _draw_uploads_page(
         percent_text = _fmt_percent(item.get("percent_done"))
         update_text = _fmt_last_update(item.get("last_update"))
 
-        draw.text((4, y), _fit_text(f"{row_number:02d} {label}", 120, FONT_SMALL), font=FONT_SMALL, fill="white")
+        draw.text((4, y), _fit_text(f"{row_number:02d} {label}", 120, FONT_SMALL), font=FONT_SMALL, fill=(242, 243, 244))
         y += 9
         meta = f"{status_text} {percent_text}  {update_text}"
-        draw.text((4, y), _fit_text(meta, 120, FONT_SMALL), font=FONT_SMALL, fill="white")
+        draw.text((4, y), _fit_text(meta, 120, FONT_SMALL), font=FONT_SMALL, fill=(242, 243, 244))
         y += 13
 
     if len(uploads) > MAX_UPLOAD_ROWS:
-        draw.text((4, 102), f"Rows {upload_offset + 1}-{len(uploads)}", font=FONT, fill="white")
+        draw.text((4, 102), f"Rows {upload_offset + 1}-{len(uploads)}", font=FONT, fill=(242, 243, 244))
 
 
 def _get_selected_upload(snapshot: Dict[str, Any], selected_upload_index: int) -> Optional[Dict[str, Any]]:
@@ -862,22 +862,22 @@ def _draw_upload_detail_page(
     max_scroll = max(0, len(lines) - visible_lines)
     detail_scroll = max(0, min(detail_scroll, max_scroll))
 
-    draw.rectangle((3, 15, 124, 105), outline="white")
+    draw.rectangle((3, 15, 124, 105), outline=(242, 243, 244))
     y = 18
     for label, value in lines[detail_scroll:detail_scroll + visible_lines]:
         if label:
             label_text = f"{label}:"
-            draw.text((6, y), label_text, font=FONT_DETAIL_BOLD, fill="white")
+            draw.text((6, y), label_text, font=FONT_DETAIL_BOLD, fill=(242, 243, 244))
             value_x = 10 + _text_width(FONT_DETAIL_BOLD, label_text)
         else:
             value_x = 12
-        draw.text((value_x, y), _fit_text(value, 122 - value_x, FONT_DETAIL), font=FONT_DETAIL, fill="white")
+        draw.text((value_x, y), _fit_text(value, 122 - value_x, FONT_DETAIL), font=FONT_DETAIL, fill=(242, 243, 244))
         y += 11
 
-    draw.line((5, 92, 122, 92), fill="white")
+    draw.line((5, 92, 122, 92), fill=(242, 243, 244))
     marker = f"{selected_upload_index + 1}/{len(snapshot.get('uploads') or [])}"
-    draw.text((6, 95), _fit_text(marker, 26, FONT_SMALL), font=FONT_SMALL, fill="white")
-    draw.text((34, 95), _fit_text(f"Lines {detail_scroll + 1}-{min(len(lines), detail_scroll + visible_lines)}", 86, FONT_SMALL), font=FONT_SMALL, fill="white")
+    draw.text((6, 95), _fit_text(marker, 26, FONT_SMALL), font=FONT_SMALL, fill=(242, 243, 244))
+    draw.text((34, 95), _fit_text(f"Lines {detail_scroll + 1}-{min(len(lines), detail_scroll + visible_lines)}", 86, FONT_SMALL), font=FONT_SMALL, fill=(242, 243, 244))
 
 
 def _render(
@@ -894,10 +894,10 @@ def _render(
         source = str(state.get("source") or "none")
         loading = bool(state.get("loading"))
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
-    draw.rectangle((0, 0, WIDTH - 1, HEIGHT - 1), outline="white")
+    draw.rectangle((0, 0, WIDTH - 1, HEIGHT - 1), outline=(242, 243, 244))
     _draw_header(draw, page_index)
 
     if loading and not snapshot:
@@ -917,7 +917,7 @@ def _render(
                 _draw_uploads_page(draw, snapshot, upload_offset, selected_upload_index)
         errors = snapshot.get("errors") or []
         if errors:
-            draw.text((4, 103), _fit_text(errors[0], 120), font=FONT, fill="white")
+            draw.text((4, 103), _fit_text(errors[0], 120), font=FONT, fill=(242, 243, 244))
 
     footer_status = status if not loading else "Refreshing..."
     _draw_footer(draw, footer_status, source)

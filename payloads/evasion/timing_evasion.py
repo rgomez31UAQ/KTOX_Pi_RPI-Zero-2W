@@ -234,7 +234,7 @@ def _remove_evasion():
 # LCD drawing
 # ---------------------------------------------------------------------------
 def _draw_lcd():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     idx = _get("preset_idx")
@@ -245,12 +245,12 @@ def _draw_lcd():
     cur_jitter = _get("current_jitter")
 
     # Header
-    d.rectangle((0, 0, 127, 12), fill="#111")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
     d.text((2, 1), "TIMING EVASION", font=font, fill="#AA00FF")
-    d.ellipse((118, 3, 124, 9), fill="#00FF00" if active else "#666")
+    d.ellipse((118, 3, 124, 9), fill=(30, 132, 73) if active else "#666")
 
     y = 16
-    d.text((2, y), f"Interface: {iface}", font=font, fill="#AAAAAA")
+    d.text((2, y), f"Interface: {iface}", font=font, fill=(171, 178, 185))
     y += 14
 
     # Presets
@@ -266,18 +266,18 @@ def _draw_lcd():
     y += 4
     # Current state
     if active:
-        d.text((2, y), f"Delay: {cur_delay}", font=font, fill="#00CCFF")
+        d.text((2, y), f"Delay: {cur_delay}", font=font, fill=(171, 178, 185))
         y += 11
-        d.text((2, y), f"Jitter: {cur_jitter}", font=font, fill="#00CCFF")
+        d.text((2, y), f"Jitter: {cur_jitter}", font=font, fill=(171, 178, 185))
     else:
-        d.text((2, y), "No jitter active", font=font, fill="#666")
+        d.text((2, y), "No jitter active", font=font, fill=(86, 101, 115))
 
     # Status
     d.rectangle((0, 106, 127, 115), fill="#0a0a0a")
     d.text((2, 107), status[:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     action = "REMOVE" if active else "APPLY"
     d.text((2, 117), f"OK:{action} K1:cust K3:x", font=font, fill="#AAA")
 
@@ -292,13 +292,13 @@ def main():
     _set(interface=iface)
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 16), "TIMING EVASION", font=font, fill="#AA00FF")
-    d.text((4, 32), "Network jitter", font=font, fill="#888")
-    d.text((4, 52), "OK=Apply/Remove", font=font, fill="#666")
-    d.text((4, 64), "U/D=Presets K1=Custom", font=font, fill="#666")
-    d.text((4, 76), "K3=Exit (cleanup)", font=font, fill="#666")
+    d.text((4, 32), "Network jitter", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "OK=Apply/Remove", font=font, fill=(86, 101, 115))
+    d.text((4, 64), "U/D=Presets K1=Custom", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K3=Exit (cleanup)", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

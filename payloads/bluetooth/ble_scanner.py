@@ -309,7 +309,7 @@ def _export_json():
 # ── Drawing ──────────────────────────────────────────────────────────────────
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     with lock:
@@ -324,7 +324,7 @@ def _draw_screen():
         d_scroll = detail_scroll
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     title = "BLE SCAN" if cur_view == "list" else "BLE DETAIL"
     d.text((2, 1), title, font=font, fill="#2196F3")
     color = "#00FF00" if active else "#FF0000"
@@ -336,14 +336,14 @@ def _draw_screen():
         # Detail view
         end = min(d_scroll + 8, len(d_lines))
         for i in range(d_scroll, end):
-            d.text((2, y), d_lines[i][:22], font=font, fill="#CCCCCC")
+            d.text((2, y), d_lines[i][:22], font=font, fill=(242, 243, 244))
             y += ROW_H
-        d.rectangle((0, 116, 127, 127), fill="#111")
+        d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
         d.text((2, 117), "LEFT=Back U/D=Scroll", font=font, fill="#AAA")
     else:
         # List view
         d.text((2, y), f"Devs:{n_dev} Sort:{srt} {msg[:8]}",
-               font=font, fill="#888")
+               font=font, fill=(113, 125, 126))
         y += 13
 
         devs = _sorted_devices()
@@ -362,7 +362,7 @@ def _draw_screen():
         if not devs:
             d.text((2, y), "No devices yet", font=font, fill="#555")
 
-        d.rectangle((0, 116, 127, 127), fill="#111")
+        d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
         lbl = "OK:Stop" if active else "OK:Go"
         d.text((2, 117), f"{lbl} K1:Srt K3:X", font=font, fill="#AAA")
 
@@ -376,14 +376,14 @@ def main():
     global view, detail_lines, detail_scroll
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((8, 10), "BLE SCANNER", font=font, fill="#2196F3")
-    d.text((4, 28), "Continuous BLE device", font=font, fill="#888")
-    d.text((4, 40), "scanner dashboard.", font=font, fill="#888")
-    d.text((4, 60), "OK=Start  RIGHT=Detail", font=font, fill="#666")
-    d.text((4, 72), "K1=Sort  K2=Export", font=font, fill="#666")
-    d.text((4, 84), "K3=Exit", font=font, fill="#666")
+    d.text((4, 28), "Continuous BLE device", font=font, fill=(113, 125, 126))
+    d.text((4, 40), "scanner dashboard.", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "OK=Start  RIGHT=Detail", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "K1=Sort  K2=Export", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

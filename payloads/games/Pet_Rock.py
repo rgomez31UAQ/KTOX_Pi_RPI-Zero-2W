@@ -211,54 +211,54 @@ def draw_rock_face(expression="neutral", blink=False, shake=0, message=None):
     d = ImageDraw.Draw(img)
     
     # Title bar
-    d.rectangle((0,0,W,17), fill="#8B0000")
-    d.text((4,3), "PET ROCK", font=f9, fill="#FF3333")
+    d.rectangle((0,0,W,17), fill=(139, 0, 0))
+    d.text((4,3), "PET ROCK", font=f9, fill=(231, 76, 60))
     
     # Rock body
     cx, cy = W//2, H//2 - 10
     rx, ry = 40, 30
     off_x = random.randint(-shake, shake) if shake else 0
     off_y = random.randint(-shake, shake) if shake else 0
-    d.ellipse((cx-rx+off_x, cy-ry+off_y, cx+rx+off_x, cy+ry+off_y), fill="#555555", outline="#333333", width=2)
+    d.ellipse((cx-rx+off_x, cy-ry+off_y, cx+rx+off_x, cy+ry+off_y), fill=(113, 125, 126), outline=(86, 101, 115), width=2)
     # Texture cracks
-    d.line((cx-20+off_x, cy-10+off_y, cx-10+off_x, cy+5+off_y), fill="#444444", width=1)
-    d.line((cx+10+off_x, cy-15+off_y, cx+25+off_x, cy+0+off_y), fill="#444444", width=1)
-    d.line((cx-5+off_x, cy+15+off_y, cx+15+off_x, cy+10+off_y), fill="#444444", width=1)
+    d.line((cx-20+off_x, cy-10+off_y, cx-10+off_x, cy+5+off_y), fill=(34, 0, 0), width=1)
+    d.line((cx+10+off_x, cy-15+off_y, cx+25+off_x, cy+0+off_y), fill=(34, 0, 0), width=1)
+    d.line((cx-5+off_x, cy+15+off_y, cx+15+off_x, cy+10+off_y), fill=(34, 0, 0), width=1)
     
     # Eyes
     eye_y = cy - 8
     eye_spacing = 20
     eye_radius = 6
     if blink:
-        d.line((cx-eye_spacing-5+off_x, eye_y+off_y, cx-eye_spacing+5+off_x, eye_y+off_y), fill="#000000", width=3)
-        d.line((cx+eye_spacing-5+off_x, eye_y+off_y, cx+eye_spacing+5+off_x, eye_y+off_y), fill="#000000", width=3)
+        d.line((cx-eye_spacing-5+off_x, eye_y+off_y, cx-eye_spacing+5+off_x, eye_y+off_y), fill=(10, 0, 0), width=3)
+        d.line((cx+eye_spacing-5+off_x, eye_y+off_y, cx+eye_spacing+5+off_x, eye_y+off_y), fill=(10, 0, 0), width=3)
     else:
-        d.ellipse((cx-eye_spacing-eye_radius+off_x, eye_y-eye_radius+off_y, cx-eye_spacing+eye_radius+off_x, eye_y+eye_radius+off_y), fill="#FFFFFF", outline="#000000")
-        d.ellipse((cx+eye_spacing-eye_radius+off_x, eye_y-eye_radius+off_y, cx+eye_spacing+eye_radius+off_x, eye_y+eye_radius+off_y), fill="#FFFFFF", outline="#000000")
+        d.ellipse((cx-eye_spacing-eye_radius+off_x, eye_y-eye_radius+off_y, cx-eye_spacing+eye_radius+off_x, eye_y+eye_radius+off_y), fill=(242, 243, 244), outline=(10, 0, 0))
+        d.ellipse((cx+eye_spacing-eye_radius+off_x, eye_y-eye_radius+off_y, cx+eye_spacing+eye_radius+off_x, eye_y+eye_radius+off_y), fill=(242, 243, 244), outline=(10, 0, 0))
         # Pupils
         pupil_x = 2 if expression == "angry" else -2 if expression == "smug" else 0
-        d.ellipse((cx-eye_spacing-2+pupil_x+off_x, eye_y-2+off_y, cx-eye_spacing+2+pupil_x+off_x, eye_y+2+off_y), fill="#000000")
-        d.ellipse((cx+eye_spacing-2+pupil_x+off_x, eye_y-2+off_y, cx+eye_spacing+2+pupil_x+off_x, eye_y+2+off_y), fill="#000000")
+        d.ellipse((cx-eye_spacing-2+pupil_x+off_x, eye_y-2+off_y, cx-eye_spacing+2+pupil_x+off_x, eye_y+2+off_y), fill=(10, 0, 0))
+        d.ellipse((cx+eye_spacing-2+pupil_x+off_x, eye_y-2+off_y, cx+eye_spacing+2+pupil_x+off_x, eye_y+2+off_y), fill=(10, 0, 0))
     
     # Mouth
     mouth_y = cy + 8
     if expression == "neutral":
-        d.line((cx-10+off_x, mouth_y+off_y, cx+10+off_x, mouth_y+off_y), fill="#000000", width=2)
+        d.line((cx-10+off_x, mouth_y+off_y, cx+10+off_x, mouth_y+off_y), fill=(10, 0, 0), width=2)
     elif expression == "angry":
-        d.line((cx-12+off_x, mouth_y-4+off_y, cx+0+off_x, mouth_y+off_y), fill="#000000", width=2)
-        d.line((cx+0+off_x, mouth_y+off_y, cx+12+off_x, mouth_y-4+off_y), fill="#000000", width=2)
+        d.line((cx-12+off_x, mouth_y-4+off_y, cx+0+off_x, mouth_y+off_y), fill=(10, 0, 0), width=2)
+        d.line((cx+0+off_x, mouth_y+off_y, cx+12+off_x, mouth_y-4+off_y), fill=(10, 0, 0), width=2)
     elif expression == "smug":
-        d.arc((cx-12+off_x, mouth_y-6+off_y, cx+12+off_x, mouth_y+6+off_y), start=0, end=180, fill="#000000", width=2)
+        d.arc((cx-12+off_x, mouth_y-6+off_y, cx+12+off_x, mouth_y+6+off_y), start=0, end=180, fill=(10, 0, 0), width=2)
     elif expression == "bored":
-        d.arc((cx-12+off_x, mouth_y-4+off_y, cx+12+off_x, mouth_y+4+off_y), start=180, end=360, fill="#000000", width=2)
+        d.arc((cx-12+off_x, mouth_y-4+off_y, cx+12+off_x, mouth_y+4+off_y), start=180, end=360, fill=(10, 0, 0), width=2)
     
     # Footer
-    d.rectangle((0,H-12,W,H), fill="#220000")
-    d.text((4,H-10), "OK=pet  K2=status  K3=exit", font=f9, fill="#FF7777")
+    d.rectangle((0,H-12,W,H), fill=(34, 0, 0))
+    d.text((4,H-10), "OK=pet  K2=status  K3=exit", font=f9, fill=(192, 57, 43))
     
     # If message, draw bubble
     if message:
-        d.rectangle((4, H-48, W-4, H-14), fill="#0A0000", outline="#FF3333")
+        d.rectangle((4, H-48, W-4, H-14), fill=(10, 0, 0), outline="#FF3333")
         lines = []
         words = message.split()
         line = ""
@@ -272,7 +272,7 @@ def draw_rock_face(expression="neutral", blink=False, shake=0, message=None):
             lines.append(line)
         y = H-44
         for l in lines[:3]:
-            d.text((6, y), l, font=f9, fill="#FFBBBB")
+            d.text((6, y), l, font=f9, fill=(171, 178, 185))
             y += 12
     
     LCD.LCD_ShowImage(img, 0, 0)
@@ -382,8 +382,8 @@ def main():
     # Exit message
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
-    d.text((10,50), "Goodbye.", font=f11, fill="#FF3333")
-    d.text((10,70), "The rock will remember.", font=f9, fill="#FFBBBB")
+    d.text((10,50), "Goodbye.", font=f11, fill=(231, 76, 60))
+    d.text((10,70), "The rock will remember.", font=f9, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img,0,0)
     time.sleep(1.5)
     GPIO.cleanup()

@@ -37,7 +37,7 @@ except ImportError as e:
         # Attempt to initialize display for error reporting
         LCD = LCD_1in44.LCD()
         LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-        image = Image.new("RGB", (128, 128), "BLACK")
+        image = Image.new("RGB", (128, 128), (10, 0, 0))
         draw = ImageDraw.Draw(image)
         s_font = ImageFont.load_default()
 
@@ -47,20 +47,20 @@ except ImportError as e:
 
         # Display info on LCD
         draw.text((5, 2), "Import Error", font=s_font, fill="RED")
-        draw.text((5, 14), f"Module: {e.name}", font=s_font, fill="WHITE")
+        draw.text((5, 14), f"Module: {e.name}", font=s_font, fill=(242, 243, 244))
         
-        draw.text((5, 28), "Python used:", font=s_font, fill="YELLOW")
-        draw.text((5, 38), py_executable.replace('/usr/bin/', ''), font=s_font, fill="CYAN")
+        draw.text((5, 28), "Python used:", font=s_font, fill=(212, 172, 13))
+        draw.text((5, 38), py_executable.replace('/usr/bin/', ''), font=s_font, fill=(171, 178, 185))
 
-        draw.text((5, 52), "Search paths:", font=s_font, fill="YELLOW")
+        draw.text((5, 52), "Search paths:", font=s_font, fill=(212, 172, 13))
         y = 62
         for path in py_paths[:3]: # Show first 3 site-packages paths
             # Shorten path for display
             short_path = path.replace('/usr/lib/', '').replace('/dist-packages', '/d-p')
-            draw.text((5, y), short_path, font=s_font, fill="CYAN")
+            draw.text((5, y), short_path, font=s_font, fill=(171, 178, 185))
             y += 10
 
-        draw.text((5, 115), "Install deps for this env", font=s_font, fill="WHITE")
+        draw.text((5, 115), "Install deps for this env", font=s_font, fill=(242, 243, 244))
 
         LCD.LCD_ShowImage(image, 0, 0)
         time.sleep(20) # Keep message on screen for a while
@@ -101,17 +101,17 @@ def setup_fonts():
         font = ImageFont.load_default()
         small_font = ImageFont.load_default()
 
-def draw_text(draw, text, position, in_font, fill="WHITE"):
+def draw_text(draw, text, position, in_font, fill=(242, 243, 244)):
     draw.text(position, text, font=in_font, fill=fill)
 
-def draw_centered_text(draw, text, y, in_font, fill="WHITE"):
+def draw_centered_text(draw, text, y, in_font, fill=(242, 243, 244)):
     bbox = draw.textbbox((0, 0), text, font=in_font)
     text_width = bbox[2] - bbox[0]
     x = (128 - text_width) // 2
     draw.text((x, y), text, font=in_font, fill=fill)
 
 def display_message(draw, image, message_lines):
-    draw.rectangle([(0, 0), (128, 128)], fill="BLACK")
+    draw.rectangle([(0, 0), (128, 128)], fill=(10, 0, 0))
     y = 40
     for line in message_lines:
         draw_centered_text(draw, line, y, font, "LIME")
@@ -119,9 +119,9 @@ def display_message(draw, image, message_lines):
     LCD.LCD_ShowImage(image, 0, 0)
 
 def draw_menu(draw, title, items, selected_index):
-    draw.rectangle([(0, 0), (128, 128)], fill="BLACK")
+    draw.rectangle([(0, 0), (128, 128)], fill=(10, 0, 0))
     draw_centered_text(draw, title, 5, font, "CYAN")
-    draw.line([(10, 25), (118, 25)], fill="CYAN", width=1)
+    draw.line([(10, 25), (118, 25)], fill=(171, 178, 185), width=1)
 
     max_items_on_screen = 4
     start_index = max(0, selected_index - (max_items_on_screen // 2))
@@ -144,7 +144,7 @@ def draw_menu(draw, title, items, selected_index):
         y += 25
 
 def draw_confirm_screen(draw, target, pps):
-    draw.rectangle([(0, 0), (128, 128)], fill="BLACK")
+    draw.rectangle([(0, 0), (128, 128)], fill=(10, 0, 0))
     draw_centered_text(draw, "Confirm Attack", 5, font, "ORANGE")
     draw.line([(10, 25), (118, 25)], fill="ORANGE", width=1)
     
@@ -344,7 +344,7 @@ def cleanup(*_):
     log("Cleanup called. Exiting.")
     try:
         if LCD:
-            image = Image.new("RGB", (128, 128), "BLACK")
+            image = Image.new("RGB", (128, 128), (10, 0, 0))
             draw = ImageDraw.Draw(image)
             draw_centered_text(draw, "Exiting...", 55, font, "WHITE")
             LCD.LCD_ShowImage(image, 0, 0)
@@ -381,7 +381,7 @@ if __name__ == "__main__":
         
         setup_fonts()
 
-        image = Image.new("RGB", (128, 128), "BLACK")
+        image = Image.new("RGB", (128, 128), (10, 0, 0))
         draw = ImageDraw.Draw(image)
         
         while RUNNING:
@@ -451,7 +451,7 @@ if __name__ == "__main__":
             elif state == 'attacking':
                 target_ip = attack_thread.target_ip
                 target_name = attack_thread.target_name or target_ip
-                draw.rectangle([(0,0), (128,128)], fill="BLACK")
+                draw.rectangle([(0,0), (128,128)], fill=(10, 0, 0))
                 draw_centered_text(draw, "ATTACKING", 20, font, "RED")
                 draw_centered_text(draw, target_name, 45, small_font, "WHITE")
                 draw_centered_text(draw, target_ip, 60, small_font, "WHITE")

@@ -282,20 +282,20 @@ def export_loot():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(171, 178, 185))
     with lock:
         active = busy
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_list_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "TLS CERTS")
 
@@ -304,11 +304,11 @@ def draw_list_view():
         status = status_msg
         sc = scroll_pos
 
-    d.text((2, 15), status[:22], font=font, fill="#888")
+    d.text((2, 15), status[:22], font=font, fill=(113, 125, 126))
 
     if not res:
-        d.text((10, 45), "OK: Scan all hosts", font=font, fill="#666")
-        d.text((10, 57), "K1: Pick single host", font=font, fill="#666")
+        d.text((10, 45), "OK: Scan all hosts", font=font, fill=(86, 101, 115))
+        d.text((10, 57), "K1: Pick single host", font=font, fill=(86, 101, 115))
     else:
         visible = res[sc:sc + ROWS_VISIBLE - 1]
         for i, entry in enumerate(visible):
@@ -328,7 +328,7 @@ def draw_list_view():
 
 
 def draw_detail_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "CERT DETAIL")
 
@@ -337,7 +337,7 @@ def draw_detail_view():
         idx = detail_idx
 
     if idx < 0 or idx >= len(res):
-        d.text((10, 50), "No cert selected", font=font, fill="#666")
+        d.text((10, 50), "No cert selected", font=font, fill=(86, 101, 115))
         LCD.LCD_ShowImage(img, 0, 0)
         return
 
@@ -365,7 +365,7 @@ def draw_detail_view():
 
 
 def draw_host_picker():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "PICK HOST")
 
@@ -373,9 +373,9 @@ def draw_host_picker():
         hosts = list(known_hosts)
         hs = host_scroll
 
-    d.text((2, 15), f"{len(hosts)} hosts", font=font, fill="#888")
+    d.text((2, 15), f"{len(hosts)} hosts", font=font, fill=(113, 125, 126))
     if not hosts:
-        d.text((10, 50), "No hosts found", font=font, fill="#666")
+        d.text((10, 50), "No hosts found", font=font, fill=(86, 101, 115))
     else:
         visible = hosts[hs:hs + ROWS_VISIBLE - 1]
         for i, host in enumerate(visible):
@@ -389,11 +389,11 @@ def draw_host_picker():
 
 
 def _show_message(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 50), line1, font=font, fill="#00FF00")
+    d.text((10, 50), line1, font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2, font=font, fill="#888")
+        d.text((4, 65), line2, font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -405,12 +405,12 @@ def _show_message(line1, line2=""):
 def main():
     global scroll_pos, detail_idx, host_scroll, host_pick_mode, stop_flag
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 20), "TLS CERT SCANNER", font=font, fill="#00CCFF")
-    d.text((4, 40), "Scan HTTPS/TLS ports", font=font, fill="#888")
-    d.text((4, 60), "OK=Scan  K1=Single", font=font, fill="#666")
-    d.text((4, 72), "K2=Export K3=Exit", font=font, fill="#666")
+    d.text((4, 20), "TLS CERT SCANNER", font=font, fill=(171, 178, 185))
+    d.text((4, 40), "Scan HTTPS/TLS ports", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "OK=Scan  K1=Single", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "K2=Export K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 

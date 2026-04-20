@@ -212,18 +212,18 @@ _SEV_COLORS = {
 
 
 def _draw_notifications(lcd, notifs, cursor, scroll, status=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#111")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
     unread = sum(1 for n in notifs if n.get("timestamp", "") not in read_set)
-    d.text((2, 1), f"NOTIF ({unread} new)", font=font, fill="#ffaa00")
-    d.text((108, 1), "K3", font=font, fill="#888")
+    d.text((2, 1), f"NOTIF ({unread} new)", font=font, fill=(212, 172, 13))
+    d.text((108, 1), "K3", font=font, fill=(113, 125, 126))
 
     y = 16
     visible = 6
     if not notifs:
-        d.text((4, 50), "No notifications", font=font, fill="#666")
+        d.text((4, 50), "No notifications", font=font, fill=(86, 101, 115))
     else:
         end = min(len(notifs), scroll + visible)
         for i in range(scroll, end):
@@ -246,23 +246,23 @@ def _draw_notifications(lcd, notifs, cursor, scroll, status=""):
         if len(notifs) > visible:
             bar_h = max(10, int(visible / len(notifs) * 90))
             bar_y = 16 + int(scroll / max(1, len(notifs) - visible) * (90 - bar_h))
-            d.rectangle((125, bar_y, 127, bar_y + bar_h), fill="#444")
+            d.rectangle((125, bar_y, 127, bar_y + bar_h), fill=(34, 0, 0))
 
     if status:
         d.rectangle((0, 92, 127, 105), fill="#222200")
-        d.text((2, 94), status[:22], font=font, fill="#ffaa00")
+        d.text((2, 94), status[:22], font=font, fill=(212, 172, 13))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "OK:read K1:clr K2:push", font=font, fill="#666")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "OK:read K1:clr K2:push", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_confirm(lcd, message):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 40), message, font=font, fill="#ff4444")
-    d.text((10, 60), "OK = Yes", font=font, fill="#00ff00")
-    d.text((10, 75), "Any = Cancel", font=font, fill="#666")
+    d.text((10, 40), message, font=font, fill=(231, 76, 60))
+    d.text((10, 60), "OK = Yes", font=font, fill=(30, 132, 73))
+    d.text((10, 75), "Any = Cancel", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 

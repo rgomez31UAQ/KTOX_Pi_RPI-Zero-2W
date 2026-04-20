@@ -28,21 +28,20 @@ _GAME_W, _GAME_H = 128, 128
 font = ImageFont.load_default()
 
 # Quadrant definitions: (name, button, normal_color, flash_color, rect)
-# Layout: top=green, right=blue, bottom=yellow, left=red
-# Leave 14px at top for HUD, remaining area 114px split into quadrants
+# KTOX palette: top=blood, right=steel, bottom=yellow, left=rust
 QY = 14
 QW, QH = 62, 55
 QUADS = {
-    "UP":    {"col": (0, 140, 0),   "flash": (200, 255, 200), "rect": (2, QY + 2, 63, QY + 56)},
-    "RIGHT": {"col": (0, 0, 180),   "flash": (180, 180, 255), "rect": (65, QY + 2, 126, QY + 56)},
-    "DOWN":  {"col": (180, 180, 0), "flash": (255, 255, 200), "rect": (65, QY + 59, 126, QY + 113)},
-    "LEFT":  {"col": (180, 0, 0),   "flash": (255, 180, 180), "rect": (2, QY + 59, 63, QY + 113)},
+    "UP":    {"col": (139, 0,   0),  "flash": (231, 76,  60),  "rect": (2, QY + 2, 63, QY + 56)},    # HDR → EMBER
+    "RIGHT": {"col": (86,  101, 115),"flash": (171, 178, 185), "rect": (65, QY + 2, 126, QY + 56)},  # DIM → ASH
+    "DOWN":  {"col": (146, 43,  33), "flash": (212, 172, 13),  "rect": (65, QY + 59, 126, QY + 113)},# RUST → YELLOW
+    "LEFT":  {"col": (192, 57,  43), "flash": (242, 243, 244), "rect": (2, QY + 59, 63, QY + 113)},  # BLOOD → WHITE
 }
 QUAD_ORDER = ["UP", "RIGHT", "DOWN", "LEFT"]
 
-COL_BG = (0, 0, 0)
-COL_TEXT = (0, 255, 0)
-COL_BORDER = (0, 80, 0)
+COL_BG     = (10,  0,   0)   # KTOX BG
+COL_TEXT   = (242, 243, 244) # WHITE
+COL_BORDER = (34,  0,   0)   # FOOTER
 
 running = True
 
@@ -75,7 +74,7 @@ def draw_screen(highlight=None, score=0, status="", best=0):
         lx = (r[0] + r[2]) // 2 - 6
         ly = (r[1] + r[3]) // 2 - 4
         d.text((lx, ly), labels[name], font=font,
-               fill=(0, 0, 0) if name == highlight else (255, 255, 255))
+               fill=(10, 0, 0) if name == highlight else (242, 243, 244))
 
     if _GAME_W != WIDTH or _GAME_H != HEIGHT:
         img = img.resize((WIDTH, HEIGHT), Image.NEAREST)

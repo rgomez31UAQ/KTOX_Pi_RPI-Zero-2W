@@ -196,25 +196,25 @@ def run_attack():
         status_lines = ["hcxdumptool", "exited early.", "Check logs."]
 
 def draw_ui(status: str):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
-    d.text((5, 5), "PMKID Capture Attack", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "PMKID Capture Attack", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     status_color = "lime" if status == "ACTIVE" else "red"
     d.text((30, 30), status, font=FONT_STATUS, fill=status_color)
 
     y_pos = 50
     for line in status_lines:
-        d.text((5, y_pos), line, font=FONT_STATUS, fill="white")
+        d.text((5, y_pos), line, font=FONT_STATUS, fill=(242, 243, 244))
         y_pos += 12
 
-    d.text((5, 110), "OK=Start/Stop | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 110), "OK=Start/Stop | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_message(lines, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40

@@ -117,7 +117,7 @@ def save_loot_snapshot():
 
 # --- UI Drawing Functions ---
 def draw_message(lines, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = 40
     for line in lines:
@@ -129,10 +129,10 @@ def draw_message(lines, color="yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_interface_selection_ui(interfaces, current_selection):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, iface in enumerate(interfaces):
@@ -140,15 +140,15 @@ def draw_interface_selection_ui(interfaces, current_selection):
         d.text((5, y_pos), iface, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=Confirm | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=Confirm | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_main_config_ui(selected_option_index):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
-    d.text((5, 5), f"Eth Manipulator ({current_interface})", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), f"Eth Manipulator ({current_interface})", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     options = ["Speed", "Duplex", "Link Flap"]
     y_pos = 25
@@ -166,8 +166,8 @@ def draw_main_config_ui(selected_option_index):
         d.text((5, y_pos), f"{option}: {display_value}", font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 80), f"Status: {status_msg}", font=FONT, fill="yellow")
-    d.text((5, 115), "L/R=Adjust | OK=Apply | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 80), f"Status: {status_msg}", font=FONT, fill=(212, 172, 13))
+    d.text((5, 115), "L/R=Adjust | OK=Apply | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 # --- Ethernet Manipulation Functions ---

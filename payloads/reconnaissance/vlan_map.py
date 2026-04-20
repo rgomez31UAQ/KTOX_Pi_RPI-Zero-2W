@@ -566,11 +566,11 @@ def _vlan_box_color(info):
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
     # Header
-    draw.text((2, 2), "VLAN MAP", fill="CYAN", font=font)
+    draw.text((2, 2), "VLAN MAP", fill=(171, 178, 185), font=font)
 
     with lock:
         mode = scan_mode
@@ -584,10 +584,10 @@ def _draw_screen():
     mode_color = "RED" if mode == "active" else "WHITE"
     draw.text((68, 2), mode[:3].upper(), fill=mode_color, font=font)
     if trunk:
-        draw.text((96, 2), "TRK", fill="GREEN", font=font)
+        draw.text((96, 2), "TRK", fill=(30, 132, 73), font=font)
 
     # Status line
-    draw.text((2, 14), st[:22], fill="GRAY", font=font)
+    draw.text((2, 14), st[:22], fill=(86, 101, 115), font=font)
 
     # VLAN grid
     visible_count = GRID_COLS * GRID_ROWS
@@ -603,26 +603,26 @@ def _draw_screen():
         draw.rectangle(
             [x, y, x + GRID_BOX_W, y + GRID_BOX_H],
             fill=fill_color,
-            outline="WHITE",
+            outline=(242, 243, 244),
         )
         # VLAN ID text centered in box
         vid_str = str(vid)
-        draw.text((x + 2, y + 2), vid_str[:4], fill="BLACK", font=font)
+        draw.text((x + 2, y + 2), vid_str[:4], fill=(10, 0, 0), font=font)
 
     if not vlan_items:
         if is_scanning:
-            draw.text((8, 56), "Scanning...", fill="GRAY", font=font)
+            draw.text((8, 56), "Scanning...", fill=(86, 101, 115), font=font)
         else:
-            draw.text((8, 56), "Press OK to start", fill="GRAY", font=font)
+            draw.text((8, 56), "Press OK to start", fill=(86, 101, 115), font=font)
 
     # Legend
     draw.rectangle([2, 116, 8, 122], fill=(0, 180, 0))
-    draw.text((10, 116), "OK", fill="WHITE", font=font)
+    draw.text((10, 116), "OK", fill=(242, 243, 244), font=font)
     draw.rectangle([28, 116, 34, 122], fill=(200, 180, 0))
-    draw.text((36, 116), "Seen", fill="WHITE", font=font)
+    draw.text((36, 116), "Seen", fill=(242, 243, 244), font=font)
 
     total_str = f"{len(vlan_items)}v"
-    draw.text((108, 116), total_str, fill="WHITE", font=font)
+    draw.text((108, 116), total_str, fill=(242, 243, 244), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -636,10 +636,10 @@ def main():
     global scanning, my_iface, my_mac
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
-        d.text((4, 65), "pip install scapy", font=font, fill="GRAY")
+        d.text((4, 65), "pip install scapy", font=font, fill=(86, 101, 115))
         LCD.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()
@@ -718,10 +718,10 @@ def main():
             _export_results()
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "VLAN Map stopped", fill="YELLOW", font=font)
-            d.text((10, 66), f"VLANs: {count}", fill="WHITE", font=font)
+            d.text((10, 50), "VLAN Map stopped", fill=(212, 172, 13), font=font)
+            d.text((10, 66), f"VLANs: {count}", fill=(242, 243, 244), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

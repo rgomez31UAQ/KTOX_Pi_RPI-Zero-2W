@@ -43,14 +43,14 @@ _GAME_W, _GAME_H = 128, 128
 font = ImageFont.load_default()
 
 # ---------------------------------------------------------------------------
-# Colours (green/black theme)
+# Colours (KTOX dark-red theme)
 # ---------------------------------------------------------------------------
-COL_BG = (0, 0, 0)
-COL_SHIP = (0, 255, 0)
-COL_ASTEROID = (0, 200, 0)
-COL_BULLET = (0, 255, 0)
-COL_TEXT = (0, 255, 0)
-COL_DIM = (0, 120, 0)
+COL_BG       = (10,  0,   0)
+COL_SHIP     = (242, 243, 244)   # WHITE
+COL_ASTEROID = (171, 178, 185)   # ASH
+COL_BULLET   = (231, 76,  60)    # EMBER
+COL_TEXT     = (242, 243, 244)   # WHITE
+COL_DIM      = (86,  101, 115)   # DIM
 
 # ---------------------------------------------------------------------------
 # Constants

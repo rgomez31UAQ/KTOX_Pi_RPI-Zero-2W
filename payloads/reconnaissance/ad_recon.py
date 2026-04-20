@@ -469,7 +469,7 @@ def _export_json():
 # LCD drawing
 # ---------------------------------------------------------------------------
 def _draw_lcd():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     view_idx = _get("view_idx")
@@ -478,10 +478,10 @@ def _draw_lcd():
     scanning = _get("scanning")
 
     # Header
-    d.rectangle((0, 0, 127, 12), fill="#111")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
     label = VIEW_LABELS[view_idx]
     d.text((2, 1), f"AD RECON: {label}", font=font, fill="#FF8800")
-    d.ellipse((118, 3, 124, 9), fill="#00FF00" if scanning else "#666")
+    d.ellipse((118, 3, 124, 9), fill=(30, 132, 73) if scanning else "#666")
 
     y = 14
 
@@ -493,22 +493,22 @@ def _draw_lcd():
         servers = _get("ldap_servers")
         nc = _get("naming_contexts")
 
-        d.text((2, y), f"Server: {server or '(none)'}", font=font, fill="#AAAAAA")
+        d.text((2, y), f"Server: {server or '(none)'}", font=font, fill=(171, 178, 185))
         y += 12
-        d.text((2, y), f"Domain: {domain or '?'}", font=font, fill="#00CCFF")
+        d.text((2, y), f"Domain: {domain or '?'}", font=font, fill=(171, 178, 185))
         y += 12
-        d.text((2, y), f"Base: {base[:18]}", font=font, fill="#888")
+        d.text((2, y), f"Base: {base[:18]}", font=font, fill=(113, 125, 126))
         y += 14
 
-        d.text((2, y), f"LDAP servers: {len(servers)}", font=font, fill="#888")
+        d.text((2, y), f"LDAP servers: {len(servers)}", font=font, fill=(113, 125, 126))
         y += 12
-        d.text((2, y), f"NCs: {len(nc)}", font=font, fill="#888")
+        d.text((2, y), f"NCs: {len(nc)}", font=font, fill=(113, 125, 126))
         y += 14
 
         u = len(_get("users"))
         g = len(_get("groups"))
         c = len(_get("computers"))
-        d.text((2, y), f"U:{u}  G:{g}  C:{c}", font=font, fill="#00FF88")
+        d.text((2, y), f"U:{u}  G:{g}  C:{c}", font=font, fill=(30, 132, 73))
 
     elif view_idx == 1:
         items = _get("users")
@@ -527,7 +527,7 @@ def _draw_lcd():
     d.text((2, 107), status[:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK K1:scan K2:exp K3x", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -536,11 +536,11 @@ def _draw_lcd():
 def _draw_scroll_list(d, y_start, items, scroll, label):
     """Draw a scrollable text list."""
     if not items:
-        d.text((4, y_start + 20), f"No {label} found", font=font, fill="#666")
-        d.text((4, y_start + 34), "OK=enumerate", font=font, fill="#666")
+        d.text((4, y_start + 20), f"No {label} found", font=font, fill=(86, 101, 115))
+        d.text((4, y_start + 34), "OK=enumerate", font=font, fill=(86, 101, 115))
         return
 
-    d.text((2, y_start), f"Total: {len(items)}", font=font, fill="#888")
+    d.text((2, y_start), f"Total: {len(items)}", font=font, fill=(113, 125, 126))
     y = y_start + 12
     visible = 7
     for i in range(scroll, min(scroll + visible, len(items))):
@@ -550,11 +550,11 @@ def _draw_scroll_list(d, y_start, items, scroll, label):
 
 
 def _show_msg(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 50), line1[:21], font=font, fill="#00FF00")
+    d.text((4, 50), line1[:21], font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2[:21], font=font, fill="#888")
+        d.text((4, 65), line2[:21], font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.2)
 
@@ -564,13 +564,13 @@ def _show_msg(line1, line2=""):
 # ---------------------------------------------------------------------------
 def main():
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 16), "AD RECON", font=font, fill="#FF8800")
-    d.text((4, 32), "LDAP enumeration", font=font, fill="#888")
-    d.text((4, 52), "OK=Enumerate", font=font, fill="#666")
-    d.text((4, 64), "L/R=Views  K1=Scan", font=font, fill="#666")
-    d.text((4, 76), "K2=Export  K3=Exit", font=font, fill="#666")
+    d.text((4, 32), "LDAP enumeration", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "OK=Enumerate", font=font, fill=(86, 101, 115))
+    d.text((4, 64), "L/R=Views  K1=Scan", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K2=Export  K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

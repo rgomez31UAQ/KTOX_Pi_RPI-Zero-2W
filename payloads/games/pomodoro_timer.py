@@ -69,7 +69,7 @@ def cleanup(*_):
     print("Pomodoro Timer: Exiting.")
 
 # --- Section 5: Drawing Functions ---
-def draw_centered_text(draw, text, y, font, fill="WHITE"):
+def draw_centered_text(draw, text, y, font, fill=(242, 243, 244)):
     """Draws horizontally centered text."""
     bbox = draw.textbbox((0, 0), text, font=font)
     text_width = bbox[2] - bbox[0]
@@ -78,7 +78,7 @@ def draw_centered_text(draw, text, y, font, fill="WHITE"):
 
 def display_timer(lcd, state, time_left):
     """Renders the timer display on the LCD."""
-    image = Image.new("RGB", (128, 128), "BLACK")
+    image = Image.new("RGB", (128, 128), (10, 0, 0))
     draw = ImageDraw.Draw(image)
 
     # Format time as MM:SS
@@ -110,7 +110,7 @@ def display_timer(lcd, state, time_left):
     draw_centered_text(draw, time_str, 50, FONT, fill=text_color)
 
     # Draw Instructions
-    draw.text((2, 115), "S/P  Reset  Exit", font=FONT_SMALL, fill="WHITE")
+    draw.text((2, 115), "S/P  Reset  Exit", font=FONT_SMALL, fill=(242, 243, 244))
 
     lcd.LCD_ShowImage(image, 0, 0)
 

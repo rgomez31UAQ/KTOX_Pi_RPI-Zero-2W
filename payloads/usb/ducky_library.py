@@ -256,7 +256,7 @@ def _execute_script(fname):
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title, color="#00CCFF"):
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), title, font=font, fill=color)
     with lock:
         active = executing
@@ -265,13 +265,13 @@ def _draw_header(d, title, color="#00CCFF"):
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def _draw_list_view():
     """Render scrollable script list."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "DUCKY LIBRARY")
 
@@ -282,12 +282,12 @@ def _draw_list_view():
         prog = exec_progress
 
     if active:
-        d.text((2, 18), msg[:22], font=font, fill="#FFAA00")
-        d.text((2, 32), prog[:22], font=font, fill="#CCCCCC")
+        d.text((2, 18), msg[:22], font=font, fill=(212, 172, 13))
+        d.text((2, 32), prog[:22], font=font, fill=(242, 243, 244))
         _draw_footer(d, "Executing...")
     elif not scripts:
-        d.text((10, 50), "No scripts found", font=font, fill="#666")
-        d.text((10, 64), "K1 to refresh", font=font, fill="#666")
+        d.text((10, 50), "No scripts found", font=font, fill=(86, 101, 115))
+        d.text((10, 64), "K1 to refresh", font=font, fill=(86, 101, 115))
         _draw_footer(d, "K1:Refresh K3:Exit")
     else:
         visible = scripts[sc:sc + ROWS_VISIBLE]
@@ -299,7 +299,7 @@ def _draw_list_view():
             d.text((2, y), display, font=font, fill=color)
             if is_selected:
                 hint = _first_line(fname)
-                d.text((2, y + 9), hint, font=font, fill="#666")
+                d.text((2, y + 9), hint, font=font, fill=(86, 101, 115))
 
         _draw_footer(d, "OK:Prev R:Exec K3:X")
 
@@ -308,7 +308,7 @@ def _draw_list_view():
 
 def _draw_preview_view():
     """Render script preview (scrollable)."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "PREVIEW", "#FFAA00")
 
@@ -319,11 +319,11 @@ def _draw_preview_view():
     visible = lines[sc:sc + 8]
     y = 16
     for line in visible:
-        d.text((2, y), line.rstrip()[:22], font=font, fill="#CCCCCC")
+        d.text((2, y), line.rstrip()[:22], font=font, fill=(242, 243, 244))
         y += 12
 
     if not visible:
-        d.text((10, 50), "(empty script)", font=font, fill="#666")
+        d.text((10, 50), "(empty script)", font=font, fill=(86, 101, 115))
 
     _draw_footer(d, "OK:Exec K3:Back")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -331,29 +331,29 @@ def _draw_preview_view():
 
 def _draw_ip_edit_view():
     """Render IP address editor."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "EDIT IP", "#00FF00")
 
-    d.text((2, 20), "Set ATTACKER_IP:", font=font, fill="#888")
+    d.text((2, 20), "Set ATTACKER_IP:", font=font, fill=(113, 125, 126))
 
     with lock:
         buf = list(ip_edit_buf)
         cur = ip_cursor
 
     ip_str = "".join(buf)
-    d.text((2, 38), ip_str, font=font, fill="#FFFFFF")
+    d.text((2, 38), ip_str, font=font, fill=(242, 243, 244))
 
     # Cursor indicator
     if buf:
         char_width = 6
         cursor_x = 2 + cur * char_width
-        d.line((cursor_x, 48, cursor_x + 5, 48), fill="#FFFF00")
+        d.line((cursor_x, 48, cursor_x + 5, 48), fill=(212, 172, 13))
 
-    d.text((2, 60), "UP/DN: change char", font=font, fill="#666")
-    d.text((2, 72), "L/R: move cursor", font=font, fill="#666")
-    d.text((2, 84), "OK: confirm", font=font, fill="#666")
-    d.text((2, 96), "KEY1: add digit", font=font, fill="#666")
+    d.text((2, 60), "UP/DN: change char", font=font, fill=(86, 101, 115))
+    d.text((2, 72), "L/R: move cursor", font=font, fill=(86, 101, 115))
+    d.text((2, 84), "OK: confirm", font=font, fill=(86, 101, 115))
+    d.text((2, 96), "KEY1: add digit", font=font, fill=(86, 101, 115))
 
     _draw_footer(d, "OK:Save K3:Cancel")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -375,14 +375,14 @@ def main():
         status_msg = f"Found {len(scripts)} scripts"
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 16), "DUCKY LIBRARY", font=font, fill="#00CCFF")
-    d.text((4, 36), "DuckyScript launcher", font=font, fill="#888")
-    d.text((4, 48), f"Scripts: {len(scripts)}", font=font, fill="#666")
-    d.text((4, 66), "OK=Preview  R=Execute", font=font, fill="#666")
-    d.text((4, 78), "K1=Refresh K2=Set IP", font=font, fill="#666")
-    d.text((4, 90), "K3=Exit", font=font, fill="#666")
+    d.text((8, 16), "DUCKY LIBRARY", font=font, fill=(171, 178, 185))
+    d.text((4, 36), "DuckyScript launcher", font=font, fill=(113, 125, 126))
+    d.text((4, 48), f"Scripts: {len(scripts)}", font=font, fill=(86, 101, 115))
+    d.text((4, 66), "OK=Preview  R=Execute", font=font, fill=(86, 101, 115))
+    d.text((4, 78), "K1=Refresh K2=Set IP", font=font, fill=(86, 101, 115))
+    d.text((4, 90), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.5)
 
