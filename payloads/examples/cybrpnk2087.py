@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – Cyberpunk: Neural Nexus (Epic Edition)
+KTOx Payload – Cyberpunk: Neural Nexus 
+author: wickednull
 ========================================================
 A massive text adventure with 60+ scenes, faction reputation,
 inventory puzzles, and multiple endings. Play time: 1-2 hours.
