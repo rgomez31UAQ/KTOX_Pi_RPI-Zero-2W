@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – CybrPnk2087
-================================================
-Massive text adventure with inventory, health, shopping, and a central hub.
-120+ scenes, full choice-driven narrative. 
-You are Niko. Build your crew, find love, become a legend.
+KTOx Payload – Cyberpunk 2087: Ultimate Edition (Save/Load + Hub Jump)
+=======================================================================
+Massive text adventure with inventory, health, shopping, central hub.
+Press KEY2 anytime to return to Afterlife hub.
+Save game in hub menu. Auto-load on start.
 
 Controls: 
   UP/DOWN = scroll text / move cursor in choices
   OK = next page / select choice
   KEY1 = open inventory (use/eat items, equip gear)
+  KEY2 = return to Afterlife hub
   KEY3 = exit
 """
 
@@ -18,10 +19,18 @@ import sys
 import time
 import random
 import textwrap
+import json
 
 import RPi.GPIO as GPIO
 import LCD_1in44
 from PIL import Image, ImageDraw, ImageFont
+
+# ----------------------------------------------------------------------
+# Paths
+# ----------------------------------------------------------------------
+LOOT_DIR = "/root/KTOx/loot"
+os.makedirs(LOOT_DIR, exist_ok=True)
+SAVE_FILE = os.path.join(LOOT_DIR, "cyberpunk_save.json")
 
 # ----------------------------------------------------------------------
 # Hardware
@@ -68,7 +77,7 @@ class Game:
     def __init__(self):
         self.inventory = []
         self.flags = {}
-        self.scene = "start"
+        self.scene = "start_menu"
         self.running = True
         self.rep_arasaka = 0
         self.rep_militech = 0
@@ -164,7 +173,7 @@ class Game:
                 prefix = "> " if i == 0 else "  "
                 d.text((4, y), f"{prefix}{it[:21]}", font=FONT, fill=(171,178,185) if i != 0 else (255,255,255))
                 y += 12
-            d.text((4, H-12), f"HP:{self.health} Eddies:{self.eddies}", font=FONT, fill=(192,57,43))
+            d.text((4, H-12), f"HP:{self.health} E:{self.eddies}", font=FONT, fill=(192,57,43))
             d.text((4, H-24), "OK=use  K1=back  UP/DN=scroll", font=FONT, fill=(192,57,43))
             LCD.LCD_ShowImage(img, 0, 0)
             btn = wait_btn(0.2)
@@ -178,6 +187,54 @@ class Game:
                 return
             elif btn == "KEY1":
                 return
+
+    def save_game(self):
+        data = {
+            "inventory": self.inventory,
+            "flags": self.flags,
+            "scene": self.scene,
+            "rep_arasaka": self.rep_arasaka,
+            "rep_militech": self.rep_militech,
+            "rep_voodoo": self.rep_voodoo,
+            "rep_netwatch": self.rep_netwatch,
+            "street_cred": self.street_cred,
+            "crew": self.crew,
+            "crew_loyalty": self.crew_loyalty,
+            "romance": self.romance,
+            "health": self.health,
+            "eddies": self.eddies,
+            "equipped_weapon": self.equipped_weapon,
+            "equipped_cyberware": self.equipped_cyberware,
+        }
+        try:
+            with open(SAVE_FILE, "w") as f:
+                json.dump(data, f, indent=2)
+            return True
+        except:
+            return False
+
+    def load_game(self):
+        try:
+            with open(SAVE_FILE, "r") as f:
+                data = json.load(f)
+            self.inventory = data.get("inventory", [])
+            self.flags = data.get("flags", {})
+            self.scene = data.get("scene", "afterlife_hub")
+            self.rep_arasaka = data.get("rep_arasaka", 0)
+            self.rep_militech = data.get("rep_militech", 0)
+            self.rep_voodoo = data.get("rep_voodoo", 0)
+            self.rep_netwatch = data.get("rep_netwatch", 0)
+            self.street_cred = data.get("street_cred", 0)
+            self.crew = data.get("crew", [])
+            self.crew_loyalty = data.get("crew_loyalty", 50)
+            self.romance = data.get("romance", None)
+            self.health = data.get("health", 100)
+            self.eddies = data.get("eddies", 500)
+            self.equipped_weapon = data.get("equipped_weapon", None)
+            self.equipped_cyberware = data.get("equipped_cyberware", None)
+            return True
+        except:
+            return False
 
     def _wrap(self, text):
         return textwrap.wrap(text, width=23)
@@ -223,6 +280,10 @@ class Game:
                     wait_for_release("OK")
                     return
                 wait_for_release("OK")
+            elif btn == "KEY2":
+                wait_for_release("KEY2")
+                self.scene = "afterlife_hub"
+                return
             elif btn == "KEY3":
                 wait_for_release("KEY3")
                 self.running = False
@@ -265,6 +326,10 @@ class Game:
             elif btn == "OK":
                 wait_for_release("OK")
                 return selected
+            elif btn == "KEY2":
+                wait_for_release("KEY2")
+                self.scene = "afterlife_hub"
+                return None
             elif btn == "KEY3":
                 wait_for_release("KEY3")
                 self.running = False
@@ -273,6 +338,23 @@ class Game:
 # =============================================================================
 # SCENE DEFINITIONS (120+ scenes – all present)
 # =============================================================================
+def scene_start_menu(g):
+    g.show_text(["Cyberpunk 2087", "Choose an option:"])
+    choices = ["New Game", "Continue"]
+    idx = g.choose(choices)
+    if idx == 0:
+        g.__init__()
+        g.scene = "start"
+        return "start"
+    else:
+        if g.load_game():
+            g.show_text(["Game loaded.", f"Returning to {g.scene}"])
+            return g.scene
+        else:
+            g.show_text(["No save file found.", "Starting new game."])
+            g.scene = "start"
+            return "start"
+
 def scene_start(g):
     g.show_text([
         ">>> 2087 <<<",
@@ -294,12 +376,18 @@ def scene_afterlife_hub(g):
         f"Health: {g.health} | Eddies: {g.eddies}",
         "Who do you want to talk to?"
     ])
-    choices = ["Talk to Fixer (gigs)", "Talk to Bartender (food/rumors)", "Visit Shop", "Talk to your crew", "Leave"]
+    choices = ["Talk to Fixer (gigs)", "Talk to Bartender (food/rumors)", "Visit Shop", "Talk to your crew", "Save Game", "Leave"]
     idx = g.choose(choices)
     if idx == 0: return "fixer_gigs"
     elif idx == 1: return "bartender"
     elif idx == 2: return "shop"
     elif idx == 3: return "crew_hub"
+    elif idx == 4:
+        if g.save_game():
+            g.show_text(["Game saved."])
+        else:
+            g.show_text(["Save failed."])
+        return "afterlife_hub"
     else: return "street"
 
 def scene_fixer_gigs(g):
@@ -432,6 +520,18 @@ def scene_talk_lina(g):
     else:
         g.show_text(["You have no cyberware to install."])
     return "afterlife_hub"
+
+def scene_street(g):
+    g.show_text([
+        "You step outside. Night City streets. Rain. Neon reflections.",
+        "Where to now?"
+    ])
+    choices = ["Go back to Afterlife", "Explore the Combat Zone", "Visit Kabuki market", "Go to Pacifica"]
+    idx = g.choose(choices)
+    if idx == 0: return "afterlife_hub"
+    elif idx == 1: return "combat_zone"
+    elif idx == 2: return "kabuki"
+    else: return "pacifica_side"
 
 # --------------------- REST OF SCENES (original 120+ with fixes) ---------------------
 def scene_combat_zone(g):
@@ -919,7 +1019,7 @@ def ending_legend(g):
     ])
     choices = ["Restart", "Exit"]
     idx = g.choose(choices)
-    if idx == 0: return "start"
+    if idx == 0: return "start_menu"
     else: g.running = False; return None
 
 def ending_sellout(g):
@@ -930,7 +1030,7 @@ def ending_sellout(g):
     ])
     choices = ["Restart", "Exit"]
     idx = g.choose(choices)
-    if idx == 0: return "start"
+    if idx == 0: return "start_menu"
     else: g.running = False; return None
 
 def ending_purge(g):
@@ -941,60 +1041,61 @@ def ending_purge(g):
     ])
     choices = ["Restart", "Exit"]
     idx = g.choose(choices)
-    if idx == 0: return "start"
+    if idx == 0: return "start_menu"
     else: g.running = False; return None
 
 def ending_death(g):
     g.show_text(["You die in a firefight. Your name is forgotten.", "GAME OVER"])
     choices = ["Restart", "Exit"]
     idx = g.choose(choices)
-    if idx == 0: return "start"
+    if idx == 0: return "start_menu"
     else: g.running = False; return None
 
 def ending_captured(g):
     g.show_text(["Arasaka captures you. You become an engram.", "GAME OVER"])
     choices = ["Restart", "Exit"]
     idx = g.choose(choices)
-    if idx == 0: return "start"
+    if idx == 0: return "start_menu"
     else: g.running = False; return None
 
 def ending_romance_jin(g):
     g.show_text(["You and Jin become partners. He helps you build a netrunning school.", "ENDING: LOVE IN THE NET"])
     choices = ["Restart", "Exit"]
     idx = g.choose(choices)
-    if idx == 0: return "start"
+    if idx == 0: return "start_menu"
     else: g.running = False; return None
 
 def ending_romance_maya(g):
     g.show_text(["You and Maya retire to a quiet cabin in the badlands. No more bullets.", "ENDING: PEACE"])
     choices = ["Restart", "Exit"]
     idx = g.choose(choices)
-    if idx == 0: return "start"
+    if idx == 0: return "start_menu"
     else: g.running = False; return None
 
 def ending_romance_lucy(g):
     g.show_text(["Lucy pulls you into the net. You become digital lovers, forever roaming.", "ENDING: GHOST LOVE"])
     choices = ["Restart", "Exit"]
     idx = g.choose(choices)
-    if idx == 0: return "start"
+    if idx == 0: return "start_menu"
     else: g.running = False; return None
 
 def ending_legend_solo(g):
     g.show_text(["You become the most feared solo in Night City. No crew, no love. Just glory.", "ENDING: LONE LEGEND"])
     choices = ["Restart", "Exit"]
     idx = g.choose(choices)
-    if idx == 0: return "start"
+    if idx == 0: return "start_menu"
     else: g.running = False; return None
 
 def ending_burnout(g):
     g.show_text(["You overdose on cyberware. Your body fails. A cautionary tale.", "ENDING: BURNOUT"])
     choices = ["Restart", "Exit"]
     idx = g.choose(choices)
-    if idx == 0: return "start"
+    if idx == 0: return "start_menu"
     else: g.running = False; return None
 
 # --------------------- SCENE DISPATCHER ---------------------
 scene_map = {
+    "start_menu": scene_start_menu,
     "start": scene_start,
     "afterlife_hub": scene_afterlife_hub,
     "fixer_gigs": scene_fixer_gigs,
@@ -1005,6 +1106,7 @@ scene_map = {
     "talk_maya": scene_talk_maya,
     "talk_jin": scene_talk_jin,
     "talk_lina": scene_talk_lina,
+    "street": scene_street,
     "combat_zone": scene_combat_zone,
     "maya_recruit": scene_maya_recruit,
     "combat_zone_loot": scene_combat_zone_loot,
@@ -1082,10 +1184,13 @@ def main():
     game = Game()
     game.running = True
     while game.running:
-        # Check for KEY1 (inventory) in any scene
+        # Check for KEY1 (inventory) or KEY2 (hub jump) in any scene
         btn = wait_btn(0.01)
         if btn == "KEY1":
             game.show_inventory()
+            continue
+        elif btn == "KEY2":
+            game.scene = "afterlife_hub"
             continue
         next_scene = run_scene(game, game.scene)
         if next_scene is None:
