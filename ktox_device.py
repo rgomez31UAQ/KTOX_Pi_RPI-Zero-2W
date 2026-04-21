@@ -2059,8 +2059,38 @@ def _ask_pps():
         # else continue
 
 
+def _get_mac_arping(ip, iface, timeout=2):
+    """Use system arping to get MAC address."""
+    try:
+        cmd = ["arping", "-c", "1", "-I", iface, "-w", str(timeout), ip]
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout+1)
+        import re
+        m = re.search(r"\[([0-9a-fA-F:]{17})\]", proc.stdout)
+        if m:
+            return m.group(1).upper()
+    except Exception:
+        pass
+    return ""
+
 def _scapy_resolve(ip, iface):
-    """Return MAC for ip, or empty string on failure (runs synchronously)."""
+    """
+    Return MAC for ip, or empty string on failure.
+    Tries: ARP cache, arping, then scapy.
+    """
+    # 1. Check local ARP cache
+    rc, out = _run(["arp", "-n", ip], timeout=3)
+    if rc == 0:
+        import re
+        m = re.search(r"([0-9a-fA-F:]{17})", out)
+        if m:
+            mac = m.group(1).upper()
+            if mac != "FF:FF:FF:FF:FF:FF":
+                return mac
+    # 2. Try system arping
+    mac = _get_mac_arping(ip, iface)
+    if mac:
+        return mac
+    # 3. Fallback to scapy
     script = (
         "import sys,logging;"
         "logging.getLogger('scapy.runtime').setLevel(logging.ERROR);"
@@ -2072,9 +2102,12 @@ def _scapy_resolve(ip, iface):
     try:
         r = subprocess.run(["python3", "-c", script],
                            capture_output=True, text=True, timeout=8)
-        return r.stdout.strip()
+        mac = r.stdout.strip()
+        if mac:
+            return mac.upper()
     except Exception:
-        return ""
+        pass
+    return ""
 
 
 def _scapy_restore(target_ip, target_mac, gw_ip, gw_mac, iface, my_mac):
