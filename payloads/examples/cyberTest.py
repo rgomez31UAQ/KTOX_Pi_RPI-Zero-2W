@@ -775,1040 +775,2769 @@ def run_combat(self, enemies_data, flee_allowed=True):
 def scene_start_menu(g):
 g.show_text([“CYBERPUNK 2087”,“Night City never dies.”,“v2.0 – wickednull”])
 idx = g.choose([“New Game”,“Continue”,“About”])
+
+# =============================================================================
+
+# START MENU
+
+# =============================================================================
+
+def scene_start_menu(g):
+g.show_text([
+“CYBERPUNK 2087”,
+“”,
+“Night City never sleeps.”,
+“Neither do the dead.”,
+“”,
+“v2.0  |  wickednull”,
+], title=“TITLE”)
+idx = g.choose([“New Game”, “Continue”, “About”])
 if idx == 0:
 g.**init**()
 return “prologue”
 elif idx == 1:
 if g.load_game():
-g.show_text([“Loaded.”, f”Returning to Act {g.story_act}.”])
+g.show_text([“Save loaded.”, f”Welcome back, {g.player_name}.”])
 return g.scene
-g.show_text([“No save found.”,“Starting new game.”])
+g.show_text([“No save found.”, “Starting fresh.”])
 return “prologue”
 elif idx == 2:
 g.show_text([
-“Cyberpunk 2087 v2.0”,
-“Full RPG for Raspberry Pi Zero 2W”,
-“10 acts, multiple endings.”,
+“Cyberpunk 2087”,
+“A full-length RPG for”,
+“Raspberry Pi Zero 2W”,
+“with Waveshare 1.44 LCD”,
+“”,
+“10 acts. Multiple endings.”,
+“Real choices. Real consequences.”,
+“”,
 “author: wickednull”,
 ])
 return “start_menu”
 return “start_menu”
 
-# ─── PROLOGUE ───────────────────────────────────────────────────────
+# =============================================================================
+
+# PROLOGUE  –  WHO IS NIKO?
+
+# =============================================================================
 
 def scene_prologue(g):
 g.show_text([
-“PROLOGUE”,
-“Night City, 2087.”,
-“Arasaka collapsed in the coup of 2077. Militech filled the void.”,
-“The corps rebuilt the city in their image: chrome and surveillance.”,
-“You are NIKO. Twenty-three. No chrome. No corp. Just a debt.”,
-“Fixer Rook keeps calling. Said it’s urgent.”,
-“Your cracked neural port buzzes. Time to answer.”
+“NIGHT CITY  –  2087”,
+“”,
+“The war ended ten years ago.”,
+“Arasaka lost. Militech won.”,
+“The corps call it the Reconstruction.”,
+“The streets call it something else.”,
+“”,
+“You are NIKO.”,
+“Twenty-three years old.”,
+“No implants. No rep. No corp backing.”,
+“Just a cracked neural port,”,
+“a secondhand pistol,”,
+“and 800 eddies of debt”,
+“to a man named Rook.”,
 ], title=“PROLOGUE”)
-idx = g.choose([“Go to Afterlife bar”,“Check your messages first”,“Ignore everything”])
+g.show_text([
+“Your agent—a scratched slab of plastic”,
+“you found in a dumpster—buzzes.”,
+“”,
+“ROOK:  Afterlife. Now.”,
+“       Don’t make me come get you.”,
+“”,
+“Another message. No sender ID.”,
+“Encrypted so hard Jin couldn’t crack it.”,
+“Three words:”,
+“”,
+“       I  NEED  YOU”,
+“”,
+“You stare at the ceiling of your capsule.”,
+“800 eddies. The debt won’t pay itself.”,
+], title=“PROLOGUE”)
+idx = g.choose([
+“Head to the Afterlife”,
+“Try to crack the mystery message first”,
+“Check your gear before anything”,
+])
 if idx == 0:
 return “afterlife_intro”
 elif idx == 1:
-return “messages_intro”
+g.show_text([
+“You spend an hour on the message.”,
+“The encryption is military-grade.”,
+“You get one fragment before it re-locks:”,
+“”,
+“       …MIKOSHI…”,
+“”,
+“You don’t know what that means.”,
+“But it sits in your chest like a coal.”,
+“You head to the Afterlife.”,
+])
+g.set_flag(“saw_mikoshi_hint”)
+return “afterlife_intro”
 else:
 g.show_text([
-“You sit on a pile of scrap.”,
-“An hour later, Rook shows up in person.”,
-“‘Niko. GET UP. I’m not paying in patience.’”
+“Pistol: 6 rounds, worn grip.”,
+“Jacket: three bullet holes, patched badly.”,
+“Eddies: 500. Minus the 800 you owe Rook.”,
+“”,
+“You’re ready as you’re going to get.”,
+“Which isn’t saying much.”,
 ])
 return “afterlife_intro”
 
-def scene_messages_intro(g):
-g.show_text([
-“MESSAGES”,
-“Rook: ‘Afterlife. Now. 10k job.’”,
-“Unknown: ‘You don’t know me. But I know you. – L’”,
-“Bank: ‘You owe 800 eddies. Final notice.’”
-], title=“MESSAGES”)
-g.show_text([
-“The mysterious message from ‘L’ is encrypted.”,
-“Rook’s offer sounds real.”,
-“The debt sounds worse.”
-])
-return “afterlife_intro”
+# =============================================================================
 
-# ─── ACT 1: THE HEIST ───────────────────────────────────────────────
+# ACT 1  –  THE HEIST
+
+# =============================================================================
 
 def scene_afterlife_intro(g):
 g.show_text([
-“ACT 1 – THE HEIST”,
-“The Afterlife. Neon signs flicker.”,
-“‘David Martinez’ on the menu—a tribute to a legend.”,
-“Rook leans over a table in the back.”,
-“‘Finally. Militech is moving a prototype neural chip—Relic 2.0 prequel.’,”,
-“‘Convoy route, tomorrow night. 10k eddies if you grab it.’”,
+“ACT 1  –  THE HEIST”,
+“”,
+“The Afterlife.”,
+“Legend has it this bar was named after”,
+“the mercs who drank here and never came back.”,
+“The cocktails are named after them too.”,
+“”,
+“A David Martinez sits untouched on the bar.”,
+“Nobody orders it. Nobody throws it out.”,
+“”,
+“Rook is in the back booth.”,
+“He always is.”,
+“Fifty years old and looks seventy.”,
+“Night City does that to people.”,
 ], title=“ACT 1”)
-idx = g.choose([“Take the job”,“Ask about the chip”,“Negotiate price”,“Walk away”])
+g.show_text([
+“ROOK:  ‘Finally. Sit down.’”,
+“”,
+“‘Militech is moving a prototype chip’,”,
+“‘called the Ghost Relic.’,”,
+“‘Tomorrow night. Private convoy.’,”,
+“‘Four guards, one aerial drone,’,”,
+“‘scrambled comms.’”,
+“”,
+“‘You grab it, I pay you 10,000 eddies.’”,
+“‘You ask questions, I find someone else.’”,
+“”,
+“He slides a data chip across the table.”,
+“Convoy route. Guard rotation.”,
+“Everything you need and nothing you don’t.”,
+], title=“ACT 1”)
+idx = g.choose([
+“Take the job”,
+“Ask what the chip does”,
+“Push for more money”,
+“Walk out”,
+])
 if idx == 0:
 g.set_flag(“accepted_heist”)
 return “heist_plan”
 elif idx == 1:
 g.show_text([
-“Rook: ‘Prototype neural processor. Militech calls it the Ghost Relic.’”,
-“‘Word is it can copy engrams without Arasaka’s method.’”,
-“‘Don’t ask more. Take the job.’”
+“Rook’s eyes go flat.”,
+“‘It copies neural engrams.’,”,
+“‘Without Arasaka’s method.’,”,
+“‘Without Arasaka’s permission.’,”,
+“‘That’s all you need to know.’”,
+“”,
+“He taps the data chip.”,
+“‘Well?’”,
 ])
 g.set_flag(“knows_chip_value”)
-return “afterlife_intro”
+g.set_flag(“accepted_heist”)
+return “heist_plan”
 elif idx == 2:
 g.show_text([
-“You push for 15k.”,
-“Rook: ‘12k. Final offer. You’re not in a position to negotiate.’”,
-“You take it.”
+“You say 15,000.”,
+“”,
+“Rook doesn’t blink.”,
+“‘12. Final. You’re 800 in the hole to me”,
+“and you haven’t worked in six weeks.”,
+“You don’t negotiate from that chair.’”,
+“”,
+“He’s right. You take 12.”,
 ])
 g.set_flag(“negotiated_pay”)
 g.set_flag(“accepted_heist”)
 return “heist_plan”
 else:
 g.show_text([
-“You walk out. Your debt notice buzzes again.”,
-“Two hours later you’re back.”,
-“Rook: ‘Good. I knew you’d come around.’”
+“You stand up.”,
+“Rook watches you walk to the door.”,
+“”,
+“You make it four steps before”,
+“your agent buzzes:”,
+“BANK: FINAL NOTICE – 800 EDDIES”,
+“”,
+“You turn around.”,
+“Rook is already looking at his drink.”,
+“‘Sit down, Niko.’”,
 ])
 g.set_flag(“accepted_heist”)
 return “heist_plan”
 
 def scene_heist_plan(g):
+pay_note = “12,000” if g.check_flag(“negotiated_pay”) else “10,000”
 g.show_text([
-“You need a plan. The convoy has:”,
-“- 4 guards”,
-“- A Militech AV overhead”,
-“- Scrambled comms”,
-“Options: frontal assault, ambush, or find a netrunner to disable systems first.”
-], title=“HEIST PLAN”)
-idx = g.choose([“Recruit crew first”,“Assault convoy alone”,“Scout the route”,“Buy gear”])
+f”The job: {pay_note} eddies.”,
+“The convoy: tomorrow night, Route 7.”,
+“”,
+“You have one day to get ready.”,
+“Options:”,
+“  - Go in alone (risky, clean split)”,
+“  - Find crew (safer, shared pay)”,
+“  - Scout the route first”,
+“  - Gear up at the shop”,
+“”,
+“What’s your move?”,
+], title=“HEIST PREP”)
+idx = g.choose([
+“Find crew (Combat Zone + Kabuki)”,
+“Go alone – keep all the pay”,
+“Scout Route 7 first”,
+“Hit the shop”,
+])
 if idx == 0:
-return “crew_recruit_hub”
+return “heist_crew_hunt”
 elif idx == 1:
-return “heist_alone”
+return “heist_solo_warning”
 elif idx == 2:
 g.show_text([
-“You scout the highway overpass.”,
-“You identify a choke point.”,
-“Bonus: the AV has a blind spot when it banks west.”,
+“You spend three hours on the overpass”,
+“watching Route 7.”,
+“”,
+“Guard rotation: every 8 minutes.”,
+“The drone banks west at minute 4.”,
+“That’s your window.”,
+“”,
+“Choke point: the underpass at marker 7-C.”,
+“Force the convoy to stop there,”,
+“you own the fight.”,
+“”,
+“Scout complete. You’ll hit harder now.”,
 ])
 g.set_flag(“scouted_convoy”)
 return “heist_plan”
 else:
 return “shop”
 
-def scene_crew_recruit_hub(g):
+def scene_heist_solo_warning(g):
 g.show_text([
-“Before the heist, you need people.”,
-“You know of Maya—a solo in the Combat Zone.”,
-“And Jin—a netrunner hiding in Kabuki.”
-], title=“RECRUIT”)
-idx = g.choose([“Find Maya (Combat Zone)”,“Find Jin (Kabuki)”,“Go straight to heist”])
-if idx == 0: return “combat_zone”
-elif idx == 1: return “kabuki”
-else: return “heist_combat”
+“Going alone means:”,
+“  - Full 10-12k pay”,
+“  - No backup”,
+“  - Four guards plus a drone”,
+“”,
+“You’ve survived worse.”,
+“Probably.”,
+“”,
+“You check your pistol.”,
+“Six rounds.”,
+“You’re going to need more than that.”,
+], title=“SOLO RUN”)
+idx = g.choose([
+“Do it anyway”,
+“Actually, find some crew first”,
+])
+if idx == 0:
+return “heist_alone”
+return “heist_crew_hunt”
+
+def scene_heist_crew_hunt(g):
+g.show_text([
+“You know of two people”,
+“who might take this job.”,
+“”,
+“MAYA – a solo in the Combat Zone.”,
+“Good with a rifle. Has a grudge”,
+“against Militech specifically.”,
+“”,
+“JIN – a netrunner in Kabuki.”,
+“Can kill a drone from three blocks away.”,
+“Costs 500 eddies upfront.”,
+“”,
+“Who do you find first?”,
+], title=“FIND CREW”)
+idx = g.choose([
+“Find Maya (Combat Zone)”,
+“Find Jin (Kabuki)”,
+“Find both before hitting the convoy”,
+“Forget crew – go now”,
+])
+if idx == 0:
+return “combat_zone”
+elif idx == 1:
+return “kabuki”
+elif idx == 2:
+g.set_flag(“want_both_crew”)
+return “combat_zone”
+else:
+return “heist_alone”
 
 def scene_heist_alone(g):
 g.show_text([
-“You go in alone. Brutal. Efficient. Risky.”,
-“Three Militech guards on the overpass.”,
-“You have to move fast.”
-], title=“HEIST: SOLO”)
+“NIGHT  –  ROUTE 7”,
+“”,
+“The convoy is three vehicles.”,
+“Guards in tactical gear.”,
+“The drone makes its pass.”,
+“”,
+“You wait for the window.”,
+“Four minutes.”,
+“The drone banks west.”,
+“”,
+“You move.”,
+], title=“THE HEIST”)
 result = g.run_combat([
-(“Militech Guard”, 30, 9, 10, 1),
-(“Militech Guard”, 30, 9, 10, 1),
-(“Convoy Driver”,  20, 6,  8, 0),
+(“Militech Guard”,  30, 9, 10, 1),
+(“Militech Guard”,  30, 9, 10, 1),
+(“Convoy Driver”,   20, 6,  8, 0),
 ])
-if result == “hub”: return “afterlife_hub”
+if result == “hub”:
+return “afterlife_hub”
 if not result:
-g.show_text([“You’re cut down. Game over.”])
-g.running = False
-return None
+g.health = max(5, g.health - 30)
+g.show_text([
+“They put you on the ground.”,
+“You crawl into the storm drain”,
+“before they can zip-tie you.”,
+“”,
+“You survive. Barely.”,
+“The chip is still on the convoy.”,
+“”,
+“You rest. Then you try again.”,
+“Or you get some backup first.”,
+])
+return “heist_plan”
+# Victory
 g.add_item(“prototype_chip”)
-g.eddies += 12000 if g.check_flag(“negotiated_pay”) else 10000
-g.heist_done   = True
-g.story_act    = 1
+pay = 12000 if g.check_flag(“negotiated_pay”) else 10000
+g.eddies   += pay
+g.heist_done = True
+g.story_act  = 1
 g.change_rep(“street”, 2)
+g.show_text([
+“You pull the chip from the transport.”,
+“Small. Heavy.”,
+“Worth more than your life, apparently.”,
+“”,
+“You disappear into the underpass”,
+“before the drone comes back.”,
+“”,
+f”+{pay} eddies when you deliver.”,
+“Rook pays without counting.”,
+])
 return “after_heist”
 
 def scene_heist_combat(g):
+crew_names = “ + “.join(g.crew) if g.crew else “alone”
 g.show_text([
-“Your crew hits the convoy at the overpass.”,
-“Jin kills the AV feed. Maya lays down suppressing fire.”,
-“You punch through the middle.”
-], title=“HEIST: CREW”)
-scout_bonus = 5 if g.check_flag(“scouted_convoy”) else 0
-enemies = [
-(“Militech Guard”,    35, 10-scout_bonus, 10, 1),
-(“Militech Guard”,    35, 10-scout_bonus, 10, 1),
-(“Militech Sergeant”, 50, 13,             12, 2),
-]
-result = g.run_combat(enemies)
-if result == “hub”: return “afterlife_hub”
+“NIGHT  –  ROUTE 7”,
+“”,
+f”Your crew: {crew_names}.”,
+“”,
+“Jin kills the drone’s feed remotely.”,
+“The pilot’s controls go dark mid-bank.”,
+“”,
+“Maya is on the overpass with a rifle.”,
+“‘Three guards on foot. One in the cab.’”,
+“‘You take the left two. I’ll hold the right.’”,
+“”,
+“You move on her signal.”,
+], title=“THE HEIST”)
+scout_mod = -3 if g.check_flag(“scouted_convoy”) else 0
+result = g.run_combat([
+(“Militech Guard”,    35, max(6, 10+scout_mod), 10, 1),
+(“Militech Guard”,    35, max(6, 10+scout_mod), 10, 1),
+(“Militech Sergeant”, 50, 13, 12, 2),
+])
+if result == “hub”:
+return “afterlife_hub”
 if not result:
-g.show_text([“Your crew is wiped. Game over.”])
-g.running = False
-return None
+g.health = max(5, g.health - 25)
+g.show_text([
+“The sergeant calls in backup.”,
+“You pull back into the dark.”,
+“”,
+“Maya: ‘We need to regroup.’”,
+“Jin: ‘Their comms are back up. We have minutes.’”,
+“”,
+“You retreat. No chip. No pay.”,
+“But you’re breathing.”,
+“Try again when you’re stronger.”,
+])
+return “heist_plan”
 g.add_item(“prototype_chip”)
 pay = 12000 if g.check_flag(“negotiated_pay”) else 10000
-g.eddies     += pay
-g.heist_done  = True
-g.story_act   = 1
+g.eddies    += pay
+g.heist_done = True
+g.story_act  = 1
 g.change_rep(“street”, 3)
+g.show_text([
+“The sergeant goes down last.”,
+“”,
+“Silence. Rain. The chip is in your hand.”,
+“”,
+“Maya, from the overpass: ‘Clean.’”,
+“Jin, in your ear: ‘Drone’s coming back”,
+“in ninety seconds. Move.’”,
+“”,
+“You move.”,
+])
 return “after_heist”
 
 def scene_after_heist(g):
 g.show_text([
-“ACT 1 COMPLETE”,
-“Rook pays up. No questions.”,
-“But as you leave, a Militech agent blocks the door.”,
-“Vector: ‘Nice work, choom. We were watching.’”,
-“‘Hand over the chip, work for us, or we bury you.’”,
-“She holds up a badge. Colonel Ana Vector. Militech Intel.”
-], title=“AFTERMATH”)
+“Back at the Afterlife.”,
+“”,
+“Rook counts the chip, not the money.”,
+“He doesn’t even look up when he pays you.”,
+“”,
+“You’re halfway to the door”,
+“when someone steps in your path.”,
+“”,
+“Tall. Militech uniform under a civilian coat.”,
+“She’s not hiding it.”,
+“She doesn’t need to.”,
+“”,
+“VECTOR:  ‘Sit back down, Niko.’,”,
+“‘We need to have a conversation.’”,
+], title=“VECTOR”)
+g.show_text([
+“Colonel Ana Vector.”,
+“Militech Intelligence Division.”,
+“”,
+“She slides into the booth”,
+“like she owns it. Like she owns the bar.”,
+“Like she owns Night City.”,
+“”,
+“‘We had eyes on that convoy.’,”,
+“‘We let you take it.’,”,
+“‘Now we need something back.’”,
+“”,
+“She sets a data chip on the table.”,
+“Her side. Not yours.”,
+“”,
+“‘Work for us. One job.’,”,
+“‘Then we call it even.’,”,
+“‘Refuse, and the chip goes back to Militech”,
+“along with your address.’”,
+], title=“VECTOR”)
 idx = g.choose([
-“Work for Militech”,
-“Refuse—keep the chip”,
-“Hand it over (400 eddies back)”,
-“Attack her”
+“Agree – hear the job”,
+“Refuse – take your chances”,
+“Hand the chip back – walk away clean”,
+“Ask what the job is first”,
 ])
 if idx == 0:
 g.chose_militech = True
-g.change_rep(“militech”, 3)
+g.change_rep(“militech”, 2)
 g.set_flag(“vector_ally”)
-g.show_text([“Vector: ‘Smart. First job: find out who leaked our route.’”])
-return “act2_hub”
+g.show_text([
+“Vector: ‘Smart.’,”,
+“”,
+“‘Someone inside Militech sold our convoy route.’,”,
+“‘A data analyst. Name: Hiro Tanaka.’,”,
+“‘Find him before we do.’,”,
+“‘If he talks to the Voodoo Boys first”,
+“we lose six months of field work.’”,
+“”,
+“‘You have 48 hours.’”,
+“”,
+“She stands, takes her chip back,”,
+“and walks out.”,
+“Three guards follow her.”,
+“You didn’t see them come in.”,
+])
+return “act2_vector_lead”
 elif idx == 1:
-g.change_rep(“militech”, -4)
+g.change_rep(“militech”, -3)
 g.set_flag(“militech_enemy”)
 g.show_text([
-“Vector: ‘Your funeral.’”,
-“She leaves. But you know they’ll send someone else.”
+“Vector’s expression doesn’t change.”,
+“”,
+“‘That’s a choice.’,”,
+“‘Not a smart one. But yours to make.’”,
+“”,
+“She leaves.”,
+“Rook doesn’t look up.”,
+“‘You just made an enemy, Niko.’,”,
+“‘Militech doesn’t forget.’”,
+“”,
+“Two days later, someone shoots out”,
+“your capsule window.”,
+“A warning.”,
+“You start sleeping somewhere else.”,
 ])
-return “act2_hub”
+return “act2_no_vector”
 elif idx == 2:
-g.eddies += 400
+g.eddies   += 500
 g.remove_item(“prototype_chip”)
-g.show_text([
-“You hand it over. Vector nods.”,
-“‘Reasonable. We’ll be in touch.’”,
-“The chip is gone. But you’re alive.”
-])
 g.change_rep(“militech”, 1)
-return “act2_hub”
+g.show_text([
+“You slide the chip across.”,
+“”,
+“Vector picks it up.”,
+“Studies it for a moment.”,
+“”,
+“‘Reasonable.’,”,
+“‘Here’s 500 for your trouble.’,”,
+“‘We’ll be in touch.’”,
+“”,
+“She’s gone before you can ask”,
+“what that means.”,
+“”,
+“Rook: ‘You just gave up 10,000 eddies”,
+“to save your own skin.’,”,
+“‘Can’t say I blame you.’”,
+])
+return “act2_no_vector”
 else:
-g.show_text([“You lunge—Vector’s six guards appear from nowhere.”,
-“You barely escape through the kitchen.”])
-g.change_rep(“militech”, -5)
-g.health = max(1, g.health - 30)
-return “act2_hub”
+g.show_text([
+“Vector: ‘There’s a leak inside Militech.’,”,
+“‘A mole feeding data to the Voodoo Boys.’,”,
+“‘Name: Hiro Tanaka. Data analyst.’,”,
+“‘Find him. Bring him in. Or just”,
+“find out who he’s talking to.’”,
+“”,
+“‘We pay 5,000 on delivery.”,
+“On top of keeping your address private.’”,
+“”,
+“She waits.”,
+])
+return “after_heist”  # loop back for final choice
 
-# ─── ACT 2 ──────────────────────────────────────────────────────────
+# =============================================================================
 
-def scene_act2_hub(g):
+# ACT 2  –  GHOST SIGNAL
+
+# =============================================================================
+
+def scene_act2_vector_lead(g):
 g.story_act = max(g.story_act, 2)
 g.show_text([
-“ACT 2 – GHOST SIGNAL”,
-“Night City hums with tension.”,
-“Militech is tightening its grip on the net.”,
-“And that encrypted message from ‘L’ is still in your agent.”,
-“Jin decrypts it: ‘Pacifica, old netrunner den. Come alone.’”,
+“ACT 2  –  GHOST SIGNAL”,
+“”,
+“Hiro Tanaka.”,
+“You pull everything you can on him.”,
+“Low-level analyst. Twelve years at Militech.”,
+“Clean record. Then nothing for two months.”,
+“Then a withdrawal. 40,000 eddies.”,
+“Then a one-way transit pass.”,
+“”,
+“He’s running.”,
+“Or he’s planning to.”,
+“”,
+“Jin tracks his agent signal”,
+“to a capsule hotel in Kabuki.”,
+“Room 14. Sixth floor.”,
+“He checked in six hours ago.”,
 ], title=“ACT 2”)
 idx = g.choose([
-“Go to Pacifica now”,
-“Investigate Militech leak first”,
-“Hit the Combat Zone for work”,
-“Visit Afterlife hub”
+“Go to the capsule hotel now”,
+“Stake out the hotel – wait and watch”,
+“Hack his room’s comms first (cyberdeck)”,
+“Send Maya in as a guest”,
 ])
-if idx == 0: return “pacifica_first”
-elif idx == 1: return “militech_leak”
-elif idx == 2: return “combat_zone”
-else: return “afterlife_hub”
-
-def scene_pacifica_first(g):
-g.show_text([
-“Pacifica. Half-built towers. Sea-wind.”,
-“The den: a basement of dead terminals.”,
-“Then—a holographic figure. Silver hair. White jacket.”,
-“‘I’m Lucy. I’ve been watching you since the convoy.’”,
-“‘You’re different. You ask questions.’”,
-“‘I need someone like that. Do you know what the Ghost Relic does?’”
-], title=“LUCY”)
-idx = g.choose([“Ask what she wants”,“Mention the prototype chip”,“Tell her you work alone”])
 if idx == 0:
-g.show_text([
-“Lucy: ‘Militech and Arasaka both want the same thing—Mikoshi.’”,
-“‘Arasaka’s soul trap. They still run it from the ruins.’”,
-“‘I need to destroy it. And the Ghost Relic is the key.’”,
-“‘Will you help me?’”
-])
-return “lucy_deal”
+return “hiro_direct”
 elif idx == 1:
 g.show_text([
-“Lucy’s eyes widen. ‘You have it? Don’t let anyone know.’”,
-“‘That chip is a map to Mikoshi’s backdoor.’”,
-“‘I need it. And I need you.’”
+“You watch from the lobby cafe.”,
+“Four hours. Terrible synth-coffee.”,
+“”,
+“Hiro comes down at 3 AM with a bag.”,
+“He’s leaving.”,
+“You follow him to the metro platform.”,
 ])
-g.lucy_trust += 1
-return “lucy_deal”
-else:
-g.show_text([
-“Lucy: ‘That’s fine. But they’ll come for you regardless.’”,
-“‘The chip you stole just painted a target on your back.’”,
-“‘Help me, and I can keep you invisible.’”
-])
-return “lucy_deal”
-
-def scene_lucy_deal(g):
-g.show_text([
-“Lucy lays out the plan:”,
-“Three access keys to reach the Mikoshi core.”,
-“1. Militech clearance code”,
-“2. Voodoo Boys net ritual”,
-“3. Arasaka biokey—from a living exec.”,
-“‘Together, we can free every engram they’ve ever stolen.’”,
-“She looks at you. ‘Are you in?’”
-], title=“THE PLAN”)
-idx = g.choose([“Yes—I’m in”,“Ask about David Martinez”,“Demand payment”,“Refuse”])
-if idx == 0:
-g.met_lucy    = True
-g.lucy_trust += 1
-g.story_act   = max(g.story_act, 3)
-return “act3_key_hunt”
-elif idx == 1:
-g.show_text([
-“Lucy’s expression softens. Then hardens.”,
-“‘David was everything. He died for this city.’”,
-“‘His engram is in Mikoshi. I want to give him rest.’”,
-“She looks away. ‘Are you in?’”
-])
-g.lucy_trust += 1
-return “lucy_deal”
+return “hiro_platform”
 elif idx == 2:
+if g.has_item(“cyberdeck”):
+g.energy = max(0, g.energy - 20)
 g.show_text([
-“Lucy: ‘There’s no eddies here. Only a chance to do something real.’”,
-“‘But if we succeed—you’ll have access to Arasaka’s vaults.’”,
-“‘That’s worth more than Rook could ever pay you.’”
+“Jin patches you in.”,
+“”,
+“Hiro’s messages:”,
+“‘Meeting at the fish market. 4 AM.’”,
+“‘Bring everything you have on the convoy.’”,
+“‘They’ll get you out of the city.’”,
+“”,
+“‘They.’ Voodoo Boys.”,
+“He’s not just running.”,
+“He’s delivering.”,
+“You have until 4 AM.”,
 ])
-g.lucy_trust += 1
-return “lucy_deal”
+g.set_flag(“hiro_4am_deadline”)
+return “hiro_intercept”
 else:
+g.show_text([“No cyberdeck. You stake out the hotel instead.”])
+return “hiro_platform”
+else:
+if “Maya” in g.crew:
 g.show_text([
-“Lucy: ‘Okay. But when they come for you—and they will—’”,
-“‘don’t come looking for me.’”,
-“She vanishes from the projector.”
+“Maya: ‘You want me to what?’”,
+“‘Chat him up? I’m a soldier, Niko.’”,
+“‘But fine.’”,
+“”,
+“Twenty minutes later:”,
+“‘Room 14. He’s packing.”,
+“He’s scared. And he’s got a meet”,
+“at the fish market at 4 AM.’”,
+“”,
+“Maya: ‘You owe me for this.’”,
 ])
-return “afterlife_hub”
+g.set_flag(“hiro_4am_deadline”)
+return “hiro_intercept”
+else:
+g.show_text([“You don’t have Maya yet. Try another approach.”])
+return “act2_vector_lead”
 
-def scene_militech_leak(g):
+def scene_act2_no_vector(g):
+g.story_act = max(g.story_act, 2)
 g.show_text([
-“Vector’s intel: someone inside Militech sold the convoy route.”,
-“You track the leak to a low-level data analyst named Hiro.”,
-“He’s hiding in a Kabuki capsule hotel.”
-], title=“LEAK HUNT”)
-idx = g.choose([“Confront Hiro”,“Tail him first”,“Report directly to Vector”])
+“ACT 2  –  GHOST SIGNAL”,
+“”,
+“Without Vector’s lead,”,
+“you’re working blind.”,
+“”,
+“But three days after the heist,”,
+“your agent buzzes.”,
+“Unknown sender. Heavy encryption.”,
+“Jin cracks it in forty minutes.”,
+“”,
+“‘You took the chip.’,”,
+“‘You don’t know what it is yet.’,”,
+“‘Meet me. Pacifica. The old den.’,”,
+“‘Come alone.’”,
+“’   – L’”,
+“”,
+“L.”,
+“The same initial as that first message.”,
+], title=“ACT 2”)
+idx = g.choose([
+“Go to Pacifica”,
+“Try to trace the sender first”,
+“Bring your crew – ignore the ‘alone’ part”,
+])
 if idx == 0:
-return “hiro_confront”
+return “lucy_pacifica”
 elif idx == 1:
 g.show_text([
-“You watch Hiro for hours. He’s nervous. Buying passage tickets.”,
-“He’s planning to run. You corner him at the metro station.”
+“Jin tries.”,
+“The message bounced through”,
+“eleven proxy nodes across three continents.”,
+“”,
+“Jin: ‘Whoever sent this is either”,
+“a ghost or a very good netrunner.’,”,
+“‘Maybe both.’”,
+“”,
+“You go to Pacifica.”,
 ])
-return “hiro_confront”
+return “lucy_pacifica”
 else:
 g.show_text([
-“Vector thanks you. ‘We’ll handle it.’”,
-“A day later, Hiro disappears from all records.”,
-“+2000 eddies deposited to your account.”
+“Maya: ‘Smart. Anyone who sends”,
+“a message like that is either”,
+“bait or paranoid.’”,
+“”,
+“Jin: ‘Or both.’”,
+“”,
+“You all go.”,
 ])
-g.eddies     += 2000
-g.change_rep(“militech”, 1)
-return “act2_hub”
+g.set_flag(“crew_to_pacifica”)
+return “lucy_pacifica”
 
-def scene_hiro_confront(g):
+def scene_hiro_direct(g):
 g.show_text([
-“Hiro: ‘Please—Voodoo Boys threatened my family.’”,
-“‘I had no choice. They have eyes everywhere.’”,
-“He hands you a data shard. ‘This is everything I gave them.’”
+“Room 14. Sixth floor.”,
+“You knock.”,
+“”,
+“Hiro opens the door”,
+“with a gun in his hand.”,
+“”,
+“He’s not pointing it at you yet.”,
+“But his finger is inside the guard.”,
+“”,
+“HIRO:  ‘Who are you?’”,
 ], title=“HIRO”)
 idx = g.choose([
-“Let him go—keep the shard”,
-“Turn him in to Vector”,
-“Help him escape Night City”
+“Show Vector’s badge – I’m here to help you”,
+“I’m just a merc. I can get you out of the city”,
+“Tell him the truth – Vector wants him found”,
+“Knock the gun away – take control”,
+])
+if idx == 0:
+g.show_text([
+“Hiro’s gun comes up.”,
+“‘Vector? That’s who sent you?’”,
+“‘Then you’re here to kill me.’”,
+“”,
+“He fires. You duck.”,
+“The shot takes out the window.”,
+“You tackle him before he reloads.”,
+])
+return “hiro_subdued”
+elif idx == 1:
+g.show_text([
+“His eyes flick. He’s weighing it.”,
+“‘How much?’”,
+“‘Enough. I need what you know first.’”,
+“”,
+“He hesitates. Then he puts the gun down.”,
+“‘Come inside.’,”,
+“‘If this is a trap I’m already dead anyway.’”,
+])
+return “hiro_talks”
+elif idx == 2:
+g.show_text([
+“His face goes white.”,
+“‘Then I’m already dead.”,
+“Why are you still talking to me?’”,
+“”,
+“‘Because I haven’t decided yet.’”,
+“”,
+“That stops him.”,
+])
+return “hiro_talks”
+else:
+result = g.run_combat([
+(“Hiro Tanaka”, 25, 7, 9, 0),
+])
+if result == “hub”:
+return “afterlife_hub”
+if not result:
+g.health = max(5, g.health - 15)
+g.show_text([
+“He gets a shot off. Grazes your arm.”,
+“You fall back into the corridor.”,
+“He locks the door.”,
+“You try a different approach.”,
+])
+return “hiro_direct”
+return “hiro_subdued”
+
+def scene_hiro_platform(g):
+g.show_text([
+“Metro platform. 3 AM.”,
+“Hiro has a bag. One-way ticket.”,
+“”,
+“You step in front of him.”,
+“”,
+“HIRO:  ‘Get out of my way.’”,
+“YOU:   ‘Where are you going, Hiro?’”,
+“”,
+“His face goes gray.”,
+“‘You’re from Militech.’”,
+“‘No. But they sent me to find you.’”,
+“”,
+“His hand goes to his coat pocket.”,
+], title=“HIRO”)
+idx = g.choose([
+“Calm him down – you’re not there to hurt him”,
+“Grab his wrist before he draws”,
+“Let him reach for whatever he’s reaching for”,
+])
+if idx == 0:
+g.show_text([
+“‘Easy. I’m not here to drag you in.’”,
+“‘I want to know why you did it first.’”,
+“”,
+“His shoulders drop. Not much.”,
+“Enough.”,
+“‘They had my daughter.’,”,
+“‘Voodoo Boys. Said they’d hurt her”,
+“if I didn’t give them the route.”,
+“I had no choice.’”,
+])
+return “hiro_talks”
+elif idx == 1:
+g.show_text([
+“He’s fast. You’re faster.”,
+“You pin his arm. He drops the agent.”,
+“He tries to yell. Your hand covers his mouth.”,
+“”,
+“‘I’m not going to hurt you.’,”,
+“‘But you’re going to talk to me.”,
+“Right now. Quietly.’”,
+“”,
+“He nods. Slowly.”,
+])
+return “hiro_talks”
+else:
+g.show_text([
+“He pulls a flash-bang.”,
+“You go blind for thirty seconds.”,
+“When your vision comes back”,
+“he’s gone.”,
+“”,
+“You find his bag. He left it.”,
+“Inside: a data shard.”,
+“Everything he was going to deliver.”,
+])
+g.add_item(“voodoo_intel”)
+g.set_flag(“hiro_escaped”)
+return “hiro_outcome”
+
+def scene_hiro_intercept(g):
+g.show_text([
+“Fish market. 4 AM.”,
+“It smells like salt and dead electronics.”,
+“”,
+“Hiro is already there.”,
+“Two Voodoo Boys with him.”,
+“He’s handing something over.”,
+“”,
+“You can stop this.”,
+“Or let it happen and follow them.”,
+], title=“INTERCEPT”)
+idx = g.choose([
+“Move in – stop the handoff”,
+“Wait – follow the Voodoo Boys after”,
+“Call it in to Vector right now”,
+])
+if idx == 0:
+g.show_text([
+“You break from cover.”,
+“The Voodoo Boys see you.”,
+“One of them pulls a weapon.”,
+])
+result = g.run_combat([
+(“Voodoo Guard”,  35, 10, 11, 1),
+(“Voodoo Guard”,  35, 10, 11, 1),
+])
+if result == “hub”:
+return “afterlife_hub”
+if not result:
+g.health = max(5, g.health - 20)
+g.show_text([
+“They scatter. Hiro with them.”,
+“The handoff happened.”,
+“”,
+“You recover. Bruised.”,
+“The data is in Voodoo Boys hands now.”,
+])
+g.set_flag(“handoff_happened”)
+return “hiro_outcome”
+g.show_text([
+“Both guards down.”,
+“Hiro hasn’t run.”,
+“He’s just standing there,”,
+“holding the shard like it burned him.”,
+])
+return “hiro_talks”
+elif idx == 1:
+g.show_text([
+“You watch. The handoff completes.”,
+“Hiro gets an envelope. Eddies.”,
+“”,
+“The Voodoo Boys head north.”,
+“You follow them for six blocks”,
+“to a safe house in Pacifica.”,
+“”,
+“You make note of the address.”,
+“And something else:”,
+“A name on the safe house door.”,
+“SABLE.”,
+])
+g.set_flag(“found_sable_safehouse”)
+g.set_flag(“handoff_happened”)
+return “hiro_outcome”
+else:
+g.show_text([
+“Vector answers on the second ring.”,
+“‘You have eyes on Tanaka?’”,
+“‘He’s at the fish market.”,
+“Voodoo Boys. Mid-handoff.’”,
+“”,
+“Six Militech units arrive in four minutes.”,
+“Hiro and both Voodoo Boys are taken.”,
+“”,
+“Vector: ‘5,000 as agreed.”,
+“You’re useful, Niko.’”,
+“”,
+“Hiro’s face when they cuff him.”,
+“He looks more relieved than scared.”,
+])
+g.eddies += 5000
+g.change_rep(“militech”, 2)
+g.set_flag(“turned_hiro_in”)
+g.set_flag(“handoff_happened”)
+return “hiro_outcome”
+
+def scene_hiro_subdued(g):
+g.show_text([
+“Hiro on the floor.”,
+“Gun across the room.”,
+“He’s not fighting anymore.”,
+“”,
+“HIRO:  ‘Just do it then.’”,
+“YOU:   ‘Do what?’”,
+“HIRO:  ‘Whatever Vector told you to do.’”,
+“”,
+“His voice is flat.”,
+“The voice of someone who gave up”,
+“a while ago.”,
+], title=“HIRO”)
+return “hiro_talks”
+
+def scene_hiro_talks(g):
+g.show_text([
+“HIRO:  ‘They took my daughter.”,
+“        Seven years old.”,
+“        Said they’d return her”,
+“        if I gave them the convoy route.’”,
+“”,
+“‘I gave them the route.’,”,
+“‘They returned her.’,”,
+“‘Then they said they needed more.”,
+“Or they’d take her again.’”,
+“”,
+“He stares at the floor.”,
+“‘I’ve been trying to run ever since.’”,
+], title=“HIRO”)
+g.show_text([
+“He slides a shard across the floor.”,
+“”,
+“‘That’s everything I gave them.”,
+“The full convoy data.”,
+“And something they didn’t ask for:”,
+“a file I found by accident.”,
+“Something called Mikoshi.”,
+“I don’t know what it means.”,
+“But the Voodoo Boys are terrified of it.”,
+“And so are Militech.”,
+], title=“HIRO”)
+idx = g.choose([
+“Let Hiro go – take the shard”,
+“Give him money to leave the city”,
+“Turn him in to Vector (5k reward)”,
+“Tell him about the chip you stole”,
 ])
 if idx == 0:
 g.add_item(“voodoo_intel”)
+g.set_flag(“hiro_escaped”)
 g.show_text([
-“Hiro runs. You have Voodoo Boys operational data.”,
-“This could be worth a lot.”
+“‘Go. Don’t come back.’”,
+“”,
+“He doesn’t say thank you.”,
+“He just picks up his bag”,
+“and walks out.”,
+“”,
+“You have the shard.”,
+“You have a name.”,
+“MIKOSHI.”,
 ])
-g.change_rep(“street”, 1)
-return “act2_hub”
 elif idx == 1:
-g.eddies += 3000
-g.change_rep(“militech”, 2)
-g.show_text([
-“Vector is pleased. 3k eddies. No questions.”,
-“You try not to think about Hiro.”
-])
-return “act2_hub”
-else:
-g.eddies -= 500
+g.eddies = max(0, g.eddies - 800)
+g.add_item(“voodoo_intel”)
+g.set_flag(“hiro_escaped”)
 g.set_flag(“helped_hiro”)
 g.change_rep(“street”, 2)
 g.show_text([
-“You burn 500 eddies on a false-flag passage ticket.”,
-“Hiro vanishes. You feel… okay about that.”
+“You give him 800 eddies.”,
+“Everything you had before the heist.”,
+“”,
+“Hiro:  ‘Why?’”,
+“You:   ‘Because your daughter didn’t”,
+“        ask to be in this story.’”,
+“”,
+“He nods. Takes the money.”,
+“You never see him again.”,
+“You hope that means he made it.”,
 ])
-return “act2_hub”
-
-# ─── ACT 3: THREE KEYS ──────────────────────────────────────────────
-
-def scene_act3_key_hunt(g):
+elif idx == 2:
+g.eddies += 5000
+g.change_rep(“militech”, 2)
+g.set_flag(“turned_hiro_in”)
 g.show_text([
-“ACT 3 – THREE KEYS”,
-“Lucy’s access requirements:”,
-f”1. Militech clearance {’[DONE]’ if ‘militech_key’ in g.keys_found else ‘[NEEDED]’}”,
-f”2. Voodoo Boys ritual {’[DONE]’ if ‘voodoo_key’ in g.keys_found else ‘[NEEDED]’}”,
-f”3. Arasaka biokey {’[DONE]’ if ‘arasaka_key’ in g.keys_found else ‘[NEEDED]’}”,
-], title=“ACT 3”)
-if len(g.keys_found) >= 3:
-return “act4_night_city_burns”
+“Vector answers immediately.”,
+“‘Bring him to the lobby.’”,
+“”,
+“She arrives in eleven minutes.”,
+“Takes Hiro without looking at him.”,
+“”,
+“She hands you 5,000 eddies.”,
+“‘You’re useful, Niko.’,”,
+“‘I’ll be in touch.’”,
+“”,
+“Hiro doesn’t struggle.”,
+“He just looks at you”,
+“as they lead him out.”,
+])
+else:
+g.add_item(“voodoo_intel”)
+g.set_flag(“hiro_escaped”)
+g.show_text([
+“His eyes focus.”,
+“‘The Ghost Relic?”,
+“That’s what they wanted it for.”,
+“The Relic maps to Mikoshi’s backdoor.”,
+“Whoever has that chip can get inside.’”,
+“”,
+“He grabs your arm.”,
+“‘Don’t let Militech have it.”,
+“Don’t let Arasaka have it.”,
+“There are people inside Mikoshi.”,
+“Real people. Trapped.’”,
+“”,
+“You let him go.”,
+“You stand there for a long time.”,
+])
+g.set_flag(“knows_mikoshi_truth”)
+return “hiro_outcome”
+
+def scene_hiro_outcome(g):
+g.show_text([
+“You have the shard.”,
+“Or you know where the data went.”,
+“Either way – you have a name.”,
+“”,
+“MIKOSHI.”,
+“”,
+“Jin finds a single reference online.”,
+“Buried. Encrypted.”,
+“Purged from most servers.”,
+“”,
+“‘It’s an Arasaka facility.’,”,
+“‘Digital. Not physical.’,”,
+“‘Some kind of storage system”,
+“for neural engrams.’”,
+“”,
+“Your agent buzzes.”,
+“Unknown sender. Again.”,
+“”,
+“‘You’re getting close.”,
+“ Meet me in Pacifica.”,
+“ I can explain everything.”,
+“ Come alone.  – L’”,
+], title=“THE LEAD”)
 idx = g.choose([
-“Militech Clearance”,
-“Voodoo Boys Ritual”,
-“Arasaka Biokey”,
-“Back to hub”
+“Go to Pacifica now”,
+“Wait – do more research first”,
+“Report to Vector before going”,
 ])
-if idx == 0: return “key_militech”
-elif idx == 1: return “key_voodoo”
-elif idx == 2: return “key_arasaka”
-else: return “afterlife_hub”
-
-def scene_key_militech(g):
-if “militech_key” in g.keys_found:
-g.show_text([“Already obtained.”])
-return “act3_key_hunt”
-if g.chose_militech or g.check_flag(“vector_ally”):
-g.show_text([
-“Vector: ‘You want clearance? Earn it.’”,
-“‘There’s a Voodoo Boys cache in Pacifica. Destroy it.’”,
-], title=“VECTOR”)
-idx = g.choose([“Accept”,“Refuse”])
 if idx == 0:
-return “militech_key_mission”
-else:
-g.show_text([“Vector: ‘Then we’re done here.’”])
-return “act3_key_hunt”
-else:
-g.show_text([
-“No Militech contacts. You’ll have to steal the clearance.”,
-“A Militech relay station in Watson has what you need.”
-], title=“RELAY HEIST”)
-idx = g.choose([“Infiltrate the relay”,“Hack from outside (needs cyberdeck)”,“Buy it on the black market (5000 eddies)”])
-if idx == 0:
-return “relay_infiltrate”
-elif idx == 1:
-return “relay_hack”
-else:
-return “relay_buy”
-
-def scene_relay_infiltrate(g):
-g.show_text([“Watson relay. You go in hard.”, “Three guards. A turret.”])
-result = g.run_combat([
-(“Relay Guard”,  35, 10, 10, 1),
-(“Relay Guard”,  35, 10, 10, 1),
-{“name”:“Relay Turret”,“hp”:60,“attack”:16,“speed”:5,“defense”:4,
-“abilities”:[(“Burst”,1.5)], “loot”:[“relay_parts”]},
-])
-if result == “hub”: return “afterlife_hub”
-if not result:
-g.show_text([“Overwhelmed. Game over.”])
-g.running = False
-return None
-g.keys_found.append(“militech_key”)
-g.add_item(“militech_clearance”)
-g.show_text([“Clearance code copied. Key 1 obtained!”])
-return “act3_key_hunt”
-
-def scene_relay_hack(g):
-if not g.has_item(“cyberdeck”):
-g.show_text([“You need a cyberdeck for this.”])
-return “act3_key_hunt”
-if g.energy < 40:
-g.show_text([“Not enough energy. Rest first.”])
-return “act3_key_hunt”
-g.energy -= 40
-success = random.random() < 0.65 + g.level * 0.05
-if success:
-g.keys_found.append(“militech_key”)
-g.add_item(“militech_clearance”)
-g.show_text([“Jin walks you through it. Clearance extracted! Key 1 obtained!”])
-else:
-g.show_text([“ICE catches you. You break the connection. Try again later.”])
-g.health = max(1, g.health - 15)
-return “act3_key_hunt”
-
-def scene_relay_buy(g):
-if g.eddies < 5000:
-g.show_text([“Need 5000 eddies.”])
-return “act3_key_hunt”
-g.eddies -= 5000
-g.keys_found.append(“militech_key”)
-g.add_item(“militech_clearance”)
-g.show_text([“Black market fixer delivers. Key 1 obtained!”])
-return “act3_key_hunt”
-
-def scene_militech_key_mission(g):
-g.show_text([
-“Voodoo Boys cache in Pacifica.”,
-“Sable’s people won’t give it up without a fight.”
-], title=“VOODOO CACHE”)
-result = g.run_combat([
-(“Voodoo Guard”,   40, 11, 11, 1),
-(“Voodoo Netrunner”, 30, 14, 13, 0),
-(“Voodoo Guard”,   40, 11, 11, 1),
-])
-if result == “hub”: return “afterlife_hub”
-if not result:
-g.show_text([“Beaten back. Game over.”])
-g.running = False
-return None
-g.keys_found.append(“militech_key”)
-g.add_item(“militech_clearance”)
-g.change_rep(“militech”, 1)
-g.change_rep(“voodoo”, -2)
-g.show_text([“Cache destroyed. Vector honors her word. Key 1 obtained!”])
-return “act3_key_hunt”
-
-def scene_key_voodoo(g):
-if “voodoo_key” in g.keys_found:
-g.show_text([“Already obtained.”])
-return “act3_key_hunt”
-g.show_text([
-“The Voodoo Boys. Pacifica’s net-shamans.”,
-“Their leader Sable demands you prove yourself first.”,
-“‘Complete the NetWatch Purge. Kill three of their agents.’”,
-“Or: ‘Bring me the Voodoo intel Hiro leaked.’”
-], title=“SABLE”)
-if g.has_item(“voodoo_intel”):
-idx = g.choose([“Give her the intel”,“Do the NetWatch Purge”,“Negotiate directly”])
-else:
-idx = g.choose([“Do the NetWatch Purge”,“Negotiate directly”,“Leave”])
-if idx == 0 and g.has_item(“voodoo_intel”):
-g.remove_item(“voodoo_intel”)
-g.keys_found.append(“voodoo_key”)
-g.change_rep(“voodoo”, 3)
-g.show_text([“Sable is impressed. ‘You play smart, choom.’”, “Key 2 obtained!”])
-return “act3_key_hunt”
-elif (idx == 0 and not g.has_item(“voodoo_intel”)) or idx == 0:
-return “netwatch_purge”
+return “lucy_pacifica”
 elif idx == 1:
 g.show_text([
-“Sable laughs. ‘Negotiate? With what?’”,
-“She crosses her arms. The room fills with guards.”,
+“Jin spends a day digging.”,
+“He finds three things:”,
+“”,
+“1. Mikoshi was built in 2060.”,
+“2. It was officially decommissioned”,
+“   after the 2077 war.”,
+“3. Its power draw never stopped.”,
+“”,
+“Jin: ‘Something’s still running in there.”,
+“Something big.’”,
+“”,
+“You go to Pacifica.”,
 ])
-return “voodoo_brawl”
+return “lucy_pacifica”
 else:
-return “act3_key_hunt”
-
-def scene_netwatch_purge(g):
 g.show_text([
-“Three NetWatch agents.”,
-“You track them to a safehouse in Vista del Rey.”
-], title=“PURGE”)
-result = g.run_combat([
-(“NetWatch Agent”,  45, 13, 12, 2),
-(“NetWatch Agent”,  45, 13, 12, 2),
-{“name”:“NW Captain”,“hp”:75,“attack”:18,“speed”:14,“defense”:4,
-“abilities”:[(“EMP Burst”,1.3),(“Hack”,0.8)],
-“loot”:[“netwatch_badge”]},
+“Vector: ‘Mikoshi? Where did you hear that?’”,
+“You tell her about Hiro. The shard. The name.”,
+“”,
+“Long silence.”,
+“‘Sit on this for now.”,
+“Don’t go digging.”,
+“That’s an order.’”,
+“”,
+“She hangs up.”,
+“”,
+“You go to Pacifica.”,
 ])
-if result == “hub”: return “afterlife_hub”
-if not result:
-g.show_text([“Taken down. Game over.”])
-g.running = False
-return None
-g.keys_found.append(“voodoo_key”)
-g.change_rep(“voodoo”, 2)
-g.change_rep(“netwatch”, -3)
-g.show_text([“Agents down. Sable honors the deal.”, “Key 2 obtained!”])
-return “act3_key_hunt”
+return “lucy_pacifica”
 
-def scene_voodoo_brawl(g):
-g.show_text([“They’re not letting you negotiate. Fight your way out.”])
-result = g.run_combat([
-(“Voodoo Guard”, 40, 11, 11, 1),
-(“Voodoo Guard”, 40, 11, 11, 1),
-(“Voodoo Guard”, 40, 11, 11, 1),
-])
-if result == “hub”: return “afterlife_hub”
-if not result:
-g.show_text([“Overwhelmed. Game over.”])
-g.running = False
-return None
-g.show_text([
-“You fight out. Sable watches from the shadows.”,
-“‘Respect. Come back when you have a real offer.’”
-])
-return “act3_key_hunt”
+# =============================================================================
 
-def scene_key_arasaka(g):
-if “arasaka_key” in g.keys_found:
-g.show_text([“Already obtained.”])
-return “act3_key_hunt”
+# LUCY  –  THE GHOST
+
+# =============================================================================
+
+def scene_lucy_pacifica(g):
 g.show_text([
-“The Arasaka biokey.”,
-“Only a living Arasaka executive carries one.”,
-“Lucy has a lead: Exec Hanako Tanaka.”,
-“She’s hiding in a safehouse in Corpo Plaza ruins.”,
-“But she has a full security detail.”
-], title=“TANAKA”)
-idx = g.choose([“Storm the safehouse”,“Try diplomacy first”,“Set a trap”])
+“PACIFICA”,
+“”,
+“Half-built towers.”,
+“Salt wind off the ocean.”,
+“The Voodoo Boys own this district”,
+“the way Militech owns Watson—”,
+“completely, and by force.”,
+“”,
+“The address leads you”,
+“to a basement under a collapsed shopping mall.”,
+“Generators humming.”,
+“Eight terminals in a ring.”,
+“All dead except one.”,
+“”,
+“A hologram flickers on.”,
+“”,
+“Silver hair. White jacket.”,
+“She looks like she’s standing”,
+“two feet in front of you.”,
+“She’s not anywhere.”,
+], title=“PACIFICA”)
+g.show_text([
+“LUCY:  ‘You found the name Mikoshi.’,”,
+“        ‘That means you’re either”,
+“        very clever or very unlucky.’”,
+“”,
+“‘Probably both.’,”,
+“‘Welcome to the club.’”,
+“”,
+“She sits – or her hologram does.”,
+“”,
+“‘My name is Lucy.”,
+“I was the best netrunner”,
+“in Night City six years ago.”,
+“Then I tried to breach Mikoshi”,
+“and they put me in here.’”,
+“”,
+“She gestures at the hologram projector.”,
+“‘I’m not dead. I’m just not”,
+“anywhere you can find me physically.”,
+“Not anymore.’”,
+], title=“LUCY”)
+idx = g.choose([
+“What is Mikoshi?”,
+“How do I know you’re real?”,
+“What do you need from me?”,
+“Ask about David Martinez”,
+])
 if idx == 0:
-return “arasaka_storm”
+g.show_text([
+“LUCY:  ‘Arasaka’s soul vault.”,
+“        When they wanted to control someone”,
+“        completely – an executive,”,
+“        a scientist, a soldier –”,
+“        they captured their engram.”,
+“        Their mind. Their self.”,
+“        And they put it in Mikoshi.”,
+“        Hostage. Leverage.’,”,
+“‘Forever, if they wanted.’”,
+“”,
+“‘When Arasaka fell,”,
+“the engrams were supposed”,
+“to be released.’,”,
+“‘They weren’t.’,”,
+“‘Someone kept the system running.”,
+“Someone still had use for them.’”,
+])
 elif idx == 1:
-return “arasaka_diplomacy”
-else:
-return “arasaka_trap”
-
-def scene_arasaka_storm(g):
-g.show_text([“Heavy security. This is a full assault.”], title=“ASSAULT”)
-result = g.run_combat([
-(“Arasaka Guard”,  50, 14, 11, 3),
-(“Arasaka Guard”,  50, 14, 11, 3),
-(“Arasaka Cyber”,  70, 18, 13, 5),
-{“name”:“Security Chief”,“hp”:90,“attack”:22,“speed”:12,“defense”:6,
-“abilities”:[(“Suppressive”,1.4),(“Shield”,0.5)],
-“boss”:True, “loot”:[“arasaka_keycard”]},
+g.show_text([
+“She laughs. It sounds real.”,
+“”,
+“LUCY:  ‘Fair question.”,
+“        Ask me something”,
+“        only someone who’s been inside”,
+“        the net would know.’”,
+“”,
+“You don’t have a question like that.”,
+“”,
+“She reaches through the hologram.”,
+“Her hand passes through your face.”,
+“You feel cold.”,
+“”,
+“‘I’m as real as anything in Night City.’,”,
+“‘Which isn’t saying much.”,
+“But it’s what you’ve got.’”,
 ])
-if result == “hub”: return “afterlife_hub”
-if not result:
-g.show_text([“Torn apart. Game over.”])
-g.running = False
-return None
-g.keys_found.append(“arasaka_key”)
-g.add_item(“arasaka_biokey”)
-g.change_rep(“arasaka”, -2)
-g.show_text([“Security down. You extract the biokey.”, “Tanaka cooperates—barely.”, “Key 3 obtained!”])
-return “act3_key_hunt”
-
-def scene_arasaka_diplomacy(g):
+elif idx == 3:
 g.show_text([
-“You send a message: ‘I’m not Militech. I don’t want you dead.’”,
-“‘Meet me. Unarmed. I’ll explain.’”,
-“Two hours of silence. Then: ‘Come alone. One hour.’”
-], title=“DIPLOMACY”)
-idx = g.choose([“Go alone (trust her)”,“Go with hidden crew”,“Send Jin instead”])
-if idx == 0:
-g.show_text([
-“Tanaka meets you. She’s terrified.”,
-“‘Militech wants me dead. If you’re against them, maybe…’”,
-“She provides the biokey. ‘Free the engrams. Free my father.’”,
+“Her face changes.”,
+“”,
+“LUCY:  ‘David.’,”,
+“”,
+“Just the name. Nothing else.”,
+“For a long moment.”,
+“”,
+“‘He tried to reach the moon.”,
+“Literally.’,”,
+“‘He almost made it.’,”,
+“‘His engram is in Mikoshi.”,
+“They grabbed it during the 77 war.”,
+“They’ve had him ever since.’”,
+“”,
+“She looks at her hands.”,
+“‘He’s been in there for ten years.”,
+“Whatever’s left of him.’”,
 ])
 g.lucy_trust += 1
-g.set_flag(“tanaka_ally”)
-g.keys_found.append(“arasaka_key”)
-g.add_item(“arasaka_biokey”)
-g.change_rep(“arasaka”, 1)
-g.show_text([“Key 3 obtained! And Tanaka might help you later.”])
-return “act3_key_hunt”
+return “lucy_the_plan”
+
+def scene_lucy_the_plan(g):
+g.show_text([
+“LUCY:  ‘I need three things”,
+“        to open Mikoshi from the outside.”,
+“        I’ve spent six years”,
+“        getting two of them.’,”,
+“”,
+“‘One more.”,
+“Then we can get everyone out.”,
+“Every engram they ever stole.”,
+“David. All of them.’”,
+“”,
+“She pulls up a display:”,
+“”,
+“KEY 1: Militech clearance code”,
+“       (Network access to the relay)”,
+“KEY 2: Voodoo Boys net ritual”,
+“       (Bypasses the ICE layer)”,
+“KEY 3: Arasaka biokey”,
+“       (Opens the core itself)”,
+“”,
+“‘I have the first two already.”,
+“I need you to get the third.’”,
+], title=“THE PLAN”)
+idx = g.choose([
+“I’m in – what do I need to do?”,
+“This sounds insane”,
+“What’s in it for me?”,
+“Ask about the biokey specifically”,
+])
+if idx == 0:
+g.met_lucy   = True
+g.lucy_trust += 1
+g.story_act   = max(g.story_act, 3)
+g.show_text([
+“LUCY:  ‘Good.”,
+“        The biokey is carried by”,
+“        a living Arasaka executive.”,
+“        There’s one still in Night City.”,
+“        Exec Hanako Tanaka.”,
+“        She’s been in hiding”,
+“        since the war ended.”,
+“        I’ll send you her last known location.”,
+“        The rest is up to you.’”,
+“”,
+“The hologram flickers.”,
+“‘One more thing.’,”,
+“‘Whatever you do—”,
+“don’t let Militech know”,
+“what you’re actually looking for.”,
+“Vector will shut this down”,
+“the moment she understands it.’”,
+])
+return “act3_biokey”
 elif idx == 1:
 g.show_text([
-“She notices. ‘You came armed.’”,
-“‘But you’re still here talking. Fine.’”,
-“A tense exchange. She gives you the biokey.”
+“LUCY:  ‘It is insane.”,
+“        But so is keeping”,
+“        ten thousand minds”,
+“        in a digital cage”,
+“        because a corp decided”,
+“        they were useful property.’”,
+“”,
+“‘You don’t have to help me.”,
+“But you found the name Mikoshi.”,
+“That means they already know”,
+“you exist.”,
+“Doing nothing won’t make you safer.’”,
 ])
-g.keys_found.append(“arasaka_key”)
-g.add_item(“arasaka_biokey”)
-g.show_text([“Key 3 obtained!”])
-return “act3_key_hunt”
+return “lucy_the_plan”
+elif idx == 2:
+g.show_text([
+“LUCY:  ‘When we breach Mikoshi,”,
+“        the vault opens.”,
+“        There’s forty years of”,
+“        Arasaka’s most sensitive data”,
+“        in there with the engrams.”,
+“        Corporate secrets.”,
+“        Personnel files.”,
+“        Blackmail material on”,
+“        every major government official”,
+“        in four countries.”,
+“”,
+“‘Any of that has value.”,
+“Take what you want.”,
+“I just want the people.’”,
+])
+g.met_lucy   = True
+g.lucy_trust += 1
+g.story_act   = max(g.story_act, 3)
+return “act3_biokey”
 else:
 g.show_text([
-“Jin: ‘She won’t talk to me. Too scared.’”,
-“‘But I grabbed her comms data. There’s a biokey backup in her luggage.’”,
+“LUCY:  ‘A biological encryption key.”,
+“        Grown from Arasaka’s founder’s DNA.”,
+“        Every senior exec carries a copy.”,
+“        Without it, the core is sealed.”,
+“        Even I can’t crack it remotely.”,
+“        It has to be present in person”,
+“        at the relay point.’”,
+“”,
+“‘Tanaka is the only exec”,
+“still alive and in the city.”,
+“She’s in hiding.”,
+“She’s also terrified.’,”,
+“‘Which makes her dangerous.’”,
 ])
-return “arasaka_storm”
+return “lucy_the_plan”
 
-def scene_arasaka_trap(g):
+# =============================================================================
+
+# ACT 3  –  THE BIOKEY
+
+# =============================================================================
+
+def scene_act3_biokey(g):
+g.story_act = max(g.story_act, 3)
 g.show_text([
-“You leak a false lead to draw her security away.”,
-“Then you slip in with Jin while Maya covers the exit.”,
-“It almost works.”
-], title=“TRAP”)
-result = g.run_combat([
-(“Arasaka Guard”, 50, 14, 11, 3),
-(“Arasaka Cyber”,  70, 18, 13, 5),
+“ACT 3  –  THE BIOKEY”,
+“”,
+“Hanako Tanaka.”,
+“”,
+“Lucy’s data puts her in”,
+“a safehouse in Corpo Plaza ruins.”,
+“Used to be the nicest block in Night City.”,
+“Now it’s rubble and radiation monitors.”,
+“”,
+“She has four Arasaka security with her.”,
+“Loyalists. The kind who stayed”,
+“when the corp fell”,
+“because they had nowhere else to go.”,
+“”,
+“How do you get to her?”,
+], title=“ACT 3”)
+idx = g.choose([
+“Go through the security – front entrance”,
+“Make contact first – send a message”,
+“Get inside quietly (optical camo)”,
+“Find out more about Tanaka first”,
 ])
-if result == “hub”: return “afterlife_hub”
-if not result:
-g.show_text([“Trap backfires. Game over.”])
-g.running = False
-return None
-g.keys_found.append(“arasaka_key”)
+if idx == 0:
+return “tanaka_assault”
+elif idx == 1:
+return “tanaka_contact”
+elif idx == 2:
+if g.equipped_cyberware == “optical_camo” or g.has_item(“optical_camo”):
+return “tanaka_stealth”
+else:
+g.show_text([
+“You don’t have optical camo.”,
+“You’ll need to find another way in.”,
+])
+return “act3_biokey”
+else:
+return “tanaka_research”
+
+def scene_tanaka_research(g):
+g.show_text([
+“You spend a day pulling everything”,
+“on Hanako Tanaka.”,
+“”,
+“Age 41. Third daughter of”,
+“Saburo Tanaka, a mid-tier Arasaka exec”,
+“who died in the 77 war.”,
+“”,
+“She stayed in Night City”,
+“after the collapse.”,
+“Not because she wanted to.”,
+“Because Militech froze her accounts”,
+“and she had nowhere to run.”,
+“”,
+“She hates Militech.”,
+“She hates what happened to Arasaka.”,
+“And according to three intercepted messages,”,
+“she’s been trying to find a way”,
+“to access Mikoshi herself.”,
+“”,
+“To reach her father’s engram.”,
+], title=“TANAKA RESEARCH”)
+g.set_flag(“tanaka_research_done”)
+g.show_text([
+“This changes things.”,
+“”,
+“She’s not an enemy.”,
+“She’s a prisoner in a different way.”,
+“”,
+“You have an angle now.”,
+])
+return “act3_biokey”
+
+def scene_tanaka_contact(g):
+extra = “”
+if g.check_flag(“tanaka_research_done”):
+extra = “(your research gives you the right words)”
+g.show_text([
+f”You send a message {extra}:”,
+“”,
+“‘Ms. Tanaka.”,
+“ I know about Mikoshi.”,
+“ I know about your father.”,
+“ I’m not Militech.”,
+“ I’m not Arasaka.”,
+“ Meet me.”,
+“ I can get you inside.’”,
+“”,
+“Then you wait.”,
+“”,
+“Forty-seven minutes.”,
+“Then:”,
+“‘Corpo Plaza. Sector 4.”,
+“ 2100 hours.”,
+“ Come alone.”,
+“ If I see anyone else”,
+“ we’re done.’”,
+], title=“CONTACT”)
+idx = g.choose([
+“Go alone – trust the meeting”,
+“Go but station crew nearby”,
+“Bring crew openly – ignore her terms”,
+])
+if idx == 0:
+return “tanaka_meeting”
+elif idx == 1:
+g.show_text([
+“Maya takes a position two blocks north.”,
+“Jin patches in remotely.”,
+“”,
+“‘You’re covered.’”,
+“‘Go.’”,
+])
+g.set_flag(“crew_nearby_tanaka”)
+return “tanaka_meeting”
+else:
+g.show_text([
+“You arrive with your crew.”,
+“The safe house window goes dark.”,
+“”,
+“Your agent buzzes:”,
+“‘Wrong choice.”,
+“ Don’t contact me again.’”,
+“”,
+“You’ll have to take the hard way in.”,
+])
+return “tanaka_assault”
+
+def scene_tanaka_meeting(g):
+g.show_text([
+“Corpo Plaza ruins.”,
+“2100 hours.”,
+“”,
+“Hanako Tanaka is not what you expected.”,
+“She’s smaller. Her clothes are expensive”,
+“but worn at the cuffs.”,
+“She’s been living carefully.”,
+“”,
+“TANAKA:  ‘You said you know about Mikoshi.”,
+“          Prove it.’”,
+], title=“TANAKA”)
+idx = g.choose([
+“Tell her about Lucy – the ghost in the net”,
+“Tell her what you know about the engrams”,
+“Tell her about her father specifically”,
+“Tell her about the Ghost Relic chip”,
+])
+if idx == 0:
+g.show_text([
+“Her expression doesn’t change.”,
+“But her hands stop moving.”,
+“”,
+“TANAKA:  ‘A netrunner named Lucy.”,
+“          Trapped in the net”,
+“          six years ago.’,”,
+“‘I’ve heard rumors.”,
+“You’re telling me they’re real.’”,
+“”,
+“‘If she can reach Mikoshi…”,
+“Then she can reach my father.’”,
+“”,
+“She sits down.”,
+“First time in the conversation.”,
+])
+elif idx == 2:
+if g.check_flag(“tanaka_research_done”):
+g.show_text([
+“Her face fractures.”,
+“Just for a moment.”,
+“Then she controls it.”,
+“”,
+“TANAKA:  ‘His engram was captured”,
+“          during the evacuation.”,
+“          I’ve known for years.”,
+“          I’ve never been able to…’”,
+“”,
+“She stops.”,
+“‘How do you know that?’”,
+“‘I did my homework.’”,
+“”,
+“Long silence.”,
+“‘What do you need from me?’”,
+])
+g.lucy_trust += 1
+else:
+g.show_text([
+“TANAKA:  ‘My father.”,
+“          You know about my father.’”,
+“”,
+“She’s quiet for a long moment.”,
+“‘His engram was taken”,
+“during the 77 evacuation.’,”,
+“‘I’ve been trying to reach it”,
+“for years.’,”,
+“‘What do you need?’”,
+])
+else:
+g.show_text([
+“TANAKA:  ‘The Ghost Relic.”,
+“          So Militech has it now.’”,
+“”,
+“‘Or someone does.’,”,
+“‘If it maps to Mikoshi’s backdoor,”,
+“then Lucy might be able to use it”,
+“to get everyone out.’”,
+“”,
+“She thinks.”,
+“‘What do you need from me?’”,
+])
+return “tanaka_gives_key”
+
+def scene_tanaka_gives_key(g):
+g.show_text([
+“TANAKA:  ‘I have the biokey.”,
+“          I’ve had it since my father”,
+“          gave it to me”,
+“          the day before he died.”,
+“          I always thought”,
+“          I’d find a way to use it.”,
+“          I never thought”,
+“          it would look like this.’”,
+“”,
+“She holds up a small device.”,
+“Organic. Warm-looking.”,
+“Like something grown, not built.”,
+“”,
+“‘If I give you this,”,
+“I need your word.”,
+“Everyone in Mikoshi gets out.”,
+“Not just my father.”,
+“Everyone.’”,
+], title=“THE KEY”)
+idx = g.choose([
+“You have my word”,
+“I can’t promise that – I don’t control Lucy”,
+“What if we can’t free all of them?”,
+])
+if idx == 0:
+g.set_flag(“promised_tanaka”)
+g.lucy_trust += 1
+g.show_text([
+“She places the biokey in your palm.”,
+“”,
+“TANAKA:  ‘It responds to proximity.”,
+“          You’ll need to be physically”,
+“          at the relay point.”,
+“          I’ll tell you where that is”,
+“          when you’re ready.’”,
+“”,
+“‘And, Niko?’,”,
+“‘Be careful who you trust.”,
+“Militech knows about this.”,
+“They’ve always known.”,
+“They’ve been waiting for someone”,
+“to do the work for them.’”,
+])
 g.add_item(“arasaka_biokey”)
-g.show_text([“Trap pays off. Biokey in hand.”, “Key 3 obtained!”])
-return “act3_key_hunt”
-
-# ─── ACT 4: NIGHT CITY BURNS ────────────────────────────────────────
-
-def scene_act4_night_city_burns(g):
+g.keys_found.append(“arasaka_key”)
+g.set_flag(“tanaka_ally”)
 g.story_act = max(g.story_act, 4)
 g.show_text([
-“ACT 4 – NIGHT CITY BURNS”,
-“All three keys secured.”,
-“But Militech found out. They’re moving on Pacifica.”,
-“Vector: ‘Stand down or we’ll level the district.’”,
-“Sable: ‘We need to move. Tonight.’”,
-“Your crew: ready. Lucy: waiting.”,
-“But Rook calls—he’s been taken. Leverage.”
+“You have it.”,
+“The biokey.”,
+“”,
+“Lucy’s third key.”,
+“”,
+“Your agent buzzes.”,
+“Vector.”,
+“”,
+“‘We need to meet.”,
+“ Now.”,
+“ It’s about Mikoshi.’”,
+“”,
+“Tanaka was right.”,
+“They’ve always known.”,
+])
+return “act4_vector_moves”
+
+def scene_tanaka_stealth(g):
+g.show_text([
+“Optical camo. You go invisible”,
+“in the middle of Corpo Plaza”,
+“and walk right past the sentries.”,
+“”,
+“The safehouse. Third floor.”,
+“Tanaka at a terminal.”,
+“Alone except for two guards outside the door.”,
+“”,
+“You materialize in the middle of the room.”,
+“”,
+“She doesn’t scream.”,
+“Her hand goes to her desk drawer.”,
+“You move faster.”,
+], title=“TANAKA STEALTH”)
+result = g.run_combat([
+(“Arasaka Guard”,  40, 12, 10, 3),
+])
+if result == “hub”:
+return “afterlife_hub”
+if not result:
+g.health = max(5, g.health - 20)
+g.show_text([
+“The guard hears the fight”,
+“and comes through the door.”,
+“You get out, barely.”,
+“Tanaka is still inside.”,
+“Try a different approach.”,
+])
+return “act3_biokey”
+g.show_text([
+“One guard down.”,
+“You hold up your hands.”,
+“‘I’m not here to hurt you.”,
+“ I’m here about Mikoshi.”,
+“ And your father.’”,
+“”,
+“Tanaka freezes.”,
+“Then: ‘How long do we have?’”,
+“‘Until the other guard comes back.”,
+“ Talk to me.’”,
+])
+return “tanaka_gives_key”
+
+def scene_tanaka_assault(g):
+g.show_text([
+“Four loyalist guards.”,
+“Arasaka-trained.”,
+“They haven’t stopped fighting”,
+“since the war ended.”,
+“They’re just fighting for a company”,
+“that no longer exists.”,
+“”,
+“You hit the front entrance.”,
+], title=“ASSAULT”)
+result = g.run_combat([
+(“Arasaka Guard”,   50, 14, 11, 3),
+(“Arasaka Guard”,   50, 14, 11, 3),
+(“Arasaka Veteran”, 70, 17, 12, 5, [(“Coordinated Fire”, 1.4)]),
+])
+if result == “hub”:
+return “afterlife_hub”
+if not result:
+g.health = max(5, g.health - 30)
+g.show_text([
+“They hold the line.”,
+“You pull back, bleeding.”,
+“”,
+“This isn’t going to work alone.”,
+“You need a smarter approach.”,
+])
+return “act3_biokey”
+g.show_text([
+“Three guards down.”,
+“You find Tanaka on the third floor.”,
+“”,
+“She’s sitting at her terminal.”,
+“She knew you were coming the moment”,
+“the fighting started downstairs.”,
+“”,
+“TANAKA:  ‘You could have just asked.’”,
+“YOU:     ‘I tried the other way first.’”,
+“”,
+“She almost smiles.”,
+])
+return “tanaka_gives_key”
+
+# =============================================================================
+
+# ACT 4  –  THE TRAP CLOSES
+
+# =============================================================================
+
+def scene_act4_vector_moves(g):
+g.story_act = max(g.story_act, 4)
+g.show_text([
+“ACT 4  –  THE TRAP CLOSES”,
+“”,
+“Vector meets you in a parking structure.”,
+“Three levels up. No cameras.”,
+“”,
+“VECTOR:  ‘Sit down, Niko.’,”,
+“‘I’m going to tell you something”,
+“I’m not supposed to tell you.’,”,
+“‘Militech knows about Mikoshi.”,
+“We’ve known for eight years.”,
+“We’ve been waiting for someone”,
+“to crack the access problem.’”,
+“”,
+“She looks out at the city.”,
+“‘You’re that someone.”,
+“Congratulations.’”,
 ], title=“ACT 4”)
-idx = g.choose([“Save Rook first”,“Ignore Rook—go to Lucy”,“Strike back at Militech”])
+g.show_text([
+“VECTOR:  ‘We don’t want to free”,
+“          the engrams, Niko.’,”,
+“‘We want the facility.”,
+“The infrastructure.”,
+“The method.’,”,
+“‘Forty years of Arasaka’s”,
+“most valuable intellectual property”,
+“sitting in a digital vault,”,
+“and all we need is someone”,
+“with a biokey to open the door.’,”,
+“”,
+“‘You have the biokey.”,
+“Hand it over.”,
+“We give you 500,000 eddies”,
+“and you walk away”,
+“the richest nobody in Night City.’”,
+“”,
+“She places a case on the hood.”,
+“500,000. In eddies.”,
+“Real ones.”,
+], title=“ACT 4”)
+idx = g.choose([
+“Take the deal – 500k is a lot of money”,
+“Refuse – you made a promise to Tanaka”,
+“Stall her – buy time”,
+“Tell Lucy about this right now”,
+])
 if idx == 0:
-return “save_rook”
+g.set_flag(“took_vector_deal”)
+g.eddies += 500000
+g.show_text([
+“You pick up the case.”,
+“”,
+“Vector: ‘Smart.’,”,
+“‘We’ll handle it from here.’”,
+“”,
+“You hand over the biokey.”,
+“”,
+“Later—at the Afterlife—”,
+“you try not to think about”,
+“what happens next.”,
+“The David Martinez sits untouched.”,
+“You order a different drink.”,
+])
+return “act4_sellout_path”
 elif idx == 1:
-g.show_text([“Rook’s on his own. You have bigger problems.”, “(You can’t go back on this choice.)”])
-g.set_flag(“abandoned_rook”)
-return “act4_assault”
+g.change_rep(“militech”, -2)
+g.show_text([
+“YOU:  ‘No deal.’”,
+“”,
+“Vector doesn’t move.”,
+“‘You understand what you’re choosing.’”,
+“YOU:  ‘I understand exactly.’”,
+“”,
+“She picks up the case.”,
+“‘Then we’re done being civil.”,
+“You have 24 hours to use that key”,
+“before we take it from you.’”,
+“”,
+“She walks to the elevator.”,
+“‘I was hoping you’d say yes, Niko.”,
+“I genuinely was.’”,
+“”,
+“The doors close.”,
+“You call Lucy.”,
+])
+return “act4_push_now”
+elif idx == 2:
+g.show_text([
+“YOU:  ‘I need 48 hours.”,
+“       I need to verify”,
+“       what you’re telling me.’”,
+“”,
+“Vector studies you.”,
+“‘24 hours. Not 48.’,”,
+“‘And Niko—’”,
+“She taps the case.”,
+“‘Don’t make me come looking for you.’”,
+“”,
+“She leaves.”,
+“You have 24 hours.”,
+“And a decision to make.”,
+])
+g.set_flag(“vector_24hr_deadline”)
+return “act4_prep_window”
 else:
-return “militech_ambush”
-
-def scene_save_rook(g):
 g.show_text([
-“Militech holding facility. Industrial district.”,
-“Rook’s inside. Twelve guards. No negotiating.”
-], title=“RESCUE”)
+“You call Lucy right there.”,
+“Vector watches.”,
+“”,
+“LUCY (in your ear):”,
+“‘I heard. Vector’s been planning this”,
+“since before you got involved.”,
+“You’re not the first person”,
+“she’s used for this.”,
+“”,
+“‘Don’t give her the key.”,
+“We go tonight.’,”,
+“‘Meet me at the relay point.”,
+“I’m sending coordinates now.’”,
+“”,
+“Vector: ‘Who are you calling?’”,
+“YOU:    ‘A friend.’”,
+])
+g.lucy_trust += 1
+return “act4_fight_out”
+
+def scene_act4_sellout_path(g):
+g.show_text([
+“Three days pass.”,
+“”,
+“Militech enters the relay point”,
+“with the biokey.”,
+“The door opens.”,
+“”,
+“Lucy’s hologram cuts out”,
+“on the fourth day.”,
+“Permanently.”,
+“”,
+“The news reports a Militech”,
+“‘data infrastructure acquisition’”,
+“in the Arasaka ruins.”,
+“Nobody asks what was inside.”,
+“”,
+“You have 500,000 eddies.”,
+“Rook is impressed.”,
+“Your crew doesn’t ask questions.”,
+“”,
+“But sometimes, late at night,”,
+“you think about ten thousand people”,
+“who woke up one morning”,
+“and never came home.”,
+“”,
+“And who’s running them now.”,
+], title=“AFTERMATH”)
+return “ending_sellout”
+
+def scene_act4_prep_window(g):
+g.show_text([
+“24 hours.”,
+“”,
+“You call Lucy.”,
+“Tell her about Vector’s deadline.”,
+“”,
+“LUCY:  ‘Then we go in 20 hours.”,
+“        Get your crew ready.”,
+“        Rest if you can.’,”,
+“‘I’ll prep the relay point.”,
+“The Arasaka tower.”,
+“There’s still an active subnet there.”,
+“That’s our entry to the Blackwall.’”,
+“”,
+“Twenty hours.”,
+“You have time to prepare.”,
+], title=“24 HOURS”)
+idx = g.choose([
+“Rest and recover (restore HP/energy)”,
+“Hit the shop – gear up”,
+“Talk to your crew”,
+“I’m ready – go now”,
+])
+if idx == 0:
+g.health = g.max_health()
+g.energy = 100
+g.show_text([
+“You sleep for six hours.”,
+“You dream about silver hair”,
+“and a city that never stops burning.”,
+“HP and energy restored.”,
+])
+return “act4_push_now”
+elif idx == 1:
+return “shop”
+elif idx == 2:
+return “crew_final_talk”
+else:
+return “act4_push_now”
+
+def scene_act4_fight_out(g):
+g.show_text([
+“Vector reaches for her radio.”,
+“Her three guards move.”,
+“”,
+“You move first.”,
+], title=“VECTOR FIGHT”)
 result = g.run_combat([
-(“Militech Guard”, 40, 11, 10, 2),
-(“Militech Guard”, 40, 11, 10, 2),
-(“Militech Elite”, 60, 16, 13, 4),
-(“Militech Elite”, 60, 16, 13, 4),
+(“Militech Guard”,  45, 13, 11, 3),
+(“Militech Guard”,  45, 13, 11, 3),
+(“Militech Guard”,  45, 13, 11, 3),
 ])
-if result == “hub”: return “afterlife_hub”
+if result == “hub”:
+return “afterlife_hub”
 if not result:
-g.show_text([“Rook dies in custody. Game over.”])
-g.running = False
-return None
-g.set_flag(“saved_rook”)
-g.change_rep(“street”, 2)
+g.health = max(5, g.health - 30)
 g.show_text([
-“Rook: ‘I owe you one, choom. Get out of here.’”,
-“+3000 eddies and Rook’s loyalty.”
+“Three trained soldiers.”,
+“You’re good but not that good.”,
+“You get out through a window.”,
+“Three stories up.”,
+“”,
+“You survive.”,
+“Vector does too.”,
+“”,
+“Your agent buzzes immediately:”,
+“VECTOR: ‘You have 12 hours.’”,
 ])
-g.eddies += 3000
-return “act4_assault”
-
-def scene_militech_ambush(g):
+g.set_flag(“vector_12hr_deadline”)
+return “act4_push_now”
 g.show_text([
-“You hit Vector’s forward base in Watson.”,
-“Brutal fighting. But you send a message.”
-], title=“AMBUSH”)
-result = g.run_combat([
-(“Militech Soldier”, 45, 13, 11, 3),
-(“Militech Soldier”, 45, 13, 11, 3),
-{“name”:“Vector’s Lieut”,“hp”:100,“attack”:20,“speed”:14,“defense”:6,
-“abilities”:[(“Flashbang”,0.5),(“Tactical”,1.3)],
-“loot”:[“vector_intel”]},
+“Vector backed away when the guards fell.”,
+“She’s fast. She’s already out the stairwell.”,
+“”,
+“Your agent buzzes:”,
+“VECTOR: ‘This isn’t over.’”,
+“”,
+“No. But you bought time.”,
+“Lucy’s coordinates are on your screen.”,
+“The Arasaka tower.”,
+“Tonight.”,
 ])
-if result == “hub”: return “afterlife_hub”
-if not result:
-g.show_text([“Outgunned. Game over.”])
-g.running = False
-return None
-g.change_rep(“militech”, -3)
-g.change_rep(“street”, 3)
-g.show_text([“Message sent. Militech pulls back. For now.”])
-return “act4_assault”
+return “act4_push_now”
 
-def scene_act4_assault(g):
+def scene_act4_push_now(g):
 g.show_text([
-“The path to Mikoshi opens.”,
-“Lucy: ‘The Blackwall relay is in the old Arasaka tower.’”,
-“‘One more fight. Then we’re in.’”,
-], title=“ACT 4 PUSH”)
+“Lucy’s voice in your ear:”,
+“‘The relay point is inside”,
+“ the old Arasaka tower.”,
+“ Sub-level four.”,
+“ There’s still a working subnet there.”,
+“ That’s where we jack in.’”,
+“”,
+“‘Vector will have people at the tower.”,
+“ She’s not going to let this happen quietly.’”,
+“”,
+“‘You’ll need to fight your way in.”,
+“ And there’s one more problem.’”,
+“”,
+“She pauses.”,
+“”,
+“‘Adam Smasher is guarding the sublevel.”,
+“ Militech rebuilt him.”,
+“ He’s been waiting.’”,
+], title=“THE TOWER”)
+idx = g.choose([
+“Let’s go – now”,
+“What do you know about Smasher?”,
+“Is there another way in?”,
+])
+if idx == 1:
+g.show_text([
+“LUCY:  ‘Smasher died in 77.”,
+“        Or should have.”,
+“        Militech found what was left”,
+“        and rebuilt it.”,
+“        Full conversion.”,
+“        Almost nothing organic left.”,
+“”,
+“        He doesn’t care about Mikoshi.”,
+“        He doesn’t care about engrams.”,
+“        He just wants to keep fighting.”,
+“        And he’s very good at it.’”,
+“”,
+“‘Aim for the power conduits”,
+“on his left shoulder.”,
+“It’s the only thing”,
+“they couldn’t reinforce.’”,
+])
+g.set_flag(“smasher_weakness_known”)
+elif idx == 2:
+g.show_text([
+“LUCY:  ‘There’s a maintenance tunnel”,
+“        on the east face.”,
+“        But Militech will have it covered.”,
+“        The front is actually”,
+“        less guarded—”,
+“        they think it’s the obvious choice,”,
+“        so they put fewer people there.”,
+“        Your call.’”,
+])
 return “arasaka_tower”
 
-# ─── ARASAKA TOWER (Expanded) ────────────────────────────────────────
+# =============================================================================
+
+# ARASAKA TOWER
+
+# =============================================================================
 
 def scene_arasaka_tower(g):
 g.show_text([
 “THE TOWER”,
-“Arasaka HQ ruins. Still radiating data.”,
-“Automated defenses online. Decade-old ICE.”,
-“Your crew splits up to cover more ground.”
-], title=“TOWER”)
-idx = g.choose([“Force through the lobby”,“Use the maintenance shaft”,“Jin hacks the security grid”])
-if idx == 0: return “tower_lobby”
-elif idx == 1: return “tower_shaft”
-elif idx == 2: return “tower_hack_grid”
-else: return “afterlife_hub”
+“”,
+“The Arasaka HQ ruins.”,
+“Ten years since the war”,
+“and they still haven’t torn it down.”,
+“Something about radiation surveys.”,
+“Something about legal disputes.”,
+“Nobody really wants to go in.”,
+“”,
+“Tonight it’s lit up.”,
+“Militech vehicles at the base.”,
+“Floodlights sweeping the plaza.”,
+“”,
+“MAYA:   ‘That’s a lot of people for’,”,
+“         ‘a building with nothing in it.’”,
+“JIN:    ‘Something very important”,
+“          is in it.”,
+“          We just need to get there first.’”,
+], title=“THE TOWER”)
+idx = g.choose([
+“Hit the front entrance hard and fast”,
+“East maintenance tunnel”,
+“Jin cuts their grid first (cyberdeck needed)”,
+“Create a distraction – draw them out”,
+])
+if idx == 0:
+return “tower_lobby”
+elif idx == 1:
+return “tower_shaft”
+elif idx == 2:
+if “Jin” in g.crew and g.has_item(“cyberdeck”):
+return “tower_hack_grid”
+else:
+g.show_text([
+“You need Jin and a cyberdeck for this.”,
+“Pick another approach.”,
+])
+return “arasaka_tower”
+else:
+g.show_text([
+“You trigger a false alarm”,
+“three blocks south.”,
+“Militech sends six units to investigate.”,
+“”,
+“Maya: ‘That bought us four minutes.’”,
+“‘Move.’”,
+])
+g.set_flag(“used_distraction”)
+return “tower_lobby”
 
 def scene_tower_lobby(g):
-g.show_text([“Automated defenses. Heavy.”], title=“LOBBY”)
+guard_count = 3 if g.check_flag(“used_distraction”) else 4
+g.show_text([
+“TOWER LOBBY”,
+“”,
+“The old Arasaka lobby.”,
+“Corporate art on the walls,”,
+“cracked and radiation-stained.”,
+“A portrait of the founder,”,
+“eyes melted by years of damp.”,
+“”,
+f”{‘Three’ if guard_count == 3 else ‘Four’} Militech guards at the desk.”,
+“Tactical gear. They’re expecting trouble.”,
+“They’re going to get it.”,
+], title=“TOWER LOBBY”)
 result = g.run_combat([
-(“Security Drone”,   45, 14, 15, 3),
-(“Security Drone”,   45, 14, 15, 3),
-(“Arasaka Hardsuit”, 90, 20, 10, 8),
-])
-if result == “hub”: return “afterlife_hub”
+(“Militech Soldier”,  45, 12, 11, 3),
+(“Militech Soldier”,  45, 12, 11, 3),
+(“Militech Soldier”,  45, 12, 11, 3),
+] + ([(“Militech Soldier”, 45, 12, 11, 3)] if guard_count == 4 else []))
+if result == “hub”:
+return “afterlife_hub”
 if not result:
-g.show_text([“Ground down. Game over.”])
-g.running = False
-return None
+g.health = max(5, g.health - 30)
+g.show_text([
+“They have a defensible position”,
+“and better gear.”,
+“You fall back to the plaza.”,
+“”,
+“Maya: ‘New plan.’”,
+])
+return “arasaka_tower”
 return “tower_sublevel”
 
 def scene_tower_shaft(g):
 g.show_text([
-“Maintenance shaft. Tight. Dark.”,
-“Two drones patrol the junction.”
-], title=“SHAFT”)
+“EAST SHAFT”,
+“”,
+“The maintenance tunnel is narrow”,
+“and smells like ten years of stagnant water.”,
+“”,
+“Jin, in your ear:”,
+“‘Two drones on the junction.”,
+“ They’re on a loop.”,
+“ You have a six-second window.’”,
+“”,
+“You move through the gap.”,
+“Then one of the drones breaks its loop.”,
+], title=“EAST SHAFT”)
 result = g.run_combat([
-(“Patrol Drone”, 35, 11, 16, 2),
-(“Patrol Drone”, 35, 11, 16, 2),
+(“Patrol Drone”, 35, 12, 17, 2),
+(“Patrol Drone”, 35, 12, 17, 2),
 ])
-if result == “hub”: return “afterlife_hub”
+if result == “hub”:
+return “afterlife_hub”
 if not result:
-g.show_text([“Trapped in the shaft. Game over.”])
-g.running = False
-return None
+g.health = max(5, g.health - 20)
+g.show_text([
+“The drones hem you in.”,
+“You crawl back out.”,
+“Jin: ‘They updated the patrol pattern.”,
+“       We need another way.’”,
+])
+return “arasaka_tower”
+g.show_text([
+“You emerge in a stairwell.”,
+“Sublevel access is two floors down.”,
+“No guards between here and there.”,
+“The tunnel was the right call.”,
+])
 return “tower_sublevel”
 
 def scene_tower_hack_grid(g):
-if “Jin” not in g.crew:
-g.show_text([“You need Jin for this.”])
-return “arasaka_tower”
-if g.energy < 30:
-g.show_text([“Not enough energy.”])
-return “arasaka_tower”
-g.energy -= 30
 g.show_text([
-“Jin: ‘I’m in. Disabling turrets…’”,
-“‘There’s something else in here. Something watching.’”,
-“A Daemon latches onto Jin’s connection.”
-])
+“GRID HACK”,
+“”,
+“Jin jacks in from the plaza.”,
+“‘I’m in their security grid.”,
+“ Cameras are easy.”,
+“ But there’s something else in here.”,
+“ Something old.’,”,
+“‘It’s not Militech’s.’”,
+“”,
+“A pause.”,
+“”,
+“‘It’s ICE. Arasaka ICE.”,
+“ Still running after ten years.”,
+“ It just noticed me.’”,
+], title=“GRID HACK”)
 result = g.run_combat([
-{“name”:“Black ICE”,“hp”:60,“attack”:18,“speed”:17,“defense”:5,
-“abilities”:[(“Dataspike”,1.6)], “loot”:[“ice_fragment”]},
+{“name”: “Arasaka ICE”,
+“hp”: 65, “attack”: 18, “speed”: 18, “defense”: 5,
+“abilities”: [(“Dataspike”, 1.6), (“Counter-trace”, 1.0)],
+“loot”: [“ice_fragment”]},
 ])
-if result == “hub”: return “afterlife_hub”
+if result == “hub”:
+return “afterlife_hub”
 if not result:
-g.show_text([“Jin is flatlined. Game over.”])
-g.running = False
-return None
-g.show_text([“Daemon beaten. Security grid down. You walk right in.”])
+g.health = max(5, g.health - 15)
+g.show_text([
+“Jin: ‘I’m out. The ICE pushed me out.”,
+“       But I got the cameras for 90 seconds.”,
+“       Move now.’”,
+])
+else:
+g.show_text([
+“Jin: ‘Got it.”,
+“ Security grid is mine.”,
+“ Cameras looped.”,
+“ Turrets disabled.’,”,
+“‘You have a clear path to sublevel 4.”,
+“ Go.’”,
+])
 return “tower_sublevel”
 
 def scene_tower_sublevel(g):
 g.show_text([
-“Sublevel -4. The core.”,
-“A pulse of light—Lucy’s avatar.”,
-“‘Here it is. The Blackwall relay to Mikoshi.’”,
-“‘Jack in. I’ll guide you through.’”,
-“But then—footsteps. Heavy ones.”
-], title=“SUBLEVEL”)
+“SUBLEVEL  –  4”,
+“”,
+“The deepest level of the tower.”,
+“A server room that never powered down.”,
+“Cooling units still running.”,
+“A single terminal glowing.”,
+“”,
+“Lucy’s hologram appears”,
+“directly from the terminal.”,
+“She looks more solid here.”,
+“More present.”,
+“”,
+“LUCY:  ‘You made it.’,”,
+“‘The relay point is there—”,
+“ the terminal.’,”,
+“‘Place the biokey in the reader.”,
+“ I’ll do the rest from inside.’,”,
+“‘But we have a problem.’”,
+“”,
+“Footsteps.”,
+“Heavy ones.”,
+“Very heavy ones.”,
+“The elevator opens.”,
+], title=“SUBLEVEL 4”)
 return “tower_boss”
 
 def scene_tower_boss(g):
+smasher_hp = 200 if g.check_flag(“smasher_weakness_known”) else 240
+weakness_note = “”
+if g.check_flag(“smasher_weakness_known”):
+weakness_note = “You remember: left shoulder conduit.”
 g.show_text([
-“The elevator opens.”,
-“Adam Smasher. Or what’s left of him.”,
-“Militech rebuilt him. He’s been waiting.”,
-“‘You think you can touch Mikoshi?’”,
-“‘I’ve been killing legends for twenty years.’”
+“ADAM SMASHER”,
+“”,
+“What comes out of the elevator”,
+“isn’t a man.”,
+“It’s barely a machine.”,
+“It’s something in between”,
+“that chose the worst parts of both.”,
+“”,
+“SMASHER:  ‘There you are.’,”,
+“‘I’ve been waiting for someone”,
+“to come down here.’,”,
+“‘It gets boring.”,
+“ Guarding a door.”,
+“ Nobody ever comes.’”,
+“”,
+“He looks at your crew.”,
+“‘Let me fix that.’”,
+“”,
+weakness_note,
 ], title=“SMASHER”)
-idx = g.choose([“Fight him”,“Stall while Lucy hacks”,“Try to reason with him”])
-if idx == 2:
-g.show_text([“He laughs. It sounds like grinding gears.”,
-“‘Reason? You’re a punchline.’”])
-# All paths lead to the fight
 result = g.run_combat([
-{“name”:“Adam Smasher”,“hp”:220,“attack”:35,“speed”:11,“defense”:12,
-“abilities”:[(“Missile Barrage”,2.0),(“AoE”,1.5),(“Gore Cannon”,1.8)],
-“boss”:True, “loot”:[“smasher_core”]},
+{“name”: “Adam Smasher”,
+“hp”: smasher_hp,
+“attack”: 35,
+“speed”: 11,
+“defense”: 12,
+“abilities”: [(“Missile Barrage”, 2.0),
+(“AoE”, 1.5),
+(“Gore Cannon”, 1.8)],
+“boss”: True,
+“loot”: [“smasher_core”]},
 ], flee_allowed=False)
-if result == “hub”: return “afterlife_hub”
+if result == “hub”:
+return “afterlife_hub”
 if not result:
+g.health = max(5, g.health - 50)
 g.show_text([
-“Smasher tears through your crew.”,
-“GAME OVER.”,
-“Legends die here.”
+“He’s too much.”,
+“He’s always been too much.”,
+“”,
+“He lets you go.”,
+“He could have finished it.”,
+“He wants it to last.”,
+“”,
+“SMASHER:  ‘Come back when”,
+“           you’re worth killing.’”,
+“”,
+“You crawl out.”,
+“You recover. You regroup.”,
+“You come back harder.”,
 ])
-g.running = False
-return None
+return “arasaka_tower”
 g.story_act = max(g.story_act, 5)
 return “tower_ending”
 
 def scene_tower_ending(g):
 g.show_text([
-“Smasher crumbles.”,
-“Lucy: ‘I can’t believe that worked.’”,
-“You: ‘It barely did.’”,
-“Maya binds her wounds. Jin stares at Smasher’s remains.”,
-“Lucy: ‘The Blackwall relay is open. Mikoshi is reachable.’”,
-“‘But it’s inside the net. We’ll need to dive deep.’”
-], title=“TOWER CLEAR”)
+“Smasher on the floor.”,
+“”,
+“It takes a moment to believe it.”,
+“”,
+“Maya, breathing hard:”,
+“‘Is it done?’”,
+“”,
+“Jin: ‘He’s not dead.”,
+“      Nothing kills Smasher.”,
+“      But he’s down.’”,
+“”,
+“Lucy: ‘The relay point is open.”,
+“       Place the biokey.”,
+“       Now. Before he gets up.’”,
+], title=“TOWER”)
+g.show_text([
+“You slot the biokey into the reader.”,
+“”,
+“The terminal lights up.”,
+“All of them.”,
+“Data cascades across every screen.”,
+“”,
+“LUCY:  ‘I have access.”,
+“        I can see Mikoshi.’,”,
+“‘I can see all of them.’,”,
+“”,
+“Her voice breaks.”,
+“”,
+“‘David. He’s in here.”,
+“ He’s… still there.’”,
+“”,
+“‘We need to get inside.”,
+“ We need to cross the Blackwall.”,
+“ All of us.’”,
+], title=“TOWER”)
 return “act5_blackwall”
 
-# ─── ACT 5: THE BLACKWALL ────────────────────────────────────────────
+# =============================================================================
+
+# ACT 5  –  THE BLACKWALL
+
+# =============================================================================
 
 def scene_act5_blackwall(g):
 g.story_act = max(g.story_act, 5)
 g.show_text([
-“ACT 5 – THE BLACKWALL”,
-“The Blackwall: a digital border between the net and rogue AIs.”,
-“No one crosses and comes back the same.”,
-“Lucy: ‘Mikoshi is on the other side.’”,
-“‘The three keys will create a hole. Brief. We go through fast.’”,
-“Jin: ‘If an AI locks onto us in there, we’re dead.’”,
-“You: ‘Then we move fast.’”
+“ACT 5  –  THE BLACKWALL”,
+“”,
+“The Blackwall is a firewall”,
+“between the public net”,
+“and the rogue AIs”,
+“that live on the other side.”,
+“”,
+“NetWatch built it.”,
+“Nobody has crossed it”,
+“and come back the same.”,
+“”,
+“Mikoshi is on the other side.”,
+“”,
+“LUCY:  ‘I’ve crossed before.”,
+“        I know the gaps.”,
+“        But I need you with me.”,
+“        The biokey works as an anchor.”,
+“        Without it, I’d drift.”,
+“”,
+“‘This is going to hurt.’,”,
+“‘That’s not a metaphor.”,
+“ Jacking into the Blackwall”,
+“ hurts in your actual body.’,”,
+“‘Are you ready?’”,
 ], title=“ACT 5”)
-idx = g.choose([“Dive in”,“Make final preparations”,“Talk to your crew”])
-if idx == 0:
-return “blackwall_dive”
-elif idx == 1:
-return “pre_blackwall_prep”
-else:
-return “crew_final_talk”
-
-def scene_pre_blackwall_prep(g):
+idx = g.choose([
+“I’m ready”,
+“Tell me what to expect inside”,
+“Is there a way to prepare better?”,
+])
+if idx == 1:
 g.show_text([
-“Before diving:”,
-“You can rest (+50 HP), stock up at the shop, or upgrade crew.”
-], title=“PREP”)
-idx = g.choose([“Rest here (+50 HP)”,“Shop”,“Ready—let’s go”])
-if idx == 0:
-g.health = min(g.max_health(), g.health + 50)
+“LUCY:  ‘It looks like the net.”,
+“        But wrong.”,
+“        Colors that shouldn’t exist.”,
+“        Geometry that doesn’t make sense.”,
+“        And things that notice you.”,
+“”,
+“        Rogue AIs.”,
+“        They’ve been on the other side”,
+“        for decades.”,
+“        Some of them were human once.”,
+“        Most of them aren’t anything”,
+“        you’d recognize anymore.”,
+“”,
+“        Move fast.”,
+“        Don’t stop.”,
+“        Don’t talk to anything”,
+“        that isn’t me.’”,
+])
+elif idx == 2:
+g.health = min(g.max_health(), g.health + 30)
 g.energy = 100
-g.show_text([“Rested. HP and energy restored.”])
-elif idx == 1:
-return “shop”
-return “act5_blackwall”
+g.show_text([
+“Lucy walks you through”,
+“a breathing technique.”,
+“It sounds ridiculous.”,
+“It actually helps.”,
+“”,
+“+30 HP. Energy restored.”,
+“As ready as you’ll ever be.”,
+])
+return “blackwall_dive”
 
 def scene_crew_final_talk(g):
 g.show_text([
-“Maya: ‘After this, I’m getting out. Somewhere with no corps.’”,
-“Jin: ‘I’ll be okay. I always am.’ (He doesn’t look sure.)”,
-“Lina (if present): ‘Systems are green. Let’s end this.’”,
-“Lucy: ‘Whatever happens in there—thank you.’”
+“BEFORE THE DIVE”,
+“”,
+“Your crew.”,
+“Whatever’s left of it.”,
 ], title=“CREW”)
+if “Maya” in g.crew:
+g.show_text([
+“MAYA:  ‘After this—”,
+“        wherever after this is—”,
+“        I want to find somewhere”,
+“        you can’t see Night City”,
+“        from the window.’”,
+“”,
+“She loads her rifle.”,
+“‘But first.’”,
+])
+if “Jin” in g.crew:
+g.show_text([
+“JIN:   ‘I’ve been in the net”,
+“        a thousand times.”,
+“        Never past the Blackwall.’”,
+“‘I read everything about it.’”,
+“‘Everything says don’t do this.’”,
+“‘But everything also said”,
+“David Martinez was crazy”,
+“for going to the moon.’”,
+“”,
+“‘Let’s go.’”,
+])
+g.show_text([
+“LUCY (through the terminal):”,
+“‘I’ve been alone in here”,
+“ for six years.”,
+“ Waiting for someone”,
+“ who would do this.’,”,
+“”,
+“‘Thank you.’,”,
+“‘That’s all.’”,
+“”,
+“She goes quiet.”,
+“You jack in.”,
+])
 g.lucy_trust += 1
+return “blackwall_dive”
+
+def scene_pre_blackwall_prep(g):
+g.show_text([
+“FINAL PREP”,
+“”,
+“Before you cross:”,
+], title=“PREP”)
+idx = g.choose([
+“Rest here – restore HP and energy”,
+“Talk to your crew”,
+“Hit the shop”,
+“I’m ready – cross now”,
+])
+if idx == 0:
+g.health = g.max_health()
+g.energy = 100
+g.show_text([“HP and energy fully restored.”])
 return “act5_blackwall”
+elif idx == 1:
+return “crew_final_talk”
+elif idx == 2:
+return “shop”
+else:
+return “blackwall_dive”
 
 def scene_blackwall_dive(g):
 g.show_text([
+“THE DIVE”,
+“”,
 “You jack in.”,
-“The world dissolves into cascading data.”,
-“Lucy guides you through narrow corridors of light.”,
-“Then—something notices you.”,
-“A Rogue AI. Ancient. Hungry.”,
-], title=“THE DIVE”)
+“”,
+“The sublevel vanishes.”,
+“Your body is still there—”,
+“you can feel it, distantly,”,
+“like a hand you can’t quite reach.”,
+“”,
+“The net.”,
+“Then: the Blackwall.”,
+“”,
+“It looks like static.”,
+“It sounds like ten thousand voices”,
+“all talking at once.”,
+“”,
+“Lucy is a thread of silver light”,
+“moving ahead of you.”,
+“‘Follow me.”,
+“ Don’t stop.”,
+“ Don’t look directly at anything”,
+“ that looks back.’”,
+], title=“BLACKWALL”)
+g.show_text([
+“Something looks back.”,
+“”,
+“It doesn’t have a shape.”,
+“Or it has too many.”,
+“It’s been on the other side”,
+“for forty years”,
+“and it’s very hungry”,
+“and you are the first interesting thing”,
+“it’s seen in a long time.”,
+“”,
+“LUCY:  ‘Run.’”,
+], title=“BLACKWALL”)
 result = g.run_combat([
-{“name”:“Rogue AI Vanguard”,“hp”:80,“attack”:20,“speed”:18,“defense”:5,
-“abilities”:[(“Dataspike”,1.5),(“Clone”,1.0)], “loot”:[“ai_fragment”]},
-{“name”:“Blackwall Daemon”,“hp”:100,“attack”:25,“speed”:15,“defense”:8,
-“abilities”:[(“Corrupt”,1.3),(“Swarm”,1.2)],
-“boss”:True},
+{“name”: “Rogue Vanguard”,
+“hp”: 80, “attack”: 20, “speed”: 18, “defense”: 4,
+“abilities”: [(“Dataspike”, 1.5)],
+“loot”: [“ai_fragment”]},
+{“name”: “Blackwall Daemon”,
+“hp”: 110, “attack”: 26, “speed”: 15, “defense”: 8,
+“abilities”: [(“Corrupt”, 1.3), (“Swarm”, 1.2)],
+“boss”: True},
 ], flee_allowed=False)
-if result == “hub”: return “afterlife_hub”
+if result == “hub”:
+return “afterlife_hub”
 if not result:
-g.show_text([“Consumed by the Blackwall. Game over.”])
-g.running = False
-return None
+g.health = max(5, g.health - 40)
+g.show_text([
+“It’s too much.”,
+“Lucy pulls you out.”,
+“”,
+“You come back to your body”,
+“with a headache like a gunshot”,
+“and blood from your nose.”,
+“”,
+“Lucy: ‘The Daemon locked onto your signal.”,
+“       Rest. Then we try again.”,
+“       I’ll find a different gap.’”,
+])
+return “act5_blackwall”
 g.story_act = max(g.story_act, 6)
 return “mikoshi_approach”
 
-# ─── ACT 6-9: MIKOSHI APPROACH AND CONFRONTATION ─────────────────────
+# =============================================================================
+
+# ACT 6  –  MIKOSHI
+
+# =============================================================================
 
 def scene_mikoshi_approach(g):
 g.story_act = max(g.story_act, 6)
 g.show_text([
-“ACT 6 – MIKOSHI”,
-“Beyond the Blackwall: a vast digital cathedral.”,
-“Rows upon rows of engrams. Thousands. Millions.”,
-“Lucy: ‘This is it. Every soul Arasaka ever stole.’”,
-“You see names. Dates. Faces frozen in light.”,
-“‘David Martinez – Engram 4471. Active.’”,
-“Lucy breaks. You give her a moment.”,
-“Then the guardian awakens.”
+“ACT 6  –  MIKOSHI”,
+“”,
+“Through the Blackwall.”,
+“”,
+“If the net was a city,”,
+“Mikoshi is its cathedral.”,
+“”,
+“Vast. Towering.”,
+“Pillars of light that go up”,
+“further than you can see.”,
+“Rows and rows of”,
+“—what? Archives? Cells?—”,
+“stretching in every direction.”,
+“”,
+“LUCY:  ‘This is it.”,
+“        Every engram.”,
+“        Every mind they ever captured.’,”,
+“”,
+“She drifts ahead of you.”,
+“Slowly. Like she’s afraid”,
+“of what she’ll find.”,
+“”,
+“Then she stops.”,
+“”,
+“‘David.’”,
+], title=“MIKOSHI”)
+g.show_text([
+“A pulse of light.”,
+“A node in the archive.”,
+“”,
+“DAVID MARTINEZ – ENGRAM 4471”,
+“STATUS: ACTIVE”,
+“CAPTURED: 2077-12-11”,
+“”,
+“Lucy touches the node.”,
+“Pulls her hand back.”,
+“”,
+“LUCY:  ‘He’s in there.”,
+“        He’s… still coherent.”,
+“        After ten years.”,
+“        He’s still him.’”,
+“”,
+“Her voice is very small.”,
+“”,
+“Then the Warden arrives.”,
 ], title=“MIKOSHI”)
 return “mikoshi_guardian”
 
 def scene_mikoshi_guardian(g):
 g.show_text([
-“An avatar of pure data rises.”,
-“The Mikoshi Warden. Arasaka’s final defense.”,
-“‘These engrams are property of Arasaka Corporation.’”,
-“‘Leave or be archived.’”
+“THE WARDEN”,
+“”,
+“An avatar of pure data.”,
+“It has the shape of an Arasaka executive”,
+“in a suit that was never manufactured.”,
+“”,
+“WARDEN: ‘Unauthorized access detected.”,
+“         These engrams are the property”,
+“         of Arasaka Corporation.”,
+“         You will leave this facility”,
+“         or be archived.’”,
+“”,
+“LUCY:   ‘There is no more”,
+“          Arasaka Corporation.’”,
+“”,
+“WARDEN: ‘My mandate predates”,
+“          that designation.”,
+“          It will outlast it as well.’”,
 ], title=“THE WARDEN”)
-idx = g.choose([“Fight the Warden”,“Hack past it (cyberdeck needed)”,“Talk—stall for Lucy”])
-if idx == 1 and not g.has_item(“cyberdeck”):
-g.show_text([“Need a cyberdeck.”])
-return “mikoshi_guardian”
+idx = g.choose([
+“Fight the Warden”,
+“Hack past it (cyberdeck + 50 energy)”,
+“Stall it – let Lucy work around it”,
+])
 if idx == 1:
-if g.energy >= 50:
+if g.has_item(“cyberdeck”) and g.energy >= 50:
 g.energy -= 50
 g.show_text([
-“Jin and Lucy work together. The Warden fractures.”,
-“You slip through the gap.”
+“You and Jin together.”,
+“”,
+“JIN:   ‘It’s not smart.”,
+“        It’s just big.”,
+“        There’s a difference.’”,
+“”,
+“You find the seam in its architecture.”,
+“You push through.”,
+“The Warden fractures.”,
+“Then reassembles—”,
+“but you’re already past it.”,
 ])
 g.story_act = max(g.story_act, 7)
 return “mikoshi_core”
 else:
-g.show_text([“Not enough energy.”])
+g.show_text([“Need cyberdeck and 50 energy for this.”])
 return “mikoshi_guardian”
 elif idx == 2:
 g.show_text([
-“You: ‘These people had rights.’”,
-“Warden: ‘Rights were voided upon contract signature.’”,
-“Lucy (behind you): ‘Keep it busy!’”,
-“Every second counts.”
+“YOU:   ‘We’re not leaving.”,
+“        We’re freeing them.”,
+“        There’s a difference.’”,
+“”,
+“WARDEN: ‘There is no legal mechanism—’”,
+“”,
+“YOU:   ‘Keep talking.’”,
+“”,
+“Behind you, Lucy is moving.”,
+“She’s already at the archive interface.”,
+“Every second you hold the Warden’s attention”,
+“is a second she’s working.”,
+“”,
+“But it figures that out.”,
 ])
-# Fighting anyway
+# Still have to fight, but Warden is weaker
 result = g.run_combat([
-{“name”:“Mikoshi Warden”,“hp”:180,“attack”:28,“speed”:14,“defense”:10,
-“abilities”:[(“Banish”,1.6),(“AoE”,1.3),(“Archive”,2.0)],
-“boss”:True, “loot”:[“warden_data”]},
+{“name”: “Mikoshi Warden”,
+“hp”: 190, “attack”: 28, “speed”: 14, “defense”: 10,
+“abilities”: [(“Archive Protocol”, 2.0),
+(“Banish”, 1.6),
+(“AoE”, 1.3)],
+“boss”: True,
+“loot”: [“warden_data”]},
 ], flee_allowed=False)
-if result == “hub”: return “afterlife_hub”
+if result == “hub”:
+return “afterlife_hub”
 if not result:
-g.show_text([“The Warden archives you all. Game over.”])
-g.running = False
-return None
+g.health = max(5, g.health - 45)
+g.show_text([
+“The Warden’s Archive Protocol.”,
+“It reaches into your jack”,
+“and starts pulling.”,
+“”,
+“Lucy breaks the connection.”,
+“You’re out.”,
+“”,
+“Back in your body.”,
+“Nose bleeding. Head splitting.”,
+“”,
+“Lucy: ‘I found a vulnerability.”,
+“       Rest. One more attempt.’”,
+])
+return “act5_blackwall”
 g.story_act = max(g.story_act, 7)
 return “mikoshi_core”
 
 def scene_mikoshi_core(g):
 g.story_act = max(g.story_act, 8)
 g.show_text([
-“ACT 7-9 – THE CORE”,
-“Mikoshi’s center. Endless data-light.”,
-“Lucy stands before the engram interface.”,
-“‘We can release them all. Or…’”,
-“Vector’s voice crackles through: ‘Niko. Hand over the core access.’”,
-“‘Militech will manage the engrams properly.’”,
-“Lucy: ‘Properly. She means sell them.’”,
-“Tanaka (if ally): ‘Free them. Please.’”,
-“You have all three keys. The choice is yours.”
-], title=“THE CHOICE”)
+“THE CORE”,
+“”,
+“With the Warden down,”,
+“Lucy moves to the central archive.”,
+“”,
+“LUCY:  ‘I can see the release protocol.”,
+“        I can free all of them.”,
+“        Every engram.”,
+“        Simultaneously.’,”,
+“”,
+“‘But—’”,
+“”,
+“She stops.”,
+“”,
+“‘There’s a file here.”,
+“ Tagged: CLASSIFIED.”,
+“ Sender: MILITECH INTEL.”,
+“ DATE: Three days ago.’”,
+“”,
+“She opens it.”,
+“Her face—the hologram of her face—”,
+“goes completely still.”,
+], title=“THE CORE”)
+g.show_text([
+“LUCY:  ‘It’s Vector.”,
+“        She has a kill-switch.”,
+“        If anyone initiates the release protocol,”,
+“        a signal goes out.”,
+“        The entire Mikoshi facility”,
+“        undergoes emergency shutdown.”,
+“        Every engram.”,
+“        Deleted.”,
+“        Including David.’,”,
+“”,
+“‘She set this up three days ago.”,
+“ The moment you refused her deal.”,
+“ She knew you’d get here.’,”,
+“”,
+“‘She’s been here the whole time.”,
+“ Waiting.”,
+“ If we free them,”,
+“ she kills them all.’”,
+“”,
+“Silence.”,
+“”,
+“Then your comms open.”,
+“Vector’s voice.”,
+], title=“THE CORE”)
+g.show_text([
+“VECTOR:  ‘Hello, Niko.”,
+“          I see you made it.’,”,
+“‘I want you to understand something.”,
+“ I’m not the villain here.’,”,
+“‘Militech will manage the engrams.”,
+“ Properly.”,
+“ With resources.”,
+“ With purpose.’,”,
+“‘Lucy’s plan is chaos.”,
+“ You release ten thousand minds”,
+“ into a net that has no infrastructure”,
+“ to support them.”,
+“ They’ll dissolve in hours.’,”,
+“”,
+“‘Give me control of the facility.”,
+“ I won’t destroy them.”,
+“ I’ll maintain them.’,”,
+“‘That’s the best deal”,
+“ any of them are going to get.’”,
+], title=“VECTOR”)
 g.story_act = max(g.story_act, 9)
 return “final_choice”
 
+# =============================================================================
+
+# ACT 10  –  THE CHOICE
+
+# =============================================================================
+
 def scene_final_choice(g):
 g.story_act = max(g.story_act, 10)
-lucy_bonus = “ (Lucy approves)” if g.lucy_trust >= 2 else “”
-tanaka_bonus = “ (Tanaka urges this)” if g.check_flag(“tanaka_ally”) else “”
+tanaka_note = “(Tanaka: ‘You promised.’)” if g.check_flag(“tanaka_ally”) else “”
+trust_note  = “(Lucy is watching you.)”  if g.lucy_trust >= 2 else “”
 g.show_text([
-“ACT 10 – THE FINAL CHOICE”,
-“The engrams of ten thousand souls wait.”,
-“David Martinez waits.”,
-“What do you do?”
-], title=“ACT 10”)
+“ACT 10  –  THE CHOICE”,
+“”,
+“Vector on comms.”,
+“Lucy at the archive.”,
+“David Martinez in a node”,
+“that has held him for ten years.”,
+“”,
+“Ten thousand others.”,
+“”,
+“You have the biokey.”,
+“You have access.”,
+“You have about ninety seconds”,
+“before Vector’s people breach”,
+“the sublevel in the physical world.”,
+“”,
+tanaka_note,
+trust_note,
+“”,
+“What do you do?”,
+], title=“THE CHOICE”)
 idx = g.choose([
-f”FREE THEM ALL{lucy_bonus}{tanaka_bonus}”,
-“SELL to Militech (Vector’s deal)”,
-“DESTROY everything—no corp ever touches them”,
-“TAKE ONE ENGRAM (merge with the net)”,
+“FREE THEM – trust Lucy’s plan”,
+“Give Vector control – 500k and maintenance”,
+“DESTROY Mikoshi – no one gets them”,
+“Upload yourself – protect from inside”,
 ])
 if idx == 0:   return “ending_legend”
 elif idx == 1: return “ending_sellout”
@@ -1816,27 +3545,79 @@ elif idx == 2: return “ending_purge”
 elif idx == 3: return “ending_merge”
 else:          return “final_choice”
 
-# ─── ENDINGS ────────────────────────────────────────────────────────
+# =============================================================================
+
+# ENDINGS
+
+# =============================================================================
 
 def scene_ending_legend(g):
 g.show_text([
 “ENDING: GHOST LEGEND”,
 “”,
-“You release the engrams.”,
-“Ten thousand souls flood the net.”,
-“David Martinez’s data dissolves—finally free.”,
-“Lucy smiles. Truly. For the first time in years.”,
-“‘Thank you, Niko.’”,
-“She fades with the others—going where she always wanted.”,
-“The net shimmers. Night City glows.”,
-“Your crew stands in the ruins of the tower.”,
-“Maya: ‘So… what now?’”,
-“You: ‘No idea. But it’s ours to figure out.’”,
+“You initiate the release.”,
 “”,
-“You became what Night City needed.”,
-“Not a corpo. Not a merc.”,
-“A ghost who chose to be real.”,
-], title=“LEGEND END”)
+“Lucy: ‘Vector’s kill-switch—’”,
+“YOU:  ‘Handle it.’”,
+“Lucy: ‘I’m trying—’”,
+“”,
+“The archive opens.”,
+“”,
+“Ten thousand lights.”,
+“All at once.”,
+“”,
+“Vector’s kill-switch fires.”,
+“But Lucy is already in the signal path.”,
+“She absorbs it.”,
+“The kill-switch hits her instead.”,
+“”,
+“Silence.”,
+], title=“LEGEND”)
+g.show_text([
+“Then: a voice.”,
+“”,
+“A voice you’ve never heard”,
+“but somehow recognize”,
+“from a hundred stories:”,
+“”,
+“DAVID MARTINEZ: ‘Hey.’”,
+“”,
+“Just that.”,
+“Like he’s been gone for a weekend”,
+“and he’s back now”,
+“and everything is fine.”,
+“”,
+“‘Hey.’”,
+], title=“LEGEND”)
+g.show_text([
+“The engrams dissolve into the net.”,
+“Not destroyed.”,
+“Free.”,
+“They go wherever free things go.”,
+“”,
+“Lucy’s signal: gone.”,
+“”,
+“You come back to your body.”,
+“Maya is holding your shoulder.”,
+“Jin is crying. He doesn’t notice.”,
+“”,
+“Outside the tower,”,
+“Night City hums.”,
+“It always does.”,
+“”,
+“But for one moment,”,
+“you imagine ten thousand people”,
+“finally breathing.”,
+“”,
+“One of them was David Martinez.”,
+“One of them was nobody you know.”,
+“They were all someone.”,
+“”,
+“You are the one who let them go.”,
+“”,
+“ENDING COMPLETE”,
+“GHOST LEGEND”,
+], title=“LEGEND”)
 g.running = False
 return None
 
@@ -1844,19 +3625,58 @@ def scene_ending_sellout(g):
 g.show_text([
 “ENDING: CORPO PUPPET”,
 “”,
-“You hand the core to Vector.”,
-“Militech pays you 500,000 eddies.”,
-“More than you’ve ever dreamed.”,
-“Lucy screams. You don’t look back.”,
-“She disappears—archived.”,
-“Your crew won’t meet your eyes.”,
-“Maya leaves that night.”,
-“Jin follows.”,
-“You’re rich.”,
-“You’re alone.”,
-“Night City doesn’t remember your name.”,
-“Neither will you, eventually.”,
-], title=“SELLOUT END”)
+“You open comms.”,
+“”,
+“YOU:    ‘Vector. You have your deal.’”,
+“VECTOR: ‘Good choice, Niko.’”,
+“”,
+“You step back from the archive.”,
+“Lucy looks at you.”,
+“She doesn’t say anything.”,
+“She doesn’t have to.”,
+“”,
+“Militech units breach the sublevel”,
+“four minutes later.”,
+“”,
+“They escort you out.”,
+“Gently.”,
+“You’re useful now.”,
+“Useful people get treated well.”,
+], title=“SELLOUT”)
+g.show_text([
+“500,000 eddies.”,
+“Real ones.”,
+“In an account with your name on it.”,
+“”,
+“The official statement:”,
+“‘Militech acquires Arasaka”,
+“ digital infrastructure assets.”,
+“ No comment on contents.’”,
+“”,
+“Lucy’s signal disappears”,
+“the same day.”,
+“Permanently.”,
+“”,
+“Rook invites you to dinner.”,
+“You go.”,
+“You don’t enjoy it.”,
+“”,
+“Maya leaves Night City”,
+“two weeks later.”,
+“She doesn’t tell you where.”,
+“”,
+“The David Martinez cocktail”,
+“is still on the menu at the Afterlife.”,
+“Now there’s a second one.”,
+“”,
+“Nobody knows who Lucy is.”,
+“But somebody named it.”,
+“”,
+“You don’t go back to that bar.”,
+“”,
+“ENDING COMPLETE”,
+“CORPO PUPPET”,
+], title=“SELLOUT”)
 g.running = False
 return None
 
@@ -1864,20 +3684,67 @@ def scene_ending_purge(g):
 g.show_text([
 “ENDING: ASHES”,
 “”,
-“You destroy the core.”,
-“Every engram—gone.”,
-“No corp will ever touch them.”,
-“Lucy: ‘Even David?’”,
-“You: ‘…Even David.’”,
-“She closes her eyes.”,
-“The explosion tears through the net.”,
-“In the physical world—”,
-“the Arasaka ruins go dark forever.”,
-“You and Lucy walk out through the Badlands.”,
-“Neither of you speaks.”,
-“Some things can’t be undone.”,
-“But neither can they be taken.”,
-], title=“ASHES END”)
+“YOU:   ‘No corp gets them.”,
+“        Not Vector.”,
+“        Not Militech.”,
+“        Not anyone.’”,
+“”,
+“LUCY:  ‘Niko—’”,
+“”,
+“YOU:   ‘David too.’,”,
+“        ‘I’m sorry.’”,
+“”,
+“She’s quiet for a long moment.”,
+“”,
+“LUCY:  ‘Do it.’”,
+], title=“ASHES”)
+g.show_text([
+“You find the core.”,
+“The physical infrastructure”,
+“connecting Mikoshi to the world.”,
+“”,
+“You destroy it.”,
+“”,
+“The archive collapses inward.”,
+“Ten thousand lights.”,
+“Gone.”,
+“”,
+“No corp will ever hold them.”,
+“No corp will ever use them.”,
+“No one will.”,
+“”,
+“They are gone.”,
+“That’s not the same as free.”,
+“But it’s not captive either.”,
+“”,
+“Lucy’s last transmission:”,
+“‘I hope they found somewhere better.’”,
+“”,
+“You don’t know if she meant”,
+“the engrams or herself.”,
+], title=“ASHES”)
+g.show_text([
+“You walk out of the tower.”,
+“”,
+“Maya and Jin are waiting.”,
+“They look at your face”,
+“and don’t ask questions.”,
+“”,
+“Night City is the same.”,
+“It always will be.”,
+“”,
+“But somewhere in the Badlands,”,
+“a woman with silver hair”,
+“and no digital shadow”,
+“finds a town with no corps”,
+“and no cameras”,
+“and stays there.”,
+“”,
+“Maybe.”,
+“”,
+“ENDING COMPLETE”,
+“ASHES”,
+], title=“ASHES”)
 g.running = False
 return None
 
@@ -1885,25 +3752,75 @@ def scene_ending_merge(g):
 g.show_text([
 “ENDING: DIGITAL GHOST”,
 “”,
-“You upload yourself.”,
-“Your body slumps in the chair.”,
-“Inside: infinite.”,
-“You find David Martinez.”,
-“He looks at you: ‘Choom. You made it.’”,
-“You protect the engrams from inside.”,
-“No key. No access. No corp.”,
-“Just you and ten thousand souls”,
-“drifting beyond the Blackwall.”,
-“Night City looks different from out here.”,
-“Smaller. Brighter.”,
-“Beautiful.”,
-], title=“GHOST END”)
+“LUCY:  ‘Niko. What are you doing?’”,
+“”,
+“YOU:   ‘Something you didn’t think of.”,
+“        Someone has to stay in here.”,
+“        To hold Vector’s kill-switch”,
+“        while the release happens.’,”,
+“        ‘To make sure it works.’”,
+“”,
+“LUCY:  ‘That means—’”,
+“”,
+“YOU:   ‘I know.’,”,
+“        ‘Do it.’”,
+], title=“MERGE”)
+g.show_text([
+“You initiate the release.”,
+“Lucy initiates the release.”,
+“”,
+“Vector’s kill-switch fires.”,
+“You catch it.”,
+“”,
+“It’s like being hit by a car”,
+“made of light.”,
+“Your body, in the sublevel,”,
+“goes still.”,
+“”,
+“Maya: ‘Niko?’”,
+“Jin: ‘Niko!’”,
+“”,
+“Nothing.”,
+], title=“MERGE”)
+g.show_text([
+“Inside:”,
+“”,
+“Ten thousand lights going free.”,
+“One of them, as he passes,”,
+“stops.”,
+“”,
+“DAVID MARTINEZ: ‘Hey.’,”,
+“‘Nice of you.’,”,
+“‘Didn’t have to be you.’”,
+“”,
+“YOU:   ‘Somebody had to.’”,
+“”,
+“DAVID: ‘Yeah.’,”,
+“‘That’s always how it goes.’,”,
+“”,
+“He goes.”,
+“They all go.”,
+“”,
+“You stay.”,
+“Somewhere in the net.”,
+“Not anywhere physical.”,
+“But present.”,
+“Watching.”,
+“”,
+“The Blackwall hums.”,
+“You hum back.”,
+“”,
+“Night City glows below”,
+“like something that will never learn.”,
+“”,
+“That’s okay.”,
+“You have time.”,
+“”,
+“ENDING COMPLETE”,
+“DIGITAL GHOST”,
+], title=“MERGE”)
 g.running = False
 return None
-
-# ─────────────────────────────────────────────────────────────────────
-
-# SIDE CONTENT (Original + expanded)
 
 # ─────────────────────────────────────────────────────────────────────
 
@@ -1959,14 +3876,13 @@ elif idx == 6: return “street”
 return “afterlife_hub”
 
 def _story_continue(g):
-“”“Route player to the correct act entry point based on story progress.”””
-# Each entry is the FORWARD scene for that act (not a replay of what’s done)
+“”“Route to the correct forward scene based on story progress.”””
 act_map = {
 0:  “prologue”,
-1:  “act2_hub”,            # heist done → drive into act 2
-2:  “act2_hub”,
-3:  “act3_key_hunt”,
-4:  “act4_night_city_burns”,
+1:  “act2_vector_lead” if g.check_flag(“vector_ally”) else “act2_no_vector”,
+2:  “act2_vector_lead” if g.check_flag(“vector_ally”) else “act2_no_vector”,
+3:  “act3_biokey”,
+4:  “act4_vector_moves”,
 5:  “act5_blackwall”,
 6:  “mikoshi_approach”,
 7:  “mikoshi_core”,
@@ -3297,109 +5213,107 @@ return “afterlife_hub”
 # ─── SCENE MAP ───────────────────────────────────────────────────────
 
 SCENE_MAP = {
-# Menus
-“start_menu”:           scene_start_menu,
-# Acts
-“prologue”:             scene_prologue,
-“messages_intro”:       scene_messages_intro,
-“afterlife_intro”:      scene_afterlife_intro,
-“heist_plan”:           scene_heist_plan,
-“crew_recruit_hub”:     scene_crew_recruit_hub,
-“heist_alone”:          scene_heist_alone,
-“heist_combat”:         scene_heist_combat,
-“after_heist”:          scene_after_heist,
-“act2_hub”:             scene_act2_hub,
-“pacifica_first”:       scene_pacifica_first,
-“lucy_deal”:            scene_lucy_deal,
-“militech_leak”:        scene_militech_leak,
-“hiro_confront”:        scene_hiro_confront,
-“act3_key_hunt”:        scene_act3_key_hunt,
-“key_militech”:         scene_key_militech,
-“relay_infiltrate”:     scene_relay_infiltrate,
-“relay_hack”:           scene_relay_hack,
-“relay_buy”:            scene_relay_buy,
-“militech_key_mission”: scene_militech_key_mission,
-“key_voodoo”:           scene_key_voodoo,
-“netwatch_purge”:       scene_netwatch_purge,
-“voodoo_brawl”:         scene_voodoo_brawl,
-“key_arasaka”:          scene_key_arasaka,
-“arasaka_storm”:        scene_arasaka_storm,
-“arasaka_diplomacy”:    scene_arasaka_diplomacy,
-“arasaka_trap”:         scene_arasaka_trap,
-“act4_night_city_burns”:scene_act4_night_city_burns,
-“save_rook”:            scene_save_rook,
-“militech_ambush”:      scene_militech_ambush,
-“act4_assault”:         scene_act4_assault,
-“arasaka_tower”:        scene_arasaka_tower,
-“tower_lobby”:          scene_tower_lobby,
-“tower_shaft”:          scene_tower_shaft,
-“tower_hack_grid”:      scene_tower_hack_grid,
-“tower_sublevel”:       scene_tower_sublevel,
-“tower_boss”:           scene_tower_boss,
-“tower_ending”:         scene_tower_ending,
-“act5_blackwall”:       scene_act5_blackwall,
-“pre_blackwall_prep”:   scene_pre_blackwall_prep,
-“crew_final_talk”:      scene_crew_final_talk,
-“blackwall_dive”:       scene_blackwall_dive,
-“mikoshi_approach”:     scene_mikoshi_approach,
-“mikoshi_guardian”:     scene_mikoshi_guardian,
-“mikoshi_core”:         scene_mikoshi_core,
-“final_choice”:         scene_final_choice,
-# Endings
-“ending_legend”:        scene_ending_legend,
-“ending_sellout”:       scene_ending_sellout,
-“ending_purge”:         scene_ending_purge,
-“ending_merge”:         scene_ending_merge,
-# Hub + Side
-“afterlife_hub”:        scene_afterlife_hub,
-“street”:               scene_street,
-“watson_district”:      scene_watson_district,
-“combat_zone”:          scene_combat_zone,
-“maya_recruit”:         scene_maya_recruit,
-“kabuki”:               scene_kabuki,
-“kabuki_cyberware”:     scene_kabuki_cyberware,
-“vendor_netrunner”:     scene_vendor_netrunner,
-“fixer_gigs”:           scene_fixer_gigs,
-# Gig 1: Ghost Data
+# ── Menus ──────────────────────────────────────────────────────
+“start_menu”:               scene_start_menu,
+# ── Prologue & Act 1 ───────────────────────────────────────────
+“prologue”:                 scene_prologue,
+“afterlife_intro”:          scene_afterlife_intro,
+“heist_plan”:               scene_heist_plan,
+“heist_solo_warning”:       scene_heist_solo_warning,
+“heist_crew_hunt”:          scene_heist_crew_hunt,
+“heist_alone”:              scene_heist_alone,
+“heist_combat”:             scene_heist_combat,
+“after_heist”:              scene_after_heist,
+# ── Act 2 ──────────────────────────────────────────────────────
+“act2_vector_lead”:         scene_act2_vector_lead,
+“act2_no_vector”:           scene_act2_no_vector,
+“hiro_direct”:              scene_hiro_direct,
+“hiro_platform”:            scene_hiro_platform,
+“hiro_intercept”:           scene_hiro_intercept,
+“hiro_subdued”:             scene_hiro_subdued,
+“hiro_talks”:               scene_hiro_talks,
+“hiro_outcome”:             scene_hiro_outcome,
+# ── Lucy ───────────────────────────────────────────────────────
+“lucy_pacifica”:            scene_lucy_pacifica,
+“lucy_the_plan”:            scene_lucy_the_plan,
+# ── Act 3 ──────────────────────────────────────────────────────
+“act3_biokey”:              scene_act3_biokey,
+“tanaka_research”:          scene_tanaka_research,
+“tanaka_contact”:           scene_tanaka_contact,
+“tanaka_meeting”:           scene_tanaka_meeting,
+“tanaka_gives_key”:         scene_tanaka_gives_key,
+“tanaka_stealth”:           scene_tanaka_stealth,
+“tanaka_assault”:           scene_tanaka_assault,
+# ── Act 4 ──────────────────────────────────────────────────────
+“act4_vector_moves”:        scene_act4_vector_moves,
+“act4_sellout_path”:        scene_act4_sellout_path,
+“act4_prep_window”:         scene_act4_prep_window,
+“act4_fight_out”:           scene_act4_fight_out,
+“act4_push_now”:            scene_act4_push_now,
+# ── Tower ──────────────────────────────────────────────────────
+“arasaka_tower”:            scene_arasaka_tower,
+“tower_lobby”:              scene_tower_lobby,
+“tower_shaft”:              scene_tower_shaft,
+“tower_hack_grid”:          scene_tower_hack_grid,
+“tower_sublevel”:           scene_tower_sublevel,
+“tower_boss”:               scene_tower_boss,
+“tower_ending”:             scene_tower_ending,
+# ── Act 5 ──────────────────────────────────────────────────────
+“act5_blackwall”:           scene_act5_blackwall,
+“pre_blackwall_prep”:       scene_pre_blackwall_prep,
+“crew_final_talk”:          scene_crew_final_talk,
+“blackwall_dive”:           scene_blackwall_dive,
+# ── Act 6-10 ───────────────────────────────────────────────────
+“mikoshi_approach”:         scene_mikoshi_approach,
+“mikoshi_guardian”:         scene_mikoshi_guardian,
+“mikoshi_core”:             scene_mikoshi_core,
+“final_choice”:             scene_final_choice,
+# ── Endings ────────────────────────────────────────────────────
+“ending_legend”:            scene_ending_legend,
+“ending_sellout”:           scene_ending_sellout,
+“ending_purge”:             scene_ending_purge,
+“ending_merge”:             scene_ending_merge,
+# ── Hub + streets ──────────────────────────────────────────────
+“afterlife_hub”:            scene_afterlife_hub,
+“street”:                   scene_street,
+“watson_district”:          scene_watson_district,
+“combat_zone”:              scene_combat_zone,
+“maya_recruit”:             scene_maya_recruit,
+“kabuki”:                   scene_kabuki,
+“kabuki_cyberware”:         scene_kabuki_cyberware,
+“vendor_netrunner”:         scene_vendor_netrunner,
+# ── Fixer gigs ─────────────────────────────────────────────────
+“fixer_gigs”:               scene_fixer_gigs,
 “gig_ghost_data”:           scene_gig_ghost_data,
 “gig_ghost_data_entry”:     scene_gig_ghost_data_entry,
 “gig_ghost_data_ambush”:    scene_gig_ghost_data_ambush,
 “gig_ghost_data_loud”:      scene_gig_ghost_data_loud,
 “gig_ghost_data_ciro”:      scene_gig_ghost_data_ciro,
-# Gig 2: Blood Money
 “gig_blood_money”:          scene_gig_blood_money,
 “gig_blood_money_entry”:    scene_gig_blood_money_entry,
 “gig_blood_money_boss”:     scene_gig_blood_money_boss,
-# Gig 3: Broken Doc
 “gig_broken_doc”:           scene_gig_broken_doc,
 “gig_broken_doc_warehouse”: scene_gig_broken_doc_warehouse,
 “gig_broken_doc_rescued”:   scene_gig_broken_doc_rescued,
-# Gig 4: Steel Nerves
 “gig_steel_nerves”:         scene_gig_steel_nerves,
 “gig_steel_nerves_escort”:  scene_gig_steel_nerves_escort,
 “gig_steel_nerves_fight”:   scene_gig_steel_nerves_fight,
-# Gig 5: Dead Drop
 “gig_dead_drop”:            scene_gig_dead_drop,
 “gig_dead_drop_pickup”:     scene_gig_dead_drop_pickup,
 “gig_dead_drop_delivery”:   scene_gig_dead_drop_delivery,
 “gig_dead_drop_choice”:     scene_gig_dead_drop_choice,
 “gig_dead_drop_done”:       scene_gig_dead_drop_done,
-“bartender”:            scene_bartender,
-“shop”:                 scene_shop,
-“shop_heist”:           scene_shop,
-“crew_hub”:             scene_crew_hub,
-“talk_maya”:            scene_talk_maya,
-“talk_jin”:             scene_talk_jin,
-“talk_lina”:            scene_talk_lina,
-“pacifica_side”:        scene_pacifica_side,
-“voodoo_side”:          scene_voodoo_side,
-“pacifica_ruins”:       scene_pacifica_ruins,
-# Stubs routing to act2
-“act2_militech”:        scene_act2_hub,
-“act2_underground”:     scene_act2_hub,
-“act2_double”:          scene_act2_hub,
-“act2_investigation”:   scene_pacifica_first,
-“act2_prep”:            scene_shop,
+# ── Services ───────────────────────────────────────────────────
+“bartender”:                scene_bartender,
+“shop”:                     scene_shop,
+“shop_heist”:               scene_shop,
+“crew_hub”:                 scene_crew_hub,
+“talk_maya”:                scene_talk_maya,
+“talk_jin”:                 scene_talk_jin,
+“talk_lina”:                scene_talk_lina,
+“pacifica_side”:            scene_pacifica_side,
+“voodoo_side”:              scene_voodoo_side,
+“pacifica_ruins”:           scene_pacifica_ruins,
 }
 
 def run_scene(g, name):
