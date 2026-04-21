@@ -7,8 +7,7 @@ Massive text adventure with inventory, health, shopping, central hub.
 Press KEY2 anytime to return to Afterlife hub.
 Save game in hub menu. Auto-load on start.
 
-NEW: Turn-based combat system + 5‑act extended story (accessible via
-     "Story Missions" in the Afterlife hub). Niko only romances women (Maya, Lucy).
+NEW: Turn-based combat system + 5‑act extended story 
 
 Controls: 
   UP/DOWN = scroll text / move cursor in choices
