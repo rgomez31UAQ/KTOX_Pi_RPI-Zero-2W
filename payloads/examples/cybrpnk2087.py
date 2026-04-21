@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – CybrPnk 2087 (Final)
-====================================
+KTOx Payload – CybrPnk 2087 (Final, No Missing Scenes)
+=======================================================
 120+ scenes, full choice-driven cyberpunk epic.
 Set after Edgerunners and Cyberpunk 2077.
 You are Niko. Build your crew, find love, become a legend.
 
 Controls: 
   UP/DOWN = scroll text pages / move cursor in choices
-  OK = next page / select choice (single click, no auto-repeat)
+  OK = next page / select choice (single click)
   KEY3 = exit
 """
 
@@ -117,19 +117,15 @@ class Game:
         self.romance = person
 
     def _wrap(self, text):
-        """Word-wrap text to fit 23 characters per line."""
         return textwrap.wrap(text, width=23)
 
     def show_text(self, raw_lines, title="2087"):
-        """Display text with page-based scrolling. UP/DOWN change page, OK advances one page."""
-        # Flatten and wrap
         all_lines = []
         for line in raw_lines:
             if not line.strip():
                 all_lines.append("")
             else:
                 all_lines.extend(self._wrap(line))
-        # Split into pages of 5 lines
         pages = [all_lines[i:i+5] for i in range(0, len(all_lines), 5)]
         if not pages:
             pages = [["(nothing)"]]
@@ -170,7 +166,6 @@ class Game:
                 return
 
     def choose(self, choices, title="2087"):
-        """Choice menu with highlight and scrolling."""
         if not choices:
             return None
         selected = 0
@@ -213,7 +208,7 @@ class Game:
                 return None
 
 # =============================================================================
-# SCENE DEFINITIONS (120+ scenes – all present, no omissions)
+# SCENE DEFINITIONS (all 120+ present, including the missing "tower_side")
 # =============================================================================
 def scene_start(g):
     g.show_text([
@@ -479,6 +474,15 @@ def scene_arasaka_tower(g):
     elif idx == 1: return "afterlife"
     else: return "tower_side"
 
+# --- NEW SCENE: tower_side (was missing) ---
+def scene_tower_side(g):
+    g.show_text([
+        "You find a side entrance. It's a maintenance shaft.",
+        "You climb down. It leads directly to the sublevel lab.",
+        "You bypass the main security."
+    ])
+    return "tower_sublevel"
+
 def scene_tower_entrance(g):
     g.show_text([
         "The main lobby is dark. Bodies of Arasaka security from decades ago.",
@@ -635,7 +639,7 @@ def scene_mikoshi_bunker(g):
         return "ending_purge"
 
 # ----------------------------------------------------------------------
-# Side Scenes (to reach 120+)
+# Side Scenes
 # ----------------------------------------------------------------------
 def scene_netrunner_contact(g):
     g.show_text(["You call the number on the flyer. A gruff voice: 'Meet me at the Red Dirt bar.'"])
@@ -733,7 +737,7 @@ def scene_voodoo_side(g):
         return "afterlife"
 
 # ----------------------------------------------------------------------
-# Additional romance paths
+# Romance paths
 # ----------------------------------------------------------------------
 def scene_romance_jin_path(g):
     if "netrunner" not in g.crew:
@@ -857,7 +861,7 @@ def ending_burnout(g):
     else: g.running = False; return None
 
 # ----------------------------------------------------------------------
-# Scene dispatcher (complete)
+# Scene dispatcher (complete, with all scenes)
 # ----------------------------------------------------------------------
 scene_map = {
     "start": scene_start,
@@ -886,6 +890,7 @@ scene_map = {
     "mysterious_woman": scene_mysterious_woman,
     "ghost_talk": scene_ghost_talk,
     "arasaka_tower": scene_arasaka_tower,
+    "tower_side": scene_tower_side,          # <-- added missing scene
     "tower_entrance": scene_tower_entrance,
     "tower_hack": scene_tower_hack,
     "tower_fight": scene_tower_fight,
@@ -933,8 +938,9 @@ def run_scene(g, name):
     if name in scene_map:
         return scene_map[name](g)
     else:
-        g.show_text([f"Missing scene: {name}. Restarting."])
-        return "start"
+        # Instead of restarting, go to a safe fallback scene
+        g.show_text([f"Missing scene: {name}. Returning to Afterlife."])
+        return "afterlife"
 
 # ----------------------------------------------------------------------
 # Main
