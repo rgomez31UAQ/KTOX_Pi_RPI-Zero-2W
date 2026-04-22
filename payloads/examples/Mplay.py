@@ -6,6 +6,7 @@ KTOx Payload – Media Player (MP3/Video/USB Audio)
 - USB audio via plughw:1,0 (your Onn headset)
 - Auto‑installs ffmpeg, alsa-utils, python3-pil if missing
 - Non‑blocking buttons, smooth 15 fps video, A/V sync
+- MP3 playback fixed via ffmpeg + aplay pipeline
 
 Controls: UP/DOWN, OK, LEFT, KEY1=stop, KEY3=exit
 """
@@ -210,15 +211,12 @@ def stop_playback():
         current_process = None
 
 def play_audio(filepath):
-    """Play audio using ffplay (supports MP3, WAV, FLAC, OGG)."""
+    """Play audio using ffmpeg decode + aplay (works for MP3, WAV, FLAC, OGG)."""
     global current_process
     stop_playback()
-    cmd = [
-        "ffplay", "-nodisp", "-autoexit",
-        "-f", "alsa", "-i", AUDIO_DEV,
-        "-i", filepath
-    ]
-    current_process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # Use ffmpeg to decode to raw PCM and pipe to aplay
+    cmd = f"ffmpeg -i '{filepath}' -f s16le -ac 2 -ar 48000 - | aplay -D {AUDIO_DEV} -f S16_LE -c 2 -r 48000"
+    current_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     while current_process.poll() is None:
         img = Image.new("RGB", (W, H), (10, 0, 0))
         d = ImageDraw.Draw(img)
