@@ -101,7 +101,7 @@ def _wait_key_release(pin_name, timeout=0.5):
 def should_exit():
     return _key("KEY3_PIN")
 
-# ── LCD drawing helpers (now safe) ────────────────────────────────────────────
+# ── LCD drawing helpers (safe) ────────────────────────────────────────────────
 def _border():
     if not _HW: return
     draw.line([(127, 12), (127, 127)], fill=RED, width=5)
@@ -246,19 +246,19 @@ def _loki_running() -> bool:
     return False
 
 def _run_with_cancel(cmd, timeout=300, step_msg=None):
-    """Run a subprocess with periodic KEY3 check."""
+    """Run a shell command with periodic KEY3 check."""
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     start = time.time()
+    last_update = 0
     while proc.poll() is None:
         if should_exit():
             proc.terminate()
             time.sleep(0.5)
             proc.kill()
             raise Exception("cancelled by user")
-        if step_msg and _HW:
-            # update LCD every 2 seconds
-            if int(time.time() - start) % 2 == 0:
-                screen_installing(0, 1, step_msg)
+        if step_msg and _HW and (time.time() - last_update) > 1:
+            screen_installing(0, 1, step_msg)
+            last_update = time.time()
         time.sleep(0.5)
         if timeout and (time.time() - start) > timeout:
             proc.terminate()
@@ -285,8 +285,8 @@ def _start_loki() -> tuple[bool, str]:
         stderr=subprocess.STDOUT,
         cwd=str(LOKI_DIR),
     )
-    # Wait for port with KEY3 check
-    for _ in range(30):  # 3 seconds total
+    # Wait for port with KEY3 check (up to 10 seconds)
+    for _ in range(100):
         if should_exit():
             _stop_loki()
             return False, "cancelled"
@@ -317,14 +317,49 @@ def _stop_loki():
         LOKI_PID.unlink(missing_ok=True)
     subprocess.run(["pkill", "-f", "nmap"], capture_output=True)
 
-# ── Headless launcher writer ──────────────────────────────────────────────────
+# ── Headless launcher writer (with pagerctl/display mocks) ────────────────────
 def _write_launcher():
     code = f'''\
 #!/usr/bin/env python3
-# ktox_headless_loki.py - auto-generated
+# ktox_headless_loki.py - KTOx headless launcher (no Pager LCD, no libpagerctl.so)
 
 import sys, os, threading, signal, logging, time, subprocess
+from unittest.mock import MagicMock
 
+# ------------------------------------------------------------
+# MOCK pagerctl module – prevents libpagerctl.so load
+# ------------------------------------------------------------
+class MockPager:
+    def __init__(self, *args, **kwargs):
+        pass
+    def __getattr__(self, name):
+        return lambda *a, **kw: None
+
+mock_pagerctl = MagicMock()
+mock_pagerctl.Pager = MockPager
+sys.modules['pagerctl'] = mock_pagerctl
+
+# ------------------------------------------------------------
+# MOCK display module – avoids LCD init
+# ------------------------------------------------------------
+class MockDisplay:
+    def __init__(self, *args, **kwargs):
+        self.running = False
+    def start(self):
+        pass
+    def stop(self):
+        pass
+    def update_display(self, *args, **kwargs):
+        pass
+
+mock_display = MagicMock()
+mock_display.Display = MockDisplay
+mock_display.handle_exit_display = lambda *a: None
+sys.modules['display'] = mock_display
+
+# ------------------------------------------------------------
+# Now safe to import Loki and friends
+# ------------------------------------------------------------
 _dir = os.path.dirname(os.path.abspath(__file__))
 _lib = os.path.join(_dir, 'lib')
 if os.path.exists(_lib) and _lib not in sys.path:
@@ -356,6 +391,7 @@ def _patch(self, *a, **kw):
         os.makedirs(d, exist_ok=True)
 _SD.__init__ = _patch
 
+# Patch is_wifi_connected to use standard Linux check
 import Loki as _lm
 def _wifi(self):
     try:
@@ -385,7 +421,7 @@ if __name__ == '__main__':
             _f.write(str(os.getpid()))
 
     shared_data.webapp_should_exit  = False
-    shared_data.display_should_exit = True
+    shared_data.display_should_exit = True   # no Pager LCD thread
     web_thread.start()
     logger.info('Loki web interface started on port 8000')
 
@@ -423,7 +459,7 @@ def install_loki():
                 shutil.rmtree(VENDOR_DIR)
             _run_with_cancel(f"git clone --depth=1 {LOKI_REPO} {VENDOR_DIR}", timeout=300, step_msg="Cloning repo")
 
-        # Step 3: create dirs
+        # Step 3: create data dirs
         screen_installing(3, 6, "Creating data dirs...")
         for sub in ["logs", "output/crackedpwd", "output/datastolen",
                     "output/zombies", "output/vulnerabilities", "input"]:
