@@ -1,255 +1,364 @@
 #!/usr/bin/env python3
 """
-KTOx Video Player – Universal Bluetooth Audio
-===============================================
-- Auto-detects Bluetooth sinks
-- Includes Bluetooth management (scan, pair, connect)
-- Smooth 10fps video on LCD
-- Clean exit with KEY3
+KTOx Media Player
+==========================================
+Unified video/audio player with USB audio output.
+Supports: MP4, AVI, MKV, MOV, WebM (video) and MP3, WAV, FLAC, OGG (audio)
+Auto-detects your USB headset (or any USB audio card).
+
+Controls:
+  UP/DOWN – navigate files/folders
+  OK      – play selected file / enter folder
+  LEFT    – go to parent directory
+  KEY1    – stop playback
+  KEY3    – exit
+
+Loot: /root/KTOx/loot/MediaPlayer/
 """
 
-import os, sys, time, subprocess
+import os
+import sys
+import time
+import json
+import subprocess
+import re
+import signal
+import threading
+
 import RPi.GPIO as GPIO
 import LCD_1in44
 from PIL import Image, ImageDraw, ImageFont
 
 # ----------------------------------------------------------------------
-# Hardware setup
+# Paths & config
 # ----------------------------------------------------------------------
-PINS = {"UP":6,"DOWN":19,"LEFT":5,"RIGHT":26,"OK":13,"KEY1":21,"KEY2":20,"KEY3":16}
-VIDEO_EXTS = ('.mp4','.avi','.mkv','.mov','.webm')
+LOOT_DIR = "/root/KTOx/loot/MediaPlayer"
+os.makedirs(LOOT_DIR, exist_ok=True)
+CONFIG_FILE = os.path.join(LOOT_DIR, "config.json")
 START_DIR = "/root/Videos"
+if not os.path.exists(START_DIR):
+    os.makedirs(START_DIR, exist_ok=True)
 
+VIDEO_EXTS = ('.mp4', '.avi', '.mkv', '.mov', '.webm')
+AUDIO_EXTS = ('.mp3', '.wav', '.flac', '.ogg')
+ALL_MEDIA_EXTS = VIDEO_EXTS + AUDIO_EXTS
+
+# ----------------------------------------------------------------------
+# Hardware
+# ----------------------------------------------------------------------
+PINS = {
+    "UP": 6, "DOWN": 19, "LEFT": 5, "RIGHT": 26,
+    "OK": 13, "KEY1": 21, "KEY2": 20, "KEY3": 16,
+}
 GPIO.setmode(GPIO.BCM)
-for p in PINS.values(): GPIO.setup(p, GPIO.IN, GPIO.PUD_UP)
+for pin in PINS.values():
+    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 LCD = LCD_1in44.LCD()
 LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
 W, H = 128, 128
-try: font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",9)
-except: font = ImageFont.load_default()
 
-def draw_screen(lines, title="VIDEO", title_color="#8B0000"):
-    img = Image.new("RGB", (W,H), "#0A0000")
-    d = ImageDraw.Draw(img)
-    d.rectangle((0,0,W,17), fill=title_color)
-    d.text((4,3), title[:20], font=font, fill=(231, 76, 60))
-    y = 20
-    for line in lines[:6]:
-        d.text((4,y), line[:23], font=font, fill=(171, 178, 185))
-        y += 12
-    d.rectangle((0,H-12,W,H), fill="#220000")
-    d.text((4,H-10), "UP/DN OK LEFT K2=BT K3=exit", font=font, fill="#FF7777")
-    LCD.LCD_ShowImage(img,0,0)
+def font(size=9):
+    try:
+        return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", size)
+    except:
+        return ImageFont.load_default()
+FONT = font(9)
+FONT_BOLD = font(10)
+FONT_ICON = font(11)
 
-def wait_btn():
-    for _ in range(50):
-        for n,p in PINS.items():
-            if GPIO.input(p)==0:
+def wait_btn(timeout=0.1):
+    start = time.time()
+    while time.time() - start < timeout:
+        for name, pin in PINS.items():
+            if GPIO.input(pin) == 0:
                 time.sleep(0.05)
-                return n
-        time.sleep(0.01)
+                return name
+        time.sleep(0.02)
     return None
 
-# ----------------------------------------------------------------------
-# Bluetooth management
-# ----------------------------------------------------------------------
-def bt_cmd(cmd):
-    subprocess.run(["bluetoothctl", cmd], capture_output=True)
-
-def get_paired_devices():
-    out = subprocess.run(["bluetoothctl","devices"], capture_output=True, text=True).stdout
-    devs = []
-    for line in out.splitlines():
-        if line.startswith("Device "):
-            parts = line.split(" ",2)
-            if len(parts)>=3: devs.append((parts[1], parts[2]))
-    return devs
-
-def scan_devices(duration=6):
-    bt_cmd("scan off")
-    bt_cmd("menu scan"); bt_cmd("transport le"); bt_cmd("back")
-    bt_cmd("scan on")
-    time.sleep(duration)
-    bt_cmd("scan off")
-    return get_paired_devices()  # newly discovered appear in devices list
-
-def pair_and_connect(mac):
-    bt_cmd(f"pair {mac}"); time.sleep(2)
-    bt_cmd(f"trust {mac}")
-    bt_cmd(f"connect {mac}"); time.sleep(2)
-    # Force A2DP
-    cards = subprocess.run("pactl list cards short | grep bluez | cut -f1", shell=True, capture_output=True, text=True).stdout.strip()
-    if cards:
-        subprocess.run(f"pactl set-card-profile {cards} a2dp-sink", shell=True)
-    return True
-
-def get_active_bt_sink():
-    """Return the name of the active Bluetooth sink, or None."""
-    sinks = subprocess.run("pactl list sinks short", shell=True, capture_output=True, text=True).stdout
-    for line in sinks.splitlines():
-        if "bluez" in line:
-            sink_name = line.split()[1]
-            return sink_name
-    return None
-
-def bluetooth_menu():
-    """Allow user to scan, pair, and connect to Bluetooth speakers."""
-    while True:
-        devices = get_paired_devices()
-        lines = ["BLUETOOTH MENU", "Paired devices:"]
-        if devices:
-            for i, (mac, name) in enumerate(devices[:4]):
-                lines.append(f"{i+1}. {name[:16]}")
-        else:
-            lines.append("(none)")
-        lines.append(""); lines.append("K2=scan  OK=connect  K3=back")
-        draw_screen(lines, title="BLUETOOTH", title_color="#004466")
-        btn = wait_btn()
-        if btn == "KEY3": return
-        if btn == "KEY2":
-            draw_screen(["Scanning...", "6 sec"], title="SCAN")
-            found = scan_devices(6)
-            if not found:
-                draw_screen(["No new devices"], title="SCAN")
-                time.sleep(1.5)
-                continue
-            # Show found devices and allow pairing
-            idx = 0
-            while True:
-                mac, name = found[idx]
-                draw_screen([f"Found:", name[:18], "", f"{idx+1}/{len(found)}", "UP/DOWN OK"], title="PAIR")
-                btn2 = wait_btn()
-                if btn2 == "UP": idx = (idx-1)%len(found)
-                elif btn2 == "DOWN": idx = (idx+1)%len(found)
-                elif btn2 == "OK":
-                    draw_screen([f"Pairing {name[:15]}..."], title="PAIR")
-                    pair_and_connect(mac)
-                    draw_screen([f"Connected to {name[:15]}", "Audio ready"], title="SUCCESS")
-                    time.sleep(2)
-                    return
-                elif btn2 == "KEY3": break
-        elif btn == "OK" and devices:
-            idx = 0
-            while True:
-                mac, name = devices[idx]
-                draw_screen([f"Connect to:", name[:18], "", f"{idx+1}/{len(devices)}", "UP/DOWN OK"], title="CONNECT")
-                btn2 = wait_btn()
-                if btn2 == "UP": idx = (idx-1)%len(devices)
-                elif btn2 == "DOWN": idx = (idx+1)%len(devices)
-                elif btn2 == "OK":
-                    draw_screen([f"Connecting to {name[:15]}..."], title="CONNECT")
-                    bt_cmd(f"connect {mac}")
-                    time.sleep(2)
-                    pair_and_connect(mac)  # ensures A2DP
-                    draw_screen([f"Connected to {name[:15]}", "Audio ready"], title="SUCCESS")
-                    time.sleep(2)
-                    return
-                elif btn2 == "KEY3": break
+def show_message(msg, sub=""):
+    img = Image.new("RGB", (W, H), (10, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.text((64, 50), msg, font=FONT_BOLD, fill=(30, 132, 73), anchor="mm")
+    if sub:
+        d.text((64, 65), sub[:22], font=FONT, fill=(113, 125, 126), anchor="mm")
+    LCD.LCD_ShowImage(img, 0, 0)
+    time.sleep(1.5)
 
 # ----------------------------------------------------------------------
-# File browser
+# Audio device detection
+# ----------------------------------------------------------------------
+def get_usb_audio_device():
+    """Return ALSA device string (e.g., 'hw:1,0') for USB headset."""
+    try:
+        result = subprocess.run(["aplay", "-l"], capture_output=True, text=True, timeout=5)
+        lines = result.stdout.splitlines()
+        for line in lines:
+            if "Headset" in line or "USB Audio" in line:
+                match = re.search(r"card (\d+):", line)
+                if match:
+                    card = match.group(1)
+                    return f"hw:{card},0"
+    except:
+        pass
+    return "default"
+
+# ----------------------------------------------------------------------
+# Config persistence
+# ----------------------------------------------------------------------
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                return json.load(f)
+        except:
+            pass
+    return {"last_dir": START_DIR}
+
+def save_config(cfg):
+    try:
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(cfg, f, indent=2)
+    except:
+        pass
+
+# ----------------------------------------------------------------------
+# File browser helpers
 # ----------------------------------------------------------------------
 def list_media(path):
     try:
         items = []
         for f in sorted(os.scandir(path), key=lambda x: (not x.is_dir(), x.name.lower())):
-            if f.is_dir() or f.name.lower().endswith(VIDEO_EXTS):
+            if f.is_dir():
+                items.append(f)
+            elif f.name.lower().endswith(ALL_MEDIA_EXTS):
                 items.append(f)
         return items
-    except: return []
+    except:
+        return []
 
-def draw_browser(path, entries, sel, scroll):
-    lines = [f"Dir: {os.path.basename(path)[:18]}", ""]
+def get_icon(entry):
+    if entry.is_dir():
+        return "📁"
+    name = entry.name.lower()
+    if name.endswith(VIDEO_EXTS):
+        return "🎬"
+    elif name.endswith(AUDIO_EXTS):
+        return "🎵"
+    return "❓"
+
+def draw_browser(path, entries, cursor, scroll):
+    img = Image.new("RGB", (W, H), (10, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Header
+    d.rectangle((0, 0, W, 13), fill=(139, 0, 0))
+    d.text((4, 2), "MEDIA PLAYER", font=FONT_BOLD, fill=(231, 76, 60))
+    d.text((W-4, 2), f"{len(entries)}", font=FONT, fill=(30, 132, 73), anchor="rt")
+    # Path
+    path_display = os.path.basename(path) if path != "/" else path
+    d.text((4, 14), f"📂 {path_display[:20]}", font=FONT, fill=(171, 178, 185))
+    # File list
+    y = 26
     visible = entries[scroll:scroll+5]
-    for i,e in enumerate(visible):
-        idx = scroll+i
-        marker = ">" if idx==sel else " "
-        name = e.name[:18] + ("/" if e.is_dir() else "")
-        lines.append(f"{marker} {name}")
-    if not entries: lines.append("(empty)")
-    draw_screen(lines, title="FILE BROWSER", title_color="#004466")
+    for i, e in enumerate(visible):
+        idx = scroll + i
+        name = e.name[:16] + ("/" if e.is_dir() else "")
+        icon = get_icon(e)
+        if idx == cursor:
+            d.rectangle((0, y-1, W, y+9), fill=(60, 0, 0))
+            d.text((4, y), f"{icon} {name}", font=FONT, fill=(255, 255, 255))
+        else:
+            d.text((4, y), f"{icon} {name}", font=FONT, fill=(171, 178, 185))
+        y += 12
+    # Scrollbar
+    if len(entries) > 5:
+        bar_h = max(4, int(5 / len(entries) * 70))
+        bar_y = 26 + int((scroll / max(1, len(entries)-5)) * (70 - bar_h))
+        d.rectangle((W-4, bar_y, W-2, bar_y+bar_h), fill=(192, 57, 43))
+    # Footer
+    d.rectangle((0, H-12, W, H), fill=(34, 0, 0))
+    d.text((4, H-10), "UP/DN OK LEFT K1=Stop K3=Exit", font=FONT, fill=(192, 57, 43))
+    LCD.LCD_ShowImage(img, 0, 0)
 
 # ----------------------------------------------------------------------
-# Video player with auto Bluetooth sink detection
+# Playback functions
 # ----------------------------------------------------------------------
-def play_video(path):
-    # Ensure A2DP is active
-    cards = subprocess.run("pactl list cards short | grep bluez | cut -f1", shell=True, capture_output=True, text=True).stdout.strip()
-    if cards:
-        subprocess.run(f"pactl set-card-profile {cards} a2dp-sink", shell=True)
-        time.sleep(0.5)
-    # Get the active Bluetooth sink
-    sink = get_active_bt_sink()
-    if not sink:
-        draw_screen(["No Bluetooth sink", "Connect speaker first", "Press KEY2 for BT menu"])
-        time.sleep(2)
-        return
-    # ffmpeg command: video to LCD, audio to Bluetooth sink
-    cmd = ["ffmpeg","-i",path,"-vf","scale=128:128,fps=10","-pix_fmt","rgb24","-f","rawvideo","-","-f","pulse","-device",sink]
+current_process = None
+
+def stop_playback():
+    global current_process
+    if current_process:
+        current_process.terminate()
+        try:
+            current_process.wait(timeout=2)
+        except:
+            current_process.kill()
+        current_process = None
+
+def play_audio(filepath, audio_dev):
+    """Play audio file using ffplay with USB audio output."""
+    global current_process
+    stop_playback()
+    cmd = [
+        "ffplay", "-nodisp", "-autoexit",
+        "-f", "alsa", "-device", audio_dev,
+        "-i", filepath
+    ]
+    current_process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def play_video(filepath, audio_dev):
+    """Play video file using ffmpeg (video to LCD, audio to USB)."""
+    global current_process
+    stop_playback()
+    cmd = [
+        "ffmpeg", "-i", filepath,
+        "-vf", "scale=128:128,fps=10",
+        "-pix_fmt", "rgb24",
+        "-f", "rawvideo", "-",
+        "-f", "alsa", "-device", audio_dev,
+        "-ac", "2", "-ar", "48000"
+    ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    frame_size = 128*128*3
-    draw_screen(["Playing...", os.path.basename(path)[:18]], title="VIDEO")
+    current_process = proc
+    frame_size = 128 * 128 * 3
+    # Show now‑playing screen
+    img = Image.new("RGB", (W, H), (10, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, W, 13), fill=(139, 0, 0))
+    d.text((4, 2), "NOW PLAYING", font=FONT_BOLD, fill=(231, 76, 60))
+    d.text((4, 20), f"🎬 {os.path.basename(filepath)[:18]}", font=FONT, fill=(171, 178, 185))
+    d.text((4, 35), "Press KEY1 to stop", font=FONT, fill=(113, 125, 126))
+    LCD.LCD_ShowImage(img, 0, 0)
+    time.sleep(1)
     while True:
-        if wait_btn() == "KEY3":
-            proc.terminate()
+        btn = wait_btn(0.05)
+        if btn == "KEY1" or btn == "KEY3":
+            stop_playback()
             break
         raw = proc.stdout.read(frame_size)
-        if len(raw) < frame_size: break
+        if len(raw) < frame_size:
+            break
         try:
-            img = Image.frombytes("RGB", (128,128), raw)
-            LCD.LCD_ShowImage(img, 0, 0)
-        except: pass
-    proc.wait()
+            frame = Image.frombytes("RGB", (128, 128), raw)
+            LCD.LCD_ShowImage(frame, 0, 0)
+        except:
+            pass
+    # Reinit LCD after video
     LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
+
+# ----------------------------------------------------------------------
+# Now‑playing screen for audio (with progress bar)
+# ----------------------------------------------------------------------
+def play_audio_with_progress(filepath, audio_dev):
+    """Play audio and show a simple progress bar (simulated)."""
+    global current_process
+    stop_playback()
+    # Get duration using ffprobe
+    duration = 0
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", filepath],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.stdout:
+            duration = float(result.stdout.strip())
+    except:
+        pass
+    # Start ffplay
+    cmd = [
+        "ffplay", "-nodisp", "-autoexit",
+        "-f", "alsa", "-device", audio_dev,
+        "-i", filepath
+    ]
+    current_process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # Show progress screen
+    start_time = time.time()
+    while current_process.poll() is None:
+        elapsed = time.time() - start_time
+        percent = int((elapsed / duration) * 100) if duration > 0 else 0
+        percent = min(100, percent)
+        img = Image.new("RGB", (W, H), (10, 0, 0))
+        d = ImageDraw.Draw(img)
+        d.rectangle((0, 0, W, 13), fill=(139, 0, 0))
+        d.text((4, 2), "NOW PLAYING", font=FONT_BOLD, fill=(231, 76, 60))
+        d.text((4, 20), f"🎵 {os.path.basename(filepath)[:18]}", font=FONT, fill=(171, 178, 185))
+        # Progress bar
+        bar_w = int(100 * percent / 100)
+        d.rectangle((14, 40, 114, 48), fill=(34, 0, 0), outline=(192, 57, 43))
+        d.rectangle((14, 40, 14+bar_w, 48), fill=(30, 132, 73))
+        d.text((64, 44), f"{percent}%", font=FONT, fill=(255, 255, 255), anchor="mm")
+        # Time
+        d.text((64, 60), f"{int(elapsed//60):02d}:{int(elapsed%60):02d}", font=FONT, fill=(171, 178, 185), anchor="mm")
+        d.text((4, H-12), "KEY1=stop  K3=exit", font=FONT, fill=(192, 57, 43))
+        LCD.LCD_ShowImage(img, 0, 0)
+        btn = wait_btn(0.2)
+        if btn == "KEY1" or btn == "KEY3":
+            stop_playback()
+            break
+    stop_playback()
 
 # ----------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------
 def main():
-    # Create default video directory if not exists
-    if not os.path.exists(START_DIR):
-        os.makedirs(START_DIR, exist_ok=True)
-    path = START_DIR
+    cfg = load_config()
+    path = cfg.get("last_dir", START_DIR)
+    if not os.path.exists(path):
+        path = START_DIR
     entries = list_media(path)
-    sel = 0
+    cursor = 0
     scroll = 0
+    audio_dev = get_usb_audio_device()
+    show_message("Media Player Ready", f"Audio: {audio_dev}")
     while True:
-        draw_browser(path, entries, sel, scroll)
-        btn = wait_btn()
-        if btn == "KEY3": break
-        if btn == "UP" and sel > 0:
-            sel -= 1
-            if sel < scroll: scroll = sel
-        if btn == "DOWN" and entries and sel < len(entries)-1:
-            sel += 1
-            if sel >= scroll+5: scroll = sel-4
+        draw_browser(path, entries, cursor, scroll)
+        btn = wait_btn(0.2)
+        if btn == "KEY3":
+            break
+        if btn == "UP" and cursor > 0:
+            cursor -= 1
+            if cursor < scroll:
+                scroll = cursor
+        if btn == "DOWN" and entries and cursor < len(entries)-1:
+            cursor += 1
+            if cursor >= scroll + 5:
+                scroll = cursor - 4
         if btn == "LEFT":
             parent = os.path.dirname(path)
             if parent != path:
                 path = parent
                 entries = list_media(path)
-                sel = 0; scroll = 0
-        if btn == "KEY2":
-            bluetooth_menu()
-            entries = list_media(path)
+                cursor = 0
+                scroll = 0
+                cfg["last_dir"] = path
+                save_config(cfg)
         if btn == "OK" and entries:
-            e = entries[sel]
+            e = entries[cursor]
             if e.is_dir():
                 path = e.path
                 entries = list_media(path)
-                sel = 0; scroll = 0
+                cursor = 0
+                scroll = 0
+                cfg["last_dir"] = path
+                save_config(cfg)
             else:
-                play_video(e.path)
+                filepath = e.path
+                if filepath.lower().endswith(VIDEO_EXTS):
+                    play_video(filepath, audio_dev)
+                elif filepath.lower().endswith(AUDIO_EXTS):
+                    play_audio_with_progress(filepath, audio_dev)
+                # Refresh file list after playback
                 entries = list_media(path)
+        if btn == "KEY1":
+            stop_playback()
+    stop_playback()
     LCD.LCD_Clear()
     GPIO.cleanup()
-    sys.exit(0)
 
 if __name__ == "__main__":
-    # Check dependencies
-    if os.system("which ffmpeg >/dev/null 2>&1") != 0:
-        draw_screen(["ffmpeg missing","sudo apt install ffmpeg","KEY3 exit"], title="ERROR")
-        while wait_btn() != "KEY3": pass
+    if os.system("which ffmpeg >/dev/null 2>&1") != 0 or os.system("which ffplay >/dev/null 2>&1") != 0:
+        show_message("Missing ffmpeg/ffplay", "sudo apt install ffmpeg")
         sys.exit(1)
     main()
