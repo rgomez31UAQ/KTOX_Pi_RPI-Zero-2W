@@ -1,36 +1,73 @@
 #!/usr/bin/env python3
 """
-KTOx Media Player – Smooth Video with A/V Sync
-================================================
-- Non‑blocking button polling.
-- ffmpeg with -re for real‑time playback, -async 1 for audio sync.
-- USB audio via plughw:1,0 (your Onn headset).
-- 15 fps video, hardware‑accelerated where possible.
+KTOx Payload – Media Player (Auto‑Install Dependencies)
+=========================================================
+- Plays video (MP4, AVI, MKV, MOV, WebM) and audio (MP3, WAV, FLAC, OGG)
+- USB audio via plughw:1,0 
+- Auto‑installs ffmpeg, alsa-utils, and python3-pil if missing
+- Non‑blocking buttons, smooth 15 fps video, A/V sync
 
 Controls: UP/DOWN, OK, LEFT, KEY1=stop, KEY3=exit
 """
 
-import os, sys, time, json, subprocess
+import os
+import sys
+import time
+import json
+import subprocess
+
+# ----------------------------------------------------------------------
+# Auto‑install dependencies
+# ----------------------------------------------------------------------
+def auto_install():
+    """Check and install missing dependencies."""
+    missing = []
+    # Check ffmpeg
+    if os.system("which ffmpeg >/dev/null 2>&1") != 0:
+        missing.append("ffmpeg")
+    # Check aplay (alsa-utils)
+    if os.system("which aplay >/dev/null 2>&1") != 0:
+        missing.append("alsa-utils")
+    # Check PIL (python3-pil)
+    try:
+        from PIL import Image
+    except ImportError:
+        missing.append("python3-pil")
+
+    if not missing:
+        return True
+
+    # Show install message
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.text((64, 30), "Installing dependencies...", font=FONT_BOLD, fill=(30, 132, 73), anchor="mm")
+    d.text((64, 50), f"Missing: {', '.join(missing)}", font=FONT, fill=(171, 178, 185), anchor="mm")
+    d.text((64, 70), "Please wait", font=FONT, fill=(113, 125, 126), anchor="mm")
+    LCD.LCD_ShowImage(img, 0, 0)
+
+    try:
+        subprocess.run(["apt", "update"], check=True, capture_output=True)
+        subprocess.run(["apt", "install", "-y"] + missing, check=True, capture_output=True)
+        # Re-import PIL after install
+        from PIL import Image, ImageDraw, ImageFont
+        return True
+    except Exception as e:
+        img = Image.new("RGB", (128, 128), (10, 0, 0))
+        d = ImageDraw.Draw(img)
+        d.text((64, 40), "Install failed", font=FONT_BOLD, fill=(231, 76, 60), anchor="mm")
+        d.text((64, 60), "Run: sudo apt install", font=FONT, fill=(171, 178, 185), anchor="mm")
+        d.text((64, 75), f"{' '.join(missing)}", font=FONT, fill=(113, 125, 126), anchor="mm")
+        LCD.LCD_ShowImage(img, 0, 0)
+        time.sleep(3)
+        return False
+
+# ----------------------------------------------------------------------
+# Hardware (lazy init for PIL after possible install)
+# ----------------------------------------------------------------------
 import RPi.GPIO as GPIO
 import LCD_1in44
 from PIL import Image, ImageDraw, ImageFont
 
-# ----------------------------------------------------------------------
-# Paths & config
-# ----------------------------------------------------------------------
-LOOT_DIR = "/root/KTOx/loot/MediaPlayer"
-os.makedirs(LOOT_DIR, exist_ok=True)
-CONFIG_FILE = os.path.join(LOOT_DIR, "config.json")
-START_DIR = "/root/Videos"
-os.makedirs(START_DIR, exist_ok=True)
-
-VIDEO_EXTS = ('.mp4', '.avi', '.mkv', '.mov', '.webm')
-AUDIO_EXTS = ('.mp3', '.wav', '.flac', '.ogg')
-ALL_MEDIA_EXTS = VIDEO_EXTS + AUDIO_EXTS
-
-# ----------------------------------------------------------------------
-# Hardware
-# ----------------------------------------------------------------------
 PINS = {
     "UP": 6, "DOWN": 19, "LEFT": 5, "RIGHT": 26,
     "OK": 13, "KEY1": 21, "KEY2": 20, "KEY3": 16,
@@ -52,10 +89,9 @@ FONT = font(9)
 FONT_BOLD = font(10)
 
 def wait_btn_nonblock():
-    """Non‑blocking button check. Returns button name or None."""
     for name, pin in PINS.items():
         if GPIO.input(pin) == 0:
-            time.sleep(0.05)  # debounce
+            time.sleep(0.05)
             return name
     return None
 
@@ -76,6 +112,16 @@ AUDIO_DEV = "plughw:1,0"
 # ----------------------------------------------------------------------
 # Config persistence
 # ----------------------------------------------------------------------
+LOOT_DIR = "/root/KTOx/loot/MediaPlayer"
+os.makedirs(LOOT_DIR, exist_ok=True)
+CONFIG_FILE = os.path.join(LOOT_DIR, "config.json")
+START_DIR = "/root/Videos"
+os.makedirs(START_DIR, exist_ok=True)
+
+VIDEO_EXTS = ('.mp4', '.avi', '.mkv', '.mov', '.webm')
+AUDIO_EXTS = ('.mp3', '.wav', '.flac', '.ogg')
+ALL_MEDIA_EXTS = VIDEO_EXTS + AUDIO_EXTS
+
 def load_config():
     if os.path.exists(CONFIG_FILE):
         try:
@@ -120,7 +166,6 @@ def draw_browser(path, entries, cursor, scroll):
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 13), fill=(139, 0, 0))
     d.text((4, 2), "MEDIA PLAYER", font=FONT_BOLD, fill=(231, 76, 60))
-    # File count (right-aligned)
     count_text = f"{len(entries)}"
     tw = d.textlength(count_text, font=FONT)
     d.text((W - 4 - int(tw), 2), count_text, font=FONT, fill=(30, 132, 73))
@@ -162,7 +207,6 @@ def stop_playback():
         current_process = None
 
 def play_audio(filepath):
-    """Use aplay for reliable audio playback."""
     global current_process
     stop_playback()
     cmd = ["aplay", "-D", AUDIO_DEV, filepath]
@@ -183,29 +227,26 @@ def play_audio(filepath):
     stop_playback()
 
 def play_video(filepath):
-    """Play video with ffmpeg using -re for real‑time and -async 1 for sync."""
     global current_process
     stop_playback()
-
     cmd = [
         "ffmpeg",
-        "-re",                     # Read input at native frame rate
+        "-re",
         "-i", filepath,
         "-vf", "fps=15,scale=128:128",
         "-pix_fmt", "rgb24",
         "-f", "rawvideo",
-        "-vsync", "cfr",           # Constant frame rate output
+        "-vsync", "cfr",
         "-",
         "-map", "0:a",
         "-f", "alsa", AUDIO_DEV,
         "-ac", "2", "-ar", "48000",
-        "-async", "1"              # Audio sync resampling
+        "-async", "1"
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     current_process = proc
     frame_size = 128 * 128 * 3
 
-    # Show now‑playing screen
     img = Image.new("RGB", (W, H), (10, 0, 0))
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 13), fill=(139, 0, 0))
@@ -220,23 +261,25 @@ def play_video(filepath):
         if btn == "KEY1" or btn == "KEY3":
             stop_playback()
             break
-
         raw = proc.stdout.read(frame_size)
         if len(raw) < frame_size:
             break
-
         try:
             frame = Image.frombytes("RGB", (128, 128), raw)
             LCD.LCD_ShowImage(frame, 0, 0)
         except:
             pass
-
     LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
 
 # ----------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------
 def main():
+    # Auto-install dependencies first
+    if not auto_install():
+        GPIO.cleanup()
+        sys.exit(1)
+
     cfg = load_config()
     path = cfg.get("last_dir", START_DIR)
     if not os.path.exists(path):
@@ -285,14 +328,11 @@ def main():
                 entries = list_media(path)
         elif btn == "KEY1":
             stop_playback()
-        time.sleep(0.05)  # small delay to prevent CPU hogging in menu
+        time.sleep(0.05)
 
     stop_playback()
     LCD.LCD_Clear()
     GPIO.cleanup()
 
 if __name__ == "__main__":
-    if os.system("which ffmpeg >/dev/null 2>&1") != 0 or os.system("which aplay >/dev/null 2>&1") != 0:
-        show_message("Missing ffmpeg or aplay", "sudo apt install ffmpeg alsa-utils")
-        sys.exit(1)
     main()
