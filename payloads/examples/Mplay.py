@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-KTOx Payload – Media Player with Full Controls (Fixed)
-=======================================================
+KTOx Payload – Media Player with Full Controls (Fixed Exit)
+=============================================================
 - Plays video (MP4, AVI, MKV, MOV, WebM) and audio (MP3, WAV, FLAC, OGG)
 - USB audio via plughw:1,0
 - Auto‑installs ffmpeg, alsa-utils, python3-pil
 - Playback controls: pause, next, previous, volume
-- Proper process termination (no lingering ffmpeg/aplay)
+- KEY3 anywhere exits cleanly back to KTOx menu
 
 Controls in file browser: UP/DOWN, OK, LEFT, KEY3=exit
 Controls during playback:
@@ -16,7 +16,7 @@ Controls during playback:
   RIGHT – next file
   UP   – volume up (+10%)
   DOWN – volume down (-10%)
-  KEY3 – stop (same as KEY1)
+  KEY3 – exit payload completely
 """
 
 import os
@@ -124,7 +124,6 @@ AUDIO_DEV = "plughw:1,0"
 def set_volume(delta):
     """Change volume by delta percent (e.g., +10 or -10). Returns new volume."""
     try:
-        # Get current volume
         result = subprocess.run(["amixer", "-D", "hw:1", "sget", "Master"], capture_output=True, text=True)
         for line in result.stdout.splitlines():
             if "Front Left:" in line or "Playback" in line:
@@ -223,17 +222,17 @@ def draw_browser(path, entries, cursor, scroll):
     LCD.LCD_ShowImage(img, 0, 0)
 
 # ----------------------------------------------------------------------
-# Playback with controls (uses subprocess groups for clean termination)
+# Playback with controls and global exit flag
 # ----------------------------------------------------------------------
 current_proc = None
 paused = False
 current_volume = 50
+running = True
 
 def stop_playback():
     global current_proc, paused
     if current_proc:
         try:
-            # Terminate the whole process group
             os.killpg(os.getpgid(current_proc.pid), signal.SIGTERM)
             current_proc.wait(timeout=2)
         except:
@@ -250,14 +249,12 @@ def pause_playback():
     if not current_proc:
         return
     if paused:
-        # Resume: send SIGCONT to the process group
         try:
             os.killpg(os.getpgid(current_proc.pid), signal.SIGCONT)
             paused = False
         except:
             pass
     else:
-        # Pause: send SIGSTOP
         try:
             os.killpg(os.getpgid(current_proc.pid), signal.SIGSTOP)
             paused = True
@@ -265,17 +262,13 @@ def pause_playback():
             pass
 
 def play_audio(filepath):
-    """Start audio playback as a subprocess group."""
     global current_proc
-    # Use a shell pipeline so we can get a process group
     cmd = f"ffmpeg -i '{filepath}' -f s16le -ac 2 -ar 48000 - | aplay -D {AUDIO_DEV} -f S16_LE -c 2 -r 48000"
-    # Use start_new_session=True to create a new process group
     current_proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                     start_new_session=True)
     return current_proc
 
 def play_video(filepath):
-    """Start video playback as a subprocess group."""
     global current_proc
     cmd = [
         "ffmpeg", "-re", "-i", filepath,
@@ -283,25 +276,17 @@ def play_video(filepath):
         "-f", "rawvideo", "-vsync", "cfr", "-",
         "-map", "0:a", "-f", "alsa", AUDIO_DEV, "-ac", "2", "-ar", "48000", "-async", "1"
     ]
-    # Use start_new_session=True to create a new process group
     current_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                     start_new_session=True)
     return current_proc
 
 def playback_control_loop(playlist, start_idx):
-    """
-    playlist: list of file paths
-    start_idx: index to start playing
-    Handles next/prev/pause/stop/volume.
-    Returns when user stops (KEY1/KEY3) or list exhausted.
-    """
-    global current_proc, paused, current_volume
+    global current_proc, paused, current_volume, running
     idx = start_idx
     paused = False
-    # Set initial volume
-    current_volume = set_volume(0)  # read current volume
+    current_volume = set_volume(0)
 
-    while 0 <= idx < len(playlist):
+    while 0 <= idx < len(playlist) and running:
         filepath = playlist[idx]
         is_video = filepath.lower().endswith(VIDEO_EXTS)
 
@@ -314,16 +299,19 @@ def playback_control_loop(playlist, start_idx):
             d.rectangle((0, 0, W, 13), fill=(139, 0, 0))
             d.text((4, 2), "NOW PLAYING", font=FONT_BOLD, fill=(231, 76, 60))
             d.text((4, 20), f"🎬 {os.path.basename(filepath)[:18]}", font=FONT, fill=(171, 178, 185))
-            d.text((4, 35), "K2=Pause  K1=Stop", font=FONT, fill=(113, 125, 126))
+            d.text((4, 35), "K2=Pause  K1=Stop  K3=Exit", font=FONT, fill=(113, 125, 126))
             d.text((4, 45), "LEFT/RIGHT=Prev/Next", font=FONT, fill=(113, 125, 126))
             d.text((4, 55), f"UP/DOWN=Volume {current_volume}%", font=FONT, fill=(113, 125, 126))
             LCD.LCD_ShowImage(img, 0, 0)
             time.sleep(1)
 
-            # Video rendering loop
-            while True:
+            while running:
                 btn = wait_btn_nonblock()
-                if btn == "KEY1" or btn == "KEY3":
+                if btn == "KEY3":
+                    running = False
+                    stop_playback()
+                    return idx
+                elif btn == "KEY1":
                     stop_playback()
                     return idx
                 elif btn == "KEY2":
@@ -338,7 +326,6 @@ def playback_control_loop(playlist, start_idx):
                     break
                 elif btn == "UP":
                     current_volume = set_volume(+10)
-                    # Update volume on screen
                     d.rectangle((0, 55, W, 65), fill=(10, 0, 0))
                     d.text((4, 55), f"UP/DOWN=Volume {current_volume}%", font=FONT, fill=(113, 125, 126))
                     LCD.LCD_ShowImage(img, 0, 0)
@@ -348,11 +335,9 @@ def playback_control_loop(playlist, start_idx):
                     d.text((4, 55), f"UP/DOWN=Volume {current_volume}%", font=FONT, fill=(113, 125, 126))
                     LCD.LCD_ShowImage(img, 0, 0)
 
-                # Read video frame
                 if current_proc and not paused:
                     raw = current_proc.stdout.read(frame_size)
                     if len(raw) < frame_size:
-                        # EOF – end of video
                         stop_playback()
                         idx = (idx + 1) % len(playlist)
                         break
@@ -366,21 +351,23 @@ def playback_control_loop(playlist, start_idx):
         else:
             # Audio playback
             play_audio(filepath)
-            # Show now‑playing screen
             img = Image.new("RGB", (W, H), (10, 0, 0))
             d = ImageDraw.Draw(img)
             d.rectangle((0, 0, W, 13), fill=(139, 0, 0))
             d.text((4, 2), "NOW PLAYING", font=FONT_BOLD, fill=(231, 76, 60))
             d.text((4, 20), f"🎵 {os.path.basename(filepath)[:18]}", font=FONT, fill=(171, 178, 185))
-            d.text((4, 35), "K2=Pause  K1=Stop", font=FONT, fill=(113, 125, 126))
+            d.text((4, 35), "K2=Pause  K1=Stop  K3=Exit", font=FONT, fill=(113, 125, 126))
             d.text((4, 45), "LEFT/RIGHT=Prev/Next", font=FONT, fill=(113, 125, 126))
             d.text((4, 55), f"UP/DOWN=Volume {current_volume}%", font=FONT, fill=(113, 125, 126))
             LCD.LCD_ShowImage(img, 0, 0)
 
-            # Audio control loop
-            while True:
+            while running:
                 btn = wait_btn_nonblock()
-                if btn == "KEY1" or btn == "KEY3":
+                if btn == "KEY3":
+                    running = False
+                    stop_playback()
+                    return idx
+                elif btn == "KEY1":
                     stop_playback()
                     return idx
                 elif btn == "KEY2":
@@ -404,7 +391,6 @@ def playback_control_loop(playlist, start_idx):
                     d.text((4, 55), f"UP/DOWN=Volume {current_volume}%", font=FONT, fill=(113, 125, 126))
                     LCD.LCD_ShowImage(img, 0, 0)
 
-                # Check if process ended (audio finished)
                 if current_proc and current_proc.poll() is not None:
                     stop_playback()
                     idx = (idx + 1) % len(playlist)
@@ -417,6 +403,7 @@ def playback_control_loop(playlist, start_idx):
 # Main
 # ----------------------------------------------------------------------
 def main():
+    global running
     cfg = load_config()
     path = cfg.get("last_dir", START_DIR)
     if not os.path.exists(path):
@@ -426,10 +413,11 @@ def main():
     scroll = 0
     show_message("Media Player Ready", f"Audio: {AUDIO_DEV}")
 
-    while True:
+    while running:
         draw_browser(path, entries, cursor, scroll)
         btn = wait_btn_nonblock()
         if btn == "KEY3":
+            running = False
             break
         elif btn == "UP" and cursor > 0:
             cursor -= 1
@@ -458,11 +446,10 @@ def main():
                 cfg["last_dir"] = path
                 save_config(cfg)
             else:
-                # Build playlist from current directory (all media files)
                 playlist = [f.path for f in entries if not f.is_dir()]
                 start_idx = [i for i, f in enumerate(playlist) if f == e.path][0]
                 playback_control_loop(playlist, start_idx)
-                # After playback, refresh file list (in case directory changed)
+                # Refresh after playback (in case directory changed)
                 entries = list_media(path)
         time.sleep(0.05)
 
