@@ -2076,11 +2076,6 @@ def mode_mitm_engine():
         err(f"MITM Engine error: {ex}")
         import traceback; traceback.print_exc()
 
-# ── Loki Autonomous Engine ────────────────────────────────────────────────────
-def mode_loki():
-    import ktox_loki
-    ktox_loki.loki_menu()
-
 # ── Main Menu ──────────────────────────────────────────────────────────────────
 MENU_ITEMS = [
     # ── Offensive ──
@@ -2120,8 +2115,6 @@ MENU_ITEMS = [
     ("X",  "Network Attacks [ICMP/IPv6]",mode_netattack),
     ("Y",  "Interactive Shell [REPL]",  mode_repl),
     ("Z",  "Configuration",             mode_config),
-    # ── Autonomous ──
-    ("LK", "Loki Engine [AUTO]",        mode_loki),
     ("E",  "Exit",                      shutdown),
 ]
 
@@ -2144,22 +2137,13 @@ def draw_menu():
 
     console.print()
     console.print(Rule(f"[bold {C_GOOD}] DEFENSIVE [/bold {C_GOOD}]", style="#1E5631"))
-    defense = MENU_ITEMS[12:-2]   # excludes LK and E at end
+    defense = MENU_ITEMS[12:]
     left  = defense[:4]
     right = defense[4:]
     for i in range(max(len(left), len(right))):
         l = f"  [{C_BLOOD}][{left[i][0]}][/{C_BLOOD}]  [{C_ASH}]{left[i][1]:<30}[/{C_ASH}]" if i < len(left) else " " * 38
         r = f"  [{C_BLOOD}][{right[i][0]}][/{C_BLOOD}]  [{C_ASH}]{right[i][1]}[/{C_ASH}]"    if i < len(right) else ""
         console.print(l + r)
-
-    console.print()
-    console.print(Rule(f"[bold {C_ORANGE}] AUTONOMOUS [/bold {C_ORANGE}]", style=C_ORANGE))
-    loki_item = MENU_ITEMS[-2]   # LK
-    exit_item = MENU_ITEMS[-1]   # E
-    console.print(
-        f"  [{C_BLOOD}][{loki_item[0]}][/{C_BLOOD}]  [{C_ASH}]{loki_item[1]:<30}[/{C_ASH}]"
-        f"  [{C_BLOOD}][{exit_item[0]}][/{C_BLOOD}]  [{C_ASH}]{exit_item[1]}[/{C_ASH}]"
-    )
     console.print()
 
 
