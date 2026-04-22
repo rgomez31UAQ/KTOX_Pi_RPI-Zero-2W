@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-KTOx Media Player
-==========================================
-Unified video/audio player with USB audio output.
+KTOx Media Player – Professional Edition (USB Audio Fixed)
+===========================================================
+Unified video/audio player with USB audio output using plughw device.
 Supports: MP4, AVI, MKV, MOV, WebM (video) and MP3, WAV, FLAC, OGG (audio)
-Auto-detects your USB headset (or any USB audio card).
 
 Controls:
   UP/DOWN – navigate files/folders
@@ -87,10 +86,10 @@ def show_message(msg, sub=""):
     time.sleep(1.5)
 
 # ----------------------------------------------------------------------
-# Audio device detection
+# Audio device detection (now returns plughw device)
 # ----------------------------------------------------------------------
 def get_usb_audio_device():
-    """Return ALSA device string (e.g., 'hw:1,0') for USB headset."""
+    """Return ALSA device string (e.g., 'plughw:1,0') for USB headset."""
     try:
         result = subprocess.run(["aplay", "-l"], capture_output=True, text=True, timeout=5)
         lines = result.stdout.splitlines()
@@ -99,10 +98,10 @@ def get_usb_audio_device():
                 match = re.search(r"card (\d+):", line)
                 if match:
                     card = match.group(1)
-                    return f"hw:{card},0"
+                    return f"plughw:{card},0"  # Use plughw for automatic conversions
     except:
         pass
-    return "default"
+    return "plughw:1,0"  # fallback to card 1 (common for USB audio)
 
 # ----------------------------------------------------------------------
 # Config persistence
@@ -130,9 +129,7 @@ def list_media(path):
     try:
         items = []
         for f in sorted(os.scandir(path), key=lambda x: (not x.is_dir(), x.name.lower())):
-            if f.is_dir():
-                items.append(f)
-            elif f.name.lower().endswith(ALL_MEDIA_EXTS):
+            if f.is_dir() or f.name.lower().endswith(ALL_MEDIA_EXTS):
                 items.append(f)
         return items
     except:
@@ -182,7 +179,7 @@ def draw_browser(path, entries, cursor, scroll):
     LCD.LCD_ShowImage(img, 0, 0)
 
 # ----------------------------------------------------------------------
-# Playback functions
+# Playback functions (using plughw device)
 # ----------------------------------------------------------------------
 current_process = None
 
@@ -202,7 +199,7 @@ def play_audio(filepath, audio_dev):
     stop_playback()
     cmd = [
         "ffplay", "-nodisp", "-autoexit",
-        "-f", "alsa", "-device", audio_dev,
+        "-f", "alsa", "-i", audio_dev,  # Use the plughw device
         "-i", filepath
     ]
     current_process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -216,7 +213,7 @@ def play_video(filepath, audio_dev):
         "-vf", "scale=128:128,fps=10",
         "-pix_fmt", "rgb24",
         "-f", "rawvideo", "-",
-        "-f", "alsa", "-device", audio_dev,
+        "-f", "alsa", "-i", audio_dev,  # Input audio device
         "-ac", "2", "-ar", "48000"
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
@@ -269,7 +266,7 @@ def play_audio_with_progress(filepath, audio_dev):
     # Start ffplay
     cmd = [
         "ffplay", "-nodisp", "-autoexit",
-        "-f", "alsa", "-device", audio_dev,
+        "-f", "alsa", "-i", audio_dev,
         "-i", filepath
     ]
     current_process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
