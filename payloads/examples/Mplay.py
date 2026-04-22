@@ -3,7 +3,7 @@
 KTOx Payload – Media Player with Full Controls
 =================================================
 - Plays video (MP4, AVI, MKV, MOV, WebM) and audio (MP3, WAV, FLAC, OGG)
-- USB audio via plughw:1,0 (your Onn headset)
+- USB audio via plughw:1,0
 - Auto‑installs ffmpeg, alsa-utils, python3-pil if missing
 - Playback controls: pause, next, previous, volume
 - Non‑blocking buttons, smooth 15 fps video, A/V sync
