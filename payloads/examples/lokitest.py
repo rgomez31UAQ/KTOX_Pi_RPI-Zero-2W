@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# NAME: Loki
+# NAME: Loki Autonomous Engine
 
 import os, sys, time, subprocess, socket, signal, shutil, threading
 from pathlib import Path
@@ -29,7 +29,7 @@ PINS = {
 }
 
 # ----------------------------------------------------------------------
-# Display helpers (same as before, safe)
+# Display helpers (safe)
 # ----------------------------------------------------------------------
 BG     = "#0a0a0a"
 FG     = "#c8c8c8"
@@ -318,17 +318,29 @@ def _stop_loki():
     subprocess.run(["pkill", "-f", "nmap"], capture_output=True)
 
 # ----------------------------------------------------------------------
-# Write the pagerctl.py shim (full emulation)
+# Write the complete pagerctl.py shim (pure Python, uses KTOx LCD)
 # ----------------------------------------------------------------------
 def _write_pagerctl_shim():
     shim_path = LOKI_DIR / "lib" / "pagerctl.py"
     shim_path.parent.mkdir(parents=True, exist_ok=True)
     shim_code = '''\
-# pagerctl.py – KTOx shim for Loki
-import os, time, threading, queue
+# pagerctl.py - KTOx native shim for Loki
+# This replaces libpagerctl.so entirely
+
+import os
+import time
+import threading
+import queue
 from PIL import Image, ImageDraw, ImageFont
-import LCD_1in44
-import LCD_Config
+
+# Import KTOx LCD driver
+try:
+    import LCD_1in44
+    import LCD_Config
+    HAS_LCD = True
+except ImportError:
+    HAS_LCD = False
+    print("Warning: LCD_1in44 not found, running headless")
 
 # Button masks (same as original)
 BTN_UP    = 0x01
@@ -338,7 +350,7 @@ BTN_RIGHT = 0x08
 BTN_A     = 0x10   # Green / OK
 BTN_B     = 0x20   # Red / Back
 
-# Map KTOx pins to button masks (adjust if your pins differ)
+# Map KTOx pins to button masks
 PIN_MAP = {
     6:  BTN_UP,
     19: BTN_DOWN,
@@ -349,6 +361,7 @@ PIN_MAP = {
 }
 
 class Pager:
+    # Predefined colors (RGB565)
     BLACK   = 0x0000
     WHITE   = 0xFFFF
     RED     = 0xF800
@@ -376,6 +389,10 @@ class Pager:
     def init(self):
         if self._initialized:
             return 0
+        if not HAS_LCD:
+            print("Pager.init: no LCD hardware")
+            self._initialized = True
+            return 0
         try:
             self.lcd = LCD_1in44.LCD()
             self.lcd.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
@@ -388,7 +405,7 @@ class Pager:
             self._start_input_thread()
             return 0
         except Exception as e:
-            print(f"Pager init error: {e}")
+            print(f"Pager.init error: {e}")
             return -1
 
     def cleanup(self):
@@ -400,31 +417,32 @@ class Pager:
     def clear(self, color=0):
         if not self.draw:
             return
-        r,g,b = self._rgb565_to_rgb(color)
-        self.draw.rectangle((0,0,self.width,self.height), fill=(r,g,b))
+        r, g, b = self._rgb565_to_rgb(color)
+        self.draw.rectangle((0, 0, self.width, self.height), fill=(r, g, b))
 
     def flip(self):
         if self.lcd and self.image:
             self.lcd.LCD_ShowImage(self.image, 0, 0)
 
     def set_rotation(self, rotation):
+        # Not needed for KTOx, but keep for compatibility
         pass
 
-    # Primitives
+    # Drawing primitives
     def pixel(self, x, y, color):
         if self.draw:
-            r,g,b = self._rgb565_to_rgb(color)
-            self.draw.point((x,y), fill=(r,g,b))
+            r, g, b = self._rgb565_to_rgb(color)
+            self.draw.point((x, y), fill=(r, g, b))
 
     def fill_rect(self, x, y, w, h, color):
         if self.draw:
-            r,g,b = self._rgb565_to_rgb(color)
-            self.draw.rectangle((x,y,x+w-1,y+h-1), fill=(r,g,b))
+            r, g, b = self._rgb565_to_rgb(color)
+            self.draw.rectangle((x, y, x + w - 1, y + h - 1), fill=(r, g, b))
 
     def rect(self, x, y, w, h, color):
         if self.draw:
-            r,g,b = self._rgb565_to_rgb(color)
-            self.draw.rectangle((x,y,x+w-1,y+h-1), outline=(r,g,b))
+            r, g, b = self._rgb565_to_rgb(color)
+            self.draw.rectangle((x, y, x + w - 1, y + h - 1), outline=(r, g, b))
 
     def hline(self, x, y, w, color):
         self.fill_rect(x, y, w, 1, color)
@@ -434,53 +452,50 @@ class Pager:
 
     def line(self, x1, y1, x2, y2, color):
         if self.draw:
-            r,g,b = self._rgb565_to_rgb(color)
-            self.draw.line((x1,y1,x2,y2), fill=(r,g,b))
+            r, g, b = self._rgb565_to_rgb(color)
+            self.draw.line((x1, y1, x2, y2), fill=(r, g, b))
 
     def fill_circle(self, x, y, r, color):
         if self.draw:
-            r,g,b = self._rgb565_to_rgb(color)
-            self.draw.ellipse((x-r, y-r, x+r, y+r), fill=(r,g,b))
+            r_c, g_c, b_c = self._rgb565_to_rgb(color)
+            self.draw.ellipse((x - r, y - r, x + r, y + r), fill=(r_c, g_c, b_c))
 
     def circle(self, x, y, r, color):
         if self.draw:
-            r,g,b = self._rgb565_to_rgb(color)
-            self.draw.ellipse((x-r, y-r, x+r, y+r), outline=(r,g,b))
+            r_c, g_c, b_c = self._rgb565_to_rgb(color)
+            self.draw.ellipse((x - r, y - r, x + r, y + r), outline=(r_c, g_c, b_c))
 
-    # Text
+    # Text rendering
     def draw_text(self, x, y, text, color, size=1):
         self.draw_ttf(x, y, text, color, "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 9)
 
     def draw_ttf(self, x, y, text, color, font_path, font_size):
         if not self.draw:
             return
-        r,g,b = self._rgb565_to_rgb(color)
+        r, g, b = self._rgb565_to_rgb(color)
         key = f"{font_path}:{font_size}"
         if key not in self.fonts:
             try:
                 self.fonts[key] = ImageFont.truetype(font_path, font_size)
             except:
                 self.fonts[key] = ImageFont.load_default()
-        self.draw.text((x,y), text, font=self.fonts[key], fill=(r,g,b))
+        self.draw.text((x, y), text, font=self.fonts[key], fill=(r, g, b))
 
     def draw_text_centered(self, x, y, text, color, size=1):
-        if not self.draw:
-            return
-        r,g,b = self._rgb565_to_rgb(color)
         try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", size*8)
-            bbox = self.draw.textbbox((0,0), text, font=font)
-            w = bbox[2]-bbox[0]
-            self.draw.text((x - w//2, y), text, font=font, fill=(r,g,b))
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", size * 8)
+            bbox = self.draw.textbbox((0, 0), text, font=font)
+            w = bbox[2] - bbox[0]
+            self.draw_ttf(x - w // 2, y, text, color, "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", size * 8)
         except:
             self.draw_text(x, y, text, color, size)
 
     def draw_ttf_centered(self, x, y, text, color, font_path, font_size):
         try:
             font = ImageFont.truetype(font_path, font_size)
-            bbox = self.draw.textbbox((0,0), text, font=font)
-            w = bbox[2]-bbox[0]
-            self.draw_ttf(x - w//2, y, text, color, font_path, font_size)
+            bbox = self.draw.textbbox((0, 0), text, font=font)
+            w = bbox[2] - bbox[0]
+            self.draw_ttf(x - w // 2, y, text, color, font_path, font_size)
         except:
             self.draw_text(x, y, text, color)
 
@@ -495,7 +510,7 @@ class Pager:
         b = color & 0x1F
         return (r << 3, g << 2, b << 3)
 
-    # Input handling
+    # Input handling (optional, but good for completeness)
     def _start_input_thread(self):
         if not self._running:
             self._running = True
@@ -514,10 +529,9 @@ class Pager:
                     current_state |= mask
             changed = current_state ^ last_state
             if changed:
-                # Queue press/release events
                 for mask in PIN_MAP.values():
                     if changed & mask:
-                        event_type = 1 if (current_state & mask) else 0  # 1=pressed, 0=released
+                        event_type = 1 if (current_state & mask) else 0
                         self._input_queue.put((event_type, mask))
             last_state = current_state
             time.sleep(0.05)
@@ -531,7 +545,7 @@ class Pager:
 # Also provide PagerInput and PagerInputEvent for compatibility
 class PagerInputEvent:
     def __init__(self, event_type, button):
-        self.type = event_type  # 1 = pressed, 0 = released
+        self.type = event_type
         self.button = button
 
 class PagerInput:
@@ -550,12 +564,12 @@ class PagerInput:
     shim_path.chmod(0o644)
 
 # ----------------------------------------------------------------------
-# Write the headless launcher (uses real pagerctl, no mocks)
+# Write the headless launcher (uses real pagerctl shim, no mocks)
 # ----------------------------------------------------------------------
 def _write_launcher():
     launcher_code = f'''\
 #!/usr/bin/env python3
-# ktox_headless_loki.py - uses real pagerctl shim
+# ktox_headless_loki.py - uses native pagerctl shim
 
 import sys, os, threading, signal, logging, time, subprocess
 
