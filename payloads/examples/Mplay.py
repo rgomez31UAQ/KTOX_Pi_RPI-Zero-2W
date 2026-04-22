@@ -3,7 +3,7 @@
 KTOx Media Player – High FPS (15 fps, non‑blocking buttons)
 ============================================================
 - Non‑blocking button polling inside video loop.
-- 15 fps video with hardware acceleration (MMAL for H.264).
+- 15 fps video with hardware acceleration.
 - USB audio via plughw:1,0.
 
 Controls: UP/DOWN, OK, LEFT, KEY1=stop, KEY3=exit
@@ -122,7 +122,10 @@ def draw_browser(path, entries, cursor, scroll):
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 13), fill=(139, 0, 0))
     d.text((4, 2), "MEDIA PLAYER", font=FONT_BOLD, fill=(231, 76, 60))
-    d.text((W-4, 2), f"{len(entries)}", font=FONT, fill=(30, 132, 73), anchor="rt")
+    # File count (right-aligned manually)
+    count_text = f"{len(entries)}"
+    tw = d.textlength(count_text, font=FONT)
+    d.text((W - 4 - int(tw), 2), count_text, font=FONT, fill=(30, 132, 73))
     path_display = os.path.basename(path) if path != "/" else path
     d.text((4, 14), f"📂 {path_display[:20]}", font=FONT, fill=(171, 178, 185))
     y = 26
@@ -188,8 +191,6 @@ def play_video(filepath):
     global current_process
     stop_playback()
 
-    # Use MMAL hardware decoder for H.264 (Pi-specific)
-    # If the video is not H.264, it will fall back to software.
     cmd = [
         "ffmpeg",
         "-re",
