@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# NAME: Loki Autonomous Engine
+# NAME: Loki
 
 import os, sys, time, subprocess, socket, signal, shutil, threading
 from pathlib import Path
