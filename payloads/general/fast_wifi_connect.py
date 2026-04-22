@@ -44,20 +44,20 @@ def _show(lines, progress=None):
     try:
         from PIL import Image, ImageDraw  # type: ignore
 
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         draw = ImageDraw.Draw(img)
         y = 5
         for line in lines:
             if line:
-                draw.text((5, y), line[:18], font=font, fill="WHITE")
+                draw.text((5, y), line[:18], font=font, fill=(242, 243, 244))
                 y += 14
         if progress is not None:
             p = max(0.0, min(1.0, progress))
             x0, y0, x1, y1 = 6, 112, 122, 120
-            draw.rectangle((x0, y0, x1, y1), outline="WHITE", fill="BLACK")
+            draw.rectangle((x0, y0, x1, y1), outline=(242, 243, 244), fill=(10, 0, 0))
             fill_w = int((x1 - x0) * p)
             if fill_w > 0:
-                draw.rectangle((x0, y0, x0 + fill_w, y1), fill="WHITE")
+                draw.rectangle((x0, y0, x0 + fill_w, y1), fill=(242, 243, 244))
         LCD.LCD_ShowImage(img, 0, 0)
     except Exception:
         pass

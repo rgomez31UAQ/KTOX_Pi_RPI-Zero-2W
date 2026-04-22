@@ -214,21 +214,21 @@ def export_loot():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), title, font=font, fill="#3388FF")
     with lock:
         active = scanning
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_list_view():
     """Render the device list view."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "BT CLASSIC")
 
@@ -238,10 +238,10 @@ def draw_list_view():
         sel = selected_idx
         sc = scroll_pos
 
-    d.text((2, 15), status[:22], font=font, fill="#888")
+    d.text((2, 15), status[:22], font=font, fill=(113, 125, 126))
 
     if not devs:
-        d.text((20, 55), "Press OK to scan", font=font, fill="#666")
+        d.text((20, 55), "Press OK to scan", font=font, fill=(86, 101, 115))
     else:
         visible = devs[sc:sc + ROWS_VISIBLE - 1]
         for i, dev in enumerate(visible):
@@ -258,7 +258,7 @@ def draw_list_view():
         if total > ROWS_VISIBLE - 1:
             bar_h = max(4, int((ROWS_VISIBLE - 1) / total * 88))
             bar_y = 28 + int(sc / total * 88)
-            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill="#444")
+            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill=(34, 0, 0))
 
     _draw_footer(d, "OK:Scan R:Svc K3:Exit")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -266,7 +266,7 @@ def draw_list_view():
 
 def draw_services_view():
     """Render the services view for the selected device."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     with lock:
@@ -281,10 +281,10 @@ def draw_services_view():
 
     _draw_header(d, "SERVICES")
     addr_short = dev["addr"][-8:] if len(dev.get("addr", "")) > 8 else dev.get("addr", "")
-    d.text((2, 15), f"{dev.get('name', '')[:10]} {addr_short}", font=font, fill="#888")
+    d.text((2, 15), f"{dev.get('name', '')[:10]} {addr_short}", font=font, fill=(113, 125, 126))
 
     if not svcs:
-        d.text((15, 55), "No services found", font=font, fill="#666")
+        d.text((15, 55), "No services found", font=font, fill=(86, 101, 115))
     else:
         visible = svcs[sc:sc + ROWS_VISIBLE - 1]
         for i, svc in enumerate(visible):
@@ -294,7 +294,7 @@ def draw_services_view():
             line = f"{name}"
             if ch:
                 line = f"{name[:15]} ch{ch}"
-            d.text((2, y), line[:22], font=font, fill="#CCCCCC")
+            d.text((2, y), line[:22], font=font, fill=(242, 243, 244))
 
     _draw_footer(d, f"Svc:{len(svcs)} LEFT:Back")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -308,15 +308,15 @@ def main():
     global scroll_pos, selected_idx, view, svc_scroll
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 20), "BT CLASSIC SCAN", font=font, fill="#3388FF")
-    d.text((4, 40), "Device discovery +", font=font, fill="#888")
-    d.text((4, 52), "SDP enumeration", font=font, fill="#888")
-    d.text((4, 72), "OK     Start scan", font=font, fill="#666")
-    d.text((4, 84), "U/D    Scroll", font=font, fill="#666")
-    d.text((4, 96), "RIGHT  View services", font=font, fill="#666")
-    d.text((4, 108), "KEY3   Exit", font=font, fill="#666")
+    d.text((4, 40), "Device discovery +", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "SDP enumeration", font=font, fill=(113, 125, 126))
+    d.text((4, 72), "OK     Start scan", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "U/D    Scroll", font=font, fill=(86, 101, 115))
+    d.text((4, 96), "RIGHT  View services", font=font, fill=(86, 101, 115))
+    d.text((4, 108), "KEY3   Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 
@@ -397,11 +397,11 @@ def main():
 
 def _show_message(line1, line2=""):
     """Show a brief overlay message."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 50), line1, font=font, fill="#00FF00")
+    d.text((10, 50), line1, font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2, font=font, fill="#888")
+        d.text((4, 65), line2, font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 

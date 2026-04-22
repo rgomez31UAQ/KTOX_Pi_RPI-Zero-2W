@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RaspyJack Payload -- Passive HTTP Credential Extractor
+KTOx Payload -- Passive HTTP Credential Extractor
 ======================================================
 Author: 7h30th3r0n3
 
@@ -228,12 +228,12 @@ def _export_loot():
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "HTTP SNIFF", font=font, fill="#FF3366")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "HTTP SNIFF", font=font, fill=(231, 76, 60))
     indicator = "#00FF00" if sniffing else "#444"
     d.ellipse((118, 3, 122, 7), fill=indicator)
 
@@ -243,8 +243,8 @@ def _draw_frame(lcd, font):
         iface = INTERFACES[iface_idx]
 
     # Stats line
-    d.text((2, 16), f"IF:{iface}  Pkts:{pkts}", font=font, fill="#AAAAAA")
-    d.text((2, 26), f"Captured: {len(creds)}", font=font, fill="#AAAAAA")
+    d.text((2, 16), f"IF:{iface}  Pkts:{pkts}", font=font, fill=(171, 178, 185))
+    d.text((2, 26), f"Captured: {len(creds)}", font=font, fill=(171, 178, 185))
 
     # Credential list
     visible = creds[scroll_offset:scroll_offset + ROWS_VISIBLE]
@@ -261,7 +261,7 @@ def _draw_frame(lcd, font):
             color = "#888888"
 
         d.text((2, y), f"[{type_tag}]", font=font, fill=color)
-        d.text((40, y), data_preview, font=font, fill="#CCCCCC")
+        d.text((40, y), data_preview, font=font, fill=(242, 243, 244))
 
     # Scroll indicator
     total_items = len(creds)
@@ -269,14 +269,14 @@ def _draw_frame(lcd, font):
         bar_area = 60
         ind_h = max(4, int(ROWS_VISIBLE / total_items * bar_area))
         ind_y = 38 + int(scroll_offset / max(total_items, 1) * bar_area)
-        d.rectangle((126, ind_y, 127, ind_y + ind_h), fill="#444")
+        d.rectangle((126, ind_y, 127, ind_y + ind_h), fill=(34, 0, 0))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if sniffing:
-        d.text((2, 117), "OK:Stop K3:Exit", font=font, fill="#888")
+        d.text((2, 117), "OK:Stop K3:Exit", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Sniff K1:IF K3:Quit", font=font, fill="#888")
+        d.text((2, 117), "OK:Sniff K1:IF K3:Quit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -299,25 +299,25 @@ def main():
     font = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font, fill="#FF0000")
-        d.text((4, 65), "pip install scapy", font=font, fill="#888")
+        d.text((4, 50), "scapy not found!", font=font, fill=(231, 76, 60))
+        d.text((4, 65), "pip install scapy", font=font, fill=(113, 125, 126))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()
         return 1
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 16), "HTTP CRED SNIFFER", font=font, fill="#FF3366")
-    d.text((4, 36), "Passive credential", font=font, fill="#888")
-    d.text((4, 46), "extraction from HTTP", font=font, fill="#888")
-    d.text((4, 64), "OK    Start/stop", font=font, fill="#666")
-    d.text((4, 76), "KEY1  Toggle iface", font=font, fill="#666")
-    d.text((4, 88), "KEY2  Export loot", font=font, fill="#666")
-    d.text((4, 100), "KEY3  Exit", font=font, fill="#666")
+    d.text((4, 16), "HTTP CRED SNIFFER", font=font, fill=(231, 76, 60))
+    d.text((4, 36), "Passive credential", font=font, fill=(113, 125, 126))
+    d.text((4, 46), "extraction from HTTP", font=font, fill=(113, 125, 126))
+    d.text((4, 64), "OK    Start/stop", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "KEY1  Toggle iface", font=font, fill=(86, 101, 115))
+    d.text((4, 88), "KEY2  Export loot", font=font, fill=(86, 101, 115))
+    d.text((4, 100), "KEY3  Exit", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -350,10 +350,10 @@ def main():
                 if has_data:
                     fname = _export_loot()
                     # Flash confirmation
-                    img2 = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                    img2 = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                     d2 = ScaledDraw(img2)
-                    d2.text((4, 50), "Exported!", font=font, fill="#00FF00")
-                    d2.text((4, 65), fname[:22], font=font, fill="#888")
+                    d2.text((4, 50), "Exported!", font=font, fill=(30, 132, 73))
+                    d2.text((4, 65), fname[:22], font=font, fill=(113, 125, 126))
                     lcd.LCD_ShowImage(img2, 0, 0)
                     time.sleep(1.0)
                 time.sleep(0.3)

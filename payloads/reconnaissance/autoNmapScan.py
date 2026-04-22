@@ -74,7 +74,7 @@ font_large = ImageFont.truetype(
 )
 
 # In-memory canvas reused every frame
-canvas = Image.new("RGB", (WIDTH, HEIGHT), "black")
+canvas = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
 draw   = ImageDraw.Draw(canvas)
 
 # ---------------------------------------------------------------------------

@@ -395,7 +395,7 @@ def _execute_persistence():
 # DRAWING
 # ═══════════════════════════════════════════════════════════════
 def _draw(lcd):
-    img = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     screen = state["screen"]
 

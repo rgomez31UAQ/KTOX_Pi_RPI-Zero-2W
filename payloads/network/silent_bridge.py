@@ -126,13 +126,13 @@ def draw_stats(lcd, if1, if2):
     with stats_lock:
         counts = {k: proto_counts[k] for k in PROTO_LIST}
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     font = scaled_font()
 
     # Header
-    d.rectangle((0, 0, 127, 14), fill="#1a1a1a")
-    d.text((4, 2), f"{if1} <-> {if2}", font=font, fill="white")
+    d.rectangle((0, 0, 127, 14), fill=(10, 0, 0))
+    d.text((4, 2), f"{if1} <-> {if2}", font=font, fill=(242, 243, 244))
     # Right-align KEY3 hint to avoid clipping
     hint = "KEY3:Stop"
     if hasattr(d, "textbbox"):
@@ -140,7 +140,7 @@ def draw_stats(lcd, if1, if2):
         w = x1 - x0
     else:
         w, _ = d.textsize(hint, font=font)
-    d.text((127 - w - 2, 2), hint, font=font, fill="white")
+    d.text((127 - w - 2, 2), hint, font=font, fill=(242, 243, 244))
 
     # Grid area
     top = 16
@@ -150,8 +150,8 @@ def draw_stats(lcd, if1, if2):
     # Subtle grid lines
     for r in range(rows + 1):
         y = top + r * row_h
-        d.line((0, y, 127, y), fill="#222222")
-    d.line((63, top, 63, top + rows * row_h), fill="#222222")
+        d.line((0, y, 127, y), fill=(10, 0, 0))
+    d.line((63, top, 63, top + rows * row_h), fill=(10, 0, 0))
 
     # Fill cells
     for idx, proto in enumerate(PROTO_LIST):
@@ -161,7 +161,7 @@ def draw_stats(lcd, if1, if2):
         y = top + r * row_h + 3
         val = counts.get(proto, 0)
         text = f"{proto}: {val}"
-        d.text((x, y), text[:10], font=font, fill="white")
+        d.text((x, y), text[:10], font=font, fill=(242, 243, 244))
 
     lcd.LCD_ShowImage(img, 0, 0)
 

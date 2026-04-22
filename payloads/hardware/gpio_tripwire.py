@@ -236,7 +236,7 @@ def _draw_frame(lcd, font_obj):
     # Header
     header_color = "#FF0000" if armed else "#111"
     d.rectangle((0, 0, 127, 13), fill=header_color)
-    d.text((2, 1), "GPIO TRIPWIRE", font=font_obj, fill="#FFFFFF" if armed else "#00CCFF")
+    d.text((2, 1), "GPIO TRIPWIRE", font=font_obj, fill=(242, 243, 244) if armed else "#00CCFF")
 
     with lock:
         preset = PIN_PRESETS[preset_idx]
@@ -251,17 +251,17 @@ def _draw_frame(lcd, font_obj):
     d.text((2, 16), f"Status: {arm_label}", font=font_obj, fill=arm_color)
 
     # Preset info
-    d.text((2, 28), f"Config: {preset['name']}", font=font_obj, fill="#FFAA00")
+    d.text((2, 28), f"Config: {preset['name']}", font=font_obj, fill=(212, 172, 13))
     pins_str = ", ".join(str(p) for p in preset["pins"])
-    d.text((2, 38), f"Pins: {pins_str}", font=font_obj, fill="#888")
+    d.text((2, 38), f"Pins: {pins_str}", font=font_obj, fill=(113, 125, 126))
 
     # Stats
-    d.text((2, 52), f"Triggers: {count}", font=font_obj, fill="#AAAAAA")
+    d.text((2, 52), f"Triggers: {count}", font=font_obj, fill=(171, 178, 185))
     if last_t:
-        d.text((2, 62), f"Last: {last_t}", font=font_obj, fill="#AAAAAA")
+        d.text((2, 62), f"Last: {last_t}", font=font_obj, fill=(171, 178, 185))
 
     # Event log (last few entries)
-    d.text((2, 76), "Events:", font=font_obj, fill="#666")
+    d.text((2, 76), "Events:", font=font_obj, fill=(86, 101, 115))
     visible = log[-(ROWS_VISIBLE):]
     if scroll > 0:
         start = max(0, len(log) - ROWS_VISIBLE - scroll)
@@ -271,14 +271,14 @@ def _draw_frame(lcd, font_obj):
         y = 88 + i * ROW_H
         if y > 108:
             break
-        d.text((2, y), entry[:24], font=font_obj, fill="#CCCCCC")
+        d.text((2, y), entry[:24], font=font_obj, fill=(242, 243, 244))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if is_armed:
-        d.text((2, 117), "OK:Disarm K1:Test K3:X", font=font_obj, fill="#888")
+        d.text((2, 117), "OK:Disarm K1:Test K3:X", font=font_obj, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Arm K2:Cfg K3:Quit", font=font_obj, fill="#888")
+        d.text((2, 117), "OK:Arm K2:Cfg K3:Quit", font=font_obj, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 

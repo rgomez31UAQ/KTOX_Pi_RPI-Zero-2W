@@ -146,7 +146,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_message(lines, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = 40
     for line in lines:
@@ -158,7 +158,7 @@ def draw_message(lines, color="yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui_main(params, selected_index):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     d.text((5, 5), "Known Net Deauth", font=FONT_TITLE, fill="#FFC300")
     d.line([(0, 22), (128, 22)], fill="#FFC300", width=1)
@@ -170,17 +170,17 @@ def draw_ui_main(params, selected_index):
         d.text((5, y_pos), f"{key}: {params[key]}", font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 80), status_msg, font=FONT, fill="yellow")
+    d.text((5, 80), status_msg, font=FONT, fill=(212, 172, 13))
     if probed_ssid:
-        d.text((5, 95), f"Probed: {probed_ssid}", font=FONT, fill="lime")
-    d.text((5, 115), "OK=Edit | KEY2=Start | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 95), f"Probed: {probed_ssid}", font=FONT, fill=(231, 76, 60))
+    d.text((5, 115), "OK=Edit | KEY2=Start | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui_interface_selection(interfaces, current_selection):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, iface in enumerate(interfaces):
@@ -188,7 +188,7 @@ def draw_ui_interface_selection(interfaces, current_selection):
         d.text((5, y_pos), iface, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def select_interface_menu():
@@ -254,16 +254,16 @@ def handle_mac_input_logic(initial_mac):
     char_set = "0123456789abcdef:"
     
     while running:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), "Enter Target MAC:", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), "Enter Target MAC:", font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
         display_text = list(current_mac_input)
         if mac_input_cursor_pos < len(display_text):
             display_text[mac_input_cursor_pos] = '_'
-        d.text((5, 40), "".join(display_text[:17]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 40), "".join(display_text[:17]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         last_button_press_time = 0

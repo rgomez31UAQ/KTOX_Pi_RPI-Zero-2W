@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RaspyJack Payload -- Multi-Protocol Credential Sniffer
+KTOx Payload -- Multi-Protocol Credential Sniffer
 =======================================================
 Author: 7h30th3r0n3
 
@@ -366,10 +366,10 @@ def _export_creds():
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
-    draw.text((2, 2), "Cred Sniffer", fill="CYAN", font=font)
+    draw.text((2, 2), "Cred Sniffer", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -379,7 +379,7 @@ def _draw_screen():
         counts = dict(proto_counts)
 
     total = len(creds)
-    draw.text((2, 14), f"{st} [{total}]", fill="WHITE", font=font)
+    draw.text((2, 14), f"{st} [{total}]", fill=(242, 243, 244), font=font)
 
     if vm == "proto":
         y = 28
@@ -397,7 +397,7 @@ def _draw_screen():
         for c in visible:
             ts_short = c["timestamp"].split(" ")[1][:5]
             line = f"{ts_short} {c['protocol'][:4]} {c['username'][:10]}"
-            draw.text((2, y), line[:22], fill="GREEN", font=font)
+            draw.text((2, y), line[:22], fill=(30, 132, 73), font=font)
             y += 12
 
     sniff_label = "ACTIVE" if sniffing else "STOPPED"
@@ -465,7 +465,7 @@ def main():
             _sniff_thread.join(timeout=3)
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((10, 56), "Sniffer stopped", fill="RED", font=font)
             LCD.LCD_ShowImage(img, 0, 0)

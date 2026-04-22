@@ -136,7 +136,7 @@ LCD = LCD_1in44.LCD()
 LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
 WIDTH, HEIGHT = 128, 128
 font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
-canvas = Image.new("RGB", (WIDTH, HEIGHT), "black")
+canvas = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
 draw = ImageDraw.Draw(canvas)
 
 def show(lines):
@@ -166,12 +166,12 @@ def show(lines):
     if len(wrapped_lines) > 8:
         wrapped_lines = wrapped_lines[:7] + ["..."]
     
-    draw.rectangle((0, 0, WIDTH, HEIGHT), fill="black")
+    draw.rectangle((0, 0, WIDTH, HEIGHT), fill=(10, 0, 0))
     y = 5
     for line in wrapped_lines:
         w = draw.textbbox((0, 0), line, font=font_large)[2]
         x = (WIDTH - w) // 2
-        draw.text((x, y), line, font=font_large, fill="#00FF00")
+        draw.text((x, y), line, font=font_large, fill=(30, 132, 73))
         y += 12
     
     LCD.LCD_ShowImage(canvas, 0, 0)
@@ -303,7 +303,7 @@ def scan_networks():
     
     # Clean up and scan
     subprocess.run("rm -f /tmp/deauth_scan*", shell=True)
-    cmd = f"timeout {SCAN_TIMEOUT} airodump-ng --band abg --output-format csv -w /tmp/deauth_scan {WIFI_INTERFACE}"
+    cmd = f"timeout {SCAN_TIMEOUT} airodump-ng --output-format csv -w /tmp/deauth_scan {WIFI_INTERFACE}"
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     log(f"Scan command completed with return code: {result.returncode}")
     

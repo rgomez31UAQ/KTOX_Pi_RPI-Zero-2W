@@ -103,7 +103,7 @@ for p in PINS.values():
 
 LCD = LCD_1in44.LCD()
 LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-IMG = Image.new("RGB", (WIDTH, HEIGHT), "black")
+IMG = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
 DRAW = ImageDraw.Draw(IMG)
 try:
     FONT_TITLE = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 12)
@@ -279,13 +279,9 @@ if __name__ == '__main__':
                 # try setting channel on monitor interface for reliability
                 try:
                     if TARGET_AP['channel']:
-                        subprocess.run(['sudo','iw','dev', MON_IFACE, 'set', 'channel', str(TARGET_AP['channel'])], check=False)
+                        subprocess.run(['iw', 'dev', MON_IFACE, 'set', 'channel', str(TARGET_AP['channel'])], check=False)
                 except Exception:
-                    try:
-                        if TARGET_AP['channel']:
-                            subprocess.run(['sudo','iwconfig', MON_IFACE, 'channel', str(TARGET_AP['channel'])], check=False)
-                    except Exception:
-                        pass
+                    pass
                 break
             elif GPIO.input(PINS['LEFT'])==0 and now-last>db: sys.exit(0)
             time.sleep(0.05)

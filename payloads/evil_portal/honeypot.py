@@ -95,13 +95,13 @@ DEFAULT_PROFILES: Dict[str, List[Tuple[int, str]]] = {
         (22, "ssh"),
         (23, "telnet"),
         (80, "http"),
-        (8080, "http"),
+        (8888, "http"),
     ],
     # Web‑focused
     "web": [
         (80, "http"),
         (443, "https"),
-        (8080, "http"),
+        (8888, "http"),
     ],
     # Larger mix. Many are privileged.
     "all": [
@@ -116,7 +116,7 @@ DEFAULT_PROFILES: Dict[str, List[Tuple[int, str]]] = {
         (3306, "mysql"),
         (3389, "rdp"),
         (5900, "vnc"),
-        (8080, "http"),
+        (8888, "http"),
     ],
 }
 
@@ -626,7 +626,7 @@ class HoneypotLCD:
 
         # Clear to known state once after init
         try:
-            self.lcd.LCD_ShowImage(Image.new("RGB", (self.W, self.H), "black"), 0, 0)
+            self.lcd.LCD_ShowImage(Image.new("RGB", (self.W, self.H), (10, 0, 0)), 0, 0)
             hp.debug("LCD first black frame drawn")
         except Exception as e:
             hp.debug(f"LCD first frame failed: {e}")
@@ -707,7 +707,7 @@ class HoneypotLCD:
         self.running = True
         try:
             # Initial splash using the same drawing path as frames
-            splash = Image.new("RGB", (self.W, self.H), "black")
+            splash = Image.new("RGB", (self.W, self.H), (10, 0, 0))
             d = ImageDraw.Draw(splash)
             self._text(d, 2, 4, "HONEYPOT", self.font_large, "#00FF00")
             self._text(d, 2, 20, self.hp.fingerprints.get("label", "Ubuntu"))
@@ -725,7 +725,7 @@ class HoneypotLCD:
 
             while self.running and self.hp.running:
                 touched = self._poll_inputs()
-                img = Image.new("RGB", (self.W, self.H), "black")
+                img = Image.new("RGB", (self.W, self.H), (10, 0, 0))
                 draw = ImageDraw.Draw(img)
                 try:
                     if self.mode == 0:
@@ -797,7 +797,7 @@ def parse_ports_arg(ports_arg: str) -> List[Tuple[int, str]]:
             # Heuristic service guess
             svc_guess = {
                 21: "ftp", 22: "ssh", 23: "telnet", 25: "smtp", 80: "http", 110: "pop3",
-                143: "imap", 443: "https", 8080: "http",
+                143: "imap", 443: "https", 8888: "http",
             }.get(port, "raw")
             result.append((port, svc_guess))
     return result

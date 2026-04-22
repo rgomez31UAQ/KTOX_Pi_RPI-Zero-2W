@@ -330,13 +330,13 @@ def _send_test_ping(iface_name, src_mac, nat_vlan, tgt_vlan):
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "VLAN HOPPER", font=font, fill="#00CCFF")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if hopping else "#444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "VLAN HOPPER", font=font, fill=(171, 178, 185))
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if hopping else "#444")
 
     with lock:
         msg = status_msg
@@ -347,28 +347,28 @@ def _draw_frame(lcd, font):
         recv = pkts_received
         vlans = sorted(detected_vlans)
 
-    d.text((2, 16), msg[:24], font=font, fill="#AAAAAA")
-    d.text((2, 28), f"Native: {nat}  Target: {tgt}", font=font, fill="#FFAA00")
-    d.text((2, 38), f"Mode: {cur_mode}", font=font, fill="#888")
-    d.text((2, 48), f"Sent: {sent}  Recv: {recv}", font=font, fill="#888")
+    d.text((2, 16), msg[:24], font=font, fill=(171, 178, 185))
+    d.text((2, 28), f"Native: {nat}  Target: {tgt}", font=font, fill=(212, 172, 13))
+    d.text((2, 38), f"Mode: {cur_mode}", font=font, fill=(113, 125, 126))
+    d.text((2, 48), f"Sent: {sent}  Recv: {recv}", font=font, fill=(113, 125, 126))
 
     # Detected VLANs
-    d.text((2, 60), "Detected VLANs:", font=font, fill="#666")
+    d.text((2, 60), "Detected VLANs:", font=font, fill=(86, 101, 115))
     if vlans:
         vlan_str = ", ".join(str(v) for v in vlans[:10])
-        d.text((2, 72), vlan_str[:24], font=font, fill="#CCCCCC")
+        d.text((2, 72), vlan_str[:24], font=font, fill=(242, 243, 244))
     else:
-        d.text((2, 72), "none", font=font, fill="#666")
+        d.text((2, 72), "none", font=font, fill=(86, 101, 115))
 
     # Target VLAN selector arrows
-    d.text((2, 86), f"[UP/DOWN] VLAN: {tgt}", font=font, fill="#00FF88")
+    d.text((2, 86), f"[UP/DOWN] VLAN: {tgt}", font=font, fill=(30, 132, 73))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if hopping:
-        d.text((2, 117), "Hopping... K3:Exit", font=font, fill="#888")
+        d.text((2, 117), "Hopping... K3:Exit", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Hop K1:Mode K3:Quit", font=font, fill="#888")
+        d.text((2, 117), "OK:Hop K1:Mode K3:Quit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -392,9 +392,9 @@ def main():
     font = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font, fill="#FF0000")
+        d.text((4, 50), "scapy not found!", font=font, fill=(231, 76, 60))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RaspyJack Payload -- Pass the Hash (PtH)
+KTOx Payload -- Pass the Hash (PtH)
 =========================================
 Author: 7h30th3r0n3
 
@@ -606,19 +606,19 @@ def _save_results():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d):
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "PASS THE HASH", font=font, fill="#FF4400")
     with lock:
         n_ok = sum(1 for r in auth_results if r["success"])
     if n_ok > 0:
-        d.ellipse((118, 3, 122, 7), fill="#00FF00")
+        d.ellipse((118, 3, 122, 7), fill=(30, 132, 73))
     else:
-        d.ellipse((118, 3, 122, 7), fill="#444")
+        d.ellipse((118, 3, 122, 7), fill=(34, 0, 0))
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), text[:24], font=font, fill="#888")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), text[:24], font=font, fill=(113, 125, 126))
 
 
 def _draw_status_bar(d):
@@ -626,8 +626,8 @@ def _draw_status_bar(d):
         msg = status_msg
         n_h = len(collected_hashes)
         n_t = len(targets)
-    d.text((2, 15), msg[:22], font=font, fill="#FFAA00")
-    d.text((90, 15), f"H:{n_h} T:{n_t}", font=font, fill="#666")
+    d.text((2, 15), msg[:22], font=font, fill=(212, 172, 13))
+    d.text((90, 15), f"H:{n_h} T:{n_t}", font=font, fill=(86, 101, 115))
 
 
 # ---------------------------------------------------------------------------
@@ -635,7 +635,7 @@ def _draw_status_bar(d):
 # ---------------------------------------------------------------------------
 
 def draw_hashes_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d)
     _draw_status_bar(d)
@@ -645,11 +645,11 @@ def draw_hashes_view():
         sc = scroll_pos
         sel = hash_idx
 
-    d.text((2, 28), "Select hash:", font=font, fill="#AAAAAA")
+    d.text((2, 28), "Select hash:", font=font, fill=(171, 178, 185))
 
     if not hashes:
-        d.text((8, 55), "No hashes found", font=font, fill="#666")
-        d.text((8, 68), "Check loot dirs", font=font, fill="#666")
+        d.text((8, 55), "No hashes found", font=font, fill=(86, 101, 115))
+        d.text((8, 68), "Check loot dirs", font=font, fill=(86, 101, 115))
     else:
         visible = hashes[sc:sc + ROWS_VISIBLE]
         for i, h in enumerate(visible):
@@ -670,7 +670,7 @@ def draw_hashes_view():
 # ---------------------------------------------------------------------------
 
 def draw_targets_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d)
     _draw_status_bar(d)
@@ -681,11 +681,11 @@ def draw_targets_view():
         sel = target_idx
         results = {r["ip"]: r for r in auth_results}
 
-    d.text((2, 28), "SMB hosts (445):", font=font, fill="#AAAAAA")
+    d.text((2, 28), "SMB hosts (445):", font=font, fill=(171, 178, 185))
 
     if not tgts:
-        d.text((8, 55), "No SMB hosts found", font=font, fill="#666")
-        d.text((8, 68), "OK to rescan", font=font, fill="#666")
+        d.text((8, 55), "No SMB hosts found", font=font, fill=(86, 101, 115))
+        d.text((8, 68), "OK to rescan", font=font, fill=(86, 101, 115))
     else:
         visible = tgts[sc:sc + ROWS_VISIBLE]
         for i, t in enumerate(visible):
@@ -722,7 +722,7 @@ def draw_targets_view():
 # ---------------------------------------------------------------------------
 
 def draw_auth_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d)
 
@@ -731,7 +731,7 @@ def draw_auth_view():
         sc = scroll_pos
 
     if not results:
-        d.text((8, 50), "No auth attempts yet", font=font, fill="#666")
+        d.text((8, 50), "No auth attempts yet", font=font, fill=(86, 101, 115))
     else:
         visible = results[sc:sc + 4]
         for i, r in enumerate(visible):
@@ -743,11 +743,11 @@ def draw_auth_view():
             color = "#00FF00" if ok else "#FF4444"
             tag = "SUCCESS" if ok else "FAIL"
             d.text((2, y), f"{ip_str} [{tag}]", font=font, fill=color)
-            d.text((2, y + 11), f"  {user_str}", font=font, fill="#888")
+            d.text((2, y + 11), f"  {user_str}", font=font, fill=(113, 125, 126))
 
             if ok and r.get("shares"):
                 shares_str = ",".join(r["shares"][:3])
-                d.text((60, y + 11), shares_str[:12], font=font, fill="#666")
+                d.text((60, y + 11), shares_str[:12], font=font, fill=(86, 101, 115))
 
     _draw_footer(d, "UP/DN:Scroll K3:Back")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -758,7 +758,7 @@ def draw_auth_view():
 # ---------------------------------------------------------------------------
 
 def draw_cmd_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d)
 
@@ -766,7 +766,7 @@ def draw_cmd_view():
         sel = cmd_idx
         output = last_cmd_output
 
-    d.text((2, 16), "Execute command:", font=font, fill="#AAAAAA")
+    d.text((2, 16), "Execute command:", font=font, fill=(171, 178, 185))
 
     for i, cmd in enumerate(SAFE_COMMANDS):
         y = 28 + i * ROW_H
@@ -775,8 +775,8 @@ def draw_cmd_view():
         d.text((2, y), f"{prefix}{cmd[:22]}", font=font, fill=color)
 
     if output:
-        d.rectangle((0, 100, 127, 114), fill="#222")
-        d.text((2, 101), output[:22], font=font, fill="#00CCFF")
+        d.rectangle((0, 100, 127, 114), fill=(10, 0, 0))
+        d.text((2, 101), output[:22], font=font, fill=(171, 178, 185))
 
     _draw_footer(d, "OK:Run UP/DN K3:Back")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -791,11 +791,11 @@ def main():
     global status_msg, last_cmd_output
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((8, 16), "PASS THE HASH", font=font, fill="#FF4400")
-    d.text((4, 36), "NTLM hash-based auth", font=font, fill="#888")
-    d.text((4, 52), "Loading hashes...", font=font, fill="#666")
+    d.text((4, 36), "NTLM hash-based auth", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "Loading hashes...", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
 
     # Collect hashes

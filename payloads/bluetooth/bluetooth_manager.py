@@ -32,7 +32,7 @@ SCAN_TIME = 12  # seconds
 # --- Global State ---
 RUNNING = True
 LCD = None
-image = Image.new("RGB", (128, 128), "BLACK")
+image = Image.new("RGB", (128, 128), (10, 0, 0))
 draw = ImageDraw.Draw(image)
 font = ImageFont.load_default()
 
@@ -49,9 +49,9 @@ def cleanup(*_):
     print("Bluetooth Manager: Exiting.")
     sys.exit(0)
 
-def draw_message(message, fill="WHITE"):
+def draw_message(message, fill=(242, 243, 244)):
     """Draws a multi-line message centered on the screen."""
-    draw.rectangle([(0, 0), (128, 128)], fill="BLACK")
+    draw.rectangle([(0, 0), (128, 128)], fill=(10, 0, 0))
     y = 10
     for i, line in enumerate(message.split('\n')):
         bbox = draw.textbbox((0, 0), line, font=font)
@@ -110,7 +110,7 @@ if __name__ == "__main__":
                 found_devices.append({"mac": mac, "name": name})
 
         if not found_devices:
-            draw_message("No devices found.\n\nExiting.", fill="YELLOW")
+            draw_message("No devices found.\n\nExiting.", fill=(212, 172, 13))
             time.sleep(5)
             cleanup()
 
@@ -144,17 +144,17 @@ if __name__ == "__main__":
                     out, err = run_bt_command(f"pair {mac}\ntrust {mac}\nconnect {mac}", timeout=25)
                     
                     if "Connection successful" in out:
-                        draw_message(f"Connected to\n{name[:18]}!", fill="LIME")
+                        draw_message(f"Connected to\n{name[:18]}!", fill=(231, 76, 60))
                     elif "Failed to connect" in out or err:
                         draw_message(f"Failed to\nconnect.", fill="RED")
                     else: # Sometimes it connects without the "successful" message
-                        draw_message(f"Connected to\n{name[:18]}!", fill="YELLOW")
+                        draw_message(f"Connected to\n{name[:18]}!", fill=(212, 172, 13))
 
                     time.sleep(4)
                     cleanup() # Exit after attempting connection
 
             # Drawing
-            draw.rectangle([(0, 0), (128, 128)], fill="BLACK")
+            draw.rectangle([(0, 0), (128, 128)], fill=(10, 0, 0))
             display_start = max(0, selected_index - 4)
             display_end = display_start + 8
             
@@ -164,7 +164,7 @@ if __name__ == "__main__":
                 prefix = ">" if idx == selected_index else " "
                 display_item = device['name']
                 if len(display_item) > 18: display_item = display_item[:17] + "…"
-                draw.text((5, y), f"{prefix} {display_item}", fill="YELLOW" if idx == selected_index else "WHITE", font=font)
+                draw.text((5, y), f"{prefix} {display_item}", fill=(212, 172, 13) if idx == selected_index else "WHITE", font=font)
                 y += 15
 
             LCD.LCD_ShowImage(image, 0, 0)

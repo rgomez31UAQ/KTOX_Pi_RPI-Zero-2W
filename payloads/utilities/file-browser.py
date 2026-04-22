@@ -5,11 +5,6 @@ KTOx Payload – Web File Explorer
 Starts a Flask web server on port 8888 for browsing, uploading,
 and downloading files from the KTOx device.
 
-Supports:
-- Single file upload
-- Folder upload (preserves directory structure)
-- Download, delete, browse
-
 LCD Shows: IP address, port, status (running/stopped)
 
 Controls:
@@ -17,8 +12,7 @@ Controls:
   KEY3   Exit payload
 """
 
-import os, sys, time, socket, logging, threading, zipfile, io
-from werkzeug.utils import secure_filename
+import os, sys, time, socket, logging, threading
 
 KTOX_ROOT = "/root/KTOx"
 if os.path.isdir(KTOX_ROOT) and KTOX_ROOT not in sys.path:
@@ -34,6 +28,7 @@ except ImportError:
 
 try:
     from flask import Flask, render_template_string, request, send_from_directory, abort, redirect, url_for
+    from werkzeug.utils import secure_filename
     HAS_FLASK = True
 except ImportError:
     HAS_FLASK = False
@@ -87,7 +82,6 @@ input[type="file"]{background:#21262d;color:#c9d1d9;padding:8px;
 .upload-btn{background:#1f6feb;color:#fff;border:none;padding:8px 16px;
             border-radius:4px;cursor:pointer;font-weight:600}
 .upload-btn:hover{background:#388bfd}
-.folder-upload{background:#2b6a9f;margin-left:10px}
 .back-btn{display:inline-block;margin-bottom:12px;color:#8b949e;
           text-decoration:none;font-size:.9rem}
 .back-btn:hover{color:#c9d1d9}
@@ -149,57 +143,14 @@ input[type="file"]{background:#21262d;color:#c9d1d9;padding:8px;
   <div class="stats">{{ items|length }} items</div>
 
   <div class="upload-section">
-    <h3>&#x2B06; Upload Files</h3>
+    <h3>&#x2B06; Upload to this directory</h3>
     <form method="POST" action="{{ url_for('upload', path=current_path_rel) }}"
-          enctype="multipart/form-data" class="upload-form" id="singleUploadForm">
-      <input type="file" name="file" multiple>
-      <button type="submit" class="upload-btn">Upload File(s)</button>
+          enctype="multipart/form-data" class="upload-form">
+      <input type="file" name="file" required multiple>
+      <button type="submit" class="upload-btn">Upload</button>
     </form>
-  </div>
-
-  <div class="upload-section">
-    <h3>&#x1F4C1; Upload Entire Folder</h3>
-    <form method="POST" action="{{ url_for('upload_folder', path=current_path_rel) }}"
-          enctype="multipart/form-data" id="folderUploadForm">
-      <input type="file" name="folder" webkitdirectory directory multiple id="folderInput">
-      <button type="submit" class="upload-btn folder-upload">Upload Folder</button>
-    </form>
-    <div id="uploadStatus" style="margin-top:8px; font-size:0.8rem; color:#8b949e;"></div>
   </div>
 </div>
-
-<script>
-// Handle folder upload: send each file with its relative path
-document.getElementById('folderUploadForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const input = document.getElementById('folderInput');
-  const files = input.files;
-  if (!files.length) return;
-  const statusDiv = document.getElementById('uploadStatus');
-  statusDiv.innerText = 'Uploading folder... (0/' + files.length + ')';
-  let completed = 0;
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    // Get relative path: file.webkitRelativePath
-    const relPath = file.webkitRelativePath;
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('relative_path', relPath);
-    try {
-      const resp = await fetch(window.location.href, {
-        method: 'POST',
-        body: formData
-      });
-      if (resp.ok) completed++;
-      statusDiv.innerText = 'Uploading folder... (' + completed + '/' + files.length + ')';
-    } catch(err) {
-      console.error(err);
-    }
-  }
-  statusDiv.innerText = 'Upload complete! Refreshing...';
-  setTimeout(() => location.reload(), 1000);
-});
-</script>
 </body>
 </html>"""
 
@@ -280,29 +231,6 @@ if HAS_FLASK:
                 f.save(os.path.join(full, fname))
         return redirect(url_for("browse", path=path))
 
-    @_app.route("/upload_folder/<path:path>", methods=["POST"])
-    def upload_folder(path):
-        """Handle folder upload with relative_path field."""
-        full = _abs(path)
-        if not os.path.isdir(full): abort(404)
-        files = request.files.getlist("file")
-        for f in files:
-            if f and f.filename:
-                rel = request.form.get("relative_path", "")
-                if rel:
-                    # Ensure we don't escape the base directory
-                    safe_rel = os.path.normpath(rel).lstrip("/")
-                    if safe_rel.startswith(".."):
-                        continue
-                    target = os.path.join(full, safe_rel)
-                    os.makedirs(os.path.dirname(target), exist_ok=True)
-                    f.save(target)
-                else:
-                    # Fallback to simple upload (old method)
-                    fname = secure_filename(f.filename)
-                    f.save(os.path.join(full, fname))
-        return redirect(url_for("browse", path=path))
-
     @_app.route("/delete/<path:path>", methods=["POST"])
     def delete_file(path):
         full = _abs(path)
@@ -311,8 +239,6 @@ if HAS_FLASK:
         try:
             if os.path.isfile(full):
                 os.remove(full)
-            elif os.path.isdir(full):
-                os.rmdir(full)  # only empty dirs
         except Exception: pass
         return redirect(url_for("browse", path=parent_rel))
 
@@ -381,18 +307,18 @@ def main():
     try:
         while True:
             # ── Draw ──
-            img  = Image.new("RGB", (128,128), "black")
+            img  = Image.new("RGB", (128,128), (10, 0, 0))
             draw = ImageDraw.Draw(img)
 
             # Header
             hdr_color = (0,160,50) if running else (120,0,0)
             draw.rectangle([(0,0),(128,18)], fill=hdr_color)
-            draw.text((4,3), "WEB FILE EXPLORER", font=font_sm, fill="black")
+            draw.text((4,3), "WEB FILE EXPLORER", font=font_sm, fill=(10, 0, 0))
 
             # Status
             y = 25
-            draw.text((4,y), f"IP:   {ip}", font=font_sm, fill="white"); y+=14
-            draw.text((4,y), f"Port: {HTTP_PORT}", font=font_sm, fill="white"); y+=14
+            draw.text((4,y), f"IP:   {ip}", font=font_sm, fill=(242, 243, 244)); y+=14
+            draw.text((4,y), f"Port: {HTTP_PORT}", font=font_sm, fill=(242, 243, 244)); y+=14
 
             status_col = (0,255,70) if running else (255,70,70)
             status_txt = "RUNNING" if running else "STOPPED"
@@ -427,6 +353,8 @@ def main():
 
             if just_pressed("KEY1"):
                 if running:
+                    # Flask can't be stopped cleanly once started;
+                    # just show stopped state but server keeps running in bg
                     running = False
                 else:
                     if srv is None or not srv.is_alive():

@@ -301,7 +301,7 @@ def _stop_playback():
 # ── Drawing ──────────────────────────────────────────────────────────────────
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     with lock:
@@ -315,25 +315,25 @@ def _draw_screen():
         scan_on = _scan_active
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "BT AUDIO INJECT", font=font, fill="#E91E63")
     if scan_on:
-        d.ellipse((118, 3, 126, 11), fill="#FFAA00")
+        d.ellipse((118, 3, 126, 11), fill=(212, 172, 13))
     elif conn_addr:
-        d.ellipse((118, 3, 126, 11), fill="#00FF00")
+        d.ellipse((118, 3, 126, 11), fill=(30, 132, 73))
     else:
-        d.ellipse((118, 3, 126, 11), fill="#FF0000")
+        d.ellipse((118, 3, 126, 11), fill=(231, 76, 60))
 
     y = 15
-    d.text((2, y), msg[:22], font=font, fill="#888")
+    d.text((2, y), msg[:22], font=font, fill=(113, 125, 126))
     y += 12
 
     # Connection / playback status
     if conn_addr:
-        d.text((2, y), f"Conn: {conn_addr[-8:]}", font=font, fill="#00FF00")
+        d.text((2, y), f"Conn: {conn_addr[-8:]}", font=font, fill=(30, 132, 73))
         y += 12
     if play_status:
-        d.text((2, y), f"Play: {play_status[:16]}", font=font, fill="#FFAA00")
+        d.text((2, y), f"Play: {play_status[:16]}", font=font, fill=(212, 172, 13))
         y += 12
     else:
         y += 12
@@ -353,7 +353,7 @@ def _draw_screen():
         d.text((2, y), "K1 to scan", font=font, fill="#555")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK:Play K1:Scan K3:X", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -367,14 +367,14 @@ def main():
     os.makedirs(os.path.dirname(AUDIO_FILE), exist_ok=True)
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((8, 10), "BT AUDIO INJECT", font=font, fill="#E91E63")
-    d.text((4, 28), "Inject audio into BT", font=font, fill="#888")
-    d.text((4, 40), "speakers/headphones.", font=font, fill="#888")
-    d.text((4, 60), "K1=Scan  OK=Connect", font=font, fill="#666")
-    d.text((4, 72), "K2=Stop  K3=Exit", font=font, fill="#666")
-    d.text((4, 88), "* = A2DP capable", font=font, fill="#FFAA00")
+    d.text((4, 28), "Inject audio into BT", font=font, fill=(113, 125, 126))
+    d.text((4, 40), "speakers/headphones.", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "K1=Scan  OK=Connect", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "K2=Stop  K3=Exit", font=font, fill=(86, 101, 115))
+    d.text((4, 88), "* = A2DP capable", font=font, fill=(212, 172, 13))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

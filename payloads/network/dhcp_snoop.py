@@ -244,9 +244,9 @@ def _export_data():
 # ---------------------------------------------------------------------------
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
-    draw.text((2, 2), "DHCP SNOOP", fill="CYAN", font=font)
+    draw.text((2, 2), "DHCP SNOOP", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -260,7 +260,7 @@ def _draw_screen():
     indicator = "REC" if active else "IDLE"
     ind_color = "RED" if active else "GRAY"
     draw.text((90, 2), indicator, fill=ind_color, font=font)
-    draw.text((2, 14), f"Pkts:{tp} Hosts:{len(cl)}", fill="WHITE", font=font)
+    draw.text((2, 14), f"Pkts:{tp} Hosts:{len(cl)}", fill=(242, 243, 244), font=font)
 
     if vm == "clients":
         y = 28
@@ -271,20 +271,20 @@ def _draw_screen():
             ip = entry["ip"] or "?.?.?.?"
             msg = entry["msg_type"][:3]
             line = f"{name:<8} {ip:<15} {msg}"
-            draw.text((2, y), line[:22], fill="GREEN", font=font)
+            draw.text((2, y), line[:22], fill=(30, 132, 73), font=font)
             y += 14
         if not mac_list:
-            draw.text((2, 56), "No DHCP clients yet", fill="GRAY", font=font)
-        draw.text((2, 116), "OK=go K1=srv K3=exit", fill="GRAY", font=font)
+            draw.text((2, 56), "No DHCP clients yet", fill=(86, 101, 115), font=font)
+        draw.text((2, 116), "OK=go K1=srv K3=exit", fill=(86, 101, 115), font=font)
 
     elif vm == "server":
-        draw.text((2, 28), f"Server: {si['ip']}", fill="YELLOW", font=font)
-        draw.text((2, 42), f"GW:     {si['gateway']}", fill="WHITE", font=font)
-        draw.text((2, 56), f"Mask:   {si['subnet_mask']}", fill="WHITE", font=font)
+        draw.text((2, 28), f"Server: {si['ip']}", fill=(212, 172, 13), font=font)
+        draw.text((2, 42), f"GW:     {si['gateway']}", fill=(242, 243, 244), font=font)
+        draw.text((2, 56), f"Mask:   {si['subnet_mask']}", fill=(242, 243, 244), font=font)
         dns_str = ", ".join(si["dns"][:2]) if si["dns"] else "N/A"
-        draw.text((2, 70), f"DNS:    {dns_str}"[:22], fill="WHITE", font=font)
-        draw.text((2, 84), f"Domain: {si['domain']}"[:22], fill="WHITE", font=font)
-        draw.text((2, 116), "K1=clients K3=exit", fill="GRAY", font=font)
+        draw.text((2, 70), f"DNS:    {dns_str}"[:22], fill=(242, 243, 244), font=font)
+        draw.text((2, 84), f"Domain: {si['domain']}"[:22], fill=(242, 243, 244), font=font)
+        draw.text((2, 116), "K1=clients K3=exit", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -297,7 +297,7 @@ def main():
     global app_running, sniff_active, scroll_pos, view_mode, status_msg
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -353,10 +353,10 @@ def main():
         app_running = False
         sniff_active = False
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "DHCP Snoop stopped", fill="YELLOW", font=font)
-            d.text((10, 66), f"Clients: {len(clients)}", fill="WHITE", font=font)
+            d.text((10, 50), "DHCP Snoop stopped", fill=(212, 172, 13), font=font)
+            d.text((10, 66), f"Clients: {len(clients)}", fill=(242, 243, 244), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

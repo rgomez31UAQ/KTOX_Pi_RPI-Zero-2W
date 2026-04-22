@@ -136,9 +136,9 @@ def _generate_qr(data):
 
 def _error_image(msg):
     """Create a small error placeholder image."""
-    img = Image.new("RGB", (QR_SIZE, QR_SIZE), "black")
+    img = Image.new("RGB", (QR_SIZE, QR_SIZE), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, QR_SIZE // 2 - 5), msg[:18], font=font, fill="#FF4444")
+    d.text((4, QR_SIZE // 2 - 5), msg[:18], font=font, fill=(231, 76, 60))
     return img
 
 
@@ -148,12 +148,12 @@ def _compose_display(qr_img, label, is_inverted):
         from PIL import ImageOps
         qr_img = ImageOps.invert(qr_img.convert("RGB"))
 
-    canvas = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    canvas = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     canvas.paste(qr_img, (QR_OFFSET_X, QR_OFFSET_Y))
 
     d = ScaledDraw(canvas)
     truncated = label[:22] if len(label) > 22 else label
-    d.text((2, LABEL_Y), truncated, font=font, fill="#888888")
+    d.text((2, LABEL_Y), truncated, font=font, fill=(113, 125, 126))
 
     return canvas
 
@@ -220,11 +220,11 @@ def _draw_qr_view():
 
 def _draw_mode_select():
     """Show mode selection when no QR is displayed yet."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "QR GENERATOR", font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "QR GENERATOR", font=font, fill=(171, 178, 185))
 
     with lock:
         mode = MODES[mode_idx]
@@ -237,9 +237,9 @@ def _draw_mode_select():
         d.text((2, y), f"{marker} {m}", font=font, fill=color)
         y += 14
 
-    d.text((2, 78), f"Invert: {'ON' if inv else 'OFF'}", font=font, fill="#666")
+    d.text((2, 78), f"Invert: {'ON' if inv else 'OFF'}", font=font, fill=(86, 101, 115))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "L/R:Mode OK:Gen K3:X", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -247,11 +247,11 @@ def _draw_mode_select():
 
 def _draw_custom_editor():
     """Show the custom text character editor."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "CUSTOM TEXT", font=font, fill="#FFAA00")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "CUSTOM TEXT", font=font, fill=(212, 172, 13))
 
     with lock:
         text = list(custom_text)
@@ -260,23 +260,23 @@ def _draw_custom_editor():
 
     # Show current text
     text_str = "".join(text)
-    d.text((2, 18), f"Text: {text_str[:18]}", font=font, fill="#FFFFFF")
+    d.text((2, 18), f"Text: {text_str[:18]}", font=font, fill=(242, 243, 244))
 
     # Show cursor position
     if len(text_str) > 18:
-        d.text((2, 30), f"      {text_str[18:36]}", font=font, fill="#FFFFFF")
+        d.text((2, 30), f"      {text_str[18:36]}", font=font, fill=(242, 243, 244))
 
     # Current character selector
     current_char = CHARSET[ci] if CHARSET else "?"
-    d.text((2, 48), f"Char: [{current_char}]", font=font, fill="#00FF00")
-    d.text((2, 60), f"Pos: {cur}/{len(text)}", font=font, fill="#888")
+    d.text((2, 48), f"Char: [{current_char}]", font=font, fill=(30, 132, 73))
+    d.text((2, 60), f"Pos: {cur}/{len(text)}", font=font, fill=(113, 125, 126))
 
     # Instructions
-    d.text((2, 78), "UP/DN: change char", font=font, fill="#666")
-    d.text((2, 90), "OK: add char", font=font, fill="#666")
-    d.text((2, 102), "KEY1: backspace", font=font, fill="#666")
+    d.text((2, 78), "UP/DN: change char", font=font, fill=(86, 101, 115))
+    d.text((2, 90), "OK: add char", font=font, fill=(86, 101, 115))
+    d.text((2, 102), "KEY1: backspace", font=font, fill=(86, 101, 115))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "KEY2:Gen QR K3:Back", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -291,23 +291,23 @@ def main():
     global custom_text, custom_cursor, char_idx
 
     if qrcode is None:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "qrcode not installed", font=font, fill="#FF4444")
-        d.text((4, 65), "pip3 install qrcode", font=font, fill="#888")
+        d.text((4, 50), "qrcode not installed", font=font, fill=(231, 76, 60))
+        d.text((4, 65), "pip3 install qrcode", font=font, fill=(113, 125, 126))
         LCD.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()
         return 1
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 16), "QR GENERATOR", font=font, fill="#00CCFF")
-    d.text((4, 36), "Generate QR codes", font=font, fill="#888")
-    d.text((4, 48), "for the LCD", font=font, fill="#888")
-    d.text((4, 66), "L/R=Mode  OK=Generate", font=font, fill="#666")
-    d.text((4, 78), "K1=Invert K3=Exit", font=font, fill="#666")
+    d.text((8, 16), "QR GENERATOR", font=font, fill=(171, 178, 185))
+    d.text((4, 36), "Generate QR codes", font=font, fill=(113, 125, 126))
+    d.text((4, 48), "for the LCD", font=font, fill=(113, 125, 126))
+    d.text((4, 66), "L/R=Mode  OK=Generate", font=font, fill=(86, 101, 115))
+    d.text((4, 78), "K1=Invert K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.5)
 

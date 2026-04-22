@@ -194,8 +194,6 @@ def generate_scripts():
             continue  # skip unknown
         filepath = os.path.join(SCRIPT_DIR, script['file'])
         with open(filepath, 'w') as f:
-            if "exploit -j -z" not in content:
-                content += "\nexit\n"
             f.write(content)
     print(f"Generated {len(SCRIPTS_DB)} scripts in {SCRIPT_DIR}")
 
@@ -237,10 +235,8 @@ def run_script(script_path, params):
         if not output.strip():
             output = "[No output]"
         return output
-    except subprocess.TimeoutExpired as e:
-        out = e.stdout if e.stdout else ""
-        err = e.stderr if e.stderr else ""
-        return f"Script timed out after 60 seconds.\nOutput:\n{out}\n{err}"
+    except subprocess.TimeoutExpired:
+        return "Script timed out after 60 seconds"
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -420,7 +416,7 @@ HTML_TEMPLATE = """
         <div class="left">
             <div class="grid" id="scriptGrid">
                 {% for script in scripts %}
-                <div class="script-card" data-path="{{ script.path }}" data-params='{{ script.params|tojson }}'>
+                <div class="script-card" data-path="{{ script.path }}" data-params="{{ script.params|tojson }}">
                     <h3>▶ {{ script.name }} <span class="info-btn" data-walkthrough="{{ script.walkthrough }}">ⓘ</span></h3>
                     <p>{{ script.desc }}</p>
                 </div>
@@ -638,12 +634,12 @@ def lcd_loop():
             img.paste(qr_img, (0,0))
         else:
             d.rectangle([(0,0),(128,18)], fill=(120,0,0))
-            d.text((4,3), "MSF MEGA", font=font_bold, fill="#FF3333")
+            d.text((4,3), "MSF MEGA", font=font_bold, fill=(231, 76, 60))
             y = 20
-            d.text((4,y), f"IP: {ip}:{PORT}", font=font_sm, fill="#FFBBBB"); y+=12
+            d.text((4,y), f"IP: {ip}:{PORT}", font=font_sm, fill=(171, 178, 185)); y+=12
             if script_names:
                 script_name = script_names[script_idx][:18]
-                d.text((4,y), f"Script: {script_name}", font=font_sm, fill="#00FF00"); y+=12
+                d.text((4,y), f"Script: {script_name}", font=font_sm, fill=(30, 132, 73)); y+=12
                 d.text((4,y), "K2=Cycle  OK=Remind", font=font_sm, fill="#FF7777"); y+=12
             d.text((4,y), "K1=QR  K3=Exit", font=font_sm, fill="#FF7777")
             d.rectangle((0,H-12,W,H), fill="#220000")
@@ -682,11 +678,11 @@ def main():
     if os.system("which msfconsole >/dev/null 2>&1") != 0:
         print("Metasploit not found. Please install metasploit-framework.")
         if HAS_HW:
-            img = Image.new("RGB", (W,H), "black")
+            img = Image.new("RGB", (W,H), (10, 0, 0))
             d = ImageDraw.Draw(img)
             d.text((4,40), "Metasploit missing", font=font_sm, fill="red")
-            d.text((4,55), "sudo apt install", font=font_sm, fill="white")
-            d.text((4,70), "metasploit-framework", font=font_sm, fill="white")
+            d.text((4,55), "sudo apt install", font=font_sm, fill=(242, 243, 244))
+            d.text((4,70), "metasploit-framework", font=font_sm, fill=(242, 243, 244))
             LCD.LCD_ShowImage(img,0,0)
             time.sleep(5)
         return

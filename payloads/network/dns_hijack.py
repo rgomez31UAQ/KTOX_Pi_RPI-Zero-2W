@@ -359,7 +359,7 @@ def _export_log():
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
     draw.text((2, 2), "DNS HIJACK", fill="RED", font=font)
@@ -378,9 +378,9 @@ def _draw_screen():
     hj_color = "GREEN" if hj else "GRAY"
     draw.text((80, 2), hj_label, fill=hj_color, font=font)
 
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
-    draw.text((2, 26), f"Queries:{qt} Spoofed:{sc}", fill="WHITE", font=font)
-    draw.text((2, 38), f"Rules: {rules_count}", fill="YELLOW", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
+    draw.text((2, 26), f"Queries:{qt} Spoofed:{sc}", fill=(242, 243, 244), font=font)
+    draw.text((2, 38), f"Rules: {rules_count}", fill=(212, 172, 13), font=font)
 
     # Intercepted queries list
     y = 52
@@ -397,10 +397,10 @@ def _draw_screen():
         y += 14
 
     if not visible:
-        draw.text((2, 60), "No queries yet", fill="GRAY", font=font)
+        draw.text((2, 60), "No queries yet", fill=(86, 101, 115), font=font)
 
     # Footer
-    draw.text((2, 116), "OK:Hijack K1:Rule K3:Quit", fill="GRAY", font=font)
+    draw.text((2, 116), "OK:Hijack K1:Rule K3:Quit", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -415,10 +415,10 @@ def main():
 
     try:
         if not SCAPY_OK:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((4, 50), "scapy not found!", font=font, fill="RED")
-            draw.text((4, 65), "pip install scapy", font=font, fill="GRAY")
+            draw.text((4, 65), "pip install scapy", font=font, fill=(86, 101, 115))
             LCD.LCD_ShowImage(img, 0, 0)
             time.sleep(3)
             GPIO.cleanup()
@@ -499,9 +499,9 @@ def main():
         _cleanup_iptables()
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
-            draw.text((10, 50), "DNS Hijack stopped", fill="YELLOW", font=font)
+            draw.text((10, 50), "DNS Hijack stopped", fill=(212, 172, 13), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

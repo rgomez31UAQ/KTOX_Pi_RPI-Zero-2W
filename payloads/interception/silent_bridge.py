@@ -30,7 +30,7 @@ WIDTH, HEIGHT = 128, 128
 font = ImageFont.load_default()
 
 def draw(text: str):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     lines = text.splitlines()
     for i, line in enumerate(lines):
@@ -41,7 +41,7 @@ def draw(text: str):
             w, h = d.textsize(line, font=font)
 
         pos = ((WIDTH - w) // 2, ((HEIGHT - len(lines)*h) // 2) + i*h)
-        d.text(pos, line, font=font, fill="#00FF00")
+        d.text(pos, line, font=font, fill=(30, 132, 73))
     lcd.LCD_ShowImage(img, 0, 0)
 
 def setup_gpio():
@@ -80,9 +80,9 @@ def cleanup():
             continue
     if not _shown:
         try:
-            _img = Image.new("RGB", (128, 128), "black")
+            _img = Image.new("RGB", (128, 128), (10, 0, 0))
             _d = ImageDraw.Draw(_img)
-            _d.text((34, 55), "KTOx", font=font, fill="#00FF00")
+            _d.text((34, 55), "KTOx", font=font, fill=(30, 132, 73))
             lcd.LCD_ShowImage(_img, 0, 0)
         except Exception:
             pass

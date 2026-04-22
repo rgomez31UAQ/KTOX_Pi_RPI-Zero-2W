@@ -131,7 +131,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_message(message, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = 40
     for line in message.split('\n'):
@@ -143,13 +143,13 @@ def draw_message(message, color="yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_list_ui(title, items, selected_index):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), title, font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), title, font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if not items:
-        d.text((10, 60), "Nothing found.", font=FONT, fill="white")
+        d.text((10, 60), "Nothing found.", font=FONT, fill=(242, 243, 244))
     else:
         start_index = max(0, selected_index - 3)
         end_index = min(len(items), start_index + 7)
@@ -160,29 +160,29 @@ def draw_list_ui(title, items, selected_index):
             d.text((5, y_pos), line, font=FONT, fill=color)
             y_pos += 12
             
-    d.text((5, 110), "OK=Select | KEY3=Back", font=FONT, fill="cyan")
+    d.text((5, 110), "OK=Select | KEY3=Back", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_attack_ui():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "WPS Pixie-Dust Attack", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
+    d.text((5, 5), "WPS Pixie-Dust Attack", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
     
     with ui_lock:
         y_pos = 25
         for line in status_lines:
-            d.text((5, y_pos), line, font=FONT, fill="white")
+            d.text((5, y_pos), line, font=FONT, fill=(242, 243, 244))
             y_pos += 12
             
     d.text((5, 110), "Press KEY3 to Stop", font=FONT, fill="orange")
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui_interface_selection(interfaces, current_selection):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, iface in enumerate(interfaces):
@@ -190,7 +190,7 @@ def draw_ui_interface_selection(interfaces, current_selection):
         d.text((5, y_pos), iface, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def select_interface_menu():
@@ -368,7 +368,7 @@ if __name__ == '__main__':
         try:
             LCD = LCD_1in44.LCD()
             LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-            img = Image.new("RGB", (128, 128), "black")
+            img = Image.new("RGB", (128, 128), (10, 0, 0))
             d = ImageDraw.Draw(img)
             FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
             d.text((10, 40), "ERROR:\nRoot privileges\nrequired.", font=FONT_TITLE, fill="red")

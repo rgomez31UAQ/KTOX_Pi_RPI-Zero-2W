@@ -34,7 +34,7 @@ try:
     import LCD_1in44, LCD_Config
     import RPi.GPIO as GPIO
     from PIL import Image, ImageDraw, ImageFont
-    from payloads._input_helper import get_virtual_button
+    from payloads._input_helper import get_button as _get_btn
     
     # Import WiFi integration functions
     from wifi.ktox_integration import (
@@ -95,11 +95,11 @@ class FastWiFiSwitcher:
         except:
             return "unknown"
     
-    def show_fast(self, line1, line2="", line3="", line4="", color="white"):
+    def show_fast(self, line1, line2="", line3="", line4="", color=(242, 243, 244)):
         """Ultra-fast LCD display with proper PIL rendering."""
         try:
             # Create black canvas
-            img = Image.new("RGB", (self.WIDTH, self.HEIGHT), "black")
+            img = Image.new("RGB", (self.WIDTH, self.HEIGHT), (10, 0, 0))
             d = ImageDraw.Draw(img)
             
             # Draw text lines
@@ -133,11 +133,11 @@ class FastWiFiSwitcher:
     
     def switch_interface_fast(self, target_interface):
         """Ultra-fast interface switching using the fixed integration function."""
-        self.show_fast("SWITCHING...", f"To: {target_interface}", "Please wait", "", "yellow")
+        self.show_fast("SWITCHING...", f"To: {target_interface}", "Please wait", "", (212, 172, 13))
         
         def lcd_callback(msg):
             """Callback to show status on LCD."""
-            self.show_fast("SWITCHING", f"To: {target_interface}", msg[:15], "", "yellow")
+            self.show_fast("SWITCHING", f"To: {target_interface}", msg[:15], "", (212, 172, 13))
             time.sleep(0.5)  # Brief pause to read status
         
         try:
@@ -155,22 +155,22 @@ class FastWiFiSwitcher:
                 # Quick status check for display
                 status = self.check_interface_fast(target_interface)
                 if status['up']:
-                    self.show_fast("SUCCESS!", f"Now using:", target_interface, f"IP: {status['ip'][:12]}", "green")
+                    self.show_fast("SUCCESS!", f"Now using:", target_interface, f"IP: {status['ip'][:12]}", (30, 132, 73))
                 else:
-                    self.show_fast("SUCCESS!", f"Switched to:", target_interface, "Getting IP...", "green")
+                    self.show_fast("SUCCESS!", f"Switched to:", target_interface, "Getting IP...", (30, 132, 73))
                 
                 self.current_interface = target_interface
                 print(f"✅ Successfully switched to {target_interface}")
                 time.sleep(1.5)
                 return True
             else:
-                self.show_fast("FAILED!", f"{target_interface}", "switch failed", "Check logs", "red")
+                self.show_fast("FAILED!", f"{target_interface}", "switch failed", "Check logs", (231, 76, 60))
                 print(f"❌ Failed to switch to {target_interface}")
                 time.sleep(2)
                 return False
                 
         except Exception as e:
-            self.show_fast("ERROR!", str(e)[:15], "", "", "red")
+            self.show_fast("ERROR!", str(e)[:15], "", "", (231, 76, 60))
             print(f"❌ Switch error: {e}")
             time.sleep(2)
             return False
@@ -180,10 +180,7 @@ class FastWiFiSwitcher:
         current_time = time.time()
         pressed_buttons = []
 
-        virtual = get_virtual_button()
-        if virtual:
-            pressed_buttons.append(virtual)
-            return pressed_buttons
+        # Virtual buttons are handled by GPIO polling below
         
         for button_name, pin in self.buttons.items():
             current_state = GPIO.input(pin)
@@ -207,11 +204,11 @@ class FastWiFiSwitcher:
         if current.startswith('wlan'):
             status = self.check_interface_fast(current)
             if status['up']:
-                self.show_fast("Current:", current, f"IP: {status['ip'][:12]}", "KEY1/2: Switch", "white")
+                self.show_fast("Current:", current, f"IP: {status['ip'][:12]}", "KEY1/2: Switch", (242, 243, 244))
             else:
-                self.show_fast("Current:", current, "NOT CONNECTED", "KEY1/2: Switch", "red")
+                self.show_fast("Current:", current, "NOT CONNECTED", "KEY1/2: Switch", (231, 76, 60))
         else:
-            self.show_fast("Current:", current, "Non-WiFi iface", "KEY1/2: Switch", "yellow")
+            self.show_fast("Current:", current, "Non-WiFi iface", "KEY1/2: Switch", (212, 172, 13))
     
     def run(self):
         """Main fast response loop."""

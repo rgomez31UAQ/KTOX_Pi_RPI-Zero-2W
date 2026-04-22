@@ -70,7 +70,7 @@ def init_hw():
         LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
         LCD.LCD_Clear()
 
-        _image = Image.new("RGB", (W, H), "black")
+        _image = Image.new("RGB", (W, H), (10, 0, 0))
         _draw = ImageDraw.Draw(_image)
 
         for path in ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/freefont/FreeMono.ttf"]:
@@ -96,7 +96,7 @@ def push():
 def draw_menu():
     _draw.rectangle((0,0,W,H), fill="#0A0000")
     _draw.rectangle((0,0,W,17), fill="#8B0000")
-    _draw.text((4,3), "KTOX RECON DRONE", font=_font_sm, fill="#FF3333")
+    _draw.text((4,3), "KTOX RECON DRONE", font=_font_sm, fill=(231, 76, 60))
 
     start = _scroll_offset
     for i in range(VISIBLE_LINES):
@@ -113,11 +113,11 @@ def draw_menu():
 def draw_status(lines, title="STATUS"):
     _draw.rectangle((0,0,W,H), fill="#0A0000")
     _draw.rectangle((0,0,W,17), fill="#8B0000")
-    _draw.text((4,3), title, font=_font_sm, fill="#FF3333")
+    _draw.text((4,3), title, font=_font_sm, fill=(231, 76, 60))
 
     y = 20
     for line in lines[:8]:
-        _draw.text((4, y), line[:20], font=_font_sm, fill="#FFBBBB")
+        _draw.text((4, y), line[:20], font=_font_sm, fill=(171, 178, 185))
         y += 12
 
     _draw.rectangle((0, H-12, W, H), fill="#220000")
@@ -131,7 +131,7 @@ def on_screen_keyboard(prompt="Enter:"):
     while RUNNING:
         _draw.rectangle((0,0,W,H), fill="#0A0000")
         _draw.rectangle((0,0,W,17), fill="#8B0000")
-        _draw.text((4,3), prompt[:20], font=_font_sm, fill="#FF3333")
+        _draw.text((4,3), prompt[:20], font=_font_sm, fill=(231, 76, 60))
 
         shown = input_text[-17:] if len(input_text) > 17 else input_text
         _draw.rectangle((0,19,W,36), fill="#220000")

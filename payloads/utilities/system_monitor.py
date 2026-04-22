@@ -52,7 +52,7 @@ font = scaled_font()
 VIEWS = ["Dashboard", "CPU Graph", "Network"]
 REFRESH_INTERVAL = 2.0
 DEBOUNCE = 0.20
-SERVICES = ["raspyjack", "raspyjack-device", "raspyjack-webui", "caddy"]
+SERVICES = ["ktox", "ktox-device", "ktox-webui", "caddy"]
 
 lock = threading.Lock()
 _running = True
@@ -269,22 +269,22 @@ def _temp_color(t):
 
 
 def _draw_header(d, view_name):
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), f"MON: {view_name}", font=font, fill="#00ccff")
-    d.text((108, 1), "K3", font=font, fill="#888")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), f"MON: {view_name}", font=font, fill=(171, 178, 185))
+    d.text((108, 1), "K3", font=font, fill=(113, 125, 126))
 
 
 def _draw_dashboard(lcd, snap):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "Dashboard")
 
     y = 16
     # CPU bar
-    d.text((2, y), f"CPU {snap.cpu_pct:.0f}%", font=font, fill="#00ff00")
+    d.text((2, y), f"CPU {snap.cpu_pct:.0f}%", font=font, fill=(30, 132, 73))
     bar_x = 60
     bar_w = 64
-    d.rectangle((bar_x, y + 1, bar_x + bar_w, y + 9), outline="#444")
+    d.rectangle((bar_x, y + 1, bar_x + bar_w, y + 9), outline=(34, 0, 0))
     fill_w = int(snap.cpu_pct / 100 * bar_w)
     if fill_w > 0:
         c = "#ff2222" if snap.cpu_pct > 80 else "#ffaa00" if snap.cpu_pct > 50 else "#00ff00"
@@ -305,25 +305,25 @@ def _draw_dashboard(lcd, snap):
     y += 13
 
     # Uptime & load
-    d.text((2, y), f"Up {snap.uptime}  Load {snap.load}", font=font, fill="#888")
+    d.text((2, y), f"Up {snap.uptime}  Load {snap.load}", font=font, fill=(113, 125, 126))
     y += 15
 
     # Services
     d.text((2, y), "Services:", font=font, fill="#aaa"); y += 12
     for svc, st in snap.services.items():
         color = "#00ff00" if st == "active" else "#ff4444"
-        short = svc.replace("raspyjack-", "rj-")[:12]
+        short = svc.replace("ktox-", "rj-")[:12]
         d.text((2, y), f" {short}: {st}", font=font, fill=color); y += 11
         if y > 112:
             break
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "</>:view OK:refresh", font=font, fill="#666")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "</>:view OK:refresh", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_cpu_graph(lcd, history):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "CPU Graph")
 
@@ -337,7 +337,7 @@ def _draw_cpu_graph(lcd, history):
     for pct in (0, 50, 100):
         y_pos = graph_bottom - int(pct / 100 * graph_h)
         d.text((0, y_pos - 4), f"{pct:>3}", font=font, fill="#555")
-        d.line((graph_left, y_pos, graph_right, y_pos), fill="#222")
+        d.line((graph_left, y_pos, graph_right, y_pos), fill=(10, 0, 0))
 
     # Plot
     vals = list(history)
@@ -350,37 +350,37 @@ def _draw_cpu_graph(lcd, history):
             y = graph_bottom - int(min(v, 100) / 100 * graph_h)
             points.append((x, y))
         for i in range(len(points) - 1):
-            d.line([points[i], points[i + 1]], fill="#00ccff", width=1)
+            d.line([points[i], points[i + 1]], fill=(171, 178, 185), width=1)
 
     # Current value
     if vals:
-        d.text((2, 110), f"Now: {vals[-1]:.0f}%", font=font, fill="#00ff00")
+        d.text((2, 110), f"Now: {vals[-1]:.0f}%", font=font, fill=(30, 132, 73))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "</>:view OK:refresh", font=font, fill="#666")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "</>:view OK:refresh", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_network(lcd, snap, scroll):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "Network")
 
     ifaces = list(snap.net_rates.items())
     if not ifaces:
-        d.text((4, 50), "No interfaces", font=font, fill="#666")
+        d.text((4, 50), "No interfaces", font=font, fill=(86, 101, 115))
     else:
         y = 16
         visible = 4
         end = min(len(ifaces), scroll + visible)
         for i in range(scroll, end):
             iface, (rx, tx) = ifaces[i]
-            d.text((2, y), iface, font=font, fill="#00ccff"); y += 12
-            d.text((6, y), f"RX {_fmt_bytes(rx)}", font=font, fill="#00ff00"); y += 11
-            d.text((6, y), f"TX {_fmt_bytes(tx)}", font=font, fill="#ffaa00"); y += 14
+            d.text((2, y), iface, font=font, fill=(171, 178, 185)); y += 12
+            d.text((6, y), f"RX {_fmt_bytes(rx)}", font=font, fill=(30, 132, 73)); y += 11
+            d.text((6, y), f"TX {_fmt_bytes(tx)}", font=font, fill=(212, 172, 13)); y += 14
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "</>:view ^v:scroll", font=font, fill="#666")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "</>:view ^v:scroll", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
 

@@ -57,7 +57,7 @@ DISCORD_WEBHOOK_PATH = ROOT_DIR / "discord_webhook.txt"
 TOKEN_FILE = Path(os.environ.get("RJ_WS_TOKEN_FILE", str(ROOT_DIR / ".webui_token")))
 AUTH_FILE = Path(os.environ.get("RJ_WEB_AUTH_FILE", "/root/KTOx/.webui_auth.json"))
 AUTH_SECRET_FILE = Path(os.environ.get("RJ_WEB_AUTH_SECRET_FILE", "/root/KTOx/.webui_session_secret"))
-SESSION_COOKIE_NAME = "rj_session"
+SESSION_COOKIE_NAME = os.environ.get("RJ_WEB_SESSION_COOKIE", "ktox_session")
 SESSION_TTL_SECONDS = int(os.environ.get("RJ_WEB_SESSION_TTL", str(8 * 60 * 60)))
 WS_TICKET_TTL_SECONDS = int(os.environ.get("RJ_WEB_WS_TICKET_TTL", "120"))
 TAILSCALE_KEY_PATH = ROOT_DIR / ".tailscale_auth_key"
@@ -227,8 +227,12 @@ def _get_webui_bind_addrs() -> list[tuple[str, str]]:
         ip = _get_interface_ip(iface)
         if ip:
             addrs.append((ip, iface))
-    # Always include localhost for local access
-    addrs.append(("127.0.0.1", "lo"))
+    # Only add localhost when at least one real interface is up.
+    # If no interfaces have IPs yet (DHCP still running at boot), leave addrs
+    # empty so the caller's 0.0.0.0 fallback fires — the WebUI stays reachable
+    # on all interfaces once they come up, rather than hiding on localhost only.
+    if addrs:
+        addrs.append(("127.0.0.1", "lo"))
     return addrs
 PREVIEW_MAX_BYTES = int(os.environ.get("RJ_LOOT_PREVIEW_MAX", str(200 * 1024)))
 PAYLOAD_MAX_BYTES = int(os.environ.get("RJ_PAYLOAD_MAX", str(512 * 1024)))

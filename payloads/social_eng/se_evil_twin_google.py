@@ -132,7 +132,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def show_message(lines, color="lime"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40
@@ -146,44 +146,44 @@ def show_message(lines, color="lime"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main", status: str = ""):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Evil Twin (Google)", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
+    d.text((5, 5), "Evil Twin (Google)", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
     
     if screen_state == "main":
-        d.text((5, 25), "Interface:", font=FONT, fill="white")
-        d.text((5, 40), WIFI_INTERFACE, font=FONT_TITLE, fill="yellow")
-        d.text((5, 55), "SSID:", font=FONT, fill="white")
-        d.text((5, 70), FAKE_AP_SSID[:16], font=FONT_TITLE, fill="yellow")
-        d.text((5, 85), "Channel:", font=FONT, fill="white")
-        d.text((5, 100), FAKE_AP_CHANNEL, font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "OK=Start | KEY1=Edit SSID | KEY2=Edit Channel | KEY3=Select Portal", font=FONT, fill="cyan") # Modified
+        d.text((5, 25), "Interface:", font=FONT, fill=(242, 243, 244))
+        d.text((5, 40), WIFI_INTERFACE, font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 55), "SSID:", font=FONT, fill=(242, 243, 244))
+        d.text((5, 70), FAKE_AP_SSID[:16], font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 85), "Channel:", font=FONT, fill=(242, 243, 244))
+        d.text((5, 100), FAKE_AP_CHANNEL, font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "OK=Start | KEY1=Edit SSID | KEY2=Edit Channel | KEY3=Select Portal", font=FONT, fill=(171, 178, 185)) # Modified
     elif screen_state == "ssid_input": # Simplified inputs
-        d.text((5, 30), "Enter SSID:", font=FONT, fill="white")
+        d.text((5, 30), "Enter SSID:", font=FONT, fill=(242, 243, 244))
         display_ssid = list(current_ssid_input)
         if ssid_input_cursor_pos < len(display_ssid):
             display_ssid[ssid_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_ssid[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_ssid[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     elif screen_state == "channel_input": # Simplified inputs
-        d.text((5, 30), "Enter Channel:", font=FONT, fill="white")
+        d.text((5, 30), "Enter Channel:", font=FONT, fill=(242, 243, 244))
         display_channel = list(current_channel_input)
         if channel_input_cursor_pos < len(display_channel):
             display_channel[channel_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_channel), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Digit | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_channel), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Digit | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     elif screen_state == "html_select":
-        d.text((5, 5), "Select Portal", font=FONT_TITLE, fill="yellow")
-        d.line([(0, 22), (128, 22)], fill="yellow", width=1)
+        d.text((5, 5), "Select Portal", font=FONT_TITLE, fill=(212, 172, 13))
+        d.line([(0, 22), (128, 22)], fill=(212, 172, 13), width=1)
 
         if not html_files_list:
             d.text((5, 40), "No HTML files found!", font=FONT, fill="red")
         else:
             if scroll_offset > 0:
-                d.text((60, 25), "^", font=FONT, fill="white")
+                d.text((60, 25), "^", font=FONT, fill=(242, 243, 244))
             if scroll_offset + VISIBLE_ITEMS < len(html_files_list):
-                d.text((60, 100), "v", font=FONT, fill="white")
+                d.text((60, 100), "v", font=FONT, fill=(242, 243, 244))
 
             for i in range(VISIBLE_ITEMS):
                 if scroll_offset + i < len(html_files_list):
@@ -197,19 +197,19 @@ def draw_ui(screen_state="main", status: str = ""):
                         text_color = "lime"
                         d.rectangle([(0, 35 + i*15), (128, 35 + (i+1)*15)], fill="blue")
                     d.text((5, 35 + i*15), display_name, font=FONT, fill=text_color)
-        d.text((5, 110), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 110), "UP/DOWN=Select | OK=Confirm", font=FONT, fill=(171, 178, 185))
     elif screen_state == "attacking":
         status_color = "lime" if status == "ACTIVE" else "red"
         d.text((30, 25), status, font=FONT_TITLE, fill=status_color)
-        d.text((5, 45), f"SSID: {FAKE_AP_SSID}", font=FONT, fill="white")
-        d.text((5, 60), f"Clients: {status_info['clients']}", font=FONT, fill="yellow")
+        d.text((5, 45), f"SSID: {FAKE_AP_SSID}", font=FONT, fill=(242, 243, 244))
+        d.text((5, 60), f"Clients: {status_info['clients']}", font=FONT, fill=(212, 172, 13))
         d.text((5, 75), f"Creds: {status_info['credentials']}", font=FONT, fill="orange")
-        d.text((5, 110), "Press KEY3 to Stop", font=FONT, fill="cyan")
+        d.text((5, 110), "Press KEY3 to Stop", font=FONT, fill=(171, 178, 185))
     elif screen_state == "error":
         d.text((5, 5), "ERROR", font=FONT_TITLE, fill="red")
         d.line([(0, 22), (128, 22)], fill="red", width=1)
-        d.text((5, 30), status, font=FONT, fill="white")
-        d.text((5, 110), "Press OK to continue", font=FONT, fill="cyan")
+        d.text((5, 30), status, font=FONT, fill=(242, 243, 244))
+        d.text((5, 110), "Press OK to continue", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -229,14 +229,14 @@ def handle_text_input_logic(initial_text, input_type, char_set): # Renamed scree
         if cursor_pos < len(display_text):
             display_text[cursor_pos] = '_'
         # Redraw only the input line
-        img = Image.new("RGB", (128, 128), "black")
+        img = Image.new("RGB", (128, 128), (10, 0, 0))
         d = ImageDraw.Draw(img)
         if input_type == "ssid_input":
-            d.text((5, 30), "Enter SSID:", font=FONT, fill="white")
+            d.text((5, 30), "Enter SSID:", font=FONT, fill=(242, 243, 244))
         elif input_type == "channel_input":
-            d.text((5, 30), "Enter Channel:", font=FONT, fill="white")
-        d.text((5, 50), "".join(display_text), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+            d.text((5, 30), "Enter Channel:", font=FONT, fill=(242, 243, 244))
+        d.text((5, 50), "".join(display_text), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         btn = None
@@ -439,7 +439,7 @@ if __name__ == '__main__':
         try:
             LCD = LCD_1in44.LCD()
             LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-            img = Image.new("RGB", (128, 128), "black")
+            img = Image.new("RGB", (128, 128), (10, 0, 0))
             d = ImageDraw.Draw(img)
             FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
             d.text((10, 40), "ERROR:\nRoot privileges\nrequired.", font=FONT_TITLE, fill="red")

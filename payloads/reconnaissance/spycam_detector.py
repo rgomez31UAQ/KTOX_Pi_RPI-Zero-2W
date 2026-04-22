@@ -438,18 +438,18 @@ def _draw_lcd():
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 12), fill="#111")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
     alert_ind = "!" if alert else ""
     d.text((2, 1), f"SPYCAM DETECT {alert_ind}", font=font, fill="#FF0044")
-    d.ellipse((118, 3, 124, 9), fill="#00FF00" if scanning else "#666")
+    d.ellipse((118, 3, 124, 9), fill=(30, 132, 73) if scanning else "#666")
 
     y = 14
-    d.text((2, y), f"Suspects: {len(devices)}", font=font, fill="#AAAAAA")
+    d.text((2, y), f"Suspects: {len(devices)}", font=font, fill=(171, 178, 185))
     y += 13
 
     if not devices:
-        d.text((4, y + 10), "No cameras detected", font=font, fill="#666")
-        d.text((4, y + 24), "OK=Start scan", font=font, fill="#666")
+        d.text((4, y + 10), "No cameras detected", font=font, fill=(86, 101, 115))
+        d.text((4, y + 24), "OK=Start scan", font=font, fill=(86, 101, 115))
     else:
         visible = 4
         for i in range(scroll, min(scroll + visible, len(devices))):
@@ -461,9 +461,9 @@ def _draw_lcd():
             d.text((2, y), f"{ssid_short}", font=font, fill=fg)
             y += 10
             mac_short = dev["mac"][:17]
-            d.text((4, y), f"{mac_short} {dev['rssi']}dBm", font=font, fill="#888")
+            d.text((4, y), f"{mac_short} {dev['rssi']}dBm", font=font, fill=(113, 125, 126))
             y += 10
-            d.text((4, y), f"{dev['distance']} [{dev['source']}]", font=font, fill="#666")
+            d.text((4, y), f"{dev['distance']} [{dev['source']}]", font=font, fill=(86, 101, 115))
             y += 12
 
     # Status
@@ -471,7 +471,7 @@ def _draw_lcd():
     d.text((2, 107), status[:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     action = "STOP" if scanning else "SCAN"
     d.text((2, 117), f"OK:{action} K1:alrt K3:x", font=font, fill="#AAA")
 
@@ -479,11 +479,11 @@ def _draw_lcd():
 
 
 def _show_msg(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 50), line1[:21], font=font, fill="#00FF00")
+    d.text((4, 50), line1[:21], font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2[:21], font=font, fill="#888")
+        d.text((4, 65), line2[:21], font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.2)
 
@@ -493,13 +493,13 @@ def _show_msg(line1, line2=""):
 # ---------------------------------------------------------------------------
 def main():
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 16), "SPYCAM DETECTOR", font=font, fill="#FF0044")
-    d.text((4, 32), "Hidden camera finder", font=font, fill="#888")
-    d.text((4, 52), "OK=Start/Stop", font=font, fill="#666")
-    d.text((4, 64), "K1=Alert mode", font=font, fill="#666")
-    d.text((4, 76), "K2=Export  K3=Exit", font=font, fill="#666")
+    d.text((4, 32), "Hidden camera finder", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "OK=Start/Stop", font=font, fill=(86, 101, 115))
+    d.text((4, 64), "K1=Alert mode", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K2=Export  K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

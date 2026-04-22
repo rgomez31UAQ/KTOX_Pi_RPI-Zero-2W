@@ -95,7 +95,7 @@ def draw_message(message, color="yellow"):
     if isinstance(message, str):
         message = [message]
     
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
     y_offset = (HEIGHT - len(message) * 15) // 2 # Center vertically
@@ -110,13 +110,13 @@ def draw_message(message, color="yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_list_ui(title, items, selected_index):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), title, font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), title, font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if not items:
-        d.text((10, 60), "Nothing found.", font=FONT, fill="white")
+        d.text((10, 60), "Nothing found.", font=FONT, fill=(242, 243, 244))
     else:
         start_index = max(0, selected_index - 3) # Show 4 items above, 4 below
         end_index = min(len(items), start_index + 7) # Max 7 lines for items
@@ -130,7 +130,7 @@ def draw_list_ui(title, items, selected_index):
             d.text((5, y_pos), line, font=FONT, fill=color)
             y_pos += 11
             
-    d.text((5, 115), "OK=Select | KEY3=Back", font=FONT, fill="cyan")
+    d.text((5, 115), "OK=Select | KEY3=Back", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def bluetoothctl_command(commands):

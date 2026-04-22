@@ -108,7 +108,7 @@ for p in PINS.values():
 
 LCD = LCD_1in44.LCD()
 LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-IMG = Image.new("RGB", (WIDTH, HEIGHT), "black")
+IMG = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
 DRAW = ImageDraw.Draw(IMG)
 try:
     FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
@@ -280,22 +280,22 @@ def handle_packet(pkt):
 
 def draw_interface_select(options, sel):
     IMG.paste((0, 0, 0), [0, 0, WIDTH, HEIGHT])
-    DRAW.text((5, 5), "Select Interface", font=FONT_TITLE, fill="#00FFFF")
+    DRAW.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
     DRAW.line([(0, 20), (WIDTH, 20)], fill="#004444", width=1)
     y = 28
     for i, iface in enumerate(options):
         if i == sel:
             DRAW.rectangle([(2, y-1), (WIDTH-2, y+12)], fill="#002244")
-        DRAW.text((8, y), iface, font=FONT, fill="#FFFF00" if i == sel else "#FFFFFF")
+        DRAW.text((8, y), iface, font=FONT, fill=(212, 172, 13) if i == sel else "#FFFFFF")
         y += 13
-    DRAW.text((4, 113), "OK=Confirm  LEFT=Back", font=FONT, fill="#888888")
+    DRAW.text((4, 113), "OK=Confirm  LEFT=Back", font=FONT, fill=(113, 125, 126))
     LCD.LCD_ShowImage(IMG, 0, 0)
 
 
 def draw_main():
     IMG.paste((0, 0, 0), [0, 0, WIDTH, HEIGHT])
     title = "WiFi Client Mapper"
-    DRAW.text((5, 3), title, font=FONT_TITLE, fill="#00FF00")
+    DRAW.text((5, 3), title, font=FONT_TITLE, fill=(30, 132, 73))
     DRAW.line([(0, 18), (WIDTH, 18)], fill="#003300", width=1)
 
     global VIEW, SELECTION, SCROLL
@@ -337,11 +337,11 @@ def draw_main():
         sel = (i == SELECTION)
         if sel:
             DRAW.rectangle([(2, y-1), (WIDTH-2, y+12)], fill="#002244")
-        DRAW.text((6, y), lines[i], font=FONT, fill="#FFFF00" if sel else "#FFFFFF")
+        DRAW.text((6, y), lines[i], font=FONT, fill=(212, 172, 13) if sel else "#FFFFFF")
         y += 13
 
     footer = f"VIEW:{'APs' if VIEW=='aps' else 'Clients'} {'PAUSE' if PAUSED else 'LIVE'} {'LOG' if LOGGING else ''}"
-    DRAW.text((4, 113), "KEY1=Log KEY2=View LEFT=Pause KEY3=Exit", font=FONT, fill="#888888")
+    DRAW.text((4, 113), "KEY1=Log KEY2=View LEFT=Pause KEY3=Exit", font=FONT, fill=(113, 125, 126))
     LCD.LCD_ShowImage(IMG, 0, 0)
 
 # ---------------------------

@@ -29,7 +29,7 @@ font = ImageFont.load_default()
 
 CELL = 8
 COLS, ROWS = 16, 16
-COL_BG = (0, 0, 0)
+COL_BG = (10, 0, 0)
 COL_WALL = (0, 80, 0)
 COL_DOT = (0, 200, 0)
 COL_PELLET = (0, 255, 0)

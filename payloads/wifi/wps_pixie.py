@@ -378,10 +378,10 @@ def _save_result(ap):
 
 def _draw_screen():
     """Render state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
-    draw.text((2, 2), "WPS Pixie/Brute", fill="CYAN", font=font)
+    draw.text((2, 2), "WPS Pixie/Brute", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -395,7 +395,7 @@ def _draw_screen():
         psk = found_psk
         atk = attack_running
 
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
 
     if vm == "scan":
         y = 28
@@ -415,28 +415,28 @@ def _draw_screen():
     elif vm == "attack":
         mode_label = "PIXIE DUST" if am == "pixie" else "BRUTE FORCE"
         draw.text((2, 32), f"Mode: {mode_label}", fill="MAGENTA", font=font)
-        draw.text((2, 48), prog[:22], fill="YELLOW", font=font)
+        draw.text((2, 48), prog[:22], fill=(212, 172, 13), font=font)
 
         if pin:
-            draw.text((2, 64), f"PIN: {pin}", fill="GREEN", font=font)
+            draw.text((2, 64), f"PIN: {pin}", fill=(30, 132, 73), font=font)
         if psk:
-            draw.text((2, 78), f"PSK: {psk[:16]}", fill="GREEN", font=font)
+            draw.text((2, 78), f"PSK: {psk[:16]}", fill=(30, 132, 73), font=font)
 
         if atk:
             draw.text((2, 116), "Attacking... K3=exit", fill="RED", font=font)
         else:
-            draw.text((2, 116), "K2=mode OK=retry", fill="GRAY", font=font)
+            draw.text((2, 116), "K2=mode OK=retry", fill=(86, 101, 115), font=font)
 
     elif vm == "result":
-        draw.text((2, 32), "SUCCESS!", fill="GREEN", font=font)
+        draw.text((2, 32), "SUCCESS!", fill=(30, 132, 73), font=font)
         if pin:
-            draw.text((2, 50), f"PIN: {pin}", fill="GREEN", font=font)
+            draw.text((2, 50), f"PIN: {pin}", fill=(30, 132, 73), font=font)
         if psk:
-            draw.text((2, 66), f"PSK:", fill="WHITE", font=font)
-            draw.text((2, 80), psk[:22], fill="GREEN", font=font)
+            draw.text((2, 66), f"PSK:", fill=(242, 243, 244), font=font)
+            draw.text((2, 80), psk[:22], fill=(30, 132, 73), font=font)
             if len(psk) > 22:
-                draw.text((2, 94), psk[22:44], fill="GREEN", font=font)
-        draw.text((2, 116), "Saved! K3=exit", fill="GRAY", font=font)
+                draw.text((2, 94), psk[22:44], fill=(30, 132, 73), font=font)
+        draw.text((2, 116), "Saved! K3=exit", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -550,7 +550,7 @@ def main():
             _set_managed_mode(_iface)
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((10, 56), "WPS attack stopped", fill="RED", font=font)
             LCD.LCD_ShowImage(img, 0, 0)

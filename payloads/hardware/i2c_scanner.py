@@ -231,13 +231,13 @@ def _export_loot():
 
 def _draw_frame(lcd, font_obj):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "I2C SCANNER", font=font_obj, fill="#00CCFF")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if scanning else "#444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "I2C SCANNER", font=font_obj, fill=(171, 178, 185))
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if scanning else "#444")
 
     with lock:
         msg = status_msg
@@ -248,29 +248,29 @@ def _draw_frame(lcd, font_obj):
 
     if scanning:
         # Progress bar
-        d.text((2, 16), "Scanning bus 1...", font=font_obj, fill="#FFAA00")
+        d.text((2, 16), "Scanning bus 1...", font=font_obj, fill=(212, 172, 13))
         bar_x, bar_y, bar_w, bar_h = 4, 30, 120, 8
-        d.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), outline="#444")
+        d.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), outline=(34, 0, 0))
         fill_w = int(prog * (bar_w - 2))
         if fill_w > 0:
             d.rectangle(
                 (bar_x + 1, bar_y + 1, bar_x + 1 + fill_w, bar_y + bar_h - 1),
-                fill="#00CCFF",
+                fill=(171, 178, 185),
             )
         pct = int(prog * 100)
-        d.text((2, 42), f"{pct}%", font=font_obj, fill="#888")
+        d.text((2, 42), f"{pct}%", font=font_obj, fill=(113, 125, 126))
     elif dump:
         # Register dump view
-        d.text((2, 16), "Register dump:", font=font_obj, fill="#FFAA00")
+        d.text((2, 16), "Register dump:", font=font_obj, fill=(212, 172, 13))
         # Split dump into lines of ~24 chars
         for i in range(0, len(dump), 24):
             y = 28 + (i // 24) * 12
             if y > 100:
                 break
-            d.text((2, y), dump[i:i + 24], font=font_obj, fill="#CCCCCC")
+            d.text((2, y), dump[i:i + 24], font=font_obj, fill=(242, 243, 244))
     else:
         # Device list
-        d.text((2, 16), msg[:24], font=font_obj, fill="#AAAAAA")
+        d.text((2, 16), msg[:24], font=font_obj, fill=(171, 178, 185))
 
         visible = devices[scroll:scroll + ROWS_VISIBLE]
         for i, dev in enumerate(visible):
@@ -282,11 +282,11 @@ def _draw_frame(lcd, font_obj):
             d.text((2, y), line, font=font_obj, fill=color)
 
         if not devices and not scanning:
-            d.text((2, 50), "Press OK to scan", font=font_obj, fill="#666")
+            d.text((2, 50), "Press OK to scan", font=font_obj, fill=(86, 101, 115))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "OK:Scan K1:Reg K3:Quit", font=font_obj, fill="#888")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "OK:Scan K1:Reg K3:Quit", font=font_obj, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -308,10 +308,10 @@ def main():
     font_obj = scaled_font()
 
     if not SMBUS_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "smbus2 not found!", font=font_obj, fill="#FF0000")
-        d.text((4, 65), "pip install smbus2", font=font_obj, fill="#888")
+        d.text((4, 50), "smbus2 not found!", font=font_obj, fill=(231, 76, 60))
+        d.text((4, 65), "pip install smbus2", font=font_obj, fill=(113, 125, 126))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

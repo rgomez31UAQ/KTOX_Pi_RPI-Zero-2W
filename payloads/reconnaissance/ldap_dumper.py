@@ -546,7 +546,7 @@ def _start_dump():
 # ---------------------------------------------------------------------------
 def _draw_header(d, title, active=False):
     """Draw top header bar."""
-    d.rectangle((0, 0, 127, 12), fill="#111")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
     d.text((2, 1), title, font=font, fill="#FF8800")
     color = "#00FF00" if active else "#666"
     d.ellipse((118, 3, 124, 9), fill=color)
@@ -554,7 +554,7 @@ def _draw_header(d, title, active=False):
 
 def _draw_footer(d, text):
     """Draw bottom footer bar."""
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:22], font=font, fill="#AAA")
 
 
@@ -567,10 +567,10 @@ def _draw_status(d, text):
 def _draw_scroll_list(d, y_start, items, scroll, label):
     """Draw a scrollable list of entries."""
     if not items:
-        d.text((4, y_start + 20), f"No {label}", font=font, fill="#666")
+        d.text((4, y_start + 20), f"No {label}", font=font, fill=(86, 101, 115))
         return
 
-    d.text((2, y_start), f"{label}: {len(items)}", font=font, fill="#888")
+    d.text((2, y_start), f"{label}: {len(items)}", font=font, fill=(113, 125, 126))
     y = y_start + 12
     visible = 7
 
@@ -610,7 +610,7 @@ def _entry_display(entry, label):
 # ---------------------------------------------------------------------------
 def _draw_dc_select():
     """DC selection screen."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     scanning = _get("scanning")
@@ -621,10 +621,10 @@ def _draw_dc_select():
     y = 14
 
     if not dcs:
-        d.text((4, 28), "No DCs found", font=font, fill="#666")
-        d.text((4, 42), "OK = scan network", font=font, fill="#888")
+        d.text((4, 28), "No DCs found", font=font, fill=(86, 101, 115))
+        d.text((4, 42), "OK = scan network", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, y), f"DCs found: {len(dcs)}", font=font, fill="#888")
+        d.text((2, y), f"DCs found: {len(dcs)}", font=font, fill=(113, 125, 126))
         y += 14
         for i, dc in enumerate(dcs):
             prefix = ">" if i == dc_idx else " "
@@ -638,7 +638,7 @@ def _draw_dc_select():
 
     creds = _get("creds")
     cred_txt = "Creds: loaded" if creds else "Creds: none"
-    d.text((2, 94), cred_txt, font=font, fill="#888")
+    d.text((2, 94), cred_txt, font=font, fill=(113, 125, 126))
 
     _draw_status(d, _get("status"))
     _draw_footer(d, "OK=dump UP/DN=sel K3=x")
@@ -647,7 +647,7 @@ def _draw_dc_select():
 
 def _draw_results():
     """Results browser screen."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     cat_idx = _get("cat_idx")
@@ -664,7 +664,7 @@ def _draw_results():
         color = "#FF8800" if i == cat_idx else "#555"
         x = 2 + i * 26
         d.text((x, y_tab), short, font=font, fill=color)
-    d.line((0, 24, 127, 24), fill="#333")
+    d.line((0, 24, 127, 24), fill=(34, 0, 0))
 
     y = 26
     cat_key = CATEGORIES[cat_idx]
@@ -674,10 +674,10 @@ def _draw_results():
         if policy:
             for k, v in list(policy.items())[:7]:
                 short_k = k[:12]
-                d.text((2, y), f"{short_k}: {v}", font=font, fill="#AAAAAA")
+                d.text((2, y), f"{short_k}: {v}", font=font, fill=(171, 178, 185))
                 y += 12
         else:
-            d.text((4, y + 10), "No policy data", font=font, fill="#666")
+            d.text((4, y + 10), "No policy data", font=font, fill=(86, 101, 115))
     else:
         items = _get(cat_key)
         _draw_scroll_list(d, y, items, scroll, cat_label)
@@ -696,11 +696,11 @@ def main():
     _set(creds=creds)
 
     # Splash screen
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 10), "LDAP DUMPER", font=font, fill="#FF8800")
-    d.text((4, 26), "AD dump tool", font=font, fill="#888")
-    d.text((4, 46), "Scanning for DCs...", font=font, fill="#00CCFF")
+    d.text((4, 26), "AD dump tool", font=font, fill=(113, 125, 126))
+    d.text((4, 46), "Scanning for DCs...", font=font, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
     # Auto-scan for DCs

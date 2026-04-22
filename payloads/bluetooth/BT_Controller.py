@@ -40,15 +40,15 @@ running = True
 
 # ── HELPERS ────────────────────────────
 def draw_screen(lines, title="PAIRING"):
-    draw.rectangle((0,0,WIDTH,HEIGHT), fill="black")
+    draw.rectangle((0,0,WIDTH,HEIGHT), fill=(10, 0, 0))
     draw.text((2,2), title, fill="#00FFAA", font=font)
 
     y = 16
     for line in lines[:8]:
-        draw.text((2,y), line[:20], fill="#FFFFFF", font=font)
+        draw.text((2,y), line[:20], fill=(242, 243, 244), font=font)
         y += 12
 
-    draw.text((2,HEIGHT-10),"OK=Select K3=Exit", fill="#888888", font=font)
+    draw.text((2,HEIGHT-10),"OK=Select K3=Exit", fill=(113, 125, 126), font=font)
     LCD.LCD_ShowImage(img,0,0)
 
 def get_button():

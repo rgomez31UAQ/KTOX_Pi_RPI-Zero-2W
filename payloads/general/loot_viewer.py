@@ -145,7 +145,7 @@ def gather_loot():
                         print(f"Error parsing Nmap log {filename}: {e}", file=sys.stderr)
 
 def show_message(lines, color="lime"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40
@@ -158,15 +158,15 @@ def show_message(lines, color="lime"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
-    d.text((5, 5), "Unified Loot Viewer", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "Unified Loot Viewer", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if screen_state == "main":
         if not loot_items:
-            d.text((20, 60), "No loot found.", font=FONT, fill="white")
+            d.text((20, 60), "No loot found.", font=FONT, fill=(242, 243, 244))
         else:
             start_display_index = max(0, selected_index - 3)
             end_display_index = min(len(loot_items), start_display_index + 7)
@@ -180,21 +180,21 @@ def draw_ui(screen_state="main"):
                 d.text((5, y_pos), item_text, font=FONT, fill=color)
                 y_pos += 12
 
-        d.text((5, 115), "OK=Refresh | KEY1=Add Source | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 115), "OK=Refresh | KEY1=Add Source | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "add_source_name":
-        d.text((5, 30), "New Source Name:", font=FONT, fill="white")
+        d.text((5, 30), "New Source Name:", font=FONT, fill=(242, 243, 244))
         display_name = list(current_loot_source_name)
         if len(display_name) > 0 and loot_source_path_cursor_pos < len(display_name):
             display_name[loot_source_path_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_name[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_name[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     elif screen_state == "add_source_path":
-        d.text((5, 30), "New Source Path:", font=FONT, fill="white")
+        d.text((5, 30), "New Source Path:", font=FONT, fill=(242, 243, 244))
         display_path = list(current_loot_source_path)
         if len(display_path) > 0 and loot_source_path_cursor_pos < len(display_path):
             display_path[loot_source_path_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_path[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_path[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 

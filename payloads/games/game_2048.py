@@ -61,13 +61,13 @@ def _tile_color(val):
 
 
 def draw_board(lcd, board, score):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = ImageFont.load_default()
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((4, 1), "2048", font=font, fill="white")
-    d.text((78, 1), f"S:{score}", font=font, fill="white")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((4, 1), "2048", font=font, fill=(242, 243, 244))
+    d.text((78, 1), f"S:{score}", font=font, fill=(242, 243, 244))
 
     cell = 28
     offset_x = 2
@@ -83,7 +83,7 @@ def draw_board(lcd, board, score):
             base_color = _tile_color(val)
             color = base_color
             text_color = "white"
-            d.rectangle((x0, y0, x1, y1), fill=color, outline="#555555")
+            d.rectangle((x0, y0, x1, y1), fill=color, outline=(86, 101, 115))
             if val:
                 txt = str(val)
                 if hasattr(d, "textbbox"):
@@ -244,12 +244,12 @@ def main():
                 draw_board(lcd, board, score)
                 time.sleep(0.5)
                 # Show game over
-                img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                 d = ImageDraw.Draw(img)
                 font = ImageFont.load_default()
-                d.text((20, 50), "GAME OVER", font=font, fill="white")
-                d.text((10, 70), "KEY1=New", font=font, fill="white")
-                d.text((10, 82), "KEY3=Exit", font=font, fill="white")
+                d.text((20, 50), "GAME OVER", font=font, fill=(242, 243, 244))
+                d.text((10, 70), "KEY1=New", font=font, fill=(242, 243, 244))
+                d.text((10, 82), "KEY3=Exit", font=font, fill=(242, 243, 244))
                 lcd.LCD_ShowImage(img, 0, 0)
                 while True:
                     btn = get_button({"KEY1": KEY1, "KEY3": KEY3}, GPIO)

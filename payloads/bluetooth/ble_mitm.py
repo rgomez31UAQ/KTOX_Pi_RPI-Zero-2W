@@ -379,7 +379,7 @@ def _export_log():
 # ── Drawing ──────────────────────────────────────────────────────────────────
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     with lock:
@@ -396,23 +396,23 @@ def _draw_screen():
         scan_on = _scan_active
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "BLE MITM", font=font, fill="#9C27B0")
     if prx:
-        d.ellipse((118, 3, 126, 11), fill="#00FF00")
+        d.ellipse((118, 3, 126, 11), fill=(30, 132, 73))
     elif scan_on:
-        d.ellipse((118, 3, 126, 11), fill="#FFAA00")
+        d.ellipse((118, 3, 126, 11), fill=(212, 172, 13))
     else:
-        d.ellipse((118, 3, 126, 11), fill="#FF0000")
+        d.ellipse((118, 3, 126, 11), fill=(231, 76, 60))
 
     y = 15
-    d.text((2, y), msg[:22], font=font, fill="#888")
+    d.text((2, y), msg[:22], font=font, fill=(113, 125, 126))
     y += 12
 
     if tgt:
-        d.text((2, y), f"Tgt: {tgt[-11:]}", font=font, fill="#00FF00" if tgt_conn else "#FF4444")
+        d.text((2, y), f"Tgt: {tgt[-11:]}", font=font, fill=(30, 132, 73) if tgt_conn else "#FF4444")
         y += 12
-    d.text((2, y), f"GATT ops: {n_ops}", font=font, fill="#FFAA00")
+    d.text((2, y), f"GATT ops: {n_ops}", font=font, fill=(212, 172, 13))
     y += 13
 
     if cur_view == "devices":
@@ -432,13 +432,13 @@ def _draw_screen():
         for i in range(sp, end):
             entry = logs[i]
             txt = f"{entry['ts']} {entry['op']} {entry.get('uuid', '')}"
-            d.text((2, y), txt[:22], font=font, fill="#CCCCCC")
+            d.text((2, y), txt[:22], font=font, fill=(242, 243, 244))
             y += ROW_H
         if not logs:
             d.text((2, y), "No GATT traffic", font=font, fill="#555")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK:Sel K1:Scan K3:X", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -450,14 +450,14 @@ def main():
     global scroll_pos, selected_idx, status_msg, view
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((8, 10), "BLE MITM PROXY", font=font, fill="#9C27B0")
-    d.text((4, 28), "GATT man-in-the-middle", font=font, fill="#888")
-    d.text((4, 40), "proxy for BLE devices.", font=font, fill="#888")
-    d.text((4, 60), "K1=Scan  OK=Connect", font=font, fill="#666")
-    d.text((4, 72), "L/R=View  K2=Export", font=font, fill="#666")
-    d.text((4, 84), "K3=Exit", font=font, fill="#666")
+    d.text((4, 28), "GATT man-in-the-middle", font=font, fill=(113, 125, 126))
+    d.text((4, 40), "proxy for BLE devices.", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "K1=Scan  OK=Connect", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "L/R=View  K2=Export", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

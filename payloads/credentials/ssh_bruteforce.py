@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RaspyJack Payload -- SSH Credential Spray
+KTOx Payload -- SSH Credential Spray
 ==========================================
 Author: 7h30th3r0n3
 
@@ -290,12 +290,12 @@ def _export_loot():
 
 def _draw_frame(lcd, font, mode):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "SSH SPRAY", font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "SSH SPRAY", font=font, fill=(171, 178, 185))
     indicator = "#00FF00" if (brute_active or scan_active) else "#444"
     d.ellipse((118, 3, 122, 7), fill=indicator)
 
@@ -309,7 +309,7 @@ def _draw_frame(lcd, font, mode):
         aps = attempts_per_sec
 
     if mode == "hosts":
-        d.text((2, 16), f"Hosts: {len(host_list)}", font=font, fill="#AAAAAA")
+        d.text((2, 16), f"Hosts: {len(host_list)}", font=font, fill=(171, 178, 185))
         visible = host_list[scroll_offset:scroll_offset + ROWS_VISIBLE]
         for i, ip in enumerate(visible):
             y = 28 + i * 12
@@ -321,40 +321,40 @@ def _draw_frame(lcd, font, mode):
             d.text((2, y), f"{prefix}{ip}{tag}", font=font, fill=color)
 
         if creds:
-            d.text((2, 92), f"Creds found: {len(creds)}", font=font, fill="#00FF00")
+            d.text((2, 92), f"Creds found: {len(creds)}", font=font, fill=(30, 132, 73))
 
     elif mode == "brute":
         target = host_list[selected_idx] if host_list else "?"
-        d.text((2, 16), f"Target: {target}", font=font, fill="#AAAAAA")
+        d.text((2, 16), f"Target: {target}", font=font, fill=(171, 178, 185))
 
         pct = done / max(total, 1)
-        d.rectangle((4, 30, 124, 38), outline="#444")
+        d.rectangle((4, 30, 124, 38), outline=(34, 0, 0))
         fill_w = int(pct * 118)
         if fill_w > 0:
-            d.rectangle((5, 31, 5 + fill_w, 37), fill="#00CCFF")
+            d.rectangle((5, 31, 5 + fill_w, 37), fill=(171, 178, 185))
 
-        d.text((2, 42), f"{done}/{total} ({int(pct*100)}%)", font=font, fill="#AAAAAA")
-        d.text((2, 54), f"{aps:.1f} att/s", font=font, fill="#888")
-        d.text((2, 66), f"Try: {pair[0]}:{pair[1]}", font=font, fill="#CCCCCC")
+        d.text((2, 42), f"{done}/{total} ({int(pct*100)}%)", font=font, fill=(171, 178, 185))
+        d.text((2, 54), f"{aps:.1f} att/s", font=font, fill=(113, 125, 126))
+        d.text((2, 66), f"Try: {pair[0]}:{pair[1]}", font=font, fill=(242, 243, 244))
 
         if creds:
             y = 80
             for c in creds[-3:]:
                 d.text((2, y), f"{c['user']}:{c['pass']}",
-                       font=font, fill="#00FF00")
+                       font=font, fill=(30, 132, 73))
                 y += 12
 
     if msg:
-        d.text((2, 104), msg[:22], font=font, fill="#FFAA00")
+        d.text((2, 104), msg[:22], font=font, fill=(212, 172, 13))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if brute_active:
-        d.text((2, 117), "Running... K3:Exit", font=font, fill="#888")
+        d.text((2, 117), "Running... K3:Exit", font=font, fill=(113, 125, 126))
     elif scan_active:
-        d.text((2, 117), "Scanning... K3:Exit", font=font, fill="#888")
+        d.text((2, 117), "Scanning... K3:Exit", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Go K1:Scan K3:Quit", font=font, fill="#888")
+        d.text((2, 117), "OK:Go K1:Scan K3:Quit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -380,24 +380,24 @@ def main():
     try:
         subprocess.run(["sshpass", "-V"], capture_output=True, timeout=3)
     except FileNotFoundError:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "sshpass not found!", font=font, fill="#FF0000")
-        d.text((4, 65), "apt install sshpass", font=font, fill="#888")
+        d.text((4, 50), "sshpass not found!", font=font, fill=(231, 76, 60))
+        d.text((4, 65), "apt install sshpass", font=font, fill=(113, 125, 126))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()
         return 1
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 16), "SSH CRED SPRAY", font=font, fill="#00CCFF")
-    d.text((4, 36), "Spray common creds", font=font, fill="#888")
-    d.text((4, 56), "OK    Start attack", font=font, fill="#666")
-    d.text((4, 68), "KEY1  Scan for hosts", font=font, fill="#666")
-    d.text((4, 80), "KEY2  Export loot", font=font, fill="#666")
-    d.text((4, 92), "KEY3  Exit", font=font, fill="#666")
+    d.text((8, 16), "SSH CRED SPRAY", font=font, fill=(171, 178, 185))
+    d.text((4, 36), "Spray common creds", font=font, fill=(113, 125, 126))
+    d.text((4, 56), "OK    Start attack", font=font, fill=(86, 101, 115))
+    d.text((4, 68), "KEY1  Scan for hosts", font=font, fill=(86, 101, 115))
+    d.text((4, 80), "KEY2  Export loot", font=font, fill=(86, 101, 115))
+    d.text((4, 92), "KEY3  Exit", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 

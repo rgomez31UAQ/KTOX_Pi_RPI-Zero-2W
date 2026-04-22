@@ -49,7 +49,7 @@ def init_hw():
     LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
     LCD.LCD_Clear()
 
-    _image = Image.new("RGB", (W,H), "black")
+    _image = Image.new("RGB", (W,H), (10, 0, 0))
     _draw = ImageDraw.Draw(_image)
     _font = ImageFont.load_default()
 
@@ -59,9 +59,9 @@ def push():
 
 # ── UI ─────────────────────────────────────────────
 def draw(lines, title="Hunter Core"):
-    _draw.rectangle((0,0,W,H), fill="black")
+    _draw.rectangle((0,0,W,H), fill=(10, 0, 0))
     _draw.rectangle((0,0,W,16), fill=(80,0,0))
-    _draw.text((3,2), title, font=_font, fill="#FF4444")
+    _draw.text((3,2), title, font=_font, fill=(231, 76, 60))
 
     y = 18
     for l in lines[:9]:

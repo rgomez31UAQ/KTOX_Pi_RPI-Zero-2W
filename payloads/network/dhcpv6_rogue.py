@@ -370,7 +370,7 @@ def _export_data():
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
     draw.text((2, 2), "DHCPv6 ROGUE", fill="RED", font=font)
@@ -388,9 +388,9 @@ def _draw_screen():
     srv_color = "GREEN" if srv else "GRAY"
     draw.text((90, 2), srv_label, fill=srv_color, font=font)
 
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
-    draw.text((2, 26), f"Clients: {len(client_list)}", fill="GREEN", font=font)
-    draw.text((2, 38), f"Requests: {req}", fill="WHITE", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
+    draw.text((2, 26), f"Clients: {len(client_list)}", fill=(30, 132, 73), font=font)
+    draw.text((2, 38), f"Requests: {req}", fill=(242, 243, 244), font=font)
 
     dns_label = "DNS: ON" if dns_on else "DNS: OFF"
     dns_color = "GREEN" if dns_on else "GRAY"
@@ -402,14 +402,14 @@ def _draw_screen():
     for c in visible:
         mac_short = c.get("mac", "??:??")[-8:]
         line = f"{mac_short} {c.get('type', '?')[:4]}"
-        draw.text((2, y), line, fill="WHITE", font=font)
+        draw.text((2, y), line, fill=(242, 243, 244), font=font)
         y += 14
 
     if not visible:
-        draw.text((2, 60), "No clients yet", fill="GRAY", font=font)
+        draw.text((2, 60), "No clients yet", fill=(86, 101, 115), font=font)
 
     # Footer
-    draw.text((2, 116), "OK:Srv K1:DNS K3:Quit", fill="GRAY", font=font)
+    draw.text((2, 116), "OK:Srv K1:DNS K3:Quit", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -424,10 +424,10 @@ def main():
 
     try:
         if not SCAPY_OK:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((4, 50), "scapy not found!", font=font, fill="RED")
-            draw.text((4, 65), "pip install scapy", font=font, fill="GRAY")
+            draw.text((4, 65), "pip install scapy", font=font, fill=(86, 101, 115))
             LCD.LCD_ShowImage(img, 0, 0)
             time.sleep(3)
             GPIO.cleanup()
@@ -508,9 +508,9 @@ def main():
         _run_silent(["sudo", "ip6tables", "-t", "nat", "-F"])
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
-            draw.text((10, 50), "DHCPv6 stopped", fill="YELLOW", font=font)
+            draw.text((10, 50), "DHCPv6 stopped", fill=(212, 172, 13), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

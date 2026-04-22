@@ -268,9 +268,9 @@ def _fmt_bytes(b):
 
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
-    draw.text((2, 2), "TRUNK DUMP", fill="CYAN", font=font)
+    draw.text((2, 2), "TRUNK DUMP", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -282,8 +282,8 @@ def _draw_screen():
         vs = dict(vlan_stats)
         ta = trunk_active
 
-    draw.text((80, 2), f"T:{tt}", fill="YELLOW", font=font)
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
+    draw.text((80, 2), f"T:{tt}", fill=(212, 172, 13), font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
 
     if vm == "vlans":
         y = 28
@@ -298,25 +298,25 @@ def _draw_screen():
 
         if not vl:
             if ta:
-                draw.text((2, 56), "No tagged traffic yet", fill="GRAY", font=font)
+                draw.text((2, 56), "No tagged traffic yet", fill=(86, 101, 115), font=font)
             else:
-                draw.text((2, 56), "Press OK to start DTP", fill="GRAY", font=font)
-        draw.text((2, 116), "OK=DTP R=detail K3=ex", fill="GRAY", font=font)
+                draw.text((2, 56), "Press OK to start DTP", fill=(86, 101, 115), font=font)
+        draw.text((2, 116), "OK=DTP R=detail K3=ex", fill=(86, 101, 115), font=font)
 
     elif vm == "detail":
-        draw.text((2, 28), f"VLAN {sv}", fill="YELLOW", font=font)
+        draw.text((2, 28), f"VLAN {sv}", fill=(212, 172, 13), font=font)
         stats = vs.get(sv, {"packets": 0, "bytes": 0, "ips": {}})
-        draw.text((2, 42), f"Pkts: {stats['packets']}", fill="WHITE", font=font)
-        draw.text((2, 56), f"Bytes: {_fmt_bytes(stats['bytes'])}", fill="WHITE", font=font)
+        draw.text((2, 42), f"Pkts: {stats['packets']}", fill=(242, 243, 244), font=font)
+        draw.text((2, 56), f"Bytes: {_fmt_bytes(stats['bytes'])}", fill=(242, 243, 244), font=font)
 
         # Top talkers
         ips = stats.get("ips", {})
         top = sorted(ips.items(), key=lambda x: x[1], reverse=True)[:3]
         y = 72
         for ip, bcount in top:
-            draw.text((2, y), f"{ip} {_fmt_bytes(bcount)}"[:22], fill="GREEN", font=font)
+            draw.text((2, y), f"{ip} {_fmt_bytes(bcount)}"[:22], fill=(30, 132, 73), font=font)
             y += 14
-        draw.text((2, 116), "OK=back K3=exit", fill="GRAY", font=font)
+        draw.text((2, 116), "OK=back K3=exit", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -330,7 +330,7 @@ def main():
     global status_msg, my_iface, my_mac, sniff_running
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -396,10 +396,10 @@ def main():
         app_running = False
         sniff_running = False
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "Trunk dump stopped", fill="YELLOW", font=font)
-            d.text((10, 66), f"VLANs: {len(vlan_list)}", fill="WHITE", font=font)
+            d.text((10, 50), "Trunk dump stopped", fill=(212, 172, 13), font=font)
+            d.text((10, 66), f"VLANs: {len(vlan_list)}", fill=(242, 243, 244), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

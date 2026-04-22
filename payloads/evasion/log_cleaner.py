@@ -153,12 +153,12 @@ def _clean_item(item_name):
 
 def _draw_checklist(lcd, items, selected_items, cursor, scroll_offset, status=""):
     """Draw the checklist UI."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((2, 1), "Log Cleaner", font=font, fill="#00ff00")
-    d.text((100, 1), "K3", font=font, fill="white")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "Log Cleaner", font=font, fill=(30, 132, 73))
+    d.text((100, 1), "K3", font=font, fill=(242, 243, 244))
 
     y = 15
     visible = 7
@@ -177,32 +177,32 @@ def _draw_checklist(lcd, items, selected_items, cursor, scroll_offset, status=""
         y += 13
 
     y = max(y + 2, 106)
-    d.line((0, y - 2, 127, y - 2), fill="#333333")
-    d.text((2, y), "OK=tog K1=sel K2=all", font=font, fill="#666666")
+    d.line((0, y - 2, 127, y - 2), fill=(34, 0, 0))
+    d.text((2, y), "OK=tog K1=sel K2=all", font=font, fill=(86, 101, 115))
 
     if status:
-        d.text((2, y + 11), status[:20], font=font, fill="#ffff00")
+        d.text((2, y + 11), status[:20], font=font, fill=(212, 172, 13))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_progress(lcd, message, progress, total):
     """Draw a progress screen."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.text((4, 20), "Cleaning...", font=font, fill="#00ff00")
-    d.text((4, 40), message[:20], font=font, fill="#aaaaaa")
+    d.text((4, 20), "Cleaning...", font=font, fill=(30, 132, 73))
+    d.text((4, 40), message[:20], font=font, fill=(171, 178, 185))
 
     bar_x, bar_y = 10, 65
     bar_w, bar_h = 108, 12
-    d.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), outline="#00ff00")
+    d.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), outline=(30, 132, 73))
     if total > 0:
         fill_w = int(bar_w * progress / total)
-        d.rectangle((bar_x, bar_y, bar_x + fill_w, bar_y + bar_h), fill="#00ff00")
+        d.rectangle((bar_x, bar_y, bar_x + fill_w, bar_y + bar_h), fill=(30, 132, 73))
 
     pct = int(100 * progress / total) if total > 0 else 0
-    d.text((50, bar_y + 16), f"{pct}%", font=font, fill="white")
+    d.text((50, bar_y + 16), f"{pct}%", font=font, fill=(242, 243, 244))
 
     lcd.LCD_ShowImage(img, 0, 0)
 

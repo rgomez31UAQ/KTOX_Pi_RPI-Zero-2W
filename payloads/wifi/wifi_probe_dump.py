@@ -174,13 +174,13 @@ def _export_loot():
 
 def _draw_frame(lcd, font):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "PROBE DUMP", font=font, fill="#00FF00")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if running else "#FF0000")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "PROBE DUMP", font=font, fill=(30, 132, 73))
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if running else "#FF0000")
 
     with lock:
         total_devs = len(probes)
@@ -191,7 +191,7 @@ def _draw_frame(lcd, font):
         device_list = sorted(probes.items(), key=lambda kv: len(kv[1]), reverse=True)
 
     # Summary line
-    d.text((2, 16), f"Dev:{total_devs}  SSID:{total_ssids}", font=font, fill="#AAAAAA")
+    d.text((2, 16), f"Dev:{total_devs}  SSID:{total_ssids}", font=font, fill=(171, 178, 185))
 
     # Scrollable device list
     visible = device_list[scroll:scroll + ROWS_VISIBLE]
@@ -200,19 +200,19 @@ def _draw_frame(lcd, font):
         short_mac = mac[-8:]
         ssid_preview = ", ".join(sorted(ssids))[:12] if ssids else "<hidden>"
         line = f"{short_mac} {ssid_preview}"
-        d.text((2, y), line, font=font, fill="#CCCCCC")
+        d.text((2, y), line, font=font, fill=(242, 243, 244))
 
     # Scroll indicator
     total = len(device_list)
     if total > ROWS_VISIBLE:
         bar_h = max(4, int(ROWS_VISIBLE / total * 80))
         bar_y = 28 + int(scroll / total * 80)
-        d.rectangle((126, bar_y, 127, bar_y + bar_h), fill="#444")
+        d.rectangle((126, bar_y, 127, bar_y + bar_h), fill=(34, 0, 0))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     status = "K1:Stop" if running else "K1:Start"
-    d.text((2, 117), f"{status} K2:Exp K3:Quit", font=font, fill="#888")
+    d.text((2, 117), f"{status} K2:Exp K3:Quit", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -234,14 +234,14 @@ def main():
     font = scaled_font()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((8, 20), "WIFI PROBE DUMP", font=font, fill="#00FF00")
-    d.text((4, 40), "Passive probe logger", font=font, fill="#888")
-    d.text((4, 60), "KEY1  Start / Stop", font=font, fill="#666")
-    d.text((4, 72), "KEY2  Export JSON", font=font, fill="#666")
-    d.text((4, 84), "KEY3  Exit", font=font, fill="#666")
-    d.text((4, 96), "U/D   Scroll list", font=font, fill="#666")
+    d.text((8, 20), "WIFI PROBE DUMP", font=font, fill=(30, 132, 73))
+    d.text((4, 40), "Passive probe logger", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "KEY1  Start / Stop", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "KEY2  Export JSON", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "KEY3  Exit", font=font, fill=(86, 101, 115))
+    d.text((4, 96), "U/D   Scroll list", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
 
     try:
@@ -265,19 +265,19 @@ def main():
                         threading.Thread(target=_hop_thread, daemon=True).start()
                         threading.Thread(target=_sniff_thread, daemon=True).start()
                     else:
-                        img2 = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                        img2 = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                         d2 = ScaledDraw(img2)
-                        d2.text((4, 50), "No USB WiFi found!", font=font, fill="#FF0000")
+                        d2.text((4, 50), "No USB WiFi found!", font=font, fill=(231, 76, 60))
                         lcd.LCD_ShowImage(img2, 0, 0)
                         time.sleep(1.5)
                 time.sleep(0.3)
 
             elif btn == "KEY2":
                 fname = _export_loot()
-                img2 = Image.new("RGB", (WIDTH, HEIGHT), "black")
+                img2 = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
                 d2 = ScaledDraw(img2)
-                d2.text((4, 50), "Exported!", font=font, fill="#00FF00")
-                d2.text((4, 65), fname[:22], font=font, fill="#888")
+                d2.text((4, 50), "Exported!", font=font, fill=(30, 132, 73))
+                d2.text((4, 65), fname[:22], font=font, fill=(113, 125, 126))
                 lcd.LCD_ShowImage(img2, 0, 0)
                 time.sleep(1.5)
 

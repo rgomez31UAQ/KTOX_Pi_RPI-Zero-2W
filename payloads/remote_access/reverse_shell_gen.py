@@ -160,24 +160,24 @@ def _wrap_text(text, width=19):
 
 def _draw_main(lcd, ips, shell_types, selected, port, status="", http_running=False, nc_running=False):
     """Draw main menu."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((2, 1), "RevShell Gen", font=font, fill="#00ff00")
-    d.text((100, 1), "K3", font=font, fill="white")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "RevShell Gen", font=font, fill=(30, 132, 73))
+    d.text((100, 1), "K3", font=font, fill=(242, 243, 244))
 
     y = 15
 
     # Show IPs
     for iface, ip in ips.items():
         label = iface.replace("tailscale0", "ts0")
-        d.text((2, y), f"{label}: {ip}", font=font, fill="#888888")
+        d.text((2, y), f"{label}: {ip}", font=font, fill=(113, 125, 126))
         y += 10
     y += 2
 
     # Port
-    d.text((2, y), f"Port: {port}", font=font, fill="#aaaaaa")
+    d.text((2, y), f"Port: {port}", font=font, fill=(171, 178, 185))
     y += 12
 
     # Shell types
@@ -189,43 +189,43 @@ def _draw_main(lcd, ips, shell_types, selected, port, status="", http_running=Fa
 
     # Status indicators
     y = 106
-    d.line((0, y, 127, y), fill="#333333")
+    d.line((0, y, 127, y), fill=(34, 0, 0))
     indicators = []
     if http_running:
         indicators.append("HTTP:ON")
     if nc_running:
         indicators.append("NC:ON")
     if indicators:
-        d.text((2, y + 1), " ".join(indicators), font=font, fill="#ffff00")
+        d.text((2, y + 1), " ".join(indicators), font=font, fill=(212, 172, 13))
 
-    d.text((2, y + 12), "OK=gen K1=http K2=nc", font=font, fill="#666666")
+    d.text((2, y + 12), "OK=gen K1=http K2=nc", font=font, fill=(86, 101, 115))
 
     if status:
         d.rectangle((0, 50, 127, 65), fill="#222200")
-        d.text((2, 52), status[:20], font=font, fill="#ffff00")
+        d.text((2, 52), status[:20], font=font, fill=(212, 172, 13))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_shell_view(lcd, shell_type, lines, scroll_offset):
     """Draw the generated shell command (scrollable)."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.rectangle((0, 0, 127, 12), fill="#1a1a1a")
-    d.text((2, 1), f"Shell: {shell_type}", font=font, fill="#00ff00")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), f"Shell: {shell_type}", font=font, fill=(30, 132, 73))
 
     y = 15
     visible = 8
     end = min(len(lines), scroll_offset + visible)
     for idx in range(scroll_offset, end):
-        d.text((2, y), lines[idx], font=font, fill="#cccccc")
+        d.text((2, y), lines[idx], font=font, fill=(242, 243, 244))
         y += 12
 
     if len(lines) > visible:
-        d.text((100, 15), f"{scroll_offset + 1}/{len(lines)}", font=font, fill="#666666")
+        d.text((100, 15), f"{scroll_offset + 1}/{len(lines)}", font=font, fill=(86, 101, 115))
 
-    d.text((2, 116), "U/D=scrl K3=back", font=font, fill="#666666")
+    d.text((2, 116), "U/D=scrl K3=back", font=font, fill=(86, 101, 115))
 
     lcd.LCD_ShowImage(img, 0, 0)
 

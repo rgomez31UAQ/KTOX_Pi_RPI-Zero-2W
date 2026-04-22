@@ -52,7 +52,7 @@ SCALE = WIDTH // NUM_RAYS
 
 TEXTURE_SIZE = 64
 HALF_TEXTURE_SIZE = TEXTURE_SIZE // 2
-FLOOR_COLOR = (30, 30, 30)
+FLOOR_COLOR = (20, 5, 5)
 
 # --- Map ---
 text_map = [
@@ -264,7 +264,7 @@ class SpriteObject:
             eye_box = (TEXTURE_SIZE*0.4, TEXTURE_SIZE*0.35)
             eye_size = (TEXTURE_SIZE*0.6, TEXTURE_SIZE*0.55)
             d.ellipse([eye_box, eye_size], fill=(255, 255, 100))
-            d.ellipse([(TEXTURE_SIZE*0.45, TEXTURE_SIZE*0.4), (TEXTURE_SIZE*0.55, TEXTURE_SIZE*0.5)], fill="red")
+            d.ellipse([(TEXTURE_SIZE*0.45, TEXTURE_SIZE*0.4), (TEXTURE_SIZE*0.55, TEXTURE_SIZE*0.5)], fill=(212, 172, 13))
             # Mouth
             d.arc([(20, 50), (TEXTURE_SIZE-20, TEXTURE_SIZE-15)], 20, 160, fill=(100, 10, 10), width=3)
             return img
@@ -518,7 +518,7 @@ class Game:
             "UP": False, "DOWN": False, "LEFT": False, "RIGHT": False,
             "KEY1": False, "KEY2": False, "KEY3": False
         }
-        self.screen = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        self.screen = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         self.screen_draw = ImageDraw.Draw(self.screen)
         self.clock = time.time()
         self.delta_time = 1

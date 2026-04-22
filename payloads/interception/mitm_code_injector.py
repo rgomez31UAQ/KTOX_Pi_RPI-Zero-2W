@@ -65,7 +65,7 @@ FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bol
 
 ETH_INTERFACE = "eth0"
 TARGET_IP = ""
-MITMPROXY_PORT = 8080
+MITMPROXY_PORT = 8888  # 8080 is reserved for the KTOX WebUI
 running = True
 attack_processes = {}
 status_message = "Starting..."
@@ -146,7 +146,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def show_message(lines, color="lime"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40
@@ -159,37 +159,37 @@ def show_message(lines, color="lime"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main"):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "MITM Code Injector", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
+    d.text((5, 5), "MITM Code Injector", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
 
     if screen_state == "main":
-        d.text((5, 25), f"Interface: {ETH_INTERFACE}", font=FONT, fill="white")
-        d.text((5, 40), f"Target IP: {TARGET_IP}", font=FONT, fill="white")
-        d.text((5, 55), f"Status: {status_message}", font=FONT, fill="yellow")
-        d.text((5, 70), f"Injections: {injection_count}", font=FONT_TITLE, fill="lime")
-        d.text((5, 115), "OK=Start | KEY1=Edit Iface | KEY2=Edit IP | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 25), f"Interface: {ETH_INTERFACE}", font=FONT, fill=(242, 243, 244))
+        d.text((5, 40), f"Target IP: {TARGET_IP}", font=FONT, fill=(242, 243, 244))
+        d.text((5, 55), f"Status: {status_message}", font=FONT, fill=(212, 172, 13))
+        d.text((5, 70), f"Injections: {injection_count}", font=FONT_TITLE, fill=(231, 76, 60))
+        d.text((5, 115), "OK=Start | KEY1=Edit Iface | KEY2=Edit IP | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "iface_input":
-        d.text((5, 30), "Enter Interface:", font=FONT, fill="white")
+        d.text((5, 30), "Enter Interface:", font=FONT, fill=(242, 243, 244))
         display_iface = list(current_interface_input)
         if interface_input_cursor_pos < len(display_iface):
             display_iface[interface_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_iface[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_iface[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     elif screen_state == "ip_input":
-        d.text((5, 30), "Enter Target IP:", font=FONT, fill="white")
+        d.text((5, 30), "Enter Target IP:", font=FONT, fill=(242, 243, 244))
         display_ip = list(current_ip_input)
         if ip_input_cursor_pos < len(display_ip):
             display_ip[ip_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_ip), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Digit | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_ip), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Digit | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     elif screen_state == "attacking":
-        d.text((5, 25), f"Interface: {ETH_INTERFACE}", font=FONT, fill="white")
-        d.text((5, 40), f"Target IP: {TARGET_IP}", font=FONT, fill="white")
-        d.text((5, 55), f"Status: {status_message}", font=FONT, fill="yellow")
-        d.text((5, 70), f"Injections: {injection_count}", font=FONT_TITLE, fill="lime")
-        d.text((5, 115), "KEY3=Stop", font=FONT, fill="cyan")
+        d.text((5, 25), f"Interface: {ETH_INTERFACE}", font=FONT, fill=(242, 243, 244))
+        d.text((5, 40), f"Target IP: {TARGET_IP}", font=FONT, fill=(242, 243, 244))
+        d.text((5, 55), f"Status: {status_message}", font=FONT, fill=(212, 172, 13))
+        d.text((5, 70), f"Injections: {injection_count}", font=FONT_TITLE, fill=(231, 76, 60))
+        d.text((5, 115), "KEY3=Stop", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 

@@ -218,13 +218,13 @@ def _replay_thread(filepath, iface_name, speed_mode):
 
 def _draw_frame(lcd, font_obj):
     """Render current state to the LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "PACKET REPLAY", font=font_obj, fill="#00CCFF")
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if replaying else "#444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "PACKET REPLAY", font=font_obj, fill=(171, 178, 185))
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if replaying else "#444")
 
     with lock:
         msg = status_msg
@@ -238,33 +238,33 @@ def _draw_frame(lcd, font_obj):
 
     if replaying:
         # Replay progress view
-        d.text((2, 16), f"Speed: {speed}  Iface: {iface_name}", font=font_obj, fill="#FFAA00")
-        d.text((2, 28), f"Pkts: {sent}/{total}", font=font_obj, fill="#AAAAAA")
+        d.text((2, 16), f"Speed: {speed}  Iface: {iface_name}", font=font_obj, fill=(212, 172, 13))
+        d.text((2, 28), f"Pkts: {sent}/{total}", font=font_obj, fill=(171, 178, 185))
 
         # Progress bar
         bar_x, bar_y, bar_w, bar_h = 4, 42, 120, 10
-        d.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), outline="#444")
+        d.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), outline=(34, 0, 0))
         fill_w = int(prog * (bar_w - 2))
         if fill_w > 0:
             d.rectangle(
                 (bar_x + 1, bar_y + 1, bar_x + 1 + fill_w, bar_y + bar_h - 1),
-                fill="#00CCFF",
+                fill=(171, 178, 185),
             )
 
         pct = int(prog * 100)
-        d.text((2, 56), f"{pct}%", font=font_obj, fill="#888")
+        d.text((2, 56), f"{pct}%", font=font_obj, fill=(113, 125, 126))
 
         if sel < len(files):
-            d.text((2, 70), files[sel]["name"][:24], font=font_obj, fill="#666")
+            d.text((2, 70), files[sel]["name"][:24], font=font_obj, fill=(86, 101, 115))
 
-        d.text((2, 90), msg[:24], font=font_obj, fill="#888")
+        d.text((2, 90), msg[:24], font=font_obj, fill=(113, 125, 126))
     else:
         # File selector view
-        d.text((2, 16), f"Spd:{speed} If:{iface_name}", font=font_obj, fill="#FFAA00")
+        d.text((2, 16), f"Spd:{speed} If:{iface_name}", font=font_obj, fill=(212, 172, 13))
 
         if not files:
             d.text((2, 40), "No pcap files found", font=font_obj, fill="#FF8800")
-            d.text((2, 55), f"in {LOOT_DIR}", font=font_obj, fill="#666")
+            d.text((2, 55), f"in {LOOT_DIR}", font=font_obj, fill=(86, 101, 115))
         else:
             visible = files[scroll:scroll + ROWS_VISIBLE]
             for i, f in enumerate(visible):
@@ -276,14 +276,14 @@ def _draw_frame(lcd, font_obj):
                 line = f"{marker}{f['name'][:16]} {size_str}"
                 d.text((2, y), line[:24], font=font_obj, fill=color)
 
-        d.text((2, 100), msg[:24], font=font_obj, fill="#888")
+        d.text((2, 100), msg[:24], font=font_obj, fill=(113, 125, 126))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if replaying:
-        d.text((2, 117), "OK:Stop  K3:Exit", font=font_obj, fill="#888")
+        d.text((2, 117), "OK:Stop  K3:Exit", font=font_obj, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Play K1:Spd K3:Quit", font=font_obj, fill="#888")
+        d.text((2, 117), "OK:Play K1:Spd K3:Quit", font=font_obj, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -306,10 +306,10 @@ def main():
     font_obj = scaled_font()
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
-        d.text((4, 50), "scapy not found!", font=font_obj, fill="#FF0000")
-        d.text((4, 65), "pip install scapy", font=font_obj, fill="#888")
+        d.text((4, 50), "scapy not found!", font=font_obj, fill=(231, 76, 60))
+        d.text((4, 65), "pip install scapy", font=font_obj, fill=(113, 125, 126))
         lcd.LCD_ShowImage(img, 0, 0)
         time.sleep(3)
         GPIO.cleanup()

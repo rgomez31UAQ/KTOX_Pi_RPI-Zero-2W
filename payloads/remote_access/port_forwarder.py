@@ -74,7 +74,7 @@ cursor_pos = 0
 def _new_rule():
     """Create a new default forwarding rule."""
     return {
-        "local_port": 8080,
+        "local_port": 8888,  # 8080 is reserved for the KTOX WebUI
         "remote_host": "192.168.1.1",
         "remote_port": 80,
         "active": False,
@@ -215,11 +215,11 @@ def _format_bytes(n):
 
 def _draw_config(lcd, font):
     """Draw the configuration screen for the current rule."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "PORT FORWARD", font=font, fill="#33CCFF")
 
     with lock:
@@ -228,7 +228,7 @@ def _draw_config(lcd, font):
         rule = dict(rules[current_rule])
         rule_count = len(rules)
 
-    d.text((2, 16), f"Rule {current_rule + 1}/{rule_count}", font=font, fill="#AAAAAA")
+    d.text((2, 16), f"Rule {current_rule + 1}/{rule_count}", font=font, fill=(171, 178, 185))
 
     octets = _parse_octets(rule["remote_host"])
 
@@ -260,29 +260,29 @@ def _draw_config(lcd, font):
     if rule["active"]:
         d.text((2, y + 16), f"Conns:{rule['conn_count']} "
                f"Fwd:{_format_bytes(rule['bytes_fwd'])}",
-               font=font, fill="#888")
+               font=font, fill=(113, 125, 126))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "OK:Go UD:Val LR:Fld", font=font, fill="#888")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "OK:Go UD:Val LR:Fld", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_rules_view(lcd, font):
     """Draw the active rules overview."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "ACTIVE RULES", font=font, fill="#33CCFF")
 
     with lock:
         rule_list = [dict(r) for r in rules]
 
     if not rule_list:
-        d.text((2, 30), "No rules configured", font=font, fill="#888")
+        d.text((2, 30), "No rules configured", font=font, fill=(113, 125, 126))
     else:
         y = 18
         for idx, rule in enumerate(rule_list):
@@ -299,7 +299,7 @@ def _draw_rules_view(lcd, font):
 
             if active:
                 detail = f"  {rule['conn_count']}c {_format_bytes(rule['bytes_fwd'])}"
-                d.text((10, y + 10), detail, font=font, fill="#888")
+                d.text((10, y + 10), detail, font=font, fill=(113, 125, 126))
                 y += 22
             else:
                 y += 12
@@ -308,8 +308,8 @@ def _draw_rules_view(lcd, font):
                 break
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
-    d.text((2, 117), "Press any to return", font=font, fill="#888")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "Press any to return", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 
@@ -335,15 +335,15 @@ def main():
     rules.append(_new_rule())
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 16), "TCP PORT FORWARDER", font=font, fill="#33CCFF")
-    d.text((4, 36), "Forward local to remote", font=font, fill="#888")
-    d.text((4, 56), "OK     Start/stop", font=font, fill="#666")
-    d.text((4, 68), "U/D    Adjust value", font=font, fill="#666")
-    d.text((4, 80), "L/R    Switch field", font=font, fill="#666")
-    d.text((4, 92), "KEY1   Add rule", font=font, fill="#666")
-    d.text((4, 104), "KEY3   Exit", font=font, fill="#666")
+    d.text((4, 36), "Forward local to remote", font=font, fill=(113, 125, 126))
+    d.text((4, 56), "OK     Start/stop", font=font, fill=(86, 101, 115))
+    d.text((4, 68), "U/D    Adjust value", font=font, fill=(86, 101, 115))
+    d.text((4, 80), "L/R    Switch field", font=font, fill=(86, 101, 115))
+    d.text((4, 92), "KEY1   Add rule", font=font, fill=(86, 101, 115))
+    d.text((4, 104), "KEY3   Exit", font=font, fill=(86, 101, 115))
     lcd.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 

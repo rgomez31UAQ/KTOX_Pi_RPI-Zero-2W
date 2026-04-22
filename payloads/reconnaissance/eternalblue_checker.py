@@ -373,14 +373,14 @@ def _status_color(status):
 
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
     d.rectangle((0, 0, 127, 13), fill=CLR_HDR_BG)
     d.text((2, 1), "MS17-010 CHECK", font=font, fill=CLR_HDR_FG)
     scanning = _get("scanning")
-    d.ellipse((118, 3, 124, 9), fill="#FF0000" if scanning else "#444444")
+    d.ellipse((118, 3, 124, 9), fill=(231, 76, 60) if scanning else "#444444")
 
     results = _get("results")
     scroll = _get("scroll")
@@ -388,15 +388,15 @@ def _draw_screen():
     progress = _get("progress")
 
     if not results and not scanning:
-        d.text((4, 30), status[:21], font=font, fill="#AAAAAA")
-        d.text((4, 50), "OK = Start scan", font=font, fill="#666666")
-        d.text((4, 62), "KEY3 = Exit", font=font, fill="#666666")
+        d.text((4, 30), status[:21], font=font, fill=(171, 178, 185))
+        d.text((4, 50), "OK = Start scan", font=font, fill=(86, 101, 115))
+        d.text((4, 62), "KEY3 = Exit", font=font, fill=(86, 101, 115))
         LCD.LCD_ShowImage(img, 0, 0)
         return
 
     if not results:
         d.text((4, 30), status[:21], font=font, fill="#FFCC00")
-        d.text((4, 46), progress[:21], font=font, fill="#AAAAAA")
+        d.text((4, 46), progress[:21], font=font, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
         return
 
@@ -414,8 +414,8 @@ def _draw_screen():
     d.rectangle((0, 106, 127, 115), fill="#0a0a0a")
     d.text((2, 107), (progress if scanning else status)[:21], font=font, fill="#FFCC00")
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111111")
-    d.text((2, 117), "U/D:scroll  K3:exit", font=font, fill="#AAAAAA")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
+    d.text((2, 117), "U/D:scroll  K3:exit", font=font, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 
@@ -425,15 +425,15 @@ def _draw_screen():
 
 def main():
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.rectangle((0, 0, 127, 13), fill=CLR_HDR_BG)
     d.text((2, 1), "MS17-010 CHECK", font=font, fill=CLR_HDR_FG)
     d.text((4, 24), "EternalBlue Detect", font=font, fill="#FFCC00")
     d.text((4, 40), "DETECTION ONLY", font=font, fill="#FF6666")
-    d.text((4, 56), "Auto-discovers SMB", font=font, fill="#888888")
-    d.text((4, 68), "hosts on local subnet", font=font, fill="#888888")
-    d.text((4, 88), "OK=Start  KEY3=Exit", font=font, fill="#666666")
+    d.text((4, 56), "Auto-discovers SMB", font=font, fill=(113, 125, 126))
+    d.text((4, 68), "hosts on local subnet", font=font, fill=(113, 125, 126))
+    d.text((4, 88), "OK=Start  KEY3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

@@ -110,13 +110,13 @@ def stop_scan_process():
         nmap_process = None
 
 def draw_ui(screen_state="main", message_lines=None):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     
     # Header
-    d.text((5, 5), "Nmap Vuln Scan", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
-    d.text((5, 115), f"IF: {NETWORK_INTERFACE}", font=FONT, fill="gray") # Display interface
+    d.text((5, 5), "Nmap Vuln Scan", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
+    d.text((5, 115), f"IF: {NETWORK_INTERFACE}", font=FONT, fill=(86, 101, 115)) # Display interface
 
     if message_lines:
         if isinstance(message_lines, str):
@@ -126,19 +126,19 @@ def draw_ui(screen_state="main", message_lines=None):
             bbox = d.textbbox((0, 0), line, font=FONT)
             w = bbox[2] - bbox[0]
             x = (WIDTH - w) // 2
-            d.text((x, y_offset), line, font=FONT, fill="yellow")
+            d.text((x, y_offset), line, font=FONT, fill=(212, 172, 13))
             y_offset += 12
     elif screen_state == "main":
-        d.text((10, 60), status_msg, font=FONT, fill="yellow")
-        d.text((5, 100), "OK=Scan | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((10, 60), status_msg, font=FONT, fill=(212, 172, 13))
+        d.text((5, 100), "OK=Scan | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui_interface_selection(interfaces, current_selection):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, iface in enumerate(interfaces):
@@ -146,8 +146,8 @@ def draw_ui_interface_selection(interfaces, current_selection):
         d.text((5, y_pos), iface, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 100), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
-    d.text((5, 110), "KEY3=Cancel", font=FONT, fill="cyan")
+    d.text((5, 100), "UP/DOWN=Select | OK=Confirm", font=FONT, fill=(171, 178, 185))
+    d.text((5, 110), "KEY3=Cancel", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def select_interface_menu():
@@ -198,19 +198,19 @@ def handle_ip_input_logic(initial_ip):
     
     while running:
         # Draw the UI for IP input
-        img = Image.new("RGB", (128, 128), "black")
+        img = Image.new("RGB", (128, 128), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), "Enter Target IP", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), "Enter Target IP", font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
         
         # Display the current input
-        d.text((5, 40), f"IP: {input_ip}", font=FONT, fill="white")
+        d.text((5, 40), f"IP: {input_ip}", font=FONT, fill=(242, 243, 244))
         
         # Display the character selection
-        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill="yellow")
+        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill=(212, 172, 13))
         
-        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill="cyan")
-        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill="cyan")
+        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill=(171, 178, 185))
+        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         btn = None

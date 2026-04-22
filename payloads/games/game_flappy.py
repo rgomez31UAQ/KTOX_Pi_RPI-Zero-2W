@@ -38,15 +38,15 @@ WIDTH, HEIGHT = LCD.width, LCD.height
 _GAME_W, _GAME_H = 128, 128  # internal render resolution
 font = ImageFont.load_default()
 
-# Colors (green/black theme)
-COL_BG = (0, 0, 0)
-COL_BIRD = (0, 255, 0)
-COL_PIPE = (0, 180, 0)
-COL_PIPE_EDGE = (0, 100, 0)
-COL_GROUND = (0, 60, 0)
-COL_SCORE = (0, 255, 0)
-COL_TEXT = (0, 255, 0)
-COL_DIM = (0, 120, 0)
+# Colors (KTOX dark-red theme)
+COL_BG        = (10,  0,   0)   # KTOX BG
+COL_BIRD      = (212, 172, 13)  # YELLOW
+COL_PIPE      = (146, 43,  33)  # RUST
+COL_PIPE_EDGE = (192, 57,  43)  # BLOOD
+COL_GROUND    = (34,  0,   0)   # FOOTER
+COL_SCORE     = (242, 243, 244) # WHITE
+COL_TEXT      = (242, 243, 244) # WHITE
+COL_DIM       = (86,  101, 115) # DIM
 
 # Game constants
 BIRD_X = 20

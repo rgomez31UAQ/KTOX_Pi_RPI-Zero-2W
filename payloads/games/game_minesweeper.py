@@ -150,37 +150,37 @@ def _draw_cell(d, r, c, mines, counts, revealed, flagged, cursor_r, cursor_c, sh
 
     if revealed[r][c] or show_all:
         if mines[r][c]:
-            d.rectangle((x0, y0, x1, y1), fill="#FF0000", outline="#880000")
+            d.rectangle((x0, y0, x1, y1), fill=(231, 76, 60), outline="#880000")
             d.ellipse((x0 + 3, y0 + 3, x1 - 3, y1 - 3), fill="#000000")
         else:
-            d.rectangle((x0, y0, x1, y1), fill="#CCCCCC", outline="#999999")
+            d.rectangle((x0, y0, x1, y1), fill=(242, 243, 244), outline="#999999")
             num = counts[r][c]
             if num > 0:
                 color = NUM_COLORS.get(num, "#000000")
                 d.text((x0 + 4, y0 + 2), str(num), font=font, fill=color)
     elif flagged[r][c]:
-        d.rectangle((x0, y0, x1, y1), fill="#444444", outline="#666666")
+        d.rectangle((x0, y0, x1, y1), fill=(34, 0, 0), outline=(86, 101, 115))
         d.polygon(
             [(x0 + 4, y0 + 3), (x0 + 4, y0 + 11), (x0 + 10, y0 + 7)],
-            fill="#FFFF00",
+            fill=(212, 172, 13),
         )
     else:
-        d.rectangle((x0, y0, x1, y1), fill="#555555", outline="#777777")
+        d.rectangle((x0, y0, x1, y1), fill=(86, 101, 115), outline="#777777")
 
     if is_cursor and not show_all:
-        d.rectangle((x0, y0, x1, y1), outline="#00FF00", width=2)
+        d.rectangle((x0, y0, x1, y1), outline=(30, 132, 73), width=2)
 
 
 def draw_board(mines, counts, revealed, flagged, cursor_r, cursor_c,
                game_over, won, show_all):
     """Render the full game board."""
-    img = Image.new("RGB", (_GAME_W, _GAME_H), "black")
+    img = Image.new("RGB", (_GAME_W, _GAME_H), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
     flags = _count_flags(flagged)
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "MINESWEEPER", font=font, fill="#00CCFF")
-    d.text((90, 1), f"F:{flags}/{MINE_COUNT}", font=font, fill="#FFFF00")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "MINESWEEPER", font=font, fill=(171, 178, 185))
+    d.text((90, 1), f"F:{flags}/{MINE_COUNT}", font=font, fill=(212, 172, 13))
 
     for r in range(GRID_H):
         for c in range(GRID_W):
@@ -188,13 +188,13 @@ def draw_board(mines, counts, revealed, flagged, cursor_r, cursor_c,
                        cursor_r, cursor_c, show_all)
 
     if game_over:
-        d.rectangle((10, 50, 118, 75), fill="#000000", outline="#FF0000")
-        d.text((20, 55), "GAME OVER!", font=font, fill="#FF0000")
-        d.text((15, 65), "K2:New  K3:Exit", font=font, fill="#888")
+        d.rectangle((10, 50, 118, 75), fill="#000000", outline=(231, 76, 60))
+        d.text((20, 55), "GAME OVER!", font=font, fill=(231, 76, 60))
+        d.text((15, 65), "K2:New  K3:Exit", font=font, fill=(113, 125, 126))
     elif won:
-        d.rectangle((10, 50, 118, 75), fill="#000000", outline="#00FF00")
-        d.text((25, 55), "YOU WIN!", font=font, fill="#00FF00")
-        d.text((15, 65), "K2:New  K3:Exit", font=font, fill="#888")
+        d.rectangle((10, 50, 118, 75), fill="#000000", outline=(30, 132, 73))
+        d.text((25, 55), "YOU WIN!", font=font, fill=(30, 132, 73))
+        d.text((15, 65), "K2:New  K3:Exit", font=font, fill=(113, 125, 126))
 
     if _GAME_W != WIDTH or _GAME_H != HEIGHT:
         img = img.resize((WIDTH, HEIGHT), Image.NEAREST)

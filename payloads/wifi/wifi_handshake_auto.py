@@ -396,7 +396,7 @@ def _export_all():
 # ── Drawing ──────────────────────────────────────────────────────────────────
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     with lock:
@@ -408,7 +408,7 @@ def _draw_screen():
         cap_list = list(captures)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "AUTO HANDSHAKE", font=font, fill="#FF5722")
     color = "#00FF00" if active else "#FF0000"
     d.ellipse((118, 3, 126, 11), fill=color)
@@ -416,9 +416,9 @@ def _draw_screen():
     y = 15
     de_str = "ON" if de else "OFF"
     d.text((2, y), f"Trk:{n_targets} Cap:{len(cap_list)} DA:{de_str}",
-           font=font, fill="#888")
+           font=font, fill=(113, 125, 126))
     y += 12
-    d.text((2, y), msg[:22], font=font, fill="#FFAA00")
+    d.text((2, y), msg[:22], font=font, fill=(212, 172, 13))
     y += 14
 
     # Capture list
@@ -427,14 +427,14 @@ def _draw_screen():
         c = cap_list[i]
         ssid = (c["ssid"] or "?")[:10]
         cnt = c["eapol_count"]
-        d.text((2, y), f"{ssid} [{cnt}] {c['ts'][-6:]}", font=font, fill="#00FF00")
+        d.text((2, y), f"{ssid} [{cnt}] {c['ts'][-6:]}", font=font, fill=(30, 132, 73))
         y += ROW_H
 
     if not cap_list:
         d.text((2, y), "No captures yet", font=font, fill="#555")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     lbl = "OK:Stop" if active else "OK:Go"
     d.text((2, 117), f"{lbl} K1:DA K2:Exp K3:X", font=font, fill="#AAA")
 
@@ -446,13 +446,13 @@ def _draw_screen():
 def main():
     global scroll_pos, deauth_enabled, status_msg
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((8, 10), "AUTO HANDSHAKE", font=font, fill="#FF5722")
-    d.text((4, 28), "Automatic WPA2/3", font=font, fill="#888")
-    d.text((4, 40), "handshake capture.", font=font, fill="#888")
-    d.text((4, 60), "OK=Start  K1=Deauth", font=font, fill="#666")
-    d.text((4, 72), "K2=Export  K3=Exit", font=font, fill="#666")
+    d.text((4, 28), "Automatic WPA2/3", font=font, fill=(113, 125, 126))
+    d.text((4, 40), "handshake capture.", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "OK=Start  K1=Deauth", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "K2=Export  K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

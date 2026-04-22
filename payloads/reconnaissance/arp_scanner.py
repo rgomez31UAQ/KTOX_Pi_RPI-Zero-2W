@@ -187,11 +187,11 @@ def save_loot():
             f.write(f"{host['ip']:<15} {host['mac']}\n")
 
 def draw_ui(status_msg="", interface=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
-    d.text((5, 5), f"ARP Scanner ({interface})", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), f"ARP Scanner ({interface})", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if status_msg:
         lines = status_msg.split('\n')
@@ -200,12 +200,12 @@ def draw_ui(status_msg="", interface=""):
             bbox = d.textbbox((0, 0), line, font=FONT)
             w = bbox[2] - bbox[0]
             x = (WIDTH - w) // 2
-            d.text((x, y_start), line, font=FONT, fill="yellow")
+            d.text((x, y_start), line, font=FONT, fill=(212, 172, 13))
             y_start += 12
     else:
         with ui_lock:
             if not discovered_hosts:
-                d.text((10, 60), "No hosts found.", font=FONT, fill="white")
+                d.text((10, 60), "No hosts found.", font=FONT, fill=(242, 243, 244))
             else:
                 start_display_index = max(0, selected_index - 3)
                 end_display_index = min(len(discovered_hosts), start_display_index + 7)
@@ -218,7 +218,7 @@ def draw_ui(status_msg="", interface=""):
                     d.text((5, y_pos), line, font=FONT, fill=color)
                     y_pos += 12
 
-    d.text((5, 110), "OK=Scan | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 110), "OK=Scan | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 if __name__ == "__main__":
@@ -228,7 +228,7 @@ if __name__ == "__main__":
         try:
             LCD = LCD_1in44.LCD()
             LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
-            img = Image.new("RGB", (128, 128), "black")
+            img = Image.new("RGB", (128, 128), (10, 0, 0))
             d = ImageDraw.Draw(img)
             FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 12)
             d.text((10, 40), "ERROR:\nRoot privileges\nrequired.", font=FONT_TITLE, fill="red")

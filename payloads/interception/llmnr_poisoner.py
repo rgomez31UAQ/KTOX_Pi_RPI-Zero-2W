@@ -123,7 +123,7 @@ LOCAL_IP = _get_local_ip(IFACE)
 
 # ── LCD helpers ───────────────────────────────────────────────────────────────
 def draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
     # Header
@@ -140,7 +140,7 @@ def draw_screen():
         count = len(captured_hashes)
         display_list = list(captured_hashes)
 
-    d.text((4, 28), f"Hashes: {count}", font=FONT_SMALL, fill="#00ccff")
+    d.text((4, 28), f"Hashes: {count}", font=FONT_SMALL, fill=(171, 178, 185))
 
     # Scrollable captured users
     y = 40
@@ -149,18 +149,18 @@ def draw_screen():
         for item in visible_items:
             user = item.get("user", "?")[:10]
             host = item.get("host", "?")[:7]
-            d.text((4, y), f"{user}@{host}", font=FONT_SMALL, fill="#ffffff")
+            d.text((4, y), f"{user}@{host}", font=FONT_SMALL, fill=(242, 243, 244))
             y += 11
     else:
-        d.text((4, y), status_msg[:20], font=FONT_SMALL, fill="#888888")
+        d.text((4, y), status_msg[:20], font=FONT_SMALL, fill=(113, 125, 126))
         if not attacking:
-            d.text((4, y + 11), "OK=Start KEY3=Exit", font=FONT_SMALL, fill="#555555")
+            d.text((4, y + 11), "OK=Start KEY3=Exit", font=FONT_SMALL, fill=(86, 101, 115))
 
     # Scroll indicators
     if scroll_offset > 0:
-        d.polygon([(120, 38), (124, 38), (122, 34)], fill="#888888")
+        d.polygon([(120, 38), (124, 38), (122, 34)], fill=(113, 125, 126))
     if scroll_offset + 5 < count:
-        d.polygon([(120, 118), (124, 118), (122, 122)], fill="#888888")
+        d.polygon([(120, 118), (124, 118), (122, 122)], fill=(113, 125, 126))
 
     LCD.LCD_ShowImage(img, 0, 0)
 

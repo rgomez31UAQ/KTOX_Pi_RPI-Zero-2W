@@ -219,12 +219,12 @@ def _flood_thread():
 # ---------------------------------------------------------------------------
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
     # Warning banner
     draw.rectangle((0, 0, 127, 13), fill="RED")
-    draw.text((4, 1), "SYN FLOOD - AUTH ONLY", fill="WHITE", font=font)
+    draw.text((4, 1), "SYN FLOOD - AUTH ONLY", fill=(242, 243, 244), font=font)
 
     with lock:
         st = status_msg
@@ -238,7 +238,7 @@ def _draw_screen():
         t_port = target_port
         spd = SPEED_LEVELS[speed_idx]
 
-    draw.text((2, 16), st[:22], fill="WHITE", font=font)
+    draw.text((2, 16), st[:22], fill=(242, 243, 244), font=font)
 
     if vm == "hosts":
         y = 30
@@ -250,29 +250,29 @@ def _draw_screen():
             y += 14
 
         if not h_list:
-            draw.text((2, 56), "Scanning...", fill="GRAY", font=font)
-        draw.text((2, 116), "OK=select K1=target", fill="GRAY", font=font)
+            draw.text((2, 56), "Scanning...", fill=(86, 101, 115), font=font)
+        draw.text((2, 116), "OK=select K1=target", fill=(86, 101, 115), font=font)
 
     elif vm == "attack":
         draw.text((2, 30), f"Target: {t_ip}:{t_port}", fill="RED", font=font)
-        draw.text((2, 44), f"Speed:  {spd} pps", fill="YELLOW", font=font)
-        draw.text((2, 58), f"Sent:   {ps}", fill="GREEN" if fa else "WHITE", font=font)
+        draw.text((2, 44), f"Speed:  {spd} pps", fill=(212, 172, 13), font=font)
+        draw.text((2, 58), f"Sent:   {ps}", fill=(30, 132, 73) if fa else "WHITE", font=font)
 
         if fa and start_time > 0:
             duration = int(time.time() - start_time)
             mins = duration // 60
             secs = duration % 60
-            draw.text((2, 72), f"Time:   {mins}m {secs}s", fill="WHITE", font=font)
+            draw.text((2, 72), f"Time:   {mins}m {secs}s", fill=(242, 243, 244), font=font)
             # Spinning indicator
             tick = int(time.time() * 4) % 4
             chars = "|/-\\"
             draw.text((110, 58), chars[tick], fill="RED", font=font)
         else:
-            draw.text((2, 72), "Press OK to start", fill="GRAY", font=font)
+            draw.text((2, 72), "Press OK to start", fill=(86, 101, 115), font=font)
 
-        draw.text((2, 88), "UP/DN = adjust speed", fill="GRAY", font=font)
-        draw.text((2, 102), "OK = start/stop", fill="GRAY", font=font)
-        draw.text((2, 116), "KEY3 = exit", fill="GRAY", font=font)
+        draw.text((2, 88), "UP/DN = adjust speed", fill=(86, 101, 115), font=font)
+        draw.text((2, 102), "OK = start/stop", fill=(86, 101, 115), font=font)
+        draw.text((2, 116), "KEY3 = exit", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -286,7 +286,7 @@ def main():
     global view_mode, status_msg, target_ip, target_port, speed_idx, packets_sent
 
     if not SCAPY_OK:
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.text((4, 50), "scapy not found!", font=font, fill="RED")
         LCD.LCD_ShowImage(img, 0, 0)
@@ -296,15 +296,15 @@ def main():
 
     try:
         # Show warning splash
-        img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+        img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
         d = ScaledDraw(img)
         d.rectangle((0, 0, 127, 127), outline="RED")
         d.rectangle((2, 2, 125, 125), outline="RED")
         d.text((10, 20), "!! WARNING !!", fill="RED", font=font)
-        d.text((4, 40), "Authorized testing", fill="YELLOW", font=font)
-        d.text((4, 54), "ONLY. Illegal use", fill="YELLOW", font=font)
-        d.text((4, 68), "is YOUR liability.", fill="YELLOW", font=font)
-        d.text((20, 100), "OK to continue", fill="GRAY", font=font)
+        d.text((4, 40), "Authorized testing", fill=(212, 172, 13), font=font)
+        d.text((4, 54), "ONLY. Illegal use", fill=(212, 172, 13), font=font)
+        d.text((4, 68), "is YOUR liability.", fill=(212, 172, 13), font=font)
+        d.text((20, 100), "OK to continue", fill=(86, 101, 115), font=font)
         LCD.LCD_ShowImage(img, 0, 0)
 
         # Wait for OK to acknowledge
@@ -397,10 +397,10 @@ def main():
         app_running = False
         flood_active = False
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
-            d.text((10, 50), "SYN Flood stopped", fill="YELLOW", font=font)
-            d.text((10, 66), f"Total: {packets_sent} pkts", fill="WHITE", font=font)
+            d.text((10, 50), "SYN Flood stopped", fill=(212, 172, 13), font=font)
+            d.text((10, 66), f"Total: {packets_sent} pkts", fill=(242, 243, 244), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

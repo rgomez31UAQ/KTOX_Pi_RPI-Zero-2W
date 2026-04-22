@@ -25,6 +25,7 @@ import time
 import signal
 import subprocess
 import re
+import select
 import threading
 import json
 # Prefer installed KTOx first, then repo parent for helpers
@@ -161,22 +162,25 @@ def run_attack():
     ]
     
     attack_process = subprocess.Popen(command, stderr=subprocess.PIPE, text=True)
-    
+
     while running and attack_process.poll() is None:
+        ready = select.select([attack_process.stderr], [], [], 0.5)[0]
+        if not ready:
+            continue
         line = attack_process.stderr.readline()
         if not line:
             break
-        
+
         parts = line.strip().split(']')
         if len(parts) > 1:
             status_text = parts[1].strip()
-            
+
             ap_count = re.search(r'(\d+)\s+/\s*(\d+)\s+APs', status_text)
             pmkid_count = re.search(r'(\d+)\s+PMKIDs', status_text)
-            
+
             ap_str = f"APs: {ap_count.group(2)}" if ap_count else "APs: N/A"
             pmkid_str = f"PMKIDs: {pmkid_count.group(1)}" if pmkid_count else "PMKIDs: 0"
-            
+
             status_lines = [
                 "hcxdumptool running...",
                 ap_str,
@@ -184,31 +188,33 @@ def run_attack():
                 f"File: pmkid_{timestamp}.pcapng"
             ]
 
-    if running:
-        status_lines = ["hcxdumptool", "crashed or exited.", "Check logs."]
-    else:
+    if not running:
         status_lines = ["Attack stopped.", f"File saved in:", f"{LOOT_DIR}"]
+    elif os.path.exists(output_file) and os.path.getsize(output_file) > 24:
+        status_lines = ["Capture complete.", f"pmkid_{timestamp}.pcapng", "Check loot dir."]
+    else:
+        status_lines = ["hcxdumptool", "exited early.", "Check logs."]
 
 def draw_ui(status: str):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
-    d.text((5, 5), "PMKID Capture Attack", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "PMKID Capture Attack", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     status_color = "lime" if status == "ACTIVE" else "red"
     d.text((30, 30), status, font=FONT_STATUS, fill=status_color)
 
     y_pos = 50
     for line in status_lines:
-        d.text((5, y_pos), line, font=FONT_STATUS, fill="white")
+        d.text((5, y_pos), line, font=FONT_STATUS, fill=(242, 243, 244))
         y_pos += 12
 
-    d.text((5, 110), "OK=Start/Stop | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 110), "OK=Start/Stop | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_message(lines, color="yellow"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40

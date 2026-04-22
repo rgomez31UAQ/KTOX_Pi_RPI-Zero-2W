@@ -65,13 +65,13 @@ LOOT_DIR = "/root/KTOx/loot/USBEthMITM"
 os.makedirs(LOOT_DIR, exist_ok=True)
 
 GADGET_BASE = "/sys/kernel/config/usb_gadget"
-GADGET_NAME = "raspyjack_eth"
-DNSMASQ_CONF = "/tmp/raspyjack_usbeth_dnsmasq.conf"
+GADGET_NAME = "ktox_eth"
+DNSMASQ_CONF = "/tmp/ktox_usbeth_dnsmasq.conf"
 USB_IFACE = "usb0"
 GATEWAY_IP = "10.0.88.1"
 DHCP_RANGE_START = "10.0.88.10"
 DHCP_RANGE_END = "10.0.88.50"
-DNS_LOG = "/tmp/raspyjack_usbeth_dns.log"
+DNS_LOG = "/tmp/ktox_usbeth_dns.log"
 ROWS_VISIBLE = 6
 
 # ---------------------------------------------------------------------------
@@ -542,20 +542,20 @@ def _export_data():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(171, 178, 185))
     with lock:
         active = gadget_running
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
 def draw_main_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "USB ETH MITM")
 
@@ -570,15 +570,15 @@ def draw_main_view():
     current_host = _detect_host_ip() if running else ""
 
     y = 18
-    d.text((2, y), msg[:22], font=font, fill="#00FF00" if running else "#FF4444")
+    d.text((2, y), msg[:22], font=font, fill=(30, 132, 73) if running else "#FF4444")
     y += 14
-    d.text((2, y), f"Host: {current_host or 'waiting...'}", font=font, fill="white")
+    d.text((2, y), f"Host: {current_host or 'waiting...'}", font=font, fill=(242, 243, 244))
     y += 14
-    d.text((2, y), f"Packets: {pkts}", font=font, fill="#CCCCCC")
+    d.text((2, y), f"Packets: {pkts}", font=font, fill=(242, 243, 244))
     y += 14
-    d.text((2, y), f"DNS queries: {dns_count}", font=font, fill="#FFAA00")
+    d.text((2, y), f"DNS queries: {dns_count}", font=font, fill=(212, 172, 13))
     y += 14
-    d.text((2, y), f"Creds found: {cred_count}", font=font, fill="#FF4444")
+    d.text((2, y), f"Creds found: {cred_count}", font=font, fill=(231, 76, 60))
     y += 14
     spoof_label = "ON" if spoof else "OFF"
     spoof_color = "#00FF00" if spoof else "#888"
@@ -590,7 +590,7 @@ def draw_main_view():
 
 
 def draw_captured_view():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "CAPTURED DATA")
 
@@ -601,20 +601,20 @@ def draw_captured_view():
 
     y = 18
     if creds:
-        d.text((2, y), "-- Credentials --", font=font, fill="#FF4444")
+        d.text((2, y), "-- Credentials --", font=font, fill=(231, 76, 60))
         y += 12
         for cred in creds[-3:]:
-            d.text((2, y), f"{cred['type']}: {cred['data'][:16]}", font=font, fill="#FFAA00")
+            d.text((2, y), f"{cred['type']}: {cred['data'][:16]}", font=font, fill=(212, 172, 13))
             y += 12
 
     if queries:
-        d.text((2, y), "-- DNS Queries --", font=font, fill="#00CCFF")
+        d.text((2, y), "-- DNS Queries --", font=font, fill=(171, 178, 185))
         y += 12
         visible = queries[sc:sc + 4]
         for q in visible:
             if y > 108:
                 break
-            d.text((2, y), q["query"][:22], font=font, fill="#888")
+            d.text((2, y), q["query"][:22], font=font, fill=(113, 125, 126))
             y += 10
 
     _draw_footer(d, "UP/DN:Scroll K3:Back")
@@ -629,13 +629,13 @@ def main():
     global scroll_pos, view_mode, dns_spoof_enabled, status_msg
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 16), "USB ETHERNET MITM", font=font, fill="#00CCFF")
-    d.text((4, 36), "RNDIS/ECM gadget", font=font, fill="#888")
-    d.text((4, 48), "Traffic interception", font=font, fill="#888")
-    d.text((4, 66), "OK=Start K1=DNS Spoof", font=font, fill="#666")
-    d.text((4, 78), "K2=Captured K3=Exit", font=font, fill="#666")
+    d.text((4, 16), "USB ETHERNET MITM", font=font, fill=(171, 178, 185))
+    d.text((4, 36), "RNDIS/ECM gadget", font=font, fill=(113, 125, 126))
+    d.text((4, 48), "Traffic interception", font=font, fill=(113, 125, 126))
+    d.text((4, 66), "OK=Start K1=DNS Spoof", font=font, fill=(86, 101, 115))
+    d.text((4, 78), "K2=Captured K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.5)
 

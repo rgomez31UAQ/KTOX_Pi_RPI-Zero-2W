@@ -81,10 +81,10 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_ui(status: str, message_lines=None):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Generic BLE Flood", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
+    d.text((5, 5), "Generic BLE Flood", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
     
     if message_lines:
         if isinstance(message_lines, str):
@@ -94,15 +94,15 @@ def draw_ui(status: str, message_lines=None):
             bbox = d.textbbox((0, 0), line, font=FONT)
             w = bbox[2] - bbox[0]
             x = (WIDTH - w) // 2
-            d.text((x, y_offset), line, font=FONT, fill="yellow")
+            d.text((x, y_offset), line, font=FONT, fill=(212, 172, 13))
             y_offset += 12
     else:
         status_color = "lime" if status == "ACTIVE" else "red"
         d.text((30, 35), status, font=FONT_STATUS, fill=status_color)
-        d.text((5, 60), "Packets Sent:", font=FONT, fill="white")
-        d.text((15, 75), str(packet_count), font=FONT_TITLE, fill="yellow")
+        d.text((5, 60), "Packets Sent:", font=FONT, fill=(242, 243, 244))
+        d.text((15, 75), str(packet_count), font=FONT_TITLE, fill=(212, 172, 13))
     
-    d.text((5, 110), "OK=Start/Stop | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 110), "OK=Start/Stop | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def ble_flood_worker():

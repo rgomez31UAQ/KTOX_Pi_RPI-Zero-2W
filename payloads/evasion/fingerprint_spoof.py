@@ -236,7 +236,7 @@ def _restore_defaults():
 # LCD drawing
 # ---------------------------------------------------------------------------
 def _draw_lcd():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     idx = _get("profile_idx")
@@ -245,8 +245,8 @@ def _draw_lcd():
     current = _get("current_values")
 
     # Header
-    d.rectangle((0, 0, 127, 12), fill="#111")
-    d.text((2, 1), "FINGERPRINT SPOOF", font=font, fill="#FF6600")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
+    d.text((2, 1), "FINGERPRINT SPOOF", font=font, fill=(231, 76, 60))
 
     y = 16
 
@@ -264,18 +264,18 @@ def _draw_lcd():
     y += 4
     # Current values
     if current:
-        d.text((2, y), f"CurTTL:{current.get('ttl', '?')}", font=font, fill="#666")
+        d.text((2, y), f"CurTTL:{current.get('ttl', '?')}", font=font, fill=(86, 101, 115))
         y += 11
         sack = current.get("tcp_sack", "?")
         ts_val = current.get("tcp_timestamps", "?")
-        d.text((2, y), f"SACK:{sack} TS:{ts_val}", font=font, fill="#666")
+        d.text((2, y), f"SACK:{sack} TS:{ts_val}", font=font, fill=(86, 101, 115))
 
     # Status
     d.rectangle((0, 106, 127, 115), fill="#0a0a0a")
     d.text((2, 107), status[:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK:apply K2:reset K3x", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -284,22 +284,22 @@ def _draw_lcd():
 def _draw_current_values():
     """Show all current sysctl values."""
     current = _read_current_values()
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
-    d.text((2, 2), "Current Stack Values", font=font, fill="#FF6600")
+    d.text((2, 2), "Current Stack Values", font=font, fill=(231, 76, 60))
     y = 18
     for key, val in current.items():
         label = key.replace("tcp_", "").replace("ip_", "")[:8]
         val_str = str(val)[:14]
-        d.text((2, y), f"{label}: {val_str}", font=font, fill="#AAAAAA")
+        d.text((2, y), f"{label}: {val_str}", font=font, fill=(171, 178, 185))
         y += 12
 
     active = _get("active_profile")
     if active:
-        d.text((2, y + 4), f"Profile: {active}", font=font, fill="#FFFF00")
+        d.text((2, y + 4), f"Profile: {active}", font=font, fill=(212, 172, 13))
 
-    d.text((2, 116), "Press any key...", font=font, fill="#666")
+    d.text((2, 116), "Press any key...", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
 
     while True:
@@ -317,13 +317,13 @@ def main():
     _save_originals()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 16), "FINGERPRINT SPOOF", font=font, fill="#FF6600")
-    d.text((4, 32), "TCP/IP stack spoofer", font=font, fill="#888")
-    d.text((4, 52), "OK=Apply profile", font=font, fill="#666")
-    d.text((4, 64), "U/D=Select  K1=Show", font=font, fill="#666")
-    d.text((4, 76), "K2=Restore  K3=Exit", font=font, fill="#666")
+    d.text((4, 16), "FINGERPRINT SPOOF", font=font, fill=(231, 76, 60))
+    d.text((4, 32), "TCP/IP stack spoofer", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "OK=Apply profile", font=font, fill=(86, 101, 115))
+    d.text((4, 64), "U/D=Select  K1=Show", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K2=Restore  K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

@@ -349,13 +349,13 @@ def _draw_list_view(draw):
         listen = listening
         fr = frames_received
 
-    draw.text((2, 2), "LLDP/CDP RECON", fill="CYAN", font=font)
+    draw.text((2, 2), "LLDP/CDP RECON", fill=(171, 178, 185), font=font)
     indicator = "ON" if listen else "OFF"
     ind_color = "GREEN" if listen else "GRAY"
     draw.text((90, 2), indicator, fill=ind_color, font=font)
 
-    draw.text((2, 14), f"Devices:{len(dev_list)} Frames:{fr}", fill="WHITE", font=font)
-    draw.text((2, 26), st[:22], fill="GRAY", font=font)
+    draw.text((2, 14), f"Devices:{len(dev_list)} Frames:{fr}", fill=(242, 243, 244), font=font)
+    draw.text((2, 26), st[:22], fill=(86, 101, 115), font=font)
 
     y = 40
     visible = dev_list[sp:sp + ROWS_VISIBLE]
@@ -369,9 +369,9 @@ def _draw_list_view(draw):
         y += 14
 
     if not visible:
-        draw.text((2, 50), "Waiting for frames...", fill="GRAY", font=font)
+        draw.text((2, 50), "Waiting for frames...", fill=(86, 101, 115), font=font)
 
-    draw.text((2, 116), "OK:Listen R:Detail K3:Quit", fill="GRAY", font=font)
+    draw.text((2, 116), "OK:Listen R:Detail K3:Quit", fill=(86, 101, 115), font=font)
 
 
 def _draw_detail_view(draw):
@@ -380,7 +380,7 @@ def _draw_detail_view(draw):
         si = selected_idx
         dev_list = list(devices)
 
-    draw.text((2, 2), "DEVICE DETAIL", fill="CYAN", font=font)
+    draw.text((2, 2), "DEVICE DETAIL", fill=(171, 178, 185), font=font)
 
     if 0 <= si < len(dev_list):
         d = dev_list[si]
@@ -398,19 +398,19 @@ def _draw_detail_view(draw):
         for label, val in fields:
             if val:
                 text = f"{label}: {val}"
-                draw.text((2, y), text[:22], fill="WHITE", font=font)
+                draw.text((2, y), text[:22], fill=(242, 243, 244), font=font)
                 y += 12
                 if y > 104:
                     break
     else:
-        draw.text((2, 40), "No device selected", fill="GRAY", font=font)
+        draw.text((2, 40), "No device selected", fill=(86, 101, 115), font=font)
 
-    draw.text((2, 116), "LEFT:Back K2:Export", fill="GRAY", font=font)
+    draw.text((2, 116), "LEFT:Back K2:Export", fill=(86, 101, 115), font=font)
 
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
     with lock:
@@ -434,10 +434,10 @@ def main():
 
     try:
         if not SCAPY_OK:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((4, 50), "scapy not found!", font=font, fill="RED")
-            draw.text((4, 65), "pip install scapy", font=font, fill="GRAY")
+            draw.text((4, 65), "pip install scapy", font=font, fill=(86, 101, 115))
             LCD.LCD_ShowImage(img, 0, 0)
             time.sleep(3)
             GPIO.cleanup()
@@ -511,9 +511,9 @@ def main():
         listening = False
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
-            draw.text((10, 50), "LLDP Recon stopped", fill="YELLOW", font=font)
+            draw.text((10, 50), "LLDP Recon stopped", fill=(212, 172, 13), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

@@ -45,7 +45,7 @@ def init_hw():
         LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
         LCD.LCD_Clear()
 
-        _image = Image.new("RGB", (128, 128), "black")
+        _image = Image.new("RGB", (128, 128), (10, 0, 0))
         _draw = ImageDraw.Draw(_image)
         try:
             _font_sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 9)
@@ -64,7 +64,7 @@ def draw_tor_screen():
     global animation_frame
     _draw.rectangle((0,0,128,128), fill="#0A0000")
     _draw.rectangle((0,0,128,18), fill="#8B0000")
-    _draw.text((5,3), "KTOX TOR", font=_font_sm, fill="#FF3333")
+    _draw.text((5,3), "KTOX TOR", font=_font_sm, fill=(231, 76, 60))
 
     # Status line
     status_color = "#00FF88" if "ON" in tor_status else "#FF6666"
@@ -72,12 +72,12 @@ def draw_tor_screen():
 
     # Tor IP (if connected)
     if tor_ip and tor_ip != "Checking...":
-        _draw.text((5,38), f"IP: {tor_ip}", font=_font_sm, fill="#FFBBBB")
+        _draw.text((5,38), f"IP: {tor_ip}", font=_font_sm, fill=(171, 178, 185))
 
     # Animated indicator
     dots = "." * ((animation_frame % 4) + 1)
     anim_text = "Tor" + dots if "Starting" in tor_status or "Connecting" in tor_status else ""
-    _draw.text((5,52), anim_text, font=_font_sm, fill="#FFAA00")
+    _draw.text((5,52), anim_text, font=_font_sm, fill=(212, 172, 13))
 
     _draw.rectangle((0,117,128,128), fill="#220000")
     _draw.text((5,118), "K1=Toggle  K3=Exit", font=_font_sm, fill="#FF7777")

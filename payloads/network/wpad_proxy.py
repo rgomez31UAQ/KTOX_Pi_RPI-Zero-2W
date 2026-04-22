@@ -69,7 +69,7 @@ font = scaled_font()
 LOOT_DIR = "/root/KTOx/loot/WPAD"
 os.makedirs(LOOT_DIR, exist_ok=True)
 
-DNSMASQ_CONF = "/tmp/raspyjack_wpad_dnsmasq.conf"
+DNSMASQ_CONF = "/tmp/ktox_wpad_dnsmasq.conf"
 PROXY_PORT = 8888
 WPAD_PORT = 80
 GATEWAY_IP = "10.0.77.1"
@@ -329,7 +329,7 @@ def _write_dnsmasq_conf(iface, pi_ip):
         f"address=/#/{pi_ip}\n"
         f"no-resolv\n"
         f"log-queries\n"
-        f"log-facility=/tmp/raspyjack_wpad_dns.log\n"
+        f"log-facility=/tmp/ktox_wpad_dns.log\n"
     )
     with open(DNSMASQ_CONF, "w") as fh:
         fh.write(conf)
@@ -440,7 +440,7 @@ def _stop_attack():
     )
 
     # Remove temp files
-    for path in (DNSMASQ_CONF, "/tmp/raspyjack_wpad_dns.log"):
+    for path in (DNSMASQ_CONF, "/tmp/ktox_wpad_dns.log"):
         try:
             os.remove(path)
         except OSError:
@@ -501,10 +501,10 @@ def _count_leases():
 
 def _draw_screen():
     """Render state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
-    draw.text((2, 2), "WPAD Proxy", fill="CYAN", font=font)
+    draw.text((2, 2), "WPAD Proxy", fill=(171, 178, 185), font=font)
 
     with lock:
         st = status_msg
@@ -516,10 +516,10 @@ def _draw_screen():
         cred_list = list(credentials)
         inj = content_injection
 
-    draw.text((2, 14), st[:22], fill="WHITE", font=font)
-    draw.text((2, 28), f"Leases: {leases}", fill="GREEN", font=font)
-    draw.text((2, 40), f"Connections: {conns}", fill="GREEN", font=font)
-    draw.text((2, 52), f"URLs: {len(url_list)}", fill="WHITE", font=font)
+    draw.text((2, 14), st[:22], fill=(242, 243, 244), font=font)
+    draw.text((2, 28), f"Leases: {leases}", fill=(30, 132, 73), font=font)
+    draw.text((2, 40), f"Connections: {conns}", fill=(30, 132, 73), font=font)
+    draw.text((2, 52), f"URLs: {len(url_list)}", fill=(242, 243, 244), font=font)
     draw.text((2, 64), f"Creds: {len(cred_list)}", fill="RED" if cred_list else "GRAY", font=font)
     inj_label = "ON" if inj else "OFF"
     draw.text((2, 76), f"Inject: {inj_label}", fill="RED" if inj else "GRAY", font=font)
@@ -529,11 +529,11 @@ def _draw_screen():
     recent = url_list[sp:sp + 2]
     for u in recent:
         line = f"{u['ts']} {u['url'][:14]}"
-        draw.text((2, y), line, fill="GRAY", font=font)
+        draw.text((2, y), line, fill=(86, 101, 115), font=font)
         y += 10
 
     atk_label = "ACTIVE" if atk else "IDLE"
-    draw.text((2, 116), f"[{atk_label}] K1=inj K3=exit", fill="GREEN" if atk else "GRAY", font=font)
+    draw.text((2, 116), f"[{atk_label}] K1=inj K3=exit", fill=(30, 132, 73) if atk else "GRAY", font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -593,7 +593,7 @@ def main():
             _stop_attack()
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((10, 56), "WPAD stopped", fill="RED", font=font)
             LCD.LCD_ShowImage(img, 0, 0)

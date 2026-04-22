@@ -436,11 +436,11 @@ def _draw_lcd():
     """Render current state on LCD."""
     st = _get_state()
     cfg = st["config"]
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "HTTP EXFIL", font=font, fill="#FF8800")
     status_color = "#00FF00" if st["status"] == "Complete" else "#FFAA00"
     if st["status"] == "Error":
@@ -449,26 +449,26 @@ def _draw_lcd():
 
     # Target URL (truncated)
     url_display = cfg["target_url"][:21]
-    d.text((2, 16), url_display, font=font, fill="#888")
+    d.text((2, 16), url_display, font=font, fill=(113, 125, 126))
 
     # Transfer progress
     if st["transfer_active"] or st["status"] in ("Complete", "Error"):
         # File being transferred
-        d.text((2, 28), f"F: {st['transfer_file'][:17]}", font=font, fill="#AAAAAA")
+        d.text((2, 28), f"F: {st['transfer_file'][:17]}", font=font, fill=(171, 178, 185))
 
         # Progress bar
         bar_y = 40
-        d.rectangle((2, bar_y, 125, bar_y + 10), outline="#444")
+        d.rectangle((2, bar_y, 125, bar_y + 10), outline=(34, 0, 0))
         bar_w = int(123 * st["transfer_progress"] / 100)
         if bar_w > 0:
             bar_color = "#00AA44" if st["status"] != "Error" else "#AA0000"
             d.rectangle((2, bar_y, 2 + bar_w, bar_y + 10), fill=bar_color)
         pct_text = f"{st['transfer_progress']:.0f}%"
-        d.text((52, bar_y + 1), pct_text, font=font, fill="white")
+        d.text((52, bar_y + 1), pct_text, font=font, fill=(242, 243, 244))
 
         # Stats
-        d.text((2, 54), f"Chunks: {st['chunks_sent']}/{st['total_chunks']}", font=font, fill="#888")
-        d.text((2, 66), f"Sent: {_format_size(st['bytes_sent'])}", font=font, fill="#888")
+        d.text((2, 54), f"Chunks: {st['chunks_sent']}/{st['total_chunks']}", font=font, fill=(113, 125, 126))
+        d.text((2, 66), f"Sent: {_format_size(st['bytes_sent'])}", font=font, fill=(113, 125, 126))
 
     # File list
     files = st["files"]
@@ -492,19 +492,19 @@ def _draw_lcd():
             size_display = _format_size(f["size"])
             fg = "#FFFFFF" if is_sel else "#666666"
             d.text((2, y), name_display, font=font, fill=fg)
-            d.text((100, y), size_display, font=font, fill="#888")
+            d.text((100, y), size_display, font=font, fill=(113, 125, 126))
 
             if is_sel:
-                d.text((92, y), ">", font=font, fill="#FFAA00")
+                d.text((92, y), ">", font=font, fill=(212, 172, 13))
     else:
-        d.text((10, 50), "No loot files", font=font, fill="#666")
+        d.text((10, 50), "No loot files", font=font, fill=(86, 101, 115))
 
     # Message
     d.rectangle((0, 106, 127, 115), fill="#0A0A0A")
     d.text((2, 106), st["last_message"][:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK:Send K2:All K3:Quit", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
@@ -518,13 +518,13 @@ def main():
     _refresh_file_list()
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 20), "HTTP EXFIL", font=font, fill="#FF8800")
-    d.text((4, 36), "Base64 chunked POST", font=font, fill="#888")
-    d.text((4, 56), "OK=Send  U/D=Select", font=font, fill="#666")
-    d.text((4, 68), "K1=URL  K2=Send All", font=font, fill="#666")
-    d.text((4, 80), "K3=Exit", font=font, fill="#666")
+    d.text((4, 36), "Base64 chunked POST", font=font, fill=(113, 125, 126))
+    d.text((4, 56), "OK=Send  U/D=Select", font=font, fill=(86, 101, 115))
+    d.text((4, 68), "K1=URL  K2=Send All", font=font, fill=(86, 101, 115))
+    d.text((4, 80), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 

@@ -243,27 +243,27 @@ def _draw_frame(lcd):
     # Header
     phase_name = PHASES[pidx]
     phase_color = PHASE_COLORS[phase_name]
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), f"TIMER - {phase_name}", font=font, fill=phase_color)
 
     if not active and not expired:
         # Setup mode
-        d.text((2, 20), "Set Duration:", font=font, fill="#AAAAAA")
+        d.text((2, 20), "Set Duration:", font=font, fill=(171, 178, 185))
 
         time_str = f"{setup_hours:02d}h : {setup_minutes:02d}m"
         _draw_big_time(d, time_str, 36, "#FFFFFF")
 
         total = setup_hours * 3600 + setup_minutes * 60
-        d.text((2, 56), f"Total: {_format_time(total)}", font=font, fill="#888")
+        d.text((2, 56), f"Total: {_format_time(total)}", font=font, fill=(113, 125, 126))
 
-        d.text((2, 74), "UP/DN: Hours", font=font, fill="#666")
-        d.text((2, 86), "LT/RT: Minutes", font=font, fill="#666")
-        d.text((2, 98), "OK: Start", font=font, fill="#666")
+        d.text((2, 74), "UP/DN: Hours", font=font, fill=(86, 101, 115))
+        d.text((2, 86), "LT/RT: Minutes", font=font, fill=(86, 101, 115))
+        d.text((2, 98), "OK: Start", font=font, fill=(86, 101, 115))
 
     elif expired:
         # Expired view
-        d.text((20, 30), "TIME UP!", font=font, fill="#FF0000")
-        d.text((2, 50), f"Elapsed: {_format_time(elapsed)}", font=font, fill="#AAAAAA")
+        d.text((20, 30), "TIME UP!", font=font, fill=(231, 76, 60))
+        d.text((2, 50), f"Elapsed: {_format_time(elapsed)}", font=font, fill=(171, 178, 185))
         d.text((2, 66), f"Phase: {phase_name}", font=font, fill=phase_color)
 
     else:
@@ -275,23 +275,23 @@ def _draw_frame(lcd):
         if paused:
             d.text((90, 20), "PAUSED", font=font, fill="#FF8800")
 
-        d.text((2, 42), f"Elapsed: {_format_time(elapsed)}", font=font, fill="#888")
+        d.text((2, 42), f"Elapsed: {_format_time(elapsed)}", font=font, fill=(113, 125, 126))
         d.text((2, 54), f"Phase: {phase_name}", font=font, fill=phase_color)
 
         # Phase log
-        d.text((2, 68), "Phase log:", font=font, fill="#666")
+        d.text((2, 68), "Phase log:", font=font, fill=(86, 101, 115))
         visible = log[-3:]
         for i, entry in enumerate(visible):
             y = 80 + i * 12
             line = f"{entry['start']} {entry['phase']} +{_format_short(entry['elapsed'])}"
-            d.text((2, y), line[:24], font=font, fill="#CCCCCC")
+            d.text((2, y), line[:24], font=font, fill=(242, 243, 244))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if active:
-        d.text((2, 117), "OK:Pause K1:Phase K3:X", font=font, fill="#888")
+        d.text((2, 117), "OK:Pause K1:Phase K3:X", font=font, fill=(113, 125, 126))
     else:
-        d.text((2, 117), "OK:Start K2:+30m K3:X", font=font, fill="#888")
+        d.text((2, 117), "OK:Start K2:+30m K3:X", font=font, fill=(113, 125, 126))
 
     lcd.LCD_ShowImage(img, 0, 0)
 

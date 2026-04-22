@@ -123,12 +123,12 @@ scrollback: list[str] = []
 current_line: str     = ""
 
 def draw_buffer(lines: list[str], partial: str = "") -> None:
-    img     = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img     = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d       = ImageDraw.Draw(img)
     visible = lines[-(ROWS - 1):] + [partial]
     y = 0
     for line in visible:
-        d.text((0, y), line[:COLS], font=font, fill="#00FF00")
+        d.text((0, y), line[:COLS], font=font, fill=(30, 132, 73))
         y += CHAR_H
     LCD.LCD_ShowImage(img, 0, 0)
 

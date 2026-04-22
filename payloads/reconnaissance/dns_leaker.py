@@ -256,24 +256,24 @@ while running:
         top_index += 1
         time.sleep(0.15)
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
-    d.text((6, 4), "DNS LEAKER", font=font, fill="#00FF88")
-    d.ellipse((108, 6, 116, 14), fill="#00FF88")
+    d.text((6, 4), "DNS LEAKER", font=font, fill=(30, 132, 73))
+    d.ellipse((108, 6, 116, 14), fill=(30, 132, 73))
 
-    d.line((4, 18, 124, 18), fill="#222")
-    d.line((4, 46, 124, 46), fill="#222")
-    d.line((4, 76, 124, 76), fill="#222")
+    d.line((4, 18, 124, 18), fill=(10, 0, 0))
+    d.line((4, 46, 124, 46), fill=(10, 0, 0))
+    d.line((4, 76, 124, 76), fill=(10, 0, 0))
 
     d.text((8, 22), f"DNS {dns_count}", font=font, fill="#FFF")
     d.text((64, 22), f"NBNS {nbns_count}", font=font, fill="#FF5555")
     d.text((8, 34), f"INT {internal_count}", font=font, fill="#00BFFF")
 
-    d.text((8, 50), "LAST", font=font, fill="#888")
+    d.text((8, 50), "LAST", font=font, fill=(113, 125, 126))
     d.text((8, 62), last_query[:26], font=font, fill="#00BFFF")
 
-    d.text((8, 80), "TOP", font=font, fill="#888")
+    d.text((8, 80), "TOP", font=font, fill=(113, 125, 126))
     y = 92
     for i in range(2):
         idx = top_index + i

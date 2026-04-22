@@ -88,7 +88,7 @@ for pin in PINS.values():
 
 # ------------------------- Drawing helpers ------------------------
 def new_canvas():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     return img, ImageDraw.Draw(img)
 
 
@@ -102,7 +102,7 @@ def draw_center(lines, *, small: bool = False, footer: str | None = None):
     y = (HEIGHT - total_h) // 2
     for s, h in zip(lines, heights):
         w = d.textbbox((0, 0), s, font=f)[2]
-        d.text(((WIDTH - w) // 2, y), s, font=f, fill="#00FF00")
+        d.text(((WIDTH - w) // 2, y), s, font=f, fill=(30, 132, 73))
         y += h + 2
     if footer:
         d.text((2, HEIGHT - 10), footer[:20], font=font_small, fill="#999999")
@@ -111,7 +111,7 @@ def draw_center(lines, *, small: bool = False, footer: str | None = None):
 
 def draw_home(username: str, cursor: int):
     img, d = new_canvas()
-    d.text((2, 2), "Navarro", font=font_big, fill="#00FF00")
+    d.text((2, 2), "Navarro", font=font_big, fill=(30, 132, 73))
     d.line([(0, 14), (WIDTH, 14)], fill="#202020")
     rows = [
         ("Username", username or "<enter>"),
@@ -120,7 +120,7 @@ def draw_home(username: str, cursor: int):
     y = 24
     for i, (k, v) in enumerate(rows):
         prefix = ">" if i == cursor else " "
-        d.text((4, y), f"{prefix} {k}: ", font=font_small, fill="#FFFFFF")
+        d.text((4, y), f"{prefix} {k}: ", font=font_small, fill=(242, 243, 244))
         d.text((70, y), v[:14], font=font_small, fill=("#00FF00" if i == cursor else "#CCCCCC"))
         y += 16
     d.line([(0, HEIGHT - 12), (WIDTH, HEIGHT - 12)], fill="#202020")
@@ -130,9 +130,9 @@ def draw_home(username: str, cursor: int):
 
 def draw_keyboard(buffer: str, grid: list[list[str]], gx: int, gy: int, page_name: str):
     img, d = new_canvas()
-    d.text((2, 2), f"Type ({page_name})", font=font_small, fill="#00FF00")
+    d.text((2, 2), f"Type ({page_name})", font=font_small, fill=(30, 132, 73))
     d.line([(0, 14), (WIDTH, 14)], fill="#202020")
-    d.text((2, 18), buffer[-18:], font=font_big, fill="#FFFFFF")
+    d.text((2, 18), buffer[-18:], font=font_big, fill=(242, 243, 244))
     top = 36
     padding = 4
     max_cols = max(len(row) for row in grid) if grid else 1
@@ -155,11 +155,11 @@ def draw_keyboard(buffer: str, grid: list[list[str]], gx: int, gy: int, page_nam
 
 def draw_running(user: str, bounce_pos: int):
     img, d = new_canvas()
-    d.text((2, 2), f"{user}", font=font_small, fill="#00FF00")
+    d.text((2, 2), f"{user}", font=font_small, fill=(30, 132, 73))
     d.line([(0, 14), (WIDTH, 14)], fill="#202020")
 
     # Status line (single): "Checking <user>…"
-    d.text((2, 18), f"Checking {user}…", font=font_small, fill="#FFFFFF")
+    d.text((2, 18), f"Checking {user}…", font=font_small, fill=(242, 243, 244))
 
     # Bouncing bar
     bar_y1, bar_y2 = 36, 42
@@ -187,7 +187,7 @@ def _shorten_middle(text: str, max_chars: int) -> str:
 
 def draw_results(user: str, items: list[tuple[str, str]], page: int, selected_idx: int, per_page: int = 6):
     img, d = new_canvas()
-    d.text((2, 2), f"Results: {user}", font=font_small, fill="#00FF00")
+    d.text((2, 2), f"Results: {user}", font=font_small, fill=(30, 132, 73))
     d.line([(0, 14), (WIDTH, 14)], fill="#202020")
     total_pages = max(1, (len(items) + per_page - 1) // per_page)
     page = max(1, min(page, total_pages))
@@ -196,7 +196,7 @@ def draw_results(user: str, items: list[tuple[str, str]], page: int, selected_id
         y = 18 + i * 16
         gi = start + i
         render = platform[:20]
-        fill = "#00FF00" if gi == selected_idx else "#FFFFFF"
+        fill = (30, 132, 73) if gi == selected_idx else "#FFFFFF"
         d.text((2, y), f"• {render}", font=font_small, fill=fill)
     d.text((WIDTH - 34, HEIGHT - 10), f"{page}/{total_pages}", font=font_small, fill="#999999")
     d.line([(0, HEIGHT - 12), (WIDTH, HEIGHT - 12)], fill="#202020")
@@ -206,7 +206,7 @@ def draw_results(user: str, items: list[tuple[str, str]], page: int, selected_id
 
 def draw_result_detail(user: str, platform: str, url: str, idx: int, total: int):
     img, d = new_canvas()
-    d.text((2, 2), f"{platform}  {idx+1}/{total}", font=font_small, fill="#00FF00")
+    d.text((2, 2), f"{platform}  {idx+1}/{total}", font=font_small, fill=(30, 132, 73))
     d.line([(0, 14), (WIDTH, 14)], fill="#202020")
 
     # Try to render a QR code on the right (64x64). If unavailable, use full width for text
@@ -245,7 +245,7 @@ def draw_result_detail(user: str, platform: str, url: str, idx: int, total: int)
             break
     y = 20
     for line in lines:
-        d.text((2, y), line, font=font_small, fill="#FFFFFF")
+        d.text((2, y), line, font=font_small, fill=(242, 243, 244))
         y += 12
     d.line([(0, HEIGHT - 12), (WIDTH, HEIGHT - 12)], fill="#202020")
     d.text((2, HEIGHT - 10), "LR=Prev/Next  K3 Back", font=font_small, fill="#999999")

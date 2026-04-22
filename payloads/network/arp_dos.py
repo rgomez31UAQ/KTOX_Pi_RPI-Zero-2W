@@ -201,7 +201,7 @@ def _flood_loop():
 
 def _draw_screen():
     """Render current state on LCD."""
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     draw = ScaledDraw(img)
 
     draw.text((2, 2), "ARP DoS / CAM FLOOD", fill="RED", font=font)
@@ -214,11 +214,11 @@ def _draw_screen():
         spd = SPEED_NAMES[speed_idx]
         iface = IFACE_CHOICES[iface_idx]
 
-    draw.text((2, 16), st[:22], fill="WHITE", font=font)
-    draw.text((2, 30), f"Iface: {iface}", fill="GRAY", font=font)
-    draw.text((2, 44), f"Speed: {spd}", fill="YELLOW", font=font)
-    draw.text((2, 58), f"Sent: {ps}", fill="GREEN" if fl else "WHITE", font=font)
-    draw.text((2, 72), f"Rate: {pps:.0f} pkt/s", fill="WHITE", font=font)
+    draw.text((2, 16), st[:22], fill=(242, 243, 244), font=font)
+    draw.text((2, 30), f"Iface: {iface}", fill=(86, 101, 115), font=font)
+    draw.text((2, 44), f"Speed: {spd}", fill=(212, 172, 13), font=font)
+    draw.text((2, 58), f"Sent: {ps}", fill=(30, 132, 73) if fl else "WHITE", font=font)
+    draw.text((2, 72), f"Rate: {pps:.0f} pkt/s", fill=(242, 243, 244), font=font)
 
     # Estimated CAM fill
     fill_pct = min(100, (ps / CAM_ESTIMATE) * 100)
@@ -230,13 +230,13 @@ def _draw_screen():
         fill_color = "RED"
     draw.text((2, 86), f"CAM fill: ~{fill_pct:.0f}%", fill=fill_color, font=font)
     draw.rectangle((2, 98, 2 + bar_width, 104), fill=fill_color)
-    draw.rectangle((2, 98, 102, 104), outline="GRAY")
+    draw.rectangle((2, 98, 102, 104), outline=(86, 101, 115))
 
     # Footer
     if fl:
-        draw.text((2, 116), "OK:Stop U/D:Spd K3:Quit", fill="GRAY", font=font)
+        draw.text((2, 116), "OK:Stop U/D:Spd K3:Quit", fill=(86, 101, 115), font=font)
     else:
-        draw.text((2, 116), "OK:Start U/D:Spd K3:Quit", fill="GRAY", font=font)
+        draw.text((2, 116), "OK:Start U/D:Spd K3:Quit", fill=(86, 101, 115), font=font)
 
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -251,10 +251,10 @@ def main():
 
     try:
         if not SCAPY_OK:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
             draw.text((4, 50), "scapy not found!", font=font, fill="RED")
-            draw.text((4, 65), "pip install scapy", font=font, fill="GRAY")
+            draw.text((4, 65), "pip install scapy", font=font, fill=(86, 101, 115))
             LCD.LCD_ShowImage(img, 0, 0)
             time.sleep(3)
             GPIO.cleanup()
@@ -321,9 +321,9 @@ def main():
         flooding = False
 
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             draw = ScaledDraw(img)
-            draw.text((10, 50), "ARP DoS stopped", fill="YELLOW", font=font)
+            draw.text((10, 50), "ARP DoS stopped", fill=(212, 172, 13), font=font)
             LCD.LCD_ShowImage(img, 0, 0)
         except Exception:
             pass

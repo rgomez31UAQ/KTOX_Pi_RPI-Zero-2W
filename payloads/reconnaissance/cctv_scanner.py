@@ -444,7 +444,7 @@ def _start_scan():
 # LCD drawing
 # ---------------------------------------------------------------------------
 def _draw_lcd():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     scroll = _get("scroll")
@@ -455,21 +455,21 @@ def _draw_lcd():
     cameras = _get("cameras")
 
     # Header
-    d.rectangle((0, 0, 127, 12), fill="#111")
+    d.rectangle((0, 0, 127, 12), fill=(10, 0, 0))
     d.text((2, 1), f"CCTV [{mode}]", font=font, fill="#FF0066")
-    d.ellipse((118, 3, 124, 9), fill="#00FF00" if scanning else "#666")
+    d.ellipse((118, 3, 124, 9), fill=(30, 132, 73) if scanning else "#666")
 
     y = 14
     # Stats
-    d.text((2, y), f"Hosts:{stats['scanned']} Cams:{stats['cameras']}", font=font, fill="#AAAAAA")
+    d.text((2, y), f"Hosts:{stats['scanned']} Cams:{stats['cameras']}", font=font, fill=(171, 178, 185))
     y += 11
-    d.text((2, y), f"Streams:{stats['streams']} Creds:{stats['creds']}", font=font, fill="#AAAAAA")
+    d.text((2, y), f"Streams:{stats['streams']} Creds:{stats['creds']}", font=font, fill=(171, 178, 185))
     y += 13
 
     # Camera list
     if not cameras:
-        d.text((4, y + 10), "No cameras found", font=font, fill="#666")
-        d.text((4, y + 24), "OK=Start scan", font=font, fill="#666")
+        d.text((4, y + 10), "No cameras found", font=font, fill=(86, 101, 115))
+        d.text((4, y + 24), "OK=Start scan", font=font, fill=(86, 101, 115))
     else:
         visible = 4
         for i in range(scroll, min(scroll + visible, len(cameras))):
@@ -483,7 +483,7 @@ def _draw_lcd():
             line2 = f" P:{len(cam['open_ports'])} S:{stream_cnt}"
             d.text((2, y), line1[:21], font=font, fill=fg)
             y += 10
-            d.text((2, y), line2[:21], font=font, fill="#888")
+            d.text((2, y), line2[:21], font=font, fill=(113, 125, 126))
             y += 12
 
     # Status
@@ -491,18 +491,18 @@ def _draw_lcd():
     d.text((2, 107), status[:21], font=font, fill="#FFCC00")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "OK K1:mode K2:exp K3x", font=font, fill="#AAA")
 
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def _show_msg(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 50), line1[:21], font=font, fill="#00FF00")
+    d.text((4, 50), line1[:21], font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2[:21], font=font, fill="#888")
+        d.text((4, 65), line2[:21], font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.2)
 
@@ -512,13 +512,13 @@ def _show_msg(line1, line2=""):
 # ---------------------------------------------------------------------------
 def main():
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((4, 16), "CCTV SCANNER", font=font, fill="#FF0066")
-    d.text((4, 32), "Camera discovery", font=font, fill="#888")
-    d.text((4, 52), "OK=Scan  K1=Mode", font=font, fill="#666")
-    d.text((4, 64), "U/D=Scroll K2=Export", font=font, fill="#666")
-    d.text((4, 76), "K3=Exit", font=font, fill="#666")
+    d.text((4, 32), "Camera discovery", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "OK=Scan  K1=Mode", font=font, fill=(86, 101, 115))
+    d.text((4, 64), "U/D=Scroll K2=Export", font=font, fill=(86, 101, 115))
+    d.text((4, 76), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 

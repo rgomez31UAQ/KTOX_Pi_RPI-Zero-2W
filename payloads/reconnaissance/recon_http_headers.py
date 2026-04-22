@@ -10,19 +10,19 @@ def handle_ip_input_logic(initial_ip):
     
     while running:
         # Draw the UI for IP input
-        img = Image.new("RGB", (128, 128), "black")
+        img = Image.new("RGB", (128, 128), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), "Enter Target IP", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), "Enter Target IP", font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
         
         # Display the current input
-        d.text((5, 40), f"IP: {input_ip}", font=FONT, fill="white")
+        d.text((5, 40), f"IP: {input_ip}", font=FONT, fill=(242, 243, 244))
         
         # Display the character selection
-        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill="yellow")
+        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill=(212, 172, 13))
         
-        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill="cyan")
-        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill="cyan")
+        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill=(171, 178, 185))
+        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         btn = None
@@ -69,7 +69,7 @@ def handle_ip_input_logic(initial_ip):
 def show_message(lines, color="lime"):
     if isinstance(lines, str):
         lines = [lines]
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
     y = 40
     for line in lines:
@@ -200,10 +200,10 @@ wifi_manager = WiFiManager()
 LOOT_DIR = os.path.join(KTOX_ROOT, 'loot', 'HTTP_Headers')
 
 def draw_ui_interface_selection(interfaces, current_selection):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, iface in enumerate(interfaces):
@@ -211,7 +211,7 @@ def draw_ui_interface_selection(interfaces, current_selection):
         d.text((5, y_pos), iface, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def select_interface_menu():
@@ -256,14 +256,14 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def draw_ui(screen_state="main", status_msg=None):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "HTTP Header Viewer", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "HTTP Header Viewer", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if screen_state == "main":
         if status_msg:
-            d.text((10, 60), status_msg, font=FONT, fill="yellow")
+            d.text((10, 60), status_msg, font=FONT, fill=(212, 172, 13))
         else:
             start_index = max(0, selected_index - 4)
             end_index = min(len(headers), start_index + 8)
@@ -275,7 +275,7 @@ def draw_ui(screen_state="main", status_msg=None):
                 d.text((5, y_pos), line, font=FONT, fill=color)
                 y_pos += 11
 
-        d.text((5, 115), "OK=Get | KEY1=Edit Iface | KEY2=Edit IP/Port | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 115), "OK=Get | KEY1=Edit Iface | KEY2=Edit IP/Port | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -288,19 +288,19 @@ def handle_port_input_logic(initial_port):
     
     while running:
         # Draw the UI for port input
-        img = Image.new("RGB", (128, 128), "black")
+        img = Image.new("RGB", (128, 128), (10, 0, 0))
         d = ImageDraw.Draw(img)
-        d.text((5, 5), "Enter Target Port", font=FONT_TITLE, fill="cyan")
-        d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+        d.text((5, 5), "Enter Target Port", font=FONT_TITLE, fill=(171, 178, 185))
+        d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
         
         # Display the current input
-        d.text((5, 40), f"Port: {input_port}", font=FONT, fill="white")
+        d.text((5, 40), f"Port: {input_port}", font=FONT, fill=(242, 243, 244))
         
         # Display the character selection
-        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill="yellow")
+        d.text((5, 70), f"Select: < {char_set[char_index]} >", font=FONT_TITLE, fill=(212, 172, 13))
         
-        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill="cyan")
-        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill="cyan")
+        d.text((5, 100), "UP/DOWN=Char | OK=Add", font=FONT, fill=(171, 178, 185))
+        d.text((5, 115), "KEY1=Del | KEY2=Save | KEY3=Cancel", font=FONT, fill=(171, 178, 185))
         LCD.LCD_ShowImage(img, 0, 0)
 
         btn = None

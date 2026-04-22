@@ -87,7 +87,7 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 
 def show_message(lines, color="lime"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
     font = FONT_TITLE
     y = 40
@@ -100,29 +100,29 @@ def show_message(lines, color="lime"):
     LCD.LCD_ShowImage(img, 0, 0)
 
 def draw_ui(screen_state="main"):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Log4Shell Scanner", font=FONT_TITLE, fill="#FF0000")
-    d.line([(0, 22), (128, 22)], fill="#FF0000", width=1)
+    d.text((5, 5), "Log4Shell Scanner", font=FONT_TITLE, fill=(231, 76, 60))
+    d.line([(0, 22), (128, 22)], fill=(231, 76, 60), width=1)
 
     if screen_state == "main":
         with ui_lock:
-            d.text((5, 25), f"Status: {scan_status}", font=FONT, fill="yellow")
+            d.text((5, 25), f"Status: {scan_status}", font=FONT, fill=(212, 172, 13))
             
             d.text((5, 40), "Vulnerable Hosts:", font=FONT, fill="orange")
             y_pos = 50
             for host in vulnerable_hosts[-5:]:
-                d.text((8, y_pos), host, font=FONT, fill="white")
+                d.text((8, y_pos), host, font=FONT, fill=(242, 243, 244))
                 y_pos += 10
 
-        d.text((5, 115), "OK=Scan | KEY1=Edit Ports | KEY3=Exit", font=FONT, fill="cyan")
+        d.text((5, 115), "OK=Scan | KEY1=Edit Ports | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     elif screen_state == "ports_input":
-        d.text((5, 30), "Enter Web Ports (CSV):", font=FONT, fill="white")
+        d.text((5, 30), "Enter Web Ports (CSV):", font=FONT, fill=(242, 243, 244))
         display_ports = list(current_ports_input)
         if ports_input_cursor_pos < len(display_ports):
             display_ports[ports_input_cursor_pos] = '_'
-        d.text((5, 50), "".join(display_ports[:16]), font=FONT_TITLE, fill="yellow")
-        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill="cyan")
+        d.text((5, 50), "".join(display_ports[:16]), font=FONT_TITLE, fill=(212, 172, 13))
+        d.text((5, 115), "UP/DOWN=Char | LEFT/RIGHT=Move | OK=Confirm", font=FONT, fill=(171, 178, 185))
     
     LCD.LCD_ShowImage(img, 0, 0)
 
@@ -187,10 +187,10 @@ def handle_text_input_logic(initial_text, screen_state_name, char_set):
     return None
 
 def draw_ui_interface_selection(interfaces, current_selection):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
-    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill="cyan")
-    d.line([(0, 22), (128, 22)], fill="cyan", width=1)
+    d.text((5, 5), "Select Interface", font=FONT_TITLE, fill=(171, 178, 185))
+    d.line([(0, 22), (128, 22)], fill=(171, 178, 185), width=1)
 
     y_pos = 25
     for i, iface in enumerate(interfaces):
@@ -198,7 +198,7 @@ def draw_ui_interface_selection(interfaces, current_selection):
         d.text((5, y_pos), iface, font=FONT, fill=color)
         y_pos += 11
     
-    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill="cyan")
+    d.text((5, 115), "UP/DOWN=Select | OK=Confirm", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 def select_interface_menu():

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RaspyJack Payload -- Default Credentials Scanner
+KTOx Payload -- Default Credentials Scanner
 =================================================
 Author: 7h30th3r0n3
 
@@ -426,11 +426,11 @@ def _save_results():
 # ---------------------------------------------------------------------------
 
 def _draw_progress():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "DEFAULT CREDS", font=font, fill="#00CCFF")
-    d.ellipse((118, 3, 124, 9), fill="#00FF00" if scanning else "#444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "DEFAULT CREDS", font=font, fill=(171, 178, 185))
+    d.ellipse((118, 3, 124, 9), fill=(30, 132, 73) if scanning else "#444")
 
     with lock:
         msg, hi, ht = status_msg, current_host_idx, total_hosts
@@ -439,40 +439,40 @@ def _draw_progress():
 
     if ht > 0:
         d.text((2, 16), f"Host {hi}/{ht}", font=font, fill="#AAA")
-        d.rectangle((2, 28, 125, 35), outline="#444")
+        d.rectangle((2, 28, 125, 35), outline=(34, 0, 0))
         fw = int((hi / ht) * 121)
         if fw > 0:
-            d.rectangle((3, 29, 3 + fw, 34), fill="#00CCFF")
+            d.rectangle((3, 29, 3 + fw, 34), fill=(171, 178, 185))
     else:
         d.text((2, 16), msg[:22], font=font, fill="#AAA")
 
-    d.text((2, 40), f"Svc: {svc}", font=font, fill="#888")
+    d.text((2, 40), f"Svc: {svc}", font=font, fill=(113, 125, 126))
     d.text((2, 52), f"Try: {cred[:20]}", font=font, fill="#CCC")
-    d.text((2, 64), f"Tests: {done}", font=font, fill="#888")
+    d.text((2, 64), f"Tests: {done}", font=font, fill=(113, 125, 126))
 
     fc = sum(1 for r in rl if r["status"] == "found")
     lc = sum(1 for r in rl if r["status"] == "locked")
-    d.text((2, 78), f"Found: {fc}", font=font, fill="#00FF00")
-    d.text((2, 90), f"Locked: {lc}", font=font, fill="#FF4444")
-    d.text((2, 104), msg[:22], font=font, fill="#FFAA00")
+    d.text((2, 78), f"Found: {fc}", font=font, fill=(30, 132, 73))
+    d.text((2, 90), f"Locked: {lc}", font=font, fill=(231, 76, 60))
+    d.text((2, 104), msg[:22], font=font, fill=(212, 172, 13))
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     foot = "Scanning... K3:Exit" if scanning else "OK:Start K1:View K3:Quit"
-    d.text((2, 117), foot, font=font, fill="#888")
+    d.text((2, 117), foot, font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def _draw_results():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "DEFAULT CREDS", font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "DEFAULT CREDS", font=font, fill=(171, 178, 185))
 
     with lock:
         rl, sp = list(results), scroll_pos
 
     if not rl:
-        d.text((2, 50), "No results yet", font=font, fill="#888")
+        d.text((2, 50), "No results yet", font=font, fill=(113, 125, 126))
     else:
         d.text((2, 16), f"Results: {len(rl)}", font=font, fill="#AAA")
         y = 28
@@ -487,9 +487,9 @@ def _draw_results():
             d.text((2, y), line[:22], font=font, fill=color)
             y += 12
 
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     nav = f"{sp+1}-{min(sp+ROWS_VISIBLE, len(rl))}/{len(rl)}"
-    d.text((2, 117), f"{nav} K1:Back K3:Quit", font=font, fill="#888")
+    d.text((2, 117), f"{nav} K1:Back K3:Quit", font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
 
 
@@ -503,16 +503,16 @@ def _draw_screen():
 def main():
     global running, scanning, scroll_pos, view_mode
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 10), "DEFAULT CREDS", font=font, fill="#00CCFF")
-    d.text((4, 26), "Scanner", font=font, fill="#00CCFF")
-    d.text((4, 44), "ARP scan + probe", font=font, fill="#888")
-    d.text((4, 56), "SSH FTP Telnet HTTP", font=font, fill="#888")
-    d.text((4, 68), "SNMP MySQL", font=font, fill="#888")
-    d.text((4, 86), "OK   Start scan", font=font, fill="#666")
-    d.text((4, 98), "KEY1 Toggle view", font=font, fill="#666")
-    d.text((4, 110), "KEY3 Exit", font=font, fill="#666")
+    d.text((4, 10), "DEFAULT CREDS", font=font, fill=(171, 178, 185))
+    d.text((4, 26), "Scanner", font=font, fill=(171, 178, 185))
+    d.text((4, 44), "ARP scan + probe", font=font, fill=(113, 125, 126))
+    d.text((4, 56), "SSH FTP Telnet HTTP", font=font, fill=(113, 125, 126))
+    d.text((4, 68), "SNMP MySQL", font=font, fill=(113, 125, 126))
+    d.text((4, 86), "OK   Start scan", font=font, fill=(86, 101, 115))
+    d.text((4, 98), "KEY1 Toggle view", font=font, fill=(86, 101, 115))
+    d.text((4, 110), "KEY3 Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -553,7 +553,7 @@ def main():
         if scan_ref and scan_ref.is_alive():
             scan_ref.join(timeout=5)
         try:
-            img = Image.new("RGB", (WIDTH, HEIGHT), "BLACK")
+            img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
             d = ScaledDraw(img)
             d.text((10, 56), "Scanner stopped", font=font, fill="RED")
             LCD.LCD_ShowImage(img, 0, 0)

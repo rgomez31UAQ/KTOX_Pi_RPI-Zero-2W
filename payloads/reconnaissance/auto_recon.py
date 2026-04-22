@@ -105,33 +105,33 @@ def _is_aborted():
 def _draw_lcd():
     """Render current state on LCD."""
     st = _get_state()
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), "AUTO RECON", font=font, fill="#FF4444")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), "AUTO RECON", font=font, fill=(231, 76, 60))
     phase_color = "#00FF00" if st["done"] else "#FFAA00"
     d.text((80, 1), st["phase"][:7], font=font, fill=phase_color)
 
     # Status lines
-    d.text((4, 20), st["status_line1"][:21], font=font, fill="white")
-    d.text((4, 34), st["status_line2"][:21], font=font, fill="#AAAAAA")
+    d.text((4, 20), st["status_line1"][:21], font=font, fill=(242, 243, 244))
+    d.text((4, 34), st["status_line2"][:21], font=font, fill=(171, 178, 185))
 
     # Host count
-    d.text((4, 52), f"Hosts: {st['host_count']}", font=font, fill="#00CCFF")
+    d.text((4, 52), f"Hosts: {st['host_count']}", font=font, fill=(171, 178, 185))
 
     # Progress bar
     bar_y = 70
-    d.rectangle((4, bar_y, 123, bar_y + 10), outline="#444")
+    d.rectangle((4, bar_y, 123, bar_y + 10), outline=(34, 0, 0))
     bar_w = int(119 * st["progress_pct"] / 100)
     if bar_w > 0:
-        d.rectangle((4, bar_y, 4 + bar_w, bar_y + 10), fill="#00AA44")
+        d.rectangle((4, bar_y, 4 + bar_w, bar_y + 10), fill=(30, 132, 73))
     pct_text = f"{st['progress_pct']}%"
-    d.text((55, bar_y + 1), pct_text, font=font, fill="white")
+    d.text((55, bar_y + 1), pct_text, font=font, fill=(242, 243, 244))
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), "KEY3: Abort", font=font, fill="#AA5555")
 
     LCD.LCD_ShowImage(img, 0, 0)

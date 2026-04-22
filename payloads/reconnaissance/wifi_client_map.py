@@ -309,15 +309,15 @@ def export_loot():
 # ---------------------------------------------------------------------------
 
 def _draw_header(d, title):
-    d.rectangle((0, 0, 127, 13), fill="#111")
-    d.text((2, 1), title, font=font, fill="#00CCFF")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
+    d.text((2, 1), title, font=font, fill=(171, 178, 185))
     with lock:
         active = sniffing
-    d.ellipse((118, 3, 122, 7), fill="#00FF00" if active else "#FF0000")
+    d.ellipse((118, 3, 122, 7), fill=(30, 132, 73) if active else "#FF0000")
 
 
 def _draw_footer(d, text):
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     d.text((2, 117), text[:24], font=font, fill="#AAA")
 
 
@@ -329,7 +329,7 @@ def _sorted_aps():
 
 
 def draw_ap_list():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "CLIENT MAP")
 
@@ -338,12 +338,12 @@ def draw_ap_list():
         sc = scroll_pos
         pkts = pkt_count
 
-    d.text((2, 15), f"{status[:16]}  p:{pkts}", font=font, fill="#888")
+    d.text((2, 15), f"{status[:16]}  p:{pkts}", font=font, fill=(113, 125, 126))
 
     aps = _sorted_aps()
     if not aps:
-        d.text((10, 45), "OK: Start sniffing", font=font, fill="#666")
-        d.text((10, 57), "Passive 802.11 map", font=font, fill="#666")
+        d.text((10, 45), "OK: Start sniffing", font=font, fill=(86, 101, 115))
+        d.text((10, 57), "Passive 802.11 map", font=font, fill=(86, 101, 115))
     else:
         visible = aps[sc:sc + ROWS_VISIBLE - 1]
         for i, (bssid, clients) in enumerate(visible):
@@ -358,37 +358,37 @@ def draw_ap_list():
         if total > ROWS_VISIBLE - 1:
             bar_h = max(4, int((ROWS_VISIBLE - 1) / total * 88))
             bar_y = 28 + int(sc / total * 88) if total > 0 else 28
-            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill="#444")
+            d.rectangle((126, bar_y, 127, bar_y + bar_h), fill=(34, 0, 0))
 
     _draw_footer(d, f"APs:{len(aps)} RIGHT:clients")
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def draw_client_list(bssid, clients):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     _draw_header(d, "CLIENTS")
 
-    d.text((2, 15), f"AP: {bssid[-11:]}", font=font, fill="#FFFF00")
-    d.text((80, 15), f"[{len(clients)}]", font=font, fill="#888")
+    d.text((2, 15), f"AP: {bssid[-11:]}", font=font, fill=(212, 172, 13))
+    d.text((80, 15), f"[{len(clients)}]", font=font, fill=(113, 125, 126))
 
     sorted_clients = sorted(clients)
     cs = client_scroll
     visible = sorted_clients[cs:cs + ROWS_VISIBLE - 1]
     for i, mac in enumerate(visible):
         y = 28 + i * ROW_H
-        d.text((2, y), mac, font=font, fill="#CCCCCC")
+        d.text((2, y), mac, font=font, fill=(242, 243, 244))
 
     _draw_footer(d, "LEFT:back UP/DN:scroll")
     LCD.LCD_ShowImage(img, 0, 0)
 
 
 def _show_message(line1, line2=""):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((10, 50), line1, font=font, fill="#00FF00")
+    d.text((10, 50), line1, font=font, fill=(30, 132, 73))
     if line2:
-        d.text((4, 65), line2, font=font, fill="#888")
+        d.text((4, 65), line2, font=font, fill=(113, 125, 126))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.5)
 
@@ -400,14 +400,14 @@ def _show_message(line1, line2=""):
 def main():
     global scroll_pos, client_scroll, stop_flag, ap_clients, pkt_count
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
-    d.text((4, 20), "WIFI CLIENT MAP", font=font, fill="#00CCFF")
-    d.text((4, 40), "Passive 802.11", font=font, fill="#888")
-    d.text((4, 52), "association mapper", font=font, fill="#888")
-    d.text((4, 72), "OK=Start/Stop", font=font, fill="#666")
-    d.text((4, 84), "K1=Rescan K2=Export", font=font, fill="#666")
-    d.text((4, 96), "K3=Exit", font=font, fill="#666")
+    d.text((4, 20), "WIFI CLIENT MAP", font=font, fill=(171, 178, 185))
+    d.text((4, 40), "Passive 802.11", font=font, fill=(113, 125, 126))
+    d.text((4, 52), "association mapper", font=font, fill=(113, 125, 126))
+    d.text((4, 72), "OK=Start/Stop", font=font, fill=(86, 101, 115))
+    d.text((4, 84), "K1=Rescan K2=Export", font=font, fill=(86, 101, 115))
+    d.text((4, 96), "K3=Exit", font=font, fill=(86, 101, 115))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(0.3)
 

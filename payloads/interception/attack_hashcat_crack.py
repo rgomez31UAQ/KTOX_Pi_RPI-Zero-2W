@@ -35,7 +35,7 @@ FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bol
 
 # ---------------- UI ----------------
 def draw(lines):
-    img = Image.new("RGB", (128, 128), "black")
+    img = Image.new("RGB", (128, 128), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
     d.text((2, 2), "HASHCAT LIVE", font=FONT_TITLE, fill="#00FFAA")
@@ -43,7 +43,7 @@ def draw(lines):
 
     y = 20
     for line in lines[:8]:
-        d.text((2, y), line[:21], font=FONT, fill="white")
+        d.text((2, y), line[:21], font=FONT, fill=(242, 243, 244))
         y += 12
 
     LCD.LCD_ShowImage(img, 0, 0)

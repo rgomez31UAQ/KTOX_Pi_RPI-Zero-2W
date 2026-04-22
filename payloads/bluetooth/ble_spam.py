@@ -128,11 +128,11 @@ def stop_attack():
     run_bt_command(cmd_disable, "Failed to disable advertising", display_error=False)
 
 def draw_ui(status: str, current_payload: str, message_lines=None):
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ImageDraw.Draw(img)
 
-    d.text((5, 5), "BLE Proximity Spam", font=FONT_TITLE, fill="#00FF00")
-    d.line([(0, 22), (128, 22)], fill="#00FF00", width=1)
+    d.text((5, 5), "BLE Proximity Spam", font=FONT_TITLE, fill=(30, 132, 73))
+    d.line([(0, 22), (128, 22)], fill=(30, 132, 73), width=1)
 
     if message_lines:
         if isinstance(message_lines, str):
@@ -142,16 +142,16 @@ def draw_ui(status: str, current_payload: str, message_lines=None):
             bbox = d.textbbox((0, 0), line, font=FONT)
             w = bbox[2] - bbox[0]
             x = (WIDTH - w) // 2
-            d.text((x, y_offset), line, font=FONT, fill="yellow")
+            d.text((x, y_offset), line, font=FONT, fill=(212, 172, 13))
             y_offset += 12
     else:
         status_color = "lime" if status == "ACTIVE" else "red"
         d.text((30, 35), status, font=FONT_STATUS, fill=status_color)
 
-        d.text((5, 60), "Payload:", font=FONT, fill="white")
-        d.text((15, 75), current_payload, font=FONT_TITLE, fill="yellow")
+        d.text((5, 60), "Payload:", font=FONT, fill=(242, 243, 244))
+        d.text((15, 75), current_payload, font=FONT_TITLE, fill=(212, 172, 13))
 
-    d.text((5, 110), "OK=Start/Stop | KEY3=Exit", font=FONT, fill="cyan")
+    d.text((5, 110), "OK=Start/Stop | KEY3=Exit", font=FONT, fill=(171, 178, 185))
     LCD.LCD_ShowImage(img, 0, 0)
 
 class Payload:

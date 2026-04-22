@@ -234,7 +234,7 @@ def _stop_flood():
 # ── Drawing ──────────────────────────────────────────────────────────────────
 
 def _draw_screen():
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
 
     with lock:
@@ -250,25 +250,25 @@ def _draw_screen():
         scan_on = _scan_active
 
     # Header
-    d.rectangle((0, 0, 127, 13), fill="#111")
+    d.rectangle((0, 0, 127, 13), fill=(10, 0, 0))
     d.text((2, 1), "BT L2CAP FLOOD", font=font, fill="#F44336")
     if active:
-        d.ellipse((118, 3, 126, 11), fill="#FF0000")
+        d.ellipse((118, 3, 126, 11), fill=(231, 76, 60))
     elif scan_on:
-        d.ellipse((118, 3, 126, 11), fill="#FFAA00")
+        d.ellipse((118, 3, 126, 11), fill=(212, 172, 13))
     else:
-        d.ellipse((118, 3, 126, 11), fill="#888888")
+        d.ellipse((118, 3, 126, 11), fill=(113, 125, 126))
 
     y = 15
-    d.text((2, y), msg[:22], font=font, fill="#888")
+    d.text((2, y), msg[:22], font=font, fill=(113, 125, 126))
     y += 12
 
     if active or tgt:
-        d.text((2, y), f"Target: {tgt[-11:]}", font=font, fill="#FF4444")
+        d.text((2, y), f"Target: {tgt[-11:]}", font=font, fill=(231, 76, 60))
         y += 12
-        d.text((2, y), f"Size: {size}B  Sent: {sent}", font=font, fill="#FFAA00")
+        d.text((2, y), f"Size: {size}B  Sent: {sent}", font=font, fill=(212, 172, 13))
         y += 12
-        d.text((2, y), f"Recv: {recv}", font=font, fill="#00FF00")
+        d.text((2, y), f"Recv: {recv}", font=font, fill=(30, 132, 73))
         y += 13
     else:
         y += 12
@@ -288,7 +288,7 @@ def _draw_screen():
             d.text((2, y), "K1 to scan", font=font, fill="#555")
 
     # Footer
-    d.rectangle((0, 116, 127, 127), fill="#111")
+    d.rectangle((0, 116, 127, 127), fill=(10, 0, 0))
     if active:
         d.text((2, 117), "OK:Stop K2:Size K3:X", font=font, fill="#AAA")
     else:
@@ -303,14 +303,14 @@ def main():
     global scroll_pos, selected_idx, pkt_size_idx, status_msg
 
     # Splash
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
+    img = Image.new("RGB", (WIDTH, HEIGHT), (10, 0, 0))
     d = ScaledDraw(img)
     d.text((8, 10), "BT L2CAP FLOOD", font=font, fill="#F44336")
-    d.text((4, 28), "Bluetooth ping flood", font=font, fill="#888")
-    d.text((4, 40), "using l2ping.", font=font, fill="#888")
-    d.text((4, 60), "K1=Scan  OK=Start", font=font, fill="#666")
-    d.text((4, 72), "K2=Pkt size  K3=Exit", font=font, fill="#666")
-    d.text((4, 90), f"Pkt size: {PACKET_SIZES[pkt_size_idx]}B", font=font, fill="#FF4444")
+    d.text((4, 28), "Bluetooth ping flood", font=font, fill=(113, 125, 126))
+    d.text((4, 40), "using l2ping.", font=font, fill=(113, 125, 126))
+    d.text((4, 60), "K1=Scan  OK=Start", font=font, fill=(86, 101, 115))
+    d.text((4, 72), "K2=Pkt size  K3=Exit", font=font, fill=(86, 101, 115))
+    d.text((4, 90), f"Pkt size: {PACKET_SIZES[pkt_size_idx]}B", font=font, fill=(231, 76, 60))
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1.0)
 
