@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-KTOx Media Player – High FPS (15 fps, non‑blocking buttons)
-============================================================
-- Non‑blocking button polling inside video loop.
-- 15 fps video with hardware acceleration.
+KTOx Media Player – Smooth 15 fps with Responsive Buttons
+==========================================================
+- Non‑blocking button check (no pauses).
+- ffmpeg controls frame rate (fps=15).
 - USB audio via plughw:1,0.
 
 Controls: UP/DOWN, OK, LEFT, KEY1=stop, KEY3=exit
@@ -50,15 +50,12 @@ def font(size=9):
 FONT = font(9)
 FONT_BOLD = font(10)
 
-def wait_btn(timeout=0.1):
-    """Non‑blocking button poll with optional timeout (seconds)."""
-    start = time.time()
-    while time.time() - start < timeout:
-        for name, pin in PINS.items():
-            if GPIO.input(pin) == 0:
-                time.sleep(0.05)
-                return name
-        time.sleep(0.01)
+def wait_btn_nonblock():
+    """Return button name if pressed, else None (non‑blocking)."""
+    for name, pin in PINS.items():
+        if GPIO.input(pin) == 0:
+            time.sleep(0.05)  # debounce
+            return name
     return None
 
 def show_message(msg, sub=""):
@@ -122,7 +119,7 @@ def draw_browser(path, entries, cursor, scroll):
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, W, 13), fill=(139, 0, 0))
     d.text((4, 2), "MEDIA PLAYER", font=FONT_BOLD, fill=(231, 76, 60))
-    # File count (right-aligned manually)
+    # File count (right-aligned)
     count_text = f"{len(entries)}"
     tw = d.textlength(count_text, font=FONT)
     d.text((W - 4 - int(tw), 2), count_text, font=FONT, fill=(30, 132, 73))
@@ -149,7 +146,7 @@ def draw_browser(path, entries, cursor, scroll):
     LCD.LCD_ShowImage(img, 0, 0)
 
 # ----------------------------------------------------------------------
-# Playback (optimised for high FPS, non‑blocking)
+# Playback (smooth, non‑blocking)
 # ----------------------------------------------------------------------
 current_process = None
 
@@ -178,25 +175,21 @@ def play_audio(filepath):
         d.text((4, 40), "Press KEY1 to stop", font=FONT, fill=(113, 125, 126))
         d.text((4, H-12), "KEY1=stop", font=FONT, fill=(192, 57, 43))
         LCD.LCD_ShowImage(img, 0, 0)
-        btn = wait_btn(0.2)
-        if btn == "KEY1" or btn == "KEY3":
+        # Non‑blocking check
+        if wait_btn_nonblock() in ("KEY1", "KEY3"):
             stop_playback()
             break
+        time.sleep(0.05)
     stop_playback()
 
 def play_video(filepath):
-    """
-    Play video with hardware acceleration, target 15 fps, non‑blocking button check.
-    """
+    """Play video with ffmpeg, non‑blocking button check."""
     global current_process
     stop_playback()
 
     cmd = [
         "ffmpeg",
-        "-re",
-        "-fflags", "nobuffer",
         "-i", filepath,
-        "-map", "0:v",
         "-vf", "fps=15,scale=128:128",
         "-pix_fmt", "rgb24",
         "-f", "rawvideo",
@@ -209,9 +202,6 @@ def play_video(filepath):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     current_process = proc
     frame_size = 128 * 128 * 3
-    target_fps = 15
-    frame_interval = 1.0 / target_fps
-    last_frame_time = 0
 
     # Show now‑playing screen
     img = Image.new("RGB", (W, H), (10, 0, 0))
@@ -223,21 +213,12 @@ def play_video(filepath):
     LCD.LCD_ShowImage(img, 0, 0)
     time.sleep(1)
 
-    # Frame rendering loop with non‑blocking button check
     while True:
-        # Check for stop button (non‑blocking, 10ms timeout)
-        btn = wait_btn(0.01)
+        # Non‑blocking button check
+        btn = wait_btn_nonblock()
         if btn == "KEY1" or btn == "KEY3":
             stop_playback()
             break
-
-        now = time.time()
-        # Frame rate limiting
-        if last_frame_time > 0:
-            elapsed = now - last_frame_time
-            if elapsed < frame_interval:
-                time.sleep(max(0, frame_interval - elapsed))
-                continue
 
         raw = proc.stdout.read(frame_size)
         if len(raw) < frame_size:
@@ -246,7 +227,6 @@ def play_video(filepath):
         try:
             frame = Image.frombytes("RGB", (128, 128), raw)
             LCD.LCD_ShowImage(frame, 0, 0)
-            last_frame_time = time.time()
         except:
             pass
 
@@ -266,18 +246,18 @@ def main():
     show_message("Media Player Ready", f"Audio: {AUDIO_DEV}")
     while True:
         draw_browser(path, entries, cursor, scroll)
-        btn = wait_btn(0.2)
+        btn = wait_btn_nonblock()
         if btn == "KEY3":
             break
-        if btn == "UP" and cursor > 0:
+        elif btn == "UP" and cursor > 0:
             cursor -= 1
             if cursor < scroll:
                 scroll = cursor
-        if btn == "DOWN" and entries and cursor < len(entries)-1:
+        elif btn == "DOWN" and entries and cursor < len(entries)-1:
             cursor += 1
             if cursor >= scroll + 5:
                 scroll = cursor - 4
-        if btn == "LEFT":
+        elif btn == "LEFT":
             parent = os.path.dirname(path)
             if parent != path:
                 path = parent
@@ -286,7 +266,7 @@ def main():
                 scroll = 0
                 cfg["last_dir"] = path
                 save_config(cfg)
-        if btn == "OK" and entries:
+        elif btn == "OK" and entries:
             e = entries[cursor]
             if e.is_dir():
                 path = e.path
@@ -302,8 +282,10 @@ def main():
                 elif filepath.lower().endswith(AUDIO_EXTS):
                     play_audio(filepath)
                 entries = list_media(path)
-        if btn == "KEY1":
+        elif btn == "KEY1":
             stop_playback()
+        time.sleep(0.05)  # small delay to prevent CPU hogging in menu
+
     stop_playback()
     LCD.LCD_Clear()
     GPIO.cleanup()
