@@ -38,7 +38,6 @@ ACCENT = (255, 170, 0)
 PANEL = (45, 0, 0)
 HILITE = (139, 0, 0)
 WHITE = (245, 245, 245)
-MUTED = (200, 200, 200)
 
 LCD = LCD_1in44.LCD()
 LCD.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
@@ -112,6 +111,25 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 for pin in PINS.values():
     GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+# ------------------------------------------------------------
+# Debounce
+# ------------------------------------------------------------
+DEBOUNCE_BY_BUTTON = {
+    "UP": 0.14,
+    "DOWN": 0.14,
+    "LEFT": 0.14,
+    "RIGHT": 0.14,
+    "OK": 0.20,
+    "KEY1": 0.22,
+    "KEY2": 0.20,
+    "KEY3": 0.20,
+}
+
+_last_press_time = {name: 0.0 for name in PINS}
+_last_pressed_state = {name: False for name in PINS}
+_last_virtual = None
+_last_virtual_time = 0.0
 
 # ------------------------------------------------------------
 # USB keyboard
@@ -264,15 +282,42 @@ VIRT_MAP = {
 }
 
 def get_virtual_action():
+    global _last_virtual, _last_virtual_time
+
     v = get_virtual_button()
     if not v:
+        _last_virtual = None
         return None
-    return VIRT_MAP.get(v, v)
+
+    v = VIRT_MAP.get(v, v)
+    if v not in PINS:
+        return None
+
+    now = time.time()
+    min_gap = DEBOUNCE_BY_BUTTON.get(v, 0.18)
+    if v == _last_virtual and (now - _last_virtual_time) < min_gap:
+        return None
+
+    _last_virtual = v
+    _last_virtual_time = now
+    return v
 
 def read_gpio_action():
+    now = time.time()
+
     for name, pin in PINS.items():
-        if GPIO.input(pin) == 0:
-            return name
+        pressed = (GPIO.input(pin) == 0)
+
+        if pressed and not _last_pressed_state[name]:
+            _last_pressed_state[name] = True
+            min_gap = DEBOUNCE_BY_BUTTON.get(name, 0.18)
+            if now - _last_press_time[name] >= min_gap:
+                _last_press_time[name] = now
+                return name
+
+        elif not pressed and _last_pressed_state[name]:
+            _last_pressed_state[name] = False
+
     return None
 
 def wait_release(name):
@@ -289,10 +334,8 @@ def wait_action(timeout=0.12):
 
         g = read_gpio_action()
         if g:
-            time.sleep(0.03)
-            if GPIO.input(PINS[g]) == 0:
-                wait_release(g)
-                return g
+            return g
+
         time.sleep(0.01)
     return None
 
@@ -426,7 +469,7 @@ KB_PAGES = [KB_LOWER, KB_UPPER, KB_SYMBOL, KB_TOOLS]
 KB_PAGE_NAMES = ["abc", "ABC", "123", "TOOL"]
 
 vkb_page = 0
-vkb_row = -1   # -1 means compose bar selected
+vkb_row = -1
 vkb_col = 0
 history = []
 history_idx = None
@@ -475,12 +518,10 @@ def history_next(current_compose):
 def draw_vkb(compose):
     draw.rectangle((0, 0, WIDTH, HEIGHT), fill=BG)
 
-    # Header
     draw.rectangle((0, 0, WIDTH, 12), fill=PANEL)
     draw.text((2, 2), f"VKB {KB_PAGE_NAMES[vkb_page]}", font=tiny_font, fill=ACCENT)
     draw.text((78, 2), "K2/K3 exit", font=tiny_font, fill=DIM)
 
-    # Compose bar
     comp_selected = (vkb_row == -1)
     draw.rounded_rectangle(
         (2, 14, WIDTH - 3, 32),
@@ -506,7 +547,6 @@ def draw_vkb(compose):
         for c, key in enumerate(row):
             selected = (r == vkb_row and c == vkb_col)
 
-            # width rules
             if len(key) <= 2:
                 w = 11
             elif len(key) == 3:
@@ -555,10 +595,8 @@ def draw_vkb(compose):
 
             x += w + gap
 
-    # Footer hints
     draw.rectangle((0, HEIGHT - 12, WIDTH, HEIGHT), fill=PANEL)
-    hint = "U/D hist  OK key"
-    draw.text((2, HEIGHT - 10), hint, font=tiny_font, fill=DIM)
+    draw.text((2, HEIGHT - 10), "U/D hist  OK key", font=tiny_font, fill=DIM)
 
     flush()
 
@@ -603,14 +641,6 @@ def vkb_apply_key(compose, key):
         token = " " + key + " "
     elif key == "-la":
         token = " -la"
-    elif key == "..":
-        token = ".."
-    elif key == "/":
-        token = "/"
-    elif key == "~":
-        token = "~"
-    elif key == "*":
-        token = "*"
 
     return compose + token, False
 
@@ -676,7 +706,7 @@ def run_vkb():
 # Main helpers
 # ------------------------------------------------------------
 vkb_mode = (keyboard is None)
-last_key1_time = 0
+last_key1_time = 0.0
 
 def redraw():
     draw_shell(scrollback, current_line, "VKB" if vkb_mode else "USB")
@@ -744,7 +774,7 @@ try:
                     vkb_mode = True
                     redraw()
 
-        if GPIO.input(PINS["KEY1"]) == 0 and (time.time() - last_key1_time > 0.25):
+        if GPIO.input(PINS["KEY1"]) == 0 and (time.time() - last_key1_time > DEBOUNCE_BY_BUTTON["KEY1"]):
             handle_key1_press()
 
         if GPIO.input(PINS["KEY2"]) == 0:
