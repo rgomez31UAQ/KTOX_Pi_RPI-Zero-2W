@@ -247,8 +247,10 @@ def run_command(cmd):
         if not output.strip():
             output = "[No output]"
         return output
-    except subprocess.TimeoutExpired:
-        return "Command timed out"
+    except subprocess.TimeoutExpired as e:
+        out = e.stdout if e.stdout else ""
+        err = e.stderr if e.stderr else ""
+        return f"Command timed out after 30 seconds.\nOutput:\n{out}\n{err}"
     except Exception as e:
         return f"Error: {str(e)}"
 

@@ -230,6 +230,7 @@ def _port_open(port: int) -> bool:
 # Loki process management
 # ----------------------------------------------------------------------
 _loki_proc = None
+_log_fh    = None
 
 def _loki_installed() -> bool:
     return LAUNCHER.exists()
@@ -242,12 +243,15 @@ def _loki_running() -> bool:
         try:
             pid = int(LOKI_PID.read_text().strip())
             os.kill(pid, 0)
-            return True
-        except:
+            cmdline = Path(f"/proc/{pid}/cmdline").read_bytes().replace(b'\x00', b' ').decode(errors="replace")
+            if "loki" in cmdline.lower() or "ktox_headless" in cmdline.lower():
+                return True
+            LOKI_PID.unlink(missing_ok=True)
+        except Exception:
             LOKI_PID.unlink(missing_ok=True)
     return False
 
-def _run_with_cancel(cmd, timeout=300, step_msg=None):
+def _run_with_cancel(cmd, timeout=300, step=0, total=1, step_msg=None):
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     start = time.time()
     last_update = 0
@@ -258,7 +262,7 @@ def _run_with_cancel(cmd, timeout=300, step_msg=None):
             proc.kill()
             raise Exception("cancelled by user")
         if step_msg and _HW and (time.time() - last_update) > 1:
-            screen_installing(0, 1, step_msg)
+            screen_installing(step, total, step_msg)
             last_update = time.time()
         time.sleep(0.5)
         if timeout and (time.time() - start) > timeout:
@@ -267,7 +271,7 @@ def _run_with_cancel(cmd, timeout=300, step_msg=None):
     return proc.returncode
 
 def _start_loki() -> tuple[bool, str]:
-    global _loki_proc
+    global _loki_proc, _log_fh
     if _loki_running():
         return True, "already running"
     if _port_open(LOKI_PORT):
@@ -279,43 +283,58 @@ def _start_loki() -> tuple[bool, str]:
     env["LOKI_PID_FILE"] = str(LOKI_PID)
     log = LOKI_DATA / "logs" / "ktox_loki.log"
     log.parent.mkdir(parents=True, exist_ok=True)
+    _log_fh = open(log, "a")
     _loki_proc = subprocess.Popen(
         [sys.executable, str(LAUNCHER)],
         env=env,
-        stdout=open(log, "a"),
+        stdout=_log_fh,
         stderr=subprocess.STDOUT,
         cwd=str(LOKI_DIR),
     )
-    for _ in range(100):
+    for _ in range(300):  # 30 seconds — Pi startup is slow
         if should_exit():
             _stop_loki()
             return False, "cancelled"
+        if _loki_proc.poll() is not None:
+            return False, "crashed - check logs"
         if _port_open(LOKI_PORT):
-            break
+            return True, f"http://{ip}:{LOKI_PORT}"
         time.sleep(0.1)
     if not _loki_running():
-        return False, "check loot/loki/logs"
+        return False, "timed out - check logs"
     return True, f"http://{ip}:{LOKI_PORT}"
 
 def _stop_loki():
-    global _loki_proc
+    global _loki_proc, _log_fh
     if _loki_proc is not None:
         try:
             _loki_proc.terminate()
             _loki_proc.wait(timeout=8)
-        except:
+        except subprocess.TimeoutExpired:
             _loki_proc.kill()
+        except Exception:
+            pass
         _loki_proc = None
+    if _log_fh is not None:
+        try:
+            _log_fh.close()
+        except Exception:
+            pass
+        _log_fh = None
     if LOKI_PID.exists():
         try:
             pid = int(LOKI_PID.read_text().strip())
             os.kill(pid, signal.SIGTERM)
             time.sleep(2)
-            os.kill(pid, signal.SIGKILL)
-        except:
+            try:
+                os.kill(pid, 0)
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        except Exception:
             pass
         LOKI_PID.unlink(missing_ok=True)
-    subprocess.run(["pkill", "-f", "nmap"], capture_output=True)
+    subprocess.run(["pkill", "-f", "ktox_headless_loki"], capture_output=True)
 
 # ----------------------------------------------------------------------
 # Write the complete pagerctl.py shim (pure Python, uses KTOx LCD)
@@ -643,8 +662,8 @@ if __name__ == '__main__':
     lt = threading.Thread(target=loki.run, daemon=True)
     lt.start()
 
-    signal.signal(signal.SIGINT,  lambda s, f: handle_exit(s, f, lt, lt, web_thread))
-    signal.signal(signal.SIGTERM, lambda s, f: handle_exit(s, f, lt, lt, web_thread))
+    signal.signal(signal.SIGINT,  lambda s, f: handle_exit(s, f, lt, web_thread))
+    signal.signal(signal.SIGTERM, lambda s, f: handle_exit(s, f, lt, web_thread))
     logger.info('Loki running — open http://0.0.0.0:8000 in your browser')
 
     while not shared_data.should_exit:
@@ -661,17 +680,17 @@ def install_loki():
     try:
         # Step 1: system packages
         screen_installing(1, 7, "Installing system packages...")
-        _run_with_cancel("apt-get update -qq && apt-get install -y nmap python3-pil python3-pil.imagetk git", timeout=300, step_msg="Installing packages")
+        _run_with_cancel("apt-get update -qq && apt-get install -y nmap python3-pil python3-pil.imagetk git", timeout=300, step=1, total=7, step_msg="Installing packages")
 
         # Step 2: clone/pull repo
         screen_installing(2, 7, "Cloning Loki repo...")
         VENDOR_DIR.parent.mkdir(parents=True, exist_ok=True)
         if VENDOR_DIR.exists() and (VENDOR_DIR / ".git").exists():
-            _run_with_cancel(f"git -C {VENDOR_DIR} pull", timeout=120, step_msg="Updating repo")
+            _run_with_cancel(f"git -C {VENDOR_DIR} pull", timeout=120, step=2, total=7, step_msg="Updating repo")
         else:
             if VENDOR_DIR.exists():
                 shutil.rmtree(VENDOR_DIR)
-            _run_with_cancel(f"git clone --depth=1 {LOKI_REPO} {VENDOR_DIR}", timeout=300, step_msg="Cloning repo")
+            _run_with_cancel(f"git clone --depth=1 {LOKI_REPO} {VENDOR_DIR}", timeout=300, step=2, total=7, step_msg="Cloning repo")
 
         # Step 3: create data dirs
         screen_installing(3, 7, "Creating data directories...")
