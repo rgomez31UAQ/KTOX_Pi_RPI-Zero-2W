@@ -148,21 +148,42 @@ def _build_login_page(device):
 <html><head>
 <title>{device['friendly']} - Login</title>
 <style>
-body {{ font-family: Arial, sans-serif; background: #f0f0f0; margin: 0;
+:root {{
+    --bg-0: #0a0000;
+    --bg-1: #220000;
+    --header: #8b0000;
+    --accent: #e74c3c;
+    --fg: #abb2b9;
+    --fg-muted: #717d7e;
+}}
+* {{ margin: 0; padding: 0; box-sizing: border-box; }}
+body {{ font-family: 'Courier New', monospace; background: linear-gradient(135deg, var(--bg-0), var(--bg-1));
        display: flex; justify-content: center; align-items: center;
-       height: 100vh; }}
-.login {{ background: white; padding: 40px; border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 320px; }}
-h2 {{ color: #333; margin-bottom: 20px; text-align: center; }}
-.subtitle {{ color: #666; text-align: center; font-size: 14px;
+       height: 100vh; color: var(--fg); }}
+.login {{ background: var(--bg-1); padding: 40px; border-radius: 8px;
+          border: 1px solid var(--accent);
+          box-shadow: 0 0 20px rgba(231, 76, 60, 0.3); width: 320px; }}
+h2 {{ color: var(--accent); margin-bottom: 20px; text-align: center;
+      text-shadow: 0 0 5px rgba(231, 76, 60, 0.5); }}
+.logo {{ text-align: center; font-size: 24px; margin-bottom: 10px;
+        color: var(--fg); text-transform: uppercase; letter-spacing: 2px; }}
+.subtitle {{ color: var(--fg-muted); text-align: center; font-size: 14px;
             margin-bottom: 20px; }}
-input {{ width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd;
-         border-radius: 4px; box-sizing: border-box; }}
-button {{ width: 100%; padding: 12px; background: #0066cc; color: white;
-          border: none; border-radius: 4px; cursor: pointer;
-          font-size: 16px; }}
-button:hover {{ background: #0052a3; }}
-.logo {{ text-align: center; font-size: 24px; margin-bottom: 10px; }}
+input {{ width: 100%; padding: 10px; margin: 8px 0; border: 1px solid rgba(231, 76, 60, 0.3);
+         border-radius: 4px; box-sizing: border-box; background: var(--bg-0);
+         color: #d4ac0d; font-family: 'Courier New', monospace; }}
+input:focus {{ outline: none; border-color: var(--accent);
+              box-shadow: 0 0 10px rgba(231, 76, 60, 0.2); }}
+button {{ width: 100%; padding: 12px; background: var(--header); color: var(--accent);
+          border: 1px solid var(--accent); border-radius: 4px; cursor: pointer;
+          font-size: 16px; font-family: 'Courier New', monospace;
+          transition: 0.2s; margin-top: 8px; }}
+button:hover {{ background: var(--accent); color: var(--bg-0);
+               box-shadow: 0 0 10px rgba(231, 76, 60, 0.4); }}
+.scanlines {{ position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+             pointer-events: none;
+             background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px);
+             z-index: 9999; }}
 </style>
 </head><body>
 <div class="login">
@@ -172,9 +193,10 @@ button:hover {{ background: #0052a3; }}
   <form method="POST" action="/login">
     <input type="text" name="username" placeholder="Username" required>
     <input type="password" name="password" placeholder="Password" required>
-    <button type="submit">Sign In</button>
+    <button type="submit">⤶ SIGN IN</button>
   </form>
 </div>
+<div class="scanlines"></div>
 </body></html>"""
 
 
@@ -231,8 +253,8 @@ class _CredHandler(BaseHTTPRequestHandler):
             self.end_headers()
             device = DEVICE_TYPES[device_idx]
             page = _build_login_page(device).replace(
-                "Please sign in",
-                "<span style='color:red'>Invalid credentials.</span> Please try again"
+                "Please sign in to manage this device",
+                "<span style='color:#e74c3c;text-shadow:0 0 5px rgba(231,76,60,0.5)'>Invalid credentials</span> — Please try again"
             )
             self.wfile.write(page.encode())
         else:
