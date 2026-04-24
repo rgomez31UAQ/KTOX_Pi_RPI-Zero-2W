@@ -2657,26 +2657,124 @@ def do_handshake_targeted():
     Dialog_info(f"Saved:\nhs_{essid[:14]}\nUse aircrack-ng", wait=True)
 
 
+def do_wifi_handshake_engine():
+    """Enhanced WiFi handshake capture using Scapy engine."""
+    try:
+        from payloads.wifi.wifi_handshake_engine import get_wifi_engine
+    except ImportError:
+        Dialog_info("Engine load\nFAILED", wait=True)
+        return
+
+    engine = get_wifi_engine()
+
+    if not engine.is_scapy_available():
+        Dialog_info("Scapy not\ninstalled", wait=True)
+        return
+
+    iface = ktox_state.get("wifi_iface", "wlan0")
+
+    # Enable monitor mode
+    Dialog_info(f"Monitor mode\non {iface}…", wait=False, timeout=1)
+    if not engine.enable_monitor_mode(iface):
+        Dialog_info("Monitor FAILED\nCheck adapter", wait=True)
+        return
+
+    # Scan networks
+    Dialog_info("Scanning…\nPlease wait", wait=False, timeout=1)
+    if not engine.scan_networks(timeout=15):
+        Dialog_info("Scan failed\nor no nets", wait=True)
+        engine.disable_monitor_mode()
+        return
+
+    networks = engine.get_networks_list()
+    items = [f" {e[:20]:20} {b} ch{c}" for b, e, c, s in networks]
+    sel = GetMenuString(items)
+    if not sel:
+        engine.disable_monitor_mode()
+        return
+
+    bssid, essid, ch, sig = networks[items.index(sel)]
+
+    if not YNDialog("Capture HS?", y="Capture", n="Cancel", b=f"{essid}\nch{ch}"):
+        engine.disable_monitor_mode()
+        return
+
+    # Capture handshake with timeout
+    Dialog_info(f"Capturing…\n{essid}\nKEY3=stop", wait=True)
+    if engine.capture_handshake(bssid, essid, ch, timeout=30, deauth_count=5):
+        Dialog_info("HS captured!\nSaved to loot", wait=True)
+    else:
+        Dialog_info("No handshake\ncaptured", wait=True)
+
+    engine.disable_monitor_mode()
+
+
+def do_wifi_pmkid_attack():
+    """Capture PMKID from network without clients."""
+    try:
+        from payloads.wifi.wifi_handshake_engine import get_wifi_engine
+    except ImportError:
+        Dialog_info("Engine load\nFAILED", wait=True)
+        return
+
+    engine = get_wifi_engine()
+    iface = ktox_state.get("wifi_iface", "wlan0")
+
+    # Enable monitor mode
+    Dialog_info(f"Monitor mode\non {iface}…", wait=False, timeout=1)
+    if not engine.enable_monitor_mode(iface):
+        Dialog_info("Monitor FAILED", wait=True)
+        return
+
+    # Scan networks
+    Dialog_info("Scanning…", wait=False, timeout=1)
+    if not engine.scan_networks(timeout=15):
+        Dialog_info("Scan failed", wait=True)
+        engine.disable_monitor_mode()
+        return
+
+    networks = engine.get_networks_list()
+    items = [f" {e[:20]:20} {b} ch{c}" for b, e, c, s in networks]
+    sel = GetMenuString(items)
+    if not sel:
+        engine.disable_monitor_mode()
+        return
+
+    bssid, essid, ch, sig = networks[items.index(sel)]
+
+    if not YNDialog("PMKID?", y="Attack", n="Cancel", b=essid):
+        engine.disable_monitor_mode()
+        return
+
+    Dialog_info(f"PMKID attack\n{essid}\nKEY3=stop", wait=True)
+    engine.pmkid_attack(bssid, essid, ch, timeout=10)
+
+    engine.disable_monitor_mode()
+    Dialog_info("PMKID attack\nCompleted", wait=True)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Payload directory scanner ──────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 
 PAYLOAD_CATEGORIES = [
     ("offensive",     "Offensive"),
-    ("reconnaissance","Recon"),
-    ("interception",  "Intercept"),
+    ("recon",         "Recon"),
+    ("intercept",     "Intercept"),
     ("dos",           "DoS"),
     ("wifi",          "WiFi"),
     ("bluetooth",     "Bluetooth"),
     ("network",       "Network"),
-    ("credentials",   "Credentials"),
+    ("creds",         "Credentials"),
     ("evasion",       "Evasion"),
     ("hardware",      "Hardware"),
     ("usb",           "USB"),
-    ("social_eng",    "Social Eng"),
-    ("exfiltration",  "Exfiltrate"),
-    ("remote_access", "Remote"),
-    ("evil_portal",   "Evil Portal"),
+    ("social",        "Social Eng"),
+    ("exfil",         "Exfiltrate"),
+    ("remote",        "Remote"),
+    ("evil",          "Evil Portal"),
+    ("media",         "Media"),
+    ("testing",       "Testing"),
     ("utilities",     "Utilities"),
     ("games",         "Games"),
     ("general",       "General"),
@@ -2855,7 +2953,8 @@ class KTOxMenu:
             (" WiFi Scan",       do_wifi_scan),
             (" Deauth AP",       do_deauth_targeted),
             (" Handshake Cap",   do_handshake_targeted),
-            (" PMKID Attack",    self._pmkid),
+            (" HS Engine Pro",   do_wifi_handshake_engine),
+            (" PMKID Attack",    do_wifi_pmkid_attack),
             (" Evil Twin AP",    self._evil_twin),
             (" Select Adapter",  self._select_adapter),
         ),
