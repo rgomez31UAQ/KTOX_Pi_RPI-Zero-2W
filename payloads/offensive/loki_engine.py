@@ -502,7 +502,7 @@ class PagerInput:
     shim_path.write_text(shim_code)
     shim_path.chmod(0o644)
 
-# Write the headless launcher
+# Write the headless launcher with fallback to KTOx wrapper
 def _write_launcher():
     launcher_code = f'''#!/usr/bin/env python3
 import sys, os, threading, signal, logging, time, subprocess
@@ -516,53 +516,56 @@ if _dir not in sys.path:
 
 os.environ['CRYPTOGRAPHY_OPENSSL_NO_LEGACY'] = '1'
 _DATA = os.environ.get('LOKI_DATA_DIR', '{LOKI_DATA}')
+_PID_FILE = os.environ.get('LOKI_PID_FILE', '')
 
-# Patch SharedData paths
-from shared import SharedData as _SD
-_orig = _SD.__init__
-def _patch(self, *a, **kw):
-    _orig(self, *a, **kw)
-    self.datadir             = _DATA
-    self.logsdir             = os.path.join(_DATA, 'logs')
-    self.output_dir          = os.path.join(_DATA, 'output')
-    self.input_dir           = os.path.join(_DATA, 'input')
-    self.crackedpwddir       = os.path.join(_DATA, 'output', 'crackedpwd')
-    self.datastolendir       = os.path.join(_DATA, 'output', 'datastolen')
-    self.zombiesdir          = os.path.join(_DATA, 'output', 'zombies')
-    self.vulnerabilities_dir = os.path.join(_DATA, 'output', 'vulnerabilities')
-    self.scan_results_dir    = os.path.join(_DATA, 'output', 'vulnerabilities')
-    self.netkbfile           = os.path.join(_DATA, 'netkb.csv')
-    for d in [self.datadir, self.logsdir, self.output_dir, self.input_dir,
-              self.crackedpwddir, self.datastolendir, self.zombiesdir,
-              self.vulnerabilities_dir]:
-        os.makedirs(d, exist_ok=True)
-_SD.__init__ = _patch
+# Write PID file early
+if _PID_FILE:
+    with open(_PID_FILE, 'w') as _f:
+        _f.write(str(os.getpid()))
 
-# Fix WiFi check
-import Loki as _lm
-def _wifi(self):
-    try:
-        r = subprocess.run(['ip', 'route', 'show', 'default'],
-                           capture_output=True, text=True, timeout=5)
-        self.wifi_connected = bool(r.stdout.strip())
-    except:
-        self.wifi_connected = True
-    return self.wifi_connected
-_lm.Loki.is_wifi_connected = _wifi
+# Try to start Loki engine + original webapp
+try:
+    # Patch SharedData paths
+    from shared import SharedData as _SD
+    _orig = _SD.__init__
+    def _patch(self, *a, **kw):
+        _orig(self, *a, **kw)
+        self.datadir             = _DATA
+        self.logsdir             = os.path.join(_DATA, 'logs')
+        self.output_dir          = os.path.join(_DATA, 'output')
+        self.input_dir           = os.path.join(_DATA, 'input')
+        self.crackedpwddir       = os.path.join(_DATA, 'output', 'crackedpwd')
+        self.datastolendir       = os.path.join(_DATA, 'output', 'datastolen')
+        self.zombiesdir          = os.path.join(_DATA, 'output', 'zombies')
+        self.vulnerabilities_dir = os.path.join(_DATA, 'output', 'vulnerabilities')
+        self.scan_results_dir    = os.path.join(_DATA, 'output', 'vulnerabilities')
+        self.netkbfile           = os.path.join(_DATA, 'netkb.csv')
+        for d in [self.datadir, self.logsdir, self.output_dir, self.input_dir,
+                  self.crackedpwddir, self.datastolendir, self.zombiesdir,
+                  self.vulnerabilities_dir]:
+            os.makedirs(d, exist_ok=True)
+    _SD.__init__ = _patch
 
-from init_shared import shared_data
-from Loki import Loki, handle_exit
-from webapp import web_thread, handle_exit_web
+    # Fix WiFi check
+    import Loki as _lm
+    def _wifi(self):
+        try:
+            r = subprocess.run(['ip', 'route', 'show', 'default'],
+                               capture_output=True, text=True, timeout=5)
+            self.wifi_connected = bool(r.stdout.strip())
+        except:
+            self.wifi_connected = True
+        return self.wifi_connected
+    _lm.Loki.is_wifi_connected = _wifi
 
-if __name__ == '__main__':
+    from init_shared import shared_data
+    from Loki import Loki, handle_exit
+    from webapp import web_thread, handle_exit_web
+
     shared_data.load_config()
     bjorn_ip = os.environ.get('BJORN_IP', '')
     if bjorn_ip:
         os.environ['BJORN_IP'] = bjorn_ip
-    pid_file = os.environ.get('LOKI_PID_FILE', '')
-    if pid_file:
-        with open(pid_file, 'w') as _f:
-            _f.write(str(os.getpid()))
 
     shared_data.webapp_should_exit  = False
     shared_data.display_should_exit = True
@@ -578,6 +581,22 @@ if __name__ == '__main__':
 
     while not shared_data.should_exit:
         time.sleep(2)
+
+except Exception as e:
+    print(f"[!] Loki failed to start: {{e}}")
+    print("[*] Falling back to KTOx wrapper...")
+    # Fallback: start the KTOx wrapper instead
+    try:
+        import sys
+        wrapper_path = "/home/user/KTOX_Pi/payloads/offensive/loki_ktox_wrapper.py"
+        if os.path.exists(wrapper_path):
+            subprocess.run([sys.executable, wrapper_path])
+        else:
+            print(f"[!] Wrapper not found: {{wrapper_path}}")
+            sys.exit(1)
+    except Exception as e2:
+        print(f"[!] Wrapper also failed: {{e2}}")
+        sys.exit(1)
 '''
     LAUNCHER.parent.mkdir(parents=True, exist_ok=True)
     LAUNCHER.write_text(launcher_code)
