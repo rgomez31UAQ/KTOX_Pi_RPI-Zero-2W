@@ -22,6 +22,7 @@ Controls:
   UP     : Speed up rain
   DOWN   : Slow down rain
   KEY1   : Cycle filter (all → TCP → UDP → DNS → ARP)
+  KEY2   : Save current capture data to loot directory (JSON)
   KEY3   : Exit
 """
 
@@ -35,6 +36,8 @@ import threading
 import struct
 import socket
 import re
+import json
+from datetime import datetime
 
 KTOX_ROOT = '/root/KTOx' if os.path.isdir('/root/KTOx') else os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -86,6 +89,10 @@ COL_DEFAULT   = (0, 180, 40)
 COL_DEF_TRAIL = (0, 50, 10)
 
 FILTER_NAMES = ["ALL", "TCP", "UDP", "DNS", "ARP"]
+
+# ── Paths for loot ───────────────────────────────────────────────────────────
+LOOT_DIR = "/root/KTOx/loot/MatrixTap"
+os.makedirs(LOOT_DIR, exist_ok=True)
 
 # ── State ─────────────────────────────────────────────────────────────────────
 running    = True
@@ -267,9 +274,6 @@ def _sniff_loop():
 
 
 # ── Renderer ──────────────────────────────────────────────────────────────────
-_frame_tick = 0.0
-
-
 def _inject_from_queue():
     """Feed pending packet strings into idle columns."""
     with pkt_lock:
@@ -344,6 +348,44 @@ def _tick_columns():
         col.step()
 
 
+# ── Save to loot (KEY2) ───────────────────────────────────────────────────────
+def save_capture_data():
+    """Save current packet queue and stats to a JSON file in loot directory."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"matrix_tap_{timestamp}.json"
+    filepath = os.path.join(LOOT_DIR, filename)
+    with pkt_lock:
+        # Make a copy of the queue to avoid holding the lock during file write
+        queue_snapshot = list(pkt_queue)
+        total = total_pkts
+        filt = FILTER_NAMES[filter_idx]
+        cap = capturing
+    data = {
+        "timestamp": datetime.now().isoformat(),
+        "total_packets_captured": total,
+        "filter_active": filt,
+        "sniffer_running": cap,
+        "packet_queue": queue_snapshot,  # each entry has chars, color, trail
+        "rain_speed": rain_speed,
+        "columns_active": sum(1 for c in columns if c.active),
+    }
+    try:
+        with open(filepath, "w") as f:
+            json.dump(data, f, indent=2)
+        # Show quick confirmation on LCD
+        img = Image.new("RGB", (WIDTH, HEIGHT), (0,0,0))
+        draw = ImageDraw.Draw(img)
+        draw.text((WIDTH//2, HEIGHT//2), "Saved!", font=FONT, fill=(0,255,0), anchor="mm")
+        LCD.LCD_ShowImage(img, 0, 0)
+        time.sleep(0.8)
+    except Exception as e:
+        # Show error
+        img = Image.new("RGB", (WIDTH, HEIGHT), (0,0,0))
+        draw = ImageDraw.Draw(img)
+        draw.text((WIDTH//2, HEIGHT//2), f"Save failed: {str(e)[:20]}", font=FONT, fill=(255,0,0), anchor="mm")
+        LCD.LCD_ShowImage(img, 0, 0)
+        time.sleep(1.2)
+
 # ── Signal handlers ───────────────────────────────────────────────────────────
 def _cleanup(*_):
     global running
@@ -382,6 +424,15 @@ def main():
             rain_speed = min(0.25, rain_speed + 0.01)
         elif btn == "KEY1":
             filter_idx = (filter_idx + 1) % len(FILTER_NAMES)
+        elif btn == "KEY2":
+            # Save capture data in a separate thread to not block the rain
+            threading.Thread(target=save_capture_data, daemon=True).start()
+            # Show a "Saving..." message
+            img = Image.new("RGB", (WIDTH, HEIGHT), (0,0,0))
+            draw = ImageDraw.Draw(img)
+            draw.text((WIDTH//2, HEIGHT//2), "Saving...", font=FONT, fill=(0,255,0), anchor="mm")
+            LCD.LCD_ShowImage(img, 0, 0)
+            time.sleep(0.3)
 
         # Feed new packet data into columns
         for _ in range(min(3, len(pkt_queue))):
