@@ -584,11 +584,11 @@ try:
 
 except Exception as e:
     print(f"[!] Loki failed to start: {{e}}")
-    print("[*] Falling back to KTOx Professional WebUI...")
-    # Fallback: start the professional webui
+    print("[*] Falling back to CYBERPUNK WebUI...")
+    # Fallback: start the cyberpunk webui
     try:
         import sys
-        webui_path = "/home/user/KTOX_Pi/payloads/offensive/loki_ktox_webui.py"
+        webui_path = "/home/user/KTOX_Pi/payloads/offensive/loki_cyberpunk_ui.py"
         if os.path.exists(webui_path):
             subprocess.run([sys.executable, webui_path])
         else:
