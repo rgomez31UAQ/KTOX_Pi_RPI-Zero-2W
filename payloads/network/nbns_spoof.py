@@ -75,7 +75,8 @@ font = scaled_font()
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-LOOT_DIR = "/root/KTOx/loot/NBNSSpoof"
+KTOX_DIR = os.environ.get("KTOX_DIR", "/root/KTOx")
+LOOT_DIR = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "loot", "NBNSSpoof")
 os.makedirs(LOOT_DIR, exist_ok=True)
 ROWS_VISIBLE = 6
 NBNS_PORT = 137

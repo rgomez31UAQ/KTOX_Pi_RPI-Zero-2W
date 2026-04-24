@@ -47,7 +47,8 @@ PINS = {
 WIDTH, HEIGHT = LCD_1in44.LCD_WIDTH, LCD_1in44.LCD_HEIGHT
 ROWS_VISIBLE = 5
 ROW_H = 12
-LOOT_DIR = "/root/KTOx/loot/SSDP"
+KTOX_DIR = os.environ.get("KTOX_DIR", "/root/KTOx")
+LOOT_DIR = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "loot", "SSDP")
 
 SSDP_ADDR = "239.255.255.250"
 SSDP_PORT = 1900

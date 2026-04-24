@@ -66,7 +66,8 @@ font = scaled_font()
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-LOOT_DIR = "/root/KTOx/loot/WPAD"
+KTOX_DIR = os.environ.get("KTOX_DIR", "/root/KTOx")
+LOOT_DIR = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "loot", "WPAD")
 os.makedirs(LOOT_DIR, exist_ok=True)
 
 DNSMASQ_CONF = "/tmp/ktox_wpad_dnsmasq.conf"

@@ -69,7 +69,8 @@ font = scaled_font()
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-LOOT_DIR = "/root/KTOx/loot/HSRPTakeover"
+KTOX_DIR = os.environ.get("KTOX_DIR", "/root/KTOx")
+LOOT_DIR = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "loot", "HSRPTakeover")
 os.makedirs(LOOT_DIR, exist_ok=True)
 HSRP_PORT = 1985
 HSRP_MCAST = "224.0.0.2"
