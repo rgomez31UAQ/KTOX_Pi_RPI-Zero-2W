@@ -212,8 +212,8 @@ class NetworkManager:
             width=W, height=H, lcd=LCD,
             gpio_pins=PINS, gpio_module=GPIO
         )
-        password = kb.run()
-        return password
+        result = kb.run()
+        return result if result else None
 
     def handle_main_menu(self):
         """Handle main menu navigation."""
