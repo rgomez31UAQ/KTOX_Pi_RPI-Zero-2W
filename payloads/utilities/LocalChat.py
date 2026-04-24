@@ -84,6 +84,10 @@ state = "setup"         # setup, conversation, typing
 history_lock = threading.Lock()
 peers_lock = threading.Lock()
 
+# Button debounce state
+button_state = {name: False for name in PINS}
+last_press_time = {name: 0 for name in PINS}
+
 # ----------------------------------------------------------------------
 # LCD Helpers
 # ----------------------------------------------------------------------
@@ -101,12 +105,21 @@ def draw_screen(lines, title="KTOx MESH", title_color="#8B0000", text_color="#FF
     LCD.LCD_ShowImage(img, 0, 0)
 
 def wait_btn(timeout=0.1):
+    """Wait for button press with debounce state tracking."""
     start = time.time()
     while time.time() - start < timeout:
         for name, pin in PINS.items():
-            if GPIO.input(pin) == 0:
-                time.sleep(0.05)
-                return name
+            pressed = (GPIO.input(pin) == 0)
+
+            if pressed and not button_state[name]:
+                button_state[name] = True
+                min_gap = 0.15
+                if time.time() - last_press_time[name] >= min_gap:
+                    last_press_time[name] = time.time()
+                    return name
+            elif not pressed and button_state[name]:
+                button_state[name] = False
+
         time.sleep(0.02)
     return None
 
