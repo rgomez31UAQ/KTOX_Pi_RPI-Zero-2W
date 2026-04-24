@@ -35,7 +35,7 @@ def main():
         print("="*50)
         
         # Check if WiFi system is available
-        wifi_interface_path = '/root/KTOx/wifi/wifi_lcd_interface.py'
+        wifi_interface_path = '/root/KTOx/wifi/network_manager.py'
         
         if not os.path.exists(wifi_interface_path):
             print("❌ WiFi management system not found!")
