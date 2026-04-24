@@ -264,7 +264,7 @@ START_X = 6
 def draw_keyboard(input_text, selected_row, selected_col):
     img = Image.new("RGB", (W, H), "#0A0000")
     d = ImageDraw.Draw(img)
-    d.rectangle((0,0,W,17), fill="#004466")
+    d.rectangle((0,0,W,17), fill="#8B0000")
     d.text((4,3), "URL ENTRY", font=font_sm, fill=(231, 76, 60))
     d.rectangle((2,19,W-2,27), fill=(10, 0, 0))
     display_text = input_text[-20:] if len(input_text) > 20 else input_text
@@ -311,7 +311,7 @@ def draw_browser(browser):
         y += 12
     # Links indicator
     if tab.links:
-        d.text((4, H-12), f"🔗 {len(tab.links)} links", font=font_sm, fill=(30, 132, 73))
+        d.text((4, H-12), f"🔗 {len(tab.links)} links", font=font_sm, fill=(231, 76, 60))
     else:
         d.text((4, H-12), "No links", font=font_sm, fill=(86, 101, 115))
     # Scrollbar

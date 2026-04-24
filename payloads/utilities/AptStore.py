@@ -26,7 +26,7 @@ lcd.LCD_Init(LCD_1in44.SCAN_DIR_DFT)
 LCD_Config.Driver_Delay_ms(50)
 
 W, H = 128, 128
-image = Image.new("RGB", (W, H), "#0a0a0a")
+image = Image.new("RGB", (W, H), "#0a0000")
 draw = ImageDraw.Draw(image)
 
 try:
@@ -39,7 +39,7 @@ def flush():
     lcd.LCD_ShowImage(image, 0, 0)
 
 def draw_menu(lines, title, selected=0, page=0, total_pages=1):
-    draw.rectangle((0,0,W,H), fill="#0a0a0a")
+    draw.rectangle((0,0,W,H), fill="#0a0000")
     draw.rectangle((0,0,W,12), fill="#8B0000")
     draw.text((2,2), title[:16], font=bold_font, fill="#fff")
     if total_pages > 1:
@@ -63,7 +63,7 @@ def wait_button():
         time.sleep(0.02)
 
 def show_message(text, delay=2):
-    draw.rectangle((0,0,W,H), fill="#0a0a0a")
+    draw.rectangle((0,0,W,H), fill="#0a0000")
     draw.text((4,10), text[:20], font=font, fill="#c8c8c8")
     flush()
     time.sleep(delay)
@@ -73,7 +73,7 @@ def show_text_scroll(lines, title="INFO"):
     page = 0
     total = max(1, (len(lines) + 5) // 6)
     while True:
-        draw.rectangle((0,0,W,H), fill="#0a0a0a")
+        draw.rectangle((0,0,W,H), fill="#0a0000")
         draw.rectangle((0,0,W,12), fill="#8B0000")
         draw.text((2,2), title[:16], font=bold_font, fill="#fff")
         if total > 1:
@@ -91,9 +91,9 @@ def show_text_scroll(lines, title="INFO"):
         elif btn in ("OK","KEY2","KEY3"): break
 
 def confirm(msg):
-    draw.rectangle((0,0,W,H), fill="#0a0a0a")
+    draw.rectangle((0,0,W,H), fill="#0a0000")
     draw.text((4,10), msg[:20], font=font, fill="#ff8800")
-    draw.text((4,30), "KEY1 = YES", font=font, fill="#2ecc40")
+    draw.text((4,30), "KEY1 = YES", font=font, fill="#e74c3c")
     draw.text((4,42), "KEY2 = NO", font=font, fill="#c8c8c8")
     flush()
     while True:
@@ -111,7 +111,7 @@ def run_apt(cmd, title="APT"):
         if line:
             lines.append(line.strip())
             if len(lines) > 6: lines = lines[-6:]
-            draw.rectangle((0,0,W,H), fill="#0a0a0a")
+            draw.rectangle((0,0,W,H), fill="#0a0000")
             draw.rectangle((0,0,W,12), fill="#8B0000")
             draw.text((2,2), title[:16], font=bold_font, fill="#fff")
             y = 16

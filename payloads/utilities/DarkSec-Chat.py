@@ -173,7 +173,7 @@ def draw_chat():
                 lines.append(f"   {line}")
         lines.append("")
     visible = lines[scroll_pos:scroll_pos+6]
-    draw_screen(visible, title="DarkSec-Chat", title_color="#004466")
+    draw_screen(visible, title="DarkSec-Chat", title_color="#8B0000")
 
 def scroll_up():
     global scroll_pos
@@ -409,7 +409,7 @@ def main():
         with chat_lock:
             for sender, text, ts, src in chat_messages:
                 f.write(f"[{datetime.fromtimestamp(ts).strftime('%H:%M:%S')}] {sender}: {text}\n")
-    draw_screen([f"Session saved", log_file[-25:], "KEY3 to exit"], title="DarkSec-Chat", title_color="#00AA00")
+    draw_screen([f"Session saved", log_file[-25:], "KEY3 to exit"], title="DarkSec-Chat", title_color="#8B0000")
     while wait_btn(0.5) != "KEY3":
         pass
     mesh_running = False

