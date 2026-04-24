@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# NAME: YouTube MP3 Ripper
+# NAME: yt-ripper
 
 """
-KTOx Payload – YouTube MP3 Ripper
-=================================
+KTOx Payload – yt-ripper
+========================
 Mode 1: Web UI dashboard on port 5000
 Mode 2: LCD CLI with on-screen keyboard
 
@@ -32,8 +32,11 @@ Commands in LCD CLI:
   /exit
   <youtube url>
 
-Loot:
-  /root/KTOx/loot/YouTube
+Audio output:
+  /root/Music (or XDG_MUSIC_DIR if configured)
+
+State:
+  /root/KTOx/loot/yt-ripper
 """
 
 import os
@@ -50,16 +53,39 @@ import LCD_1in44
 from PIL import Image, ImageDraw, ImageFont
 
 # ----------------------------------------------------------------------
-# Paths / constants
+# Directories
 # ----------------------------------------------------------------------
-LOOT_DIR = "/root/KTOx/loot/YouTube"
-JOBS_FILE = os.path.join(LOOT_DIR, "jobs.json")
-CONFIG_FILE = os.path.join(LOOT_DIR, "config.json")
-LOG_FILE = os.path.join(LOOT_DIR, "ripper.log")
+def get_music_dir():
+    xdg_config = "/root/.config/user-dirs.dirs"
+    try:
+        if os.path.exists(xdg_config):
+            with open(xdg_config, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("XDG_MUSIC_DIR="):
+                        value = line.split("=", 1)[1].strip().strip('"')
+                        value = value.replace("$HOME", "/root")
+                        if value:
+                            return value
+    except Exception:
+        pass
+    return "/root/Music"
+
+MUSIC_DIR = get_music_dir()
+STATE_DIR = "/root/KTOx/loot/yt-ripper"
+
+os.makedirs(MUSIC_DIR, exist_ok=True)
+os.makedirs(STATE_DIR, exist_ok=True)
+
+LOOT_DIR = MUSIC_DIR
+JOBS_FILE = os.path.join(STATE_DIR, "jobs.json")
+CONFIG_FILE = os.path.join(STATE_DIR, "config.json")
+LOG_FILE = os.path.join(STATE_DIR, "ripper.log")
 PORT = 5000
 
-os.makedirs(LOOT_DIR, exist_ok=True)
-
+# ----------------------------------------------------------------------
+# Display / hardware constants
+# ----------------------------------------------------------------------
 WIDTH, HEIGHT = 128, 128
 BG = (10, 0, 0)
 PANEL = (34, 0, 0)
@@ -67,7 +93,6 @@ HEADER = (139, 0, 0)
 FG = (171, 178, 185)
 ACCENT = (231, 76, 60)
 WHITE = (255, 255, 255)
-GOOD = (30, 132, 73)
 WARN = (212, 172, 13)
 DIM = (113, 125, 126)
 
@@ -85,7 +110,7 @@ PINS = {
 DEBOUNCE = 0.18
 
 # ----------------------------------------------------------------------
-# Hardware
+# Hardware init
 # ----------------------------------------------------------------------
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
@@ -166,10 +191,9 @@ def show_message(title, lines=None, footer=""):
 
 def log(msg):
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    line = f"{ts} {msg}"
     try:
         with open(LOG_FILE, "a") as f:
-            f.write(line + "\n")
+            f.write(f"{ts} {msg}\n")
     except Exception:
         pass
 
@@ -177,7 +201,7 @@ def log(msg):
 # Settings
 # ----------------------------------------------------------------------
 SETTINGS = {
-    "playlist_mode": "single",   # "single" or "playlist"
+    "playlist_mode": "single",
 }
 
 def load_settings():
@@ -300,7 +324,7 @@ class DownloadManager:
         log(f"[QUEUE] {job.url} mode={SETTINGS.get('playlist_mode')}")
         return job.job_id
 
-    def get_jobs_snapshot(self):
+    def snapshot(self):
         with self.lock:
             return {jid: job.to_dict() for jid, job in self.jobs.items()}
 
@@ -310,16 +334,16 @@ class DownloadManager:
         vals.sort(key=lambda j: j.start_time or j.job_id, reverse=True)
         return vals
 
-    def _next_queued_job(self):
+    def _next_job(self):
         with self.lock:
             for job in self.jobs.values():
                 if job.status == "queued":
                     return job
         return None
 
-    def _set_job(self, job, **updates):
+    def _set_job(self, job, **fields):
         with self.lock:
-            for k, v in updates.items():
+            for k, v in fields.items():
                 setattr(job, k, v)
         self._save_jobs()
 
@@ -330,15 +354,13 @@ class DownloadManager:
             "--extract-audio",
             "--audio-format", "mp3",
             "--audio-quality", "0",
+            "--output", out_template,
             "--newline",
             "--progress",
-            "--output", out_template,
             "--print", "after_move:FILE=%(filepath)s",
         ]
-
         if not playlist_enabled():
             cmd.append("--no-playlist")
-
         cmd.append(job.url)
 
         try:
@@ -347,7 +369,7 @@ class DownloadManager:
                 status="downloading",
                 start_time=datetime.now().isoformat(),
                 progress=0.0,
-                message=f"Starting ({SETTINGS.get('playlist_mode')})",
+                message=f"starting ({SETTINGS['playlist_mode']})",
             )
 
             proc = subprocess.Popen(
@@ -358,19 +380,18 @@ class DownloadManager:
                 bufsize=1,
             )
 
-            percent_re = re.compile(r"(\d+(?:\.\d+)?)%")
+            pct_re = re.compile(r"(\d+(?:\.\d+)?)%")
             file_re = re.compile(r"FILE=(.+)$")
 
             for line in iter(proc.stdout.readline, ""):
-                line = line.rstrip()
+                line = line.strip()
                 if not line:
                     continue
 
-                m = percent_re.search(line)
+                m = pct_re.search(line)
                 if m:
                     try:
-                        pct = float(m.group(1))
-                        self._set_job(job, progress=min(max(pct, 0.0), 100.0))
+                        self._set_job(job, progress=float(m.group(1)))
                     except Exception:
                         pass
 
@@ -378,8 +399,7 @@ class DownloadManager:
                 if fm:
                     self._set_job(job, output_path=fm.group(1).strip())
 
-                if "[download]" in line or "[ExtractAudio]" in line or "Destination" in line:
-                    self._set_job(job, message=line[-100:])
+                self._set_job(job, message=line[-120:])
 
             rc = proc.wait()
             if rc == 0:
@@ -388,9 +408,8 @@ class DownloadManager:
                     status="completed",
                     progress=100.0,
                     end_time=datetime.now().isoformat(),
-                    message=f"Completed ({SETTINGS.get('playlist_mode')})",
+                    message="completed",
                 )
-                log(f"[DONE] {job.url}")
             else:
                 self._set_job(
                     job,
@@ -398,27 +417,24 @@ class DownloadManager:
                     end_time=datetime.now().isoformat(),
                     message=f"yt-dlp exited {rc}",
                 )
-                log(f"[FAIL] {job.url} rc={rc}")
-
         except Exception as e:
             self._set_job(
                 job,
                 status="failed",
                 end_time=datetime.now().isoformat(),
-                message=str(e)[-100:],
+                message=str(e)[-120:],
             )
-            log(f"[ERR] download {job.url}: {e}")
 
-    def _worker_loop(self):
+    def _worker(self):
         while not self.stop_event.is_set():
-            job = self._next_queued_job()
+            job = self._next_job()
             if job:
                 self._download(job)
             else:
                 self.stop_event.wait(0.5)
 
     def _start_worker(self):
-        self.worker = threading.Thread(target=self._worker_loop, daemon=True)
+        self.worker = threading.Thread(target=self._worker, daemon=True)
         self.worker.start()
 
     def stop(self):
@@ -469,108 +485,736 @@ def mode_selection():
 # Web UI
 # ----------------------------------------------------------------------
 def run_webui():
-    missing = check_dependencies()
-    if missing:
-        show_message("Missing deps", missing, "Install and retry")
-        time.sleep(2)
-        return
-
     from flask import Flask, render_template_string, request, jsonify
     from werkzeug.serving import make_server
     import socket
 
+    missing = check_dependencies()
+    if missing:
+        show_message("Missing deps", missing, "Need yt-dlp ffmpeg")
+        time.sleep(2)
+        return
+
     app = Flask(__name__)
 
-    HTML = """
+    HTML = r"""
     <!doctype html>
     <html>
     <head>
-      <title>KTOx Audio Ripper</title>
+      <meta charset="utf-8">
+      <title>yt-ripper</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
-        *{box-sizing:border-box}
-        body{background:#0a0000;color:#c0c0c0;font-family:monospace;padding:20px}
-        .box{max-width:820px;margin:auto;background:#140404;border:2px solid #8b0000;border-radius:10px;padding:20px}
-        h1{color:#e74c3c;margin-bottom:16px}
-        input,button{
-          font-family:monospace;padding:10px;background:#240808;color:#eee;border:1px solid #8b0000
+        :root{
+          --bg:#050000;
+          --panel:#0d0000cc;
+          --panel2:#140404;
+          --line:#8b0000;
+          --line2:#5a0a0a;
+          --text:#d7d7d7;
+          --muted:#8d6e6e;
+          --red:#e74c3c;
+          --red2:#ff4d4d;
+          --glow:0 0 8px rgba(231,76,60,.5), 0 0 18px rgba(231,76,60,.2);
         }
-        input{width:72%}
-        button{cursor:pointer}
-        .job{margin-top:12px;padding:10px;border:1px solid #8b0000;background:#100000}
-        .bar{height:16px;background:#220000;border-radius:8px;overflow:hidden;margin:8px 0}
-        .fill{height:100%;background:#e74c3c}
-        .muted{color:#aaa;font-size:12px}
-        .toolbar{margin:10px 0 16px 0}
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%}
+        body{
+          background:radial-gradient(circle at top, #130000 0%, #050000 55%, #000 100%);
+          color:var(--text);
+          font:14px/1.4 "JetBrains Mono","Fira Code","Courier New",monospace;
+          overflow-x:hidden;
+        }
+        #matrix{
+          position:fixed; inset:0; width:100%; height:100%;
+          z-index:0; opacity:.28; pointer-events:none;
+          image-rendering:auto;
+          filter:saturate(1.15) contrast(1.05);
+        }
+        .scanline{
+          position:fixed; left:0; right:0; height:3px; top:-10px;
+          background:linear-gradient(90deg, transparent, rgba(231,76,60,.75), transparent);
+          box-shadow:0 0 12px rgba(231,76,60,.9);
+          animation:scan 9s linear infinite;
+          z-index:1; pointer-events:none;
+        }
+        @keyframes scan{from{transform:translateY(-10px)}to{transform:translateY(100vh)}}
+        .wrap{position:relative; z-index:2; max-width:1380px; margin:18px auto; padding:18px;}
+        .shell{
+          border:1px solid var(--line);
+          background:linear-gradient(180deg, rgba(16,0,0,.84), rgba(8,0,0,.92));
+          border-radius:14px;
+          box-shadow:0 0 0 1px rgba(255,0,0,.06) inset, 0 0 30px rgba(139,0,0,.35);
+          overflow:hidden;
+          backdrop-filter:blur(4px);
+        }
+        .topbar{
+          display:flex; align-items:center; justify-content:space-between;
+          padding:10px 14px;
+          border-bottom:1px solid var(--line2);
+          background:linear-gradient(180deg, rgba(45,0,0,.85), rgba(20,0,0,.9));
+        }
+        .brand{display:flex; align-items:center; gap:12px}
+        .brand h1{
+          font-size:21px; letter-spacing:3px; color:var(--red);
+          text-shadow:var(--glow);
+        }
+        .sub{font-size:11px; color:var(--muted)}
+        .statusbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+        .pill{
+          border:1px solid var(--line);
+          background:#180404;
+          color:#f1b0b0;
+          border-radius:999px;
+          padding:5px 10px;
+          font-size:11px;
+        }
+        .pill strong{color:#fff}
+        .main{
+          display:grid;
+          grid-template-columns: 1.4fr .9fr;
+          gap:18px;
+          padding:18px;
+        }
+        .panel{
+          border:1px solid var(--line2);
+          border-radius:12px;
+          background:rgba(12,0,0,.78);
+          box-shadow:0 0 18px rgba(139,0,0,.12) inset;
+          overflow:hidden;
+        }
+        .panel-head{
+          display:flex; justify-content:space-between; align-items:center;
+          padding:10px 12px;
+          border-bottom:1px solid var(--line2);
+          background:rgba(34,0,0,.7);
+        }
+        .panel-head h2{font-size:13px; color:var(--red); letter-spacing:1px}
+        .panel-body{padding:12px}
+        .skullbox{
+          min-height:142px;
+          display:grid; place-items:center;
+          background:
+            radial-gradient(circle at center, rgba(139,0,0,.15), transparent 60%),
+            linear-gradient(180deg, rgba(16,0,0,.65), rgba(8,0,0,.9));
+          border-bottom:1px solid var(--line2);
+        }
+        .skull{
+          white-space:pre;
+          color:var(--red2);
+          font-size:12px;
+          line-height:1.05;
+          text-shadow:0 0 6px rgba(231,76,60,.55);
+          opacity:.95;
+        }
+        .controls{
+          display:grid; grid-template-columns: 1fr auto auto; gap:10px;
+          margin-bottom:12px;
+        }
+        .controls input,.controls button,select{
+          border:1px solid var(--line);
+          background:#160404;
+          color:#eee;
+          border-radius:10px;
+          padding:12px 12px;
+          font:inherit;
+          outline:none;
+        }
+        .controls input:focus,select:focus{
+          box-shadow:0 0 0 1px var(--red2), 0 0 12px rgba(231,76,60,.2);
+        }
+        button{cursor:pointer; transition:.16s ease}
+        button:hover{background:#280808; box-shadow:0 0 12px rgba(231,76,60,.18)}
+        .actions{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+        .btn-primary{background:linear-gradient(180deg, #4a0a0a, #240606); color:#fff}
+        .btn-soft{background:#140404; color:#f3b0b0}
+        .notes{
+          font-size:12px; color:var(--muted);
+          line-height:1.5;
+          border-top:1px dashed var(--line2);
+          padding-top:10px;
+        }
+        .jobs{max-height:66vh; overflow:auto; padding-right:4px}
+        .job{
+          border:1px solid var(--line2);
+          border-radius:12px;
+          padding:10px;
+          margin-bottom:10px;
+          background:linear-gradient(180deg, rgba(22,0,0,.86), rgba(12,0,0,.95));
+        }
+        .job-top{
+          display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
+          margin-bottom:8px;
+        }
+        .job-title{color:#fff; font-size:12px; word-break:break-word}
+        .job-tag{
+          font-size:10px; padding:3px 7px; border-radius:999px;
+          border:1px solid var(--line); white-space:nowrap;
+        }
+        .queued{color:#ffd27a}
+        .downloading{color:#ff8d8d}
+        .completed{color:#8ef0b3}
+        .failed{color:#ff7272}
+        .bar{
+          height:12px; border-radius:999px; overflow:hidden;
+          background:#220000; border:1px solid #3c0909;
+          margin-bottom:7px;
+        }
+        .fill{
+          height:100%; width:0%;
+          background:linear-gradient(90deg, #8b0000, #e74c3c, #ff7676);
+          box-shadow:0 0 10px rgba(231,76,60,.45);
+          transition:width .25s ease;
+        }
+        .meta{font-size:11px; color:var(--muted); word-break:break-word}
+        .empty{
+          color:var(--muted); font-size:13px; text-align:center;
+          padding:26px 10px; border:1px dashed var(--line2); border-radius:12px;
+        }
+        .footer{
+          padding:10px 14px; border-top:1px solid var(--line2);
+          color:var(--muted); font-size:11px;
+          display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;
+        }
+        .grid-mini{
+          display:grid;
+          grid-template-columns:repeat(3, 1fr);
+          gap:10px;
+          margin-bottom:12px;
+        }
+        .stat{
+          border:1px solid var(--line2);
+          border-radius:12px;
+          background:#120202;
+          padding:10px;
+        }
+        .stat .k{font-size:10px; color:var(--muted)}
+        .stat .v{font-size:18px; color:#fff; margin-top:4px}
+        .recent-item{
+          border:1px solid var(--line2);
+          border-radius:10px;
+          background:#120202;
+          padding:8px 10px;
+          margin-bottom:8px;
+          cursor:pointer;
+          color:#d7d7d7;
+          word-break:break-all;
+        }
+        .recent-item:hover{
+          background:#1d0606;
+          box-shadow:0 0 10px rgba(231,76,60,.12);
+        }
+        .inspect-grid{display:grid; grid-template-columns:1fr; gap:8px}
+        .inspect-line{font-size:12px; color:#d7d7d7}
+        .inspect-line .k{color:#8d6e6e; margin-right:6px}
+        .inspect-thumb{
+          max-width:100%;
+          max-height:180px;
+          border:1px solid var(--line2);
+          border-radius:10px;
+          display:block;
+        }
+        .error-box{
+          color:#ff9d9d;
+          border:1px solid #6a1111;
+          background:#180404;
+          border-radius:10px;
+          padding:10px;
+          white-space:pre-wrap;
+          word-break:break-word;
+        }
+        @media (max-width: 980px){
+          .main{grid-template-columns:1fr}
+          .controls{grid-template-columns:1fr}
+        }
       </style>
     </head>
     <body>
-      <div class="box">
-        <h1>KTOx AUDIO RIPPER</h1>
-        <form id="f">
-          <input id="url" placeholder="YouTube URL / playlist URL" required>
-          <button type="submit">QUEUE</button>
-        </form>
+      <canvas id="matrix"></canvas>
+      <div class="scanline"></div>
 
-        <div class="toolbar">
-          <button type="button" onclick="toggleMode()">
-            Mode: <span id="pmode">...</span>
-          </button>
+      <div class="wrap">
+        <div class="shell">
+          <div class="topbar">
+            <div class="brand">
+              <div class="skull" id="miniSkull">  .-.
+ (o o)
+ | O \\
+  \\   \\
+   `~~~'</div>
+              <div>
+                <h1>yt-ripper</h1>
+                <div class="sub">red matrix edition // queue-driven downloader</div>
+              </div>
+            </div>
+            <div class="statusbar">
+              <div class="pill">MODE <strong id="modeLabel">single</strong></div>
+              <div class="pill">PORT <strong>5000</strong></div>
+              <div class="pill">JOBS <strong id="jobCount">0</strong></div>
+            </div>
+          </div>
+
+          <div class="main">
+            <div class="panel">
+              <div class="skullbox">
+<pre class="skull" id="heroSkull">
+           .ed"""" """$$$$be.
+         -"           ^""**$$$e.
+       ."                   '$$$c
+      /                      "4$$b
+     d  3                      $$$$
+     $  *                   .$$$$$$
+    .$  ^c           $$$$$e$$$$$$$$.
+    d$L  4.         4$$$$$$$$$$$$$$b
+    $$$$b ^ceeeee.  4$$ECL.F*$$$$$$$
+</pre>
+              </div>
+
+              <div class="panel-head">
+                <h2>QUEUE INPUT</h2>
+                <div class="sub">inspect then queue</div>
+              </div>
+
+              <div class="panel-body">
+                <div class="controls">
+                  <input id="urlInput" placeholder="Paste YouTube URL / playlist URL" />
+                  <select id="playlistMode">
+                    <option value="single">single</option>
+                    <option value="playlist">playlist</option>
+                  </select>
+                  <button class="btn-primary" id="inspectBtn">INSPECT</button>
+                </div>
+
+                <div class="actions">
+                  <button class="btn-soft" id="queueBtn">QUEUE</button>
+                  <button class="btn-soft" id="modeBtn">TOGGLE MODE</button>
+                  <button class="btn-soft" id="refreshBtn">REFRESH</button>
+                  <button class="btn-soft" id="pasteDemo">DEMO URL</button>
+                </div>
+
+                <div class="grid-mini">
+                  <div class="stat">
+                    <div class="k">queued</div>
+                    <div class="v" id="statQueued">0</div>
+                  </div>
+                  <div class="stat">
+                    <div class="k">active</div>
+                    <div class="v" id="statActive">0</div>
+                  </div>
+                  <div class="stat">
+                    <div class="k">done</div>
+                    <div class="v" id="statDone">0</div>
+                  </div>
+                </div>
+
+                <div class="panel" style="margin-bottom:12px;">
+                  <div class="panel-head">
+                    <h2>INSPECTED TARGET</h2>
+                    <div class="sub">metadata preview</div>
+                  </div>
+                  <div class="panel-body" id="inspectCard">
+                    <div class="empty">Paste a URL and click INSPECT.</div>
+                  </div>
+                </div>
+
+                <div class="panel">
+                  <div class="panel-head">
+                    <h2>RECENT URLS</h2>
+                    <div class="sub">tap to refill input</div>
+                  </div>
+                  <div class="panel-body" id="recentUrls">
+                    <div class="empty">No recent URLs yet.</div>
+                  </div>
+                </div>
+
+                <div class="notes">
+                  • Embedded YouTube iframes are not reliable for “rip current” because of browser cross-origin restrictions.<br>
+                  • This UI stays on one page and uses Inspect + Queue instead.<br>
+                  • Audio saves to the system music directory.<br>
+                  • State is kept under /root/KTOx/loot/yt-ripper.
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>DOWNLOAD QUEUE</h2>
+                <div class="sub">live status</div>
+              </div>
+              <div class="panel-body jobs" id="jobs"></div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div>yt-dlp + ffmpeg</div>
+            <div id="musicDirLabel">music dir: /root/Music</div>
+          </div>
         </div>
-
-        <div id="jobs"></div>
       </div>
 
       <script>
+        const skullFrames = [
+`           .-.
+          (o o)
+          | O \\
+           \\   \\
+            \`~~~'`,
+`          .---.
+         /     \\
+        | () () |
+         \\  ^  /
+          |||||
+          |||||`,
+`        .ed"""" """$$$$be.
+      -"           ^""**$$$e.
+    ."                   '$$$c
+   /                      "4$$b
+  d  3                      $$$$`,
+`           ___
+         .'/,-Y"     "~-. 
+         l.Y             ^.
+         /\\               _\\_
+        i            ___/"   "\\
+        |          /"   "\\   o !`
+        ];
+
+        let lastInspectedUrl = "";
+
         function esc(s){
-          return (s||"").replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+          return (s || "").replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+        }
+
+        async function getJSON(url, opts){
+          const r = await fetch(url, opts);
+          const data = await r.json();
+          if(!r.ok) throw new Error(data.error || 'request failed');
+          return data;
         }
 
         async function loadSettings(){
-          const r = await fetch('/api/settings');
-          const s = await r.json();
-          document.getElementById('pmode').textContent = s.playlist_mode || 'single';
+          const s = await getJSON('/api/settings');
+          document.getElementById('modeLabel').textContent = s.playlist_mode || 'single';
+          document.getElementById('playlistMode').value = s.playlist_mode || 'single';
+          if (s.music_dir) {
+            document.getElementById('musicDirLabel').textContent = 'music dir: ' + s.music_dir;
+          }
         }
 
-        async function toggleMode(){
-          await fetch('/api/settings/toggle_playlist', {method:'POST'});
+        async function setMode(mode){
+          await getJSON('/api/settings/mode', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({playlist_mode: mode})
+          });
           await loadSettings();
         }
 
-        async function loadJobs(){
-          const r = await fetch('/api/jobs');
-          const jobs = await r.json();
-          const c = document.getElementById('jobs');
-          c.innerHTML = '';
-          Object.values(jobs).reverse().forEach(job => {
-            const div = document.createElement('div');
-            div.className = 'job';
-            div.innerHTML = `
-              <div><b>${esc(job.title || job.url)}</b></div>
-              <div class="bar"><div class="fill" style="width:${job.progress||0}%"></div></div>
-              <div class="muted">${esc(job.status)} | ${esc(job.message||"")}</div>
-              ${job.output_path ? `<div class="muted">${esc(job.output_path)}</div>` : ``}
+        async function toggleMode(){
+          await getJSON('/api/settings/toggle_playlist', {method:'POST'});
+          await loadSettings();
+        }
+
+        async function inspectUrl(){
+          const input = document.getElementById('urlInput');
+          const url = input.value.trim();
+          if(!url) return;
+
+          const card = document.getElementById('inspectCard');
+          card.innerHTML = '<div class="empty">Inspecting...</div>';
+
+          try {
+            const data = await getJSON('/api/inspect', {
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({url})
+            });
+
+            lastInspectedUrl = data.webpage_url || url;
+
+            let duration = 'unknown';
+            if(data.duration){
+              const total = Number(data.duration);
+              const h = Math.floor(total / 3600);
+              const m = Math.floor((total % 3600) / 60);
+              const s = Math.floor(total % 60);
+              duration = h > 0
+                ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+                : `${m}:${String(s).padStart(2,'0')}`;
+            }
+
+            card.innerHTML = `
+              <div class="inspect-grid">
+                ${data.thumbnail ? `<img class="inspect-thumb" src="${esc(data.thumbnail)}" alt="thumbnail">` : ``}
+                <div class="inspect-line"><span class="k">title</span>${esc(data.title || 'unknown')}</div>
+                <div class="inspect-line"><span class="k">uploader</span>${esc(data.uploader || 'unknown')}</div>
+                <div class="inspect-line"><span class="k">duration</span>${esc(duration)}</div>
+                <div class="inspect-line"><span class="k">type</span>${data.is_playlist ? 'playlist' : 'single video'}</div>
+                <div class="inspect-line"><span class="k">entries</span>${data.entry_count || 1}</div>
+                <div class="inspect-line"><span class="k">url</span>${esc(data.webpage_url || url)}</div>
+              </div>
             `;
-            c.appendChild(div);
+          } catch (e) {
+            card.innerHTML = `<div class="error-box">${esc(e.message || 'inspect failed')}</div>`;
+          }
+        }
+
+        async function queueUrl(){
+          const input = document.getElementById('urlInput');
+          const url = (lastInspectedUrl || input.value).trim();
+          if(!url) return;
+
+          await getJSON('/api/download', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({url})
+          });
+
+          input.value = '';
+          lastInspectedUrl = "";
+          document.getElementById('inspectCard').innerHTML =
+            '<div class="empty">Paste a URL and click INSPECT.</div>';
+
+          await loadJobs();
+          await loadRecent();
+        }
+
+        async function loadRecent(){
+          const recent = await getJSON('/api/recent');
+          const box = document.getElementById('recentUrls');
+
+          if(!recent.length){
+            box.innerHTML = '<div class="empty">No recent URLs yet.</div>';
+            return;
+          }
+
+          box.innerHTML = '';
+          recent.forEach(url => {
+            const div = document.createElement('div');
+            div.className = 'recent-item';
+            div.textContent = url;
+            div.onclick = () => {
+              document.getElementById('urlInput').value = url;
+            };
+            box.appendChild(div);
           });
         }
 
-        document.getElementById('f').addEventListener('submit', async (e)=>{
-          e.preventDefault();
-          const url = document.getElementById('url').value.trim();
-          if(!url) return;
-          await fetch('/api/download', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({url})
+        async function loadJobs(){
+          const jobs = await getJSON('/api/jobs');
+          const arr = Object.values(jobs).reverse();
+          const jobsEl = document.getElementById('jobs');
+          document.getElementById('jobCount').textContent = arr.length;
+
+          let q = 0, a = 0, d = 0;
+          jobsEl.innerHTML = '';
+
+          if(!arr.length){
+            jobsEl.innerHTML = '<div class="empty">No jobs yet. Paste a URL and queue it.</div>';
+          }
+
+          arr.forEach(job => {
+            if(job.status === 'queued') q++;
+            if(job.status === 'downloading') a++;
+            if(job.status === 'completed') d++;
+
+            const tagClass = ['queued','downloading','completed','failed'].includes(job.status) ? job.status : 'queued';
+
+            const div = document.createElement('div');
+            div.className = 'job';
+            div.innerHTML = `
+              <div class="job-top">
+                <div class="job-title">${esc(job.title || job.url)}</div>
+                <div class="job-tag ${tagClass}">${esc(job.status)}</div>
+              </div>
+              <div class="bar"><div class="fill" style="width:${Number(job.progress || 0)}%"></div></div>
+              <div class="meta">${esc(job.message || '')}</div>
+              ${job.output_path ? `<div class="meta">${esc(job.output_path)}</div>` : ''}
+              <div class="meta">${esc((job.url || '').slice(0,100))}</div>
+            `;
+            jobsEl.appendChild(div);
           });
-          document.getElementById('url').value = '';
-          loadJobs();
+
+          document.getElementById('statQueued').textContent = q;
+          document.getElementById('statActive').textContent = a;
+          document.getElementById('statDone').textContent = d;
+        }
+
+        document.getElementById('inspectBtn').addEventListener('click', inspectUrl);
+        document.getElementById('queueBtn').addEventListener('click', queueUrl);
+        document.getElementById('refreshBtn').addEventListener('click', async () => {
+          await loadJobs();
+          await loadRecent();
+          await loadSettings();
+        });
+        document.getElementById('modeBtn').addEventListener('click', toggleMode);
+        document.getElementById('pasteDemo').addEventListener('click', () => {
+          document.getElementById('urlInput').value = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+        });
+        document.getElementById('playlistMode').addEventListener('change', e => setMode(e.target.value));
+        document.getElementById('urlInput').addEventListener('keydown', e => {
+          if(e.key === 'Enter') inspectUrl();
         });
 
-        setInterval(loadJobs, 2000);
+        setInterval(loadJobs, 1800);
         setInterval(loadSettings, 3000);
-        loadJobs();
+        setInterval(() => {
+          const f = skullFrames[(Math.random() * skullFrames.length) | 0];
+          document.getElementById('miniSkull').textContent = f.split('\n').slice(0,6).join('\n');
+          if(Math.random() > 0.45){
+            document.getElementById('heroSkull').textContent = f;
+          }
+        }, 2200);
+
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        const glyphSet = 'アァイィウヴエカガキギクグケゲコゴサザシジスズセゼソゾタダチッツテデトドナニヌネノ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&*+=-<>[]{}'.split('');
+        const skullSet = ['☠','☠','✠','☣','⛧','☢'];
+        const runeSet = ['†','‡','₪','Ψ','Ж','≠','¤'];
+
+        let cw = 18;
+        let columns = 0;
+        let streams = [];
+        let W = 0;
+        let H = 0;
+        let flash = 0;
+
+        function rand(arr){
+          return arr[(Math.random() * arr.length) | 0];
+        }
+
+        function makeStream(i){
+          const skullMode = Math.random() < 0.08;
+          return {
+            col: i,
+            x: i * cw,
+            y: -((Math.random() * 40) | 0),
+            speed: skullMode ? (0.45 + Math.random() * 0.45) : (0.9 + Math.random() * 1.4),
+            length: skullMode ? (8 + ((Math.random() * 10) | 0)) : (10 + ((Math.random() * 18) | 0)),
+            skullMode,
+            glitch: Math.random() < 0.12,
+            chars: Array.from({length: 40}, () => skullMode ? rand(skullSet) : rand(glyphSet)),
+            tick: 0,
+            swapRate: skullMode ? 5 : 3
+          };
+        }
+
+        function resize(){
+          W = canvas.width = window.innerWidth;
+          H = canvas.height = window.innerHeight;
+          columns = Math.ceil(W / cw);
+          streams = Array.from({length: columns}, (_, i) => makeStream(i));
+        }
+
+        function updateStream(s){
+          s.tick++;
+          s.y += s.speed;
+
+          if(s.tick % s.swapRate === 0){
+            for(let i = 0; i < s.chars.length; i++){
+              const roll = Math.random();
+              if(s.skullMode){
+                s.chars[i] = roll < 0.70 ? rand(skullSet) : rand(runeSet);
+              } else {
+                if(roll < 0.03) s.chars[i] = rand(skullSet);
+                else if(roll < 0.08) s.chars[i] = rand(runeSet);
+                else s.chars[i] = rand(glyphSet);
+              }
+            }
+          }
+
+          if((s.y - s.length) * cw > H + 100){
+            streams[s.col] = makeStream(s.col);
+            streams[s.col].y = -((Math.random() * 30) | 0);
+          }
+
+          if(Math.random() < 0.0018){
+            s.skullMode = !s.skullMode;
+            s.speed = s.skullMode ? (0.4 + Math.random() * 0.4) : (0.9 + Math.random() * 1.4);
+            s.length = s.skullMode ? (9 + ((Math.random() * 8) | 0)) : (10 + ((Math.random() * 18) | 0));
+            s.swapRate = s.skullMode ? 5 : 3;
+          }
+
+          if(Math.random() < 0.0025){
+            flash = 3;
+          }
+        }
+
+        function drawStream(s){
+          const x = s.x;
+          const headIndex = Math.floor(s.y);
+
+          for(let t = 0; t < s.length; t++){
+            const row = headIndex - t;
+            if(row < 0) continue;
+
+            const y = row * cw;
+            if(y > H + cw) continue;
+
+            const ch = s.chars[(t + s.tick) % s.chars.length];
+            const isHead = (t === 0);
+            const isNearHead = (t < 3);
+            const isSkull = skullSet.includes(ch);
+
+            let alpha = 1 - (t / s.length);
+            alpha = Math.max(alpha, 0.04);
+
+            if(isHead){
+              ctx.fillStyle = `rgba(255,235,235,${0.95})`;
+              ctx.shadowColor = 'rgba(255,120,120,0.95)';
+              ctx.shadowBlur = s.skullMode ? 18 : 10;
+            } else if(isSkull){
+              ctx.fillStyle = `rgba(255,90,90,${0.22 + alpha * 0.72})`;
+              ctx.shadowColor = 'rgba(255,70,70,0.75)';
+              ctx.shadowBlur = isNearHead ? 12 : 7;
+            } else if(s.skullMode){
+              ctx.fillStyle = `rgba(255,70,70,${0.18 + alpha * 0.55})`;
+              ctx.shadowColor = 'rgba(255,50,50,0.35)';
+              ctx.shadowBlur = 5;
+            } else {
+              ctx.fillStyle = `rgba(190,20,20,${0.12 + alpha * 0.55})`;
+              ctx.shadowColor = 'rgba(150,20,20,0.2)';
+              ctx.shadowBlur = isNearHead ? 4 : 2;
+            }
+
+            let dx = 0;
+            if(s.glitch && Math.random() < 0.03){
+              dx = ((Math.random() * 4) | 0) - 2;
+            }
+
+            ctx.fillText(ch, x + dx, y);
+          }
+
+          ctx.shadowBlur = 0;
+        }
+
+        function draw(){
+          ctx.fillStyle = flash > 0 ? 'rgba(20,0,0,0.18)' : 'rgba(0,0,0,0.10)';
+          ctx.fillRect(0, 0, W, H);
+
+          ctx.font = '16px monospace';
+
+          for(let i = 0; i < streams.length; i++){
+            updateStream(streams[i]);
+            drawStream(streams[i]);
+          }
+
+          if(flash > 0){
+            ctx.fillStyle = `rgba(255,40,40,${0.04 * flash})`;
+            ctx.fillRect(0, 0, W, H);
+            flash--;
+          }
+
+          requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        draw();
+
         loadSettings();
+        loadJobs();
+        loadRecent();
       </script>
     </body>
     </html>
@@ -591,16 +1235,82 @@ def run_webui():
 
     @app.route("/api/jobs")
     def api_jobs():
-        return jsonify(manager.get_jobs_snapshot())
+        return jsonify(manager.snapshot())
 
     @app.route("/api/settings")
     def api_settings():
-        return jsonify(SETTINGS)
+        payload = dict(SETTINGS)
+        payload["music_dir"] = MUSIC_DIR
+        return jsonify(payload)
 
     @app.route("/api/settings/toggle_playlist", methods=["POST"])
     def api_toggle_playlist():
         toggle_playlist_mode()
-        return jsonify(SETTINGS)
+        payload = dict(SETTINGS)
+        payload["music_dir"] = MUSIC_DIR
+        return jsonify(payload)
+
+    @app.route("/api/settings/mode", methods=["POST"])
+    def api_set_mode():
+        data = request.get_json(silent=True) or {}
+        mode = (data.get("playlist_mode") or "").strip().lower()
+        set_playlist_mode("playlist" if mode == "playlist" else "single")
+        payload = dict(SETTINGS)
+        payload["music_dir"] = MUSIC_DIR
+        return jsonify(payload)
+
+    @app.route("/api/inspect", methods=["POST"])
+    def api_inspect():
+        data = request.get_json(silent=True) or {}
+        url = (data.get("url") or "").strip()
+        if not url:
+            return jsonify({"error": "missing url"}), 400
+
+        cmd = [
+            "yt-dlp",
+            "--dump-single-json",
+            "--skip-download",
+            "--no-warnings",
+        ]
+        if SETTINGS.get("playlist_mode", "single") == "single":
+            cmd.append("--no-playlist")
+        cmd.append(url)
+
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
+            if proc.returncode != 0:
+                return jsonify({
+                    "error": (proc.stderr or proc.stdout or "inspect failed")[-300:]
+                }), 400
+
+            info = json.loads(proc.stdout)
+            entries = info.get("entries")
+            return jsonify({
+                "title": info.get("title") or "unknown",
+                "webpage_url": info.get("webpage_url") or url,
+                "uploader": info.get("uploader") or "",
+                "duration": info.get("duration"),
+                "thumbnail": info.get("thumbnail") or "",
+                "is_playlist": info.get("_type") == "playlist",
+                "entry_count": len(entries) if isinstance(entries, list) else 0,
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)[-300:]}), 400
+
+    @app.route("/api/recent")
+    def api_recent():
+        jobs = list(manager.snapshot().values())
+        jobs.reverse()
+        seen = []
+        urls = []
+        for job in jobs:
+            u = job.get("url")
+            if u and u not in seen:
+                seen.append(u)
+                urls.append(u)
+            if len(urls) >= 8:
+                break
+        return jsonify(urls)
 
     class ServerThread(threading.Thread):
         def __init__(self, app):
@@ -623,22 +1333,19 @@ def run_webui():
     except Exception:
         ip = "127.0.0.1"
 
+    show_message("WebUI Ready", [f"http://{ip}:{PORT}", f"music={MUSIC_DIR}"], "KEY3 to stop")
+
     server = ServerThread(app)
     server.start()
 
-    show_message(
-        "Web UI running",
-        [f"http://{ip}:{PORT}", f"mode={SETTINGS['playlist_mode']}"],
-        "KEY3 to stop"
-    )
-
-    while True:
-        btn = wait_btn(0.2)
-        if btn == "KEY3":
-            break
-
-    server.shutdown()
-    time.sleep(0.5)
+    try:
+        while True:
+            btn = wait_btn(0.2)
+            if btn == "KEY3":
+                break
+    finally:
+        server.shutdown()
+        time.sleep(0.4)
 
 # ----------------------------------------------------------------------
 # LCD virtual keyboard
@@ -705,8 +1412,6 @@ def vkb_input(initial=""):
                 return buf
             elif key == "ESC":
                 return None
-            elif key in ("http", "https", "www", ".com"):
-                buf += key
             else:
                 buf += key
         elif btn in ("KEY2", "KEY3"):
@@ -760,17 +1465,17 @@ def handle_cli_command(cmd):
         return ["Exiting"], "exit"
 
     jid = manager.add_job(cmd)
-    return [f"Queued {jid[-6:]}", f"mode={SETTINGS['playlist_mode']}"], None
+    return [f"Queued {jid[-6:]}", f"music={MUSIC_DIR[-12:]}"], None
 
 def run_cli():
     missing = check_dependencies()
     if missing:
-        show_message("Missing deps", missing, "Install and retry")
+        show_message("Missing deps", missing, "Need yt-dlp ffmpeg")
         time.sleep(2)
         return
 
     lines = [
-        "KTOx YouTube CLI",
+        "yt-ripper CLI",
         "OK: enter URL/cmd",
         "/help for commands",
     ]
