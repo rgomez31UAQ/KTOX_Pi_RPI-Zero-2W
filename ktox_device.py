@@ -2657,26 +2657,124 @@ def do_handshake_targeted():
     Dialog_info(f"Saved:\nhs_{essid[:14]}\nUse aircrack-ng", wait=True)
 
 
+def do_wifi_handshake_engine():
+    """Enhanced WiFi handshake capture using Scapy engine."""
+    try:
+        from payloads.wifi.wifi_handshake_engine import get_wifi_engine
+    except ImportError:
+        Dialog_info("Engine load\nFAILED", wait=True)
+        return
+
+    engine = get_wifi_engine()
+
+    if not engine.is_scapy_available():
+        Dialog_info("Scapy not\ninstalled", wait=True)
+        return
+
+    iface = ktox_state.get("wifi_iface", "wlan0")
+
+    # Enable monitor mode
+    Dialog_info(f"Monitor mode\non {iface}…", wait=False, timeout=1)
+    if not engine.enable_monitor_mode(iface):
+        Dialog_info("Monitor FAILED\nCheck adapter", wait=True)
+        return
+
+    # Scan networks
+    Dialog_info("Scanning…\nPlease wait", wait=False, timeout=1)
+    if not engine.scan_networks(timeout=15):
+        Dialog_info("Scan failed\nor no nets", wait=True)
+        engine.disable_monitor_mode()
+        return
+
+    networks = engine.get_networks_list()
+    items = [f" {e[:20]:20} {b} ch{c}" for b, e, c, s in networks]
+    sel = GetMenuString(items)
+    if not sel:
+        engine.disable_monitor_mode()
+        return
+
+    bssid, essid, ch, sig = networks[items.index(sel)]
+
+    if not YNDialog("Capture HS?", y="Capture", n="Cancel", b=f"{essid}\nch{ch}"):
+        engine.disable_monitor_mode()
+        return
+
+    # Capture handshake with timeout
+    Dialog_info(f"Capturing…\n{essid}\nKEY3=stop", wait=True)
+    if engine.capture_handshake(bssid, essid, ch, timeout=30, deauth_count=5):
+        Dialog_info("HS captured!\nSaved to loot", wait=True)
+    else:
+        Dialog_info("No handshake\ncaptured", wait=True)
+
+    engine.disable_monitor_mode()
+
+
+def do_wifi_pmkid_attack():
+    """Capture PMKID from network without clients."""
+    try:
+        from payloads.wifi.wifi_handshake_engine import get_wifi_engine
+    except ImportError:
+        Dialog_info("Engine load\nFAILED", wait=True)
+        return
+
+    engine = get_wifi_engine()
+    iface = ktox_state.get("wifi_iface", "wlan0")
+
+    # Enable monitor mode
+    Dialog_info(f"Monitor mode\non {iface}…", wait=False, timeout=1)
+    if not engine.enable_monitor_mode(iface):
+        Dialog_info("Monitor FAILED", wait=True)
+        return
+
+    # Scan networks
+    Dialog_info("Scanning…", wait=False, timeout=1)
+    if not engine.scan_networks(timeout=15):
+        Dialog_info("Scan failed", wait=True)
+        engine.disable_monitor_mode()
+        return
+
+    networks = engine.get_networks_list()
+    items = [f" {e[:20]:20} {b} ch{c}" for b, e, c, s in networks]
+    sel = GetMenuString(items)
+    if not sel:
+        engine.disable_monitor_mode()
+        return
+
+    bssid, essid, ch, sig = networks[items.index(sel)]
+
+    if not YNDialog("PMKID?", y="Attack", n="Cancel", b=essid):
+        engine.disable_monitor_mode()
+        return
+
+    Dialog_info(f"PMKID attack\n{essid}\nKEY3=stop", wait=True)
+    engine.pmkid_attack(bssid, essid, ch, timeout=10)
+
+    engine.disable_monitor_mode()
+    Dialog_info("PMKID attack\nCompleted", wait=True)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Payload directory scanner ──────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 
 PAYLOAD_CATEGORIES = [
     ("offensive",     "Offensive"),
-    ("reconnaissance","Recon"),
-    ("interception",  "Intercept"),
+    ("recon",         "Recon"),
+    ("intercept",     "Intercept"),
     ("dos",           "DoS"),
     ("wifi",          "WiFi"),
     ("bluetooth",     "Bluetooth"),
     ("network",       "Network"),
-    ("credentials",   "Credentials"),
+    ("creds",         "Credentials"),
     ("evasion",       "Evasion"),
     ("hardware",      "Hardware"),
     ("usb",           "USB"),
-    ("social_eng",    "Social Eng"),
-    ("exfiltration",  "Exfiltrate"),
-    ("remote_access", "Remote"),
-    ("evil_portal",   "Evil Portal"),
+    ("social",        "Social Eng"),
+    ("exfil",         "Exfiltrate"),
+    ("remote",        "Remote"),
+    ("evil",          "Evil Portal"),
+    ("media",         "Media"),
+    ("testing",       "Testing"),
     ("utilities",     "Utilities"),
     ("games",         "Games"),
     ("general",       "General"),
@@ -2724,6 +2822,7 @@ _FA_ICONS: dict = {
     "Network Info":     "\uf129",   # fa-info
     "ARP Watch":        "\uf06e",   # fa-eye
     # ── Offensive submenu ─────────────────────────────────────────────────
+    "Loki Engine":      "\uf0e7",   # fa-bolt
     "Kick ONE off":     "\uf05e",   # fa-ban
     "Kick ALL off":     "\uf1f8",   # fa-trash
     "ARP MITM":         "\uf0ec",
@@ -2838,13 +2937,14 @@ class KTOxMenu:
 
         # ── OFFENSIVE ─────────────────────────────────────────────────────────
         "off": (
-            (" Kick ONE off",   self._kick_one),
-            (" Kick ALL off",   self._kick_all),
-            (" ARP MITM",       self._do_mitm),
-            (" ARP Flood",      self._arp_flood),
-            (" Gateway DoS",    self._gw_dos),
-            (" ARP Cage",       self._arp_cage),
-            (" NTLMv2 Capture", self._ntlm),
+            (" Loki Engine",     self._loki_engine),
+            (" Kick ONE off",    self._kick_one),
+            (" Kick ALL off",    self._kick_all),
+            (" ARP MITM",        self._do_mitm),
+            (" ARP Flood",       self._arp_flood),
+            (" Gateway DoS",     self._gw_dos),
+            (" ARP Cage",        self._arp_cage),
+            (" NTLMv2 Capture",  self._ntlm),
             (" Back",            "home"),
         ),
 
@@ -2855,7 +2955,8 @@ class KTOxMenu:
             (" WiFi Scan",       do_wifi_scan),
             (" Deauth AP",       do_deauth_targeted),
             (" Handshake Cap",   do_handshake_targeted),
-            (" PMKID Attack",    self._pmkid),
+            (" HS Engine Pro",   do_wifi_handshake_engine),
+            (" PMKID Attack",    do_wifi_pmkid_attack),
             (" Evil Twin AP",    self._evil_twin),
             (" Select Adapter",  self._select_adapter),
         ),
@@ -3422,6 +3523,80 @@ class KTOxMenu:
             n = 0
         Dialog_info(f"Capture stopped.\n{n} hash(es).\nLoot: ntlm_hashes.txt",
                     wait=False, timeout=2)
+
+    # ── Loki Engine ───────────────────────────────────────────────────────────
+
+    def _loki_engine(self):
+        """Launch Loki autonomous security engine."""
+        try:
+            from payloads.offensive.loki_engine import get_loki_engine, LokiDisplay
+        except ImportError:
+            Dialog_info("Loki module\nnot found", wait=True)
+            return
+
+        engine = get_loki_engine()
+
+        # Initialize display
+        if HAS_GPIO:
+            LokiDisplay.init()
+
+        # Check if installed
+        if not engine.is_installed():
+            Dialog_info("Loki not\ninstalled", wait=False, timeout=1)
+            if not YNDialog("Install?", y="Yes", n="No", b="Install Loki\nfrom GitHub?"):
+                return
+
+            Dialog_info("Installing\nLoki…", wait=False, timeout=1)
+
+            def progress_cb(step, total, msg):
+                if HAS_GPIO:
+                    LokiDisplay.clear()
+                    LokiDisplay.centered(15, "LOKI", COLORS["RED"], 12)
+                    LokiDisplay.centered(27, "INSTALLING", COLORS["ORANGE"], 8)
+                    LokiDisplay.hbar(43, step / total * 100)
+                    LokiDisplay.text(6, 51, msg[:20], COLORS["WHITE"], 7)
+                    LokiDisplay.text(6, 62, f"step {step}/{total}", COLORS["DIM"], 7)
+                    LokiDisplay.show()
+
+            if not engine.install(progress_cb):
+                Dialog_info("Install\nFAILED", wait=True)
+                return
+
+            Dialog_info("Loki installed\nsuccessfully!", wait=True)
+
+        # Control loop
+        while True:
+            running = engine.is_running()
+            ip = engine.get_local_ip()
+            url = f"http://{ip}:{engine.port}"
+
+            if running:
+                web_up = engine.is_port_open()
+                Dialog_info(
+                    f"Loki {'RUN' if web_up else 'START'}\n{url}\nKEY1=stop\nKEY3=exit",
+                    wait=True,
+                )
+
+                if ktox_state.get("_loki_stop"):
+                    engine.stop()
+                    ktox_state["_loki_stop"] = False
+                    Dialog_info("Loki stopped", wait=False, timeout=1)
+                else:
+                    return
+            else:
+                Dialog_info(
+                    "Loki STOPPED\nKEY3=start\nKEY1=exit",
+                    wait=True,
+                )
+                if ktox_state.get("_loki_start"):
+                    ok, result = engine.start()
+                    if ok:
+                        Dialog_info(f"Loki running\n{result}", wait=True)
+                    else:
+                        Dialog_info(f"Start failed\n{result}", wait=True)
+                    ktox_state["_loki_start"] = False
+                else:
+                    return
 
     # ── WiFi actions ──────────────────────────────────────────────────────────
 
