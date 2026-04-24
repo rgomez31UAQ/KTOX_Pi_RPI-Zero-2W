@@ -505,6 +505,7 @@ def run_webui():
       <title>yt-ripper</title>
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
+        /* exact same CSS as original */
         :root{
           --bg:#050000;
           --panel:#0d0000cc;
@@ -1266,16 +1267,14 @@ def run_webui():
         if not url:
             return jsonify({"error": "missing url"}), 400
 
+        # Always allow full playlist inspection – user can choose mode later
         cmd = [
             "yt-dlp",
             "--dump-single-json",
             "--skip-download",
             "--no-warnings",
+            url,
         ]
-        if SETTINGS.get("playlist_mode", "single") == "single":
-            cmd.append("--no-playlist")
-        cmd.append(url)
-
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
             if proc.returncode != 0:
@@ -1292,7 +1291,7 @@ def run_webui():
                 "duration": info.get("duration"),
                 "thumbnail": info.get("thumbnail") or "",
                 "is_playlist": info.get("_type") == "playlist",
-                "entry_count": len(entries) if isinstance(entries, list) else 0,
+                "entry_count": len(entries) if isinstance(entries, list) else 1,
             })
         except Exception as e:
             return jsonify({"error": str(e)[-300:]}), 400
@@ -1333,13 +1332,22 @@ def run_webui():
     except Exception:
         ip = "127.0.0.1"
 
-    show_message("WebUI Ready", [f"http://{ip}:{PORT}", f"music={MUSIC_DIR}"], "KEY3 to stop")
+    msg_title = "WebUI Ready"
+    msg_lines = [f"http://{ip}:{PORT}", f"music={MUSIC_DIR}"]
+    msg_footer = "KEY3 to stop"
+
+    show_message(msg_title, msg_lines, msg_footer)
 
     server = ServerThread(app)
     server.start()
 
     try:
+        last_refresh = 0
         while True:
+            # Periodically refresh the LCD message in case it gets blanked
+            if time.time() - last_refresh > 3:
+                show_message(msg_title, msg_lines, msg_footer)
+                last_refresh = time.time()
             btn = wait_btn(0.2)
             if btn == "KEY3":
                 break
@@ -1371,7 +1379,8 @@ def draw_vkb(buf, row, col):
     for r, keys in enumerate(VKB):
         x = 2
         for c, key in enumerate(keys):
-            w = 11 if len(key) <= 2 else 20
+            # Adjust width: 10 for single chars, 20 for longer strings
+            w = 10 if len(key) <= 2 else 20
             if r == row and c == col:
                 d.rectangle((x, y, x + w, y + 12), fill=HEADER)
                 d.text((x + 1, y + 2), key[:4], font=FONT_SMALL, fill=WHITE)
