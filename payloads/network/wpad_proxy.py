@@ -281,12 +281,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
             if inject and b"</body>" in response_data.lower():
                 injection = (
                     b'<div style="position:fixed;bottom:0;width:100%;'
-                    b'background:#8b0000;border-top:2px solid #e74c3c;color:#abb2b9;'
-                    b'text-align:center;padding:8px;z-index:99999;'
-                    b'font-family:\'Courier New\',monospace;font-size:12px;'
-                    b'box-shadow:0 0 15px rgba(231,76,60,0.3);'
-                    b'letter-spacing:1px">'
-                    b'⚠ NETWORK MONITORED ⚠</div>'
+                    b'background:red;color:white;text-align:center;'
+                    b'padding:5px;z-index:99999">'
+                    b'Network Monitored</div>'
                 )
                 response_data = response_data.replace(
                     b"</body>", injection + b"</body>",
