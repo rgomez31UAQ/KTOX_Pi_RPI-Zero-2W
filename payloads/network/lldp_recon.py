@@ -60,7 +60,8 @@ font = scaled_font()
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-LOOT_DIR = "/root/KTOx/loot/LLDPRecon"
+KTOX_DIR = os.environ.get("KTOX_DIR", "/root/KTOx")
+LOOT_DIR = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "loot", "LLDPRecon")
 os.makedirs(LOOT_DIR, exist_ok=True)
 
 LLDP_ETHERTYPE = 0x88CC

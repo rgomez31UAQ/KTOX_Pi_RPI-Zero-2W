@@ -63,7 +63,8 @@ WIDTH, HEIGHT = LCD_1in44.LCD_WIDTH, LCD_1in44.LCD_HEIGHT
 ROWS_VISIBLE = 7
 ROW_H = 12
 
-LOOT_DIR = "/root/KTOx/loot/ProbesDump"
+KTOX_DIR = os.environ.get("KTOX_DIR", "/root/KTOx")
+LOOT_DIR = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "loot", "ProbesDump")
 
 # Channels to hop through (2.4 GHz)
 CHANNELS_24 = list(range(1, 14))

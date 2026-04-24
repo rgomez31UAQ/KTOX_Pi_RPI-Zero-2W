@@ -68,7 +68,8 @@ WIDTH, HEIGHT = LCD.width, LCD.height
 font = scaled_font()
 
 # ── Constants ────────────────────────────────────────────────────────────────
-LOOT_DIR = "/root/KTOx/loot/Handshakes"
+KTOX_DIR = os.environ.get("KTOX_DIR", "/root/KTOx")
+LOOT_DIR = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "loot", "Handshakes")
 CHANNELS_24 = list(range(1, 14))
 ROWS_VISIBLE = 6
 ROW_H = 12

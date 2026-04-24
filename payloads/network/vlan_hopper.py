@@ -50,7 +50,8 @@ PINS = {
     "OK": 13, "KEY1": 21, "KEY2": 20, "KEY3": 16,
 }
 WIDTH, HEIGHT = LCD_1in44.LCD_WIDTH, LCD_1in44.LCD_HEIGHT
-LOOT_DIR = "/root/KTOx/loot/VLANHop"
+KTOX_DIR = os.environ.get("KTOX_DIR", "/root/KTOx")
+LOOT_DIR = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "loot", "VLANHop")
 
 # DTP multicast destination
 DTP_MULTICAST = "01:00:0c:cc:cc:cc"

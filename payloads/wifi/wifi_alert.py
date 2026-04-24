@@ -76,7 +76,8 @@ font = scaled_font()
 # ── Constants ────────────────────────────────────────────────────────────────
 CONFIG_DIR = "/root/KTOx/config/wifi_alert"
 CONFIG_FILE = os.path.join(CONFIG_DIR, "watchlist.json")
-LOOT_DIR = "/root/KTOx/loot/WiFiAlert"
+KTOX_DIR = os.environ.get("KTOX_DIR", "/root/KTOx")
+LOOT_DIR = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "loot", "WiFiAlert")
 CHANNELS_24 = list(range(1, 14))
 ROWS_VISIBLE = 7
 ROW_H = 12

@@ -68,7 +68,8 @@ PINS = {
 WIDTH, HEIGHT = LCD_1in44.LCD_WIDTH, LCD_1in44.LCD_HEIGHT
 ROWS_VISIBLE = 6
 ROW_H = 12
-LOOT_DIR = "/root/KTOx/loot/Handshakes"
+KTOX_DIR = os.environ.get("KTOX_DIR", "/root/KTOx")
+LOOT_DIR = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "loot", "Handshakes")
 CHANNELS_24 = list(range(1, 14))
 
 # ---------------------------------------------------------------------------
