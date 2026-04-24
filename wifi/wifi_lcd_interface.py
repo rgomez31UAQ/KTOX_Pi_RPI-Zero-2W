@@ -55,6 +55,10 @@ class WiFiLCDInterface:
         GPIO.setmode(GPIO.BCM)
         self.setup_buttons()
 
+        # Button debounce state tracking
+        self.button_state = {name: False for name in self.buttons}
+        self.last_press_time = {name: 0 for name in self.buttons}
+
         # Menu state
         self.current_menu = "main"
         self.menu_index = 0
@@ -367,13 +371,21 @@ class WiFiLCDInterface:
                 return None
 
     def wait_btn(self, timeout=0.1):
-        """Wait for button press with timeout."""
+        """Wait for button press with debounce state tracking."""
         start = time.time()
         while time.time() - start < timeout:
             for name, pin in self.buttons.items():
-                if GPIO.input(pin) == 0:
-                    time.sleep(0.05)
-                    return name
+                pressed = (GPIO.input(pin) == 0)
+
+                if pressed and not self.button_state[name]:
+                    self.button_state[name] = True
+                    min_gap = 0.15
+                    if time.time() - self.last_press_time[name] >= min_gap:
+                        self.last_press_time[name] = time.time()
+                        return name
+                elif not pressed and self.button_state[name]:
+                    self.button_state[name] = False
+
             time.sleep(0.02)
         return None
 
