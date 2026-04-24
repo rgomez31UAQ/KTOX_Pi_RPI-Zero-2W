@@ -80,14 +80,14 @@ def install():
     print("\n[Loki] Installing from GitHub...")
 
     try:
-        print("  [1/5] Updating packages...")
+        print("  [1/6] Updating packages...")
         if not run_cmd(["apt-get", "update", "-qq"], timeout=120):
             return False
 
-        if not run_cmd(["apt-get", "install", "-y", "-qq", "nmap", "python3-pil", "git"], timeout=180):
+        if not run_cmd(["apt-get", "install", "-y", "-qq", "nmap", "python3-pil", "git", "python3-pip"], timeout=180):
             return False
 
-        print("  [2/5] Cloning Loki repository...")
+        print("  [2/6] Cloning Loki repository...")
         VENDOR_DIR.parent.mkdir(parents=True, exist_ok=True)
 
         if VENDOR_DIR.exists():
@@ -97,17 +97,40 @@ def install():
             print("  [!] Git clone failed - check internet connection")
             return False
 
-        print("  [3/5] Creating data directories...")
+        print("  [3/6] Installing Python dependencies...")
+        req_file = VENDOR_DIR / "requirements.txt"
+        if req_file.exists():
+            if not run_cmd(["pip3", "install", "-q", "-r", str(req_file)], timeout=300):
+                print("  [!] Dependency installation failed")
+                return False
+
+        print("  [4/6] Creating data directories...")
         for sub in ["logs", "output/crackedpwd", "output/datastolen", "output/zombies", "output/vulnerabilities", "input"]:
             (LOKI_DATA / sub).mkdir(parents=True, exist_ok=True)
 
-        print("  [4/5] Writing headless launcher...")
+        print("  [5/6] Writing pagerctl shim...")
+        lib_dir = VENDOR_DIR / "lib"
+        lib_dir.mkdir(parents=True, exist_ok=True)
+        pagerctl_shim = lib_dir / "pagerctl.py"
+        pagerctl_shim.write_text('''class Pager:
+    """LCD display shim for headless Loki operation"""
+    def __init__(self, *args, **kwargs):
+        self.enabled = False
+    def display(self, *args, **kwargs):
+        pass
+    def clear(self, *args, **kwargs):
+        pass
+''')
+
+        print("  [6/6] Writing headless launcher...")
         launcher = VENDOR_DIR / "ktox_headless_loki.py"
         launcher.write_text('''#!/usr/bin/env python3
 import sys, os, threading, signal, logging, time
 _dir = os.path.dirname(os.path.abspath(__file__))
 if _dir not in sys.path: sys.path.insert(0, _dir)
 os.environ['CRYPTOGRAPHY_OPENSSL_NO_LEGACY'] = '1'
+
+logging.basicConfig(level=logging.INFO)
 
 try:
     from init_shared import shared_data
@@ -118,7 +141,9 @@ try:
     shared_data.webapp_should_exit = False
     shared_data.display_should_exit = True
 
+    print("[*] Starting Loki WebUI service...")
     web_thread.start()
+
     loki = Loki(shared_data)
     lt = threading.Thread(target=loki.run, daemon=True)
     lt.start()
@@ -126,23 +151,19 @@ try:
     signal.signal(signal.SIGINT, lambda s, f: handle_exit(s, f, lt, web_thread))
     signal.signal(signal.SIGTERM, lambda s, f: handle_exit(s, f, lt, web_thread))
 
+    print("[+] Loki running - Ctrl+C to stop")
     while not shared_data.should_exit:
         time.sleep(2)
 except Exception as e:
-    print(f"Error: {e}")
+    print(f"[!] Loki Error: {e}")
     import traceback
     traceback.print_exc()
     sys.exit(1)
 ''')
         launcher.chmod(0o755)
 
-        print("  [5/5] Verifying installation...")
-        if is_installed():
-            print("[✓] Loki installed successfully!")
-            return True
-        else:
-            print("[!] Installation verification failed")
-            return False
+        print("[✓] Loki installed successfully!")
+        return True
 
     except Exception as e:
         print(f"[!] Installation failed: {e}")
@@ -162,6 +183,7 @@ def start():
     env = os.environ.copy()
     env["LOKI_DATA_DIR"] = str(LOKI_DATA)
     env["BJORN_IP"] = ip
+    env["PYTHONUNBUFFERED"] = "1"
 
     log_file = LOKI_DATA / "logs" / "loki.log"
     log_file.parent.mkdir(parents=True, exist_ok=True)
@@ -181,12 +203,17 @@ def start():
         print("  Waiting for WebUI to start...")
         for i in range(30):
             if is_port_open():
+                ip = get_local_ip()
                 print(f"\n[✓] Loki running at http://{ip}:{LOKI_PORT}")
+                print(f"  Dashboard: http://{ip}:{LOKI_PORT}/dashboard")
+                print(f"  API: http://{ip}:{LOKI_PORT}/api")
                 return True
             time.sleep(1)
 
         print("\n[!] Startup timeout - check logs:")
         print(f"  tail -f {log_file}")
+        print(f"\nDebug: Check if port {LOKI_PORT} is in use:")
+        print(f"  netstat -tlnp | grep {LOKI_PORT}")
         return False
 
     except Exception as e:
