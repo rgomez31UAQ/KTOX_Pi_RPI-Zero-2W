@@ -29,11 +29,12 @@ from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
-KTOX_DIR     = "/root/KTOx"
-INSTALL_PATH = KTOX_DIR + "/"
-LOOT_DIR     = KTOX_DIR + "/loot"
-PAYLOAD_DIR  = KTOX_DIR + "/payloads"
-PAYLOAD_LOG  = LOOT_DIR + "/payload.log"
+KTOX_DIR      = "/root/KTOx"
+INSTALL_PATH  = KTOX_DIR + "/"
+LOOT_DIR      = KTOX_DIR + "/loot"
+PAYLOAD_DIR   = KTOX_DIR + "/payloads"
+WALLPAPER_DIR = LOOT_DIR + "/wallpapers"
+PAYLOAD_LOG   = LOOT_DIR + "/payload.log"
 VERSION      = "1.0"
 
 sys.path.insert(0, KTOX_DIR)
@@ -527,11 +528,27 @@ def _setup_gpio():
     draw  = ImageDraw.Draw(image)
 
 
+def _init_wallpapers():
+    """Create wallpaper directory and copy starter assets."""
+    try:
+        wp_dir = Path(WALLPAPER_DIR)
+        wp_dir.mkdir(parents=True, exist_ok=True)
+
+        # Copy logo.bmp from assets if it exists and isn't already there
+        asset_logo = Path("/assets/logo.bmp")
+        wallpaper_logo = wp_dir / "ktox_logo.bmp"
+        if asset_logo.exists() and not wallpaper_logo.exists():
+            import shutil
+            shutil.copy2(asset_logo, wallpaper_logo)
+    except Exception as e:
+        print(f"[UI] wallpaper init failed: {e}")
+
 def _hw_init():
     """Full boot initialisation."""
     _setup_gpio()
     _load_fonts()
     _init_wifi_iface()   # auto-select wlan1 if present
+    _init_wallpapers()   # setup wallpaper directory and assets
     color.load_from_file()
     # Show KTOx logo BMP if available
     logo = Path(INSTALL_PATH + "img/logo.bmp")
@@ -4722,26 +4739,22 @@ class KTOxMenu:
             print(f"[UI] save view mode failed: {e}")
 
     def _wallpaper_menu(self):
-        """Select wallpaper from loot directory."""
+        """Select wallpaper from wallpaper directory."""
         menu_items = [" No Wallpaper"]
         wallpaper_files = []
 
-        # Check for default logo in install path
-        logo_path = INSTALL_PATH + "ktox_logo.bmp"
-        if os.path.isfile(logo_path):
-            menu_items.insert(0, f" ⭐ Default Logo")
-            wallpaper_files.insert(0, logo_path)
-
-        # Scan loot directory for image files
-        loot_dir = Path(LOOT_DIR)
-        if loot_dir.exists():
+        # Scan wallpaper directory for image files
+        wp_dir = Path(WALLPAPER_DIR)
+        if wp_dir.exists():
             for ext in ['*.bmp', '*.png', '*.jpg', '*.jpeg', '*.gif']:
-                for img_file in loot_dir.glob(ext.lower()):
-                    menu_items.append(f" {img_file.name}")
+                for img_file in sorted(wp_dir.glob(ext.lower())):
+                    label = f" ⭐ {img_file.name}" if img_file.name == "ktox_logo.bmp" else f" {img_file.name}"
+                    menu_items.append(label)
                     wallpaper_files.append(str(img_file))
-                for img_file in loot_dir.glob(ext.upper()):
+                for img_file in sorted(wp_dir.glob(ext.upper())):
                     if img_file not in wallpaper_files:
-                        menu_items.append(f" {img_file.name}")
+                        label = f" ⭐ {img_file.name}" if img_file.name == "ktox_logo.bmp" else f" {img_file.name}"
+                        menu_items.append(label)
                         wallpaper_files.append(str(img_file))
 
         sel = GetMenuString(menu_items, duplicates=True)
