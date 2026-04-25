@@ -866,13 +866,15 @@ def _draw_row_selection(row_y, row_h):
         draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
 
 
-def GetMenu(inlist, duplicates=False):
+def GetMenu(inlist, duplicates=False, force_list=False):
     """
     Dispatcher function that routes to the correct view mode rendering function.
-    All menu calls should use this instead of GetMenuString directly.
+    force_list=True disables view modes for critical menus (System, Settings, etc).
     """
+    if force_list or _view_mode == "list":
+        return GetMenuString(inlist, duplicates=duplicates)
+
     mode_map = {
-        "list": GetMenuString,
         "grid": GetMenuGrid,
         "carousel": GetMenuCarousel,
         "panel": GetMenuPanel,
@@ -1032,8 +1034,14 @@ def GetMenuGrid(inlist, duplicates=False):
                                  outline=color.border, width=1)
 
                 fill = color.selected_text if sel else color.text
-                t = _truncate(txt.strip(), 40)
-                draw.text((x + 3, y + 7), t, font=small_font, fill=fill)
+                icon = _icon_for(txt)
+                if icon:
+                    draw.text((x + 3, y + 3), icon, font=icon_font, fill=fill)
+                    t = _truncate(txt.strip(), 25)
+                    draw.text((x + 3, y + 15), t, font=small_font, fill=fill)
+                else:
+                    t = _truncate(txt.strip(), 30)
+                    draw.text((x + 3, y + 8), t, font=small_font, fill=fill)
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -3929,7 +3937,9 @@ class KTOxMenu:
             return
 
         labels = [item[0] for item in items]
-        sel_result = GetMenu(labels, duplicates=True)
+        # Force list view for critical system menus
+        force_list = key in ("sys", "home")
+        sel_result = GetMenu(labels, duplicates=True, force_list=force_list)
 
         if not sel_result:
             return
@@ -4561,7 +4571,9 @@ class KTOxMenu:
             return
 
         labels = [item[0] for item in items]
-        sel_result = GetMenu(labels, duplicates=True)
+        # Force list view for critical system menus
+        force_list = key in ("sys", "home")
+        sel_result = GetMenu(labels, duplicates=True, force_list=force_list)
 
         if not sel_result:
             return
