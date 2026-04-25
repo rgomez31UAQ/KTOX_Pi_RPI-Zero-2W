@@ -3970,39 +3970,6 @@ class KTOxMenu:
 
     # ── Navigation ────────────────────────────────────────────────────────────
 
-    def navigate(self, key):
-        tree  = self._menu()
-
-        if key == "loot":
-            self._browse_loot()
-            return
-
-        items = tree.get(key)
-        if not items:
-            Dialog_info("Empty menu.", wait=True)
-            return
-
-        labels = [item[0] for item in items]
-        # View modes ONLY for Home menu, everything else uses List view
-        if key == "home":
-            sel_result = GetMenu(labels, duplicates=True)
-        else:
-            sel_result = GetMenuString(labels, duplicates=True)
-
-        if not sel_result:
-            return
-
-        sel, _ = sel_result
-        self.select = sel
-        action = items[sel][1]
-
-        if isinstance(action, str):
-            saved      = self.which
-            self.which = action
-            self.navigate(action)
-            self.which = saved
-        elif callable(action):
-            action()
     def _nav_scan(self):
         exec_payload("Navarro/navarro_scan.py")
     def _nav_ports(self):
