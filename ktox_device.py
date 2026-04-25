@@ -29,11 +29,12 @@ from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
-KTOX_DIR     = "/root/KTOx"
-INSTALL_PATH = KTOX_DIR + "/"
-LOOT_DIR     = KTOX_DIR + "/loot"
-PAYLOAD_DIR  = KTOX_DIR + "/payloads"
-PAYLOAD_LOG  = LOOT_DIR + "/payload.log"
+KTOX_DIR      = "/root/KTOx"
+INSTALL_PATH  = KTOX_DIR + "/"
+LOOT_DIR      = KTOX_DIR + "/loot"
+PAYLOAD_DIR   = KTOX_DIR + "/payloads"
+WALLPAPER_DIR = LOOT_DIR + "/wallpapers"
+PAYLOAD_LOG   = LOOT_DIR + "/payload.log"
 VERSION      = "1.0"
 
 sys.path.insert(0, KTOX_DIR)
@@ -113,9 +114,11 @@ draw  = None
 text_font  = None
 small_font = None
 icon_font  = None
+medium_icon_font = None
+large_icon_font = None
 
 def _load_fonts():
-    global text_font, small_font, icon_font
+    global text_font, small_font, icon_font, medium_icon_font, large_icon_font
     MONO_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
     MONO      = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
     FA        = "/usr/share/fonts/truetype/fontawesome/fa-solid-900.ttf"
@@ -125,6 +128,8 @@ def _load_fonts():
     text_font  = _f(MONO_BOLD, 9)
     small_font = _f(MONO,      8)
     icon_font  = _f(FA,       12) if os.path.exists(FA) else None
+    medium_icon_font = _f(FA,  20) if os.path.exists(FA) else None
+    large_icon_font = _f(FA,   32) if os.path.exists(FA) else None
 
 # ── Runtime state ──────────────────────────────────────────────────────────────
 
@@ -469,7 +474,7 @@ def _apply_ux_from_theme(preset: dict):
     _ui_ux["cyber_bars"] = bool(preset.get("UX_CYBER_BARS", False))
 
 def _ux_window_rows():
-    return max(5, min(8, int(_ui_ux.get("window_rows", 7))))
+    return max(5, min(8, int(_ui_ux.get("window_rows", 8))))
 
 
 def _save_ui_theme(theme_name: str):
@@ -527,11 +532,27 @@ def _setup_gpio():
     draw  = ImageDraw.Draw(image)
 
 
+def _init_wallpapers():
+    """Create wallpaper directory and copy starter assets."""
+    try:
+        wp_dir = Path(WALLPAPER_DIR)
+        wp_dir.mkdir(parents=True, exist_ok=True)
+
+        # Copy logo.bmp from assets if it exists and isn't already there
+        asset_logo = Path("/assets/logo.bmp")
+        wallpaper_logo = wp_dir / "ktox_logo.bmp"
+        if asset_logo.exists() and not wallpaper_logo.exists():
+            import shutil
+            shutil.copy2(asset_logo, wallpaper_logo)
+    except Exception as e:
+        print(f"[UI] wallpaper init failed: {e}")
+
 def _hw_init():
     """Full boot initialisation."""
     _setup_gpio()
     _load_fonts()
     _init_wifi_iface()   # auto-select wlan1 if present
+    _init_wallpapers()   # setup wallpaper directory and assets
     color.load_from_file()
     # Show KTOx logo BMP if available
     logo = Path(INSTALL_PATH + "img/logo.bmp")
@@ -834,9 +855,10 @@ def YNDialog(a="Are you sure?", y="Yes", n="No", b=""):
             draw.line([(4,80),(124,80)], fill="#2a0505", width=1)
             _centered("LEFT=Yes  RIGHT=No", 84, font=small_font, fill="#4a2020")
         btn = getButton()
-        if   btn in ("KEY_LEFT_PIN","KEY1_PIN"):    answer = True
-        elif btn in ("KEY_RIGHT_PIN","KEY3_PIN"):   answer = False
-        elif btn in ("KEY_PRESS_PIN","KEY2_PIN"):   return answer
+        if   btn in ("KEY_LEFT_PIN","KEY1_PIN"):      answer = True
+        elif btn == "KEY_RIGHT_PIN":                  answer = False
+        elif btn == "KEY_PRESS_PIN":                  return answer
+        elif btn in ("KEY2_PIN", "KEY3_PIN"):         return False
 
 
 def _draw_row_selection(row_y, row_h):
@@ -988,7 +1010,7 @@ def RenderMenuWindowOnce(inlist, selected=0):
 
 def GetMenuGrid(inlist, duplicates=False):
     """
-    2-column grid layout (8 items visible: 4 rows × 2 cols).
+    2-column grid with spacious, well-separated cells.
     Returns selected label string, or "" on back.
     """
     if not inlist:
@@ -999,12 +1021,13 @@ def GetMenuGrid(inlist, duplicates=False):
     total = len(inlist)
     index = 0
     COLS = 2
-    ROWS = 4
+    ROWS = 3
     ITEMS_PER_VIEW = COLS * ROWS
-    CELL_W = 60
-    CELL_H = 25
-    START_X = 8
-    START_Y = 20
+    CELL_W = 55
+    CELL_H = 32
+    GAP = 3
+    START_X = 2
+    START_Y = 16
 
     while True:
         offset = (index // ITEMS_PER_VIEW) * ITEMS_PER_VIEW
@@ -1020,26 +1043,26 @@ def GetMenuGrid(inlist, duplicates=False):
                 txt = raw if not duplicates else raw.split("#", 1)[1]
                 row = i // COLS
                 col = i % COLS
-                x = START_X + col * CELL_W
-                y = START_Y + row * CELL_H
+                x = START_X + col * (CELL_W + GAP)
+                y = START_Y + row * (CELL_H + GAP)
                 sel = (offset + i == index)
 
                 if sel:
-                    draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
-                                 fill=color.select, outline=color.border, width=1)
+                    draw.rectangle([x, y, x + CELL_W, y + CELL_H],
+                                 fill=color.select, outline=color.border, width=2)
                 else:
-                    draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
+                    draw.rectangle([x, y, x + CELL_W, y + CELL_H],
                                  outline=color.border, width=1)
 
                 fill = color.selected_text if sel else color.text
                 icon = _icon_for(txt)
-                if icon:
-                    draw.text((x + 3, y + 3), icon, font=icon_font, fill=fill)
-                    t = _truncate(txt.strip(), 25)
-                    draw.text((x + 3, y + 15), t, font=small_font, fill=fill)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((x + CELL_W // 2, y + 8), icon, font=medium_icon_font, fill=fill, anchor="mm")
+                    t = _truncate(txt.strip(), 9)
+                    draw.text((x + CELL_W // 2, y + 24), t, font=small_font, fill=fill, anchor="mm")
                 else:
-                    t = _truncate(txt.strip(), 30)
-                    draw.text((x + 3, y + 8), t, font=small_font, fill=fill)
+                    t = _truncate(txt.strip(), 11)
+                    draw.text((x + CELL_W // 2, y + 16), t, font=text_font, fill=fill, anchor="mm")
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -1089,12 +1112,12 @@ def GetMenuCarousel(inlist, duplicates=False):
 
             icon = _icon_for(txt)
             if icon and _ui_ux.get("show_icons", True):
-                draw.text((30, 35), icon, font=icon_font, fill=color.selected_text)
+                draw.text((64, 50), icon, font=large_icon_font, fill=color.selected_text, anchor="mm")
                 display_txt = _truncate(txt.strip(), 80)
-                draw.text((8, 95), display_txt, font=text_font, fill=color.text)
+                draw.text((64, 100), display_txt, font=text_font, fill=color.text, anchor="mm")
             else:
                 display_txt = _truncate(txt.strip(), 100)
-                draw.text((8, 60), display_txt, font=icon_font, fill=color.selected_text)
+                draw.text((64, 60), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
 
             if total > 1:
                 if index > 0:
@@ -1202,7 +1225,7 @@ def RenderMenuCarouselOnce(inlist, selected=0):
 
 def GetMenuPanel(inlist, duplicates=False):
     """
-    Panel view: sidebar with icons on left, scrollable list on right.
+    Panel view: scrolling sidebar with big icons on left, content on right.
     Returns selected label string, or "" on back.
     """
     if not inlist:
@@ -1212,6 +1235,8 @@ def GetMenuPanel(inlist, duplicates=False):
 
     total = len(inlist)
     index = 0
+    SIDEBAR_ITEMS = 5
+    ICON_H = 20
 
     while True:
         with draw_lock:
@@ -1219,21 +1244,34 @@ def GetMenuPanel(inlist, duplicates=False):
             color.DrawMenuBackground()
             color.DrawBorder()
 
-            draw.rectangle([3, 14, 30, 127], fill=color.panel_bg, outline=color.border, width=1)
+            draw.rectangle([3, 14, 34, 127], fill=color.panel_bg, outline=color.border, width=1)
 
-            for i in range(min(7, total)):
-                icon = _icon_for(inlist[i] if not duplicates else inlist[i].split("#", 1)[1])
-                y = 18 + i * 15
-                if icon:
-                    fill = color.selected_text if i == index else color.text
-                    draw.text((8, y), icon, font=icon_font, fill=fill)
+            offset = max(0, min(index - SIDEBAR_ITEMS // 2, total - SIDEBAR_ITEMS))
+            for i in range(SIDEBAR_ITEMS):
+                item_idx = offset + i
+                if item_idx >= total:
+                    break
+                label = inlist[item_idx] if not duplicates else inlist[item_idx].split("#", 1)[1]
+                y = 18 + i * ICON_H
+                fill = color.selected_text if item_idx == index else color.text
+
+                icon = _icon_for(label)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((18, y + 8), icon, font=medium_icon_font, fill=fill, anchor="mm")
 
             if total > 0:
                 raw = inlist[index]
                 txt = raw if not duplicates else raw.split("#", 1)[1]
-                draw.rectangle([32, 15, 125, 125], outline=color.border, width=1, fill=color.background)
-                display_txt = _truncate(txt.strip(), 85)
-                draw.text((35, 50), display_txt, font=text_font, fill=color.text)
+                draw.rectangle([36, 15, 125, 125], outline=color.border, width=2, fill=color.background)
+
+                icon = _icon_for(txt)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((80, 40), icon, font=large_icon_font, fill=color.selected_text, anchor="mm")
+                    display_txt = _truncate(txt.strip(), 45)
+                    draw.text((80, 105), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
+                else:
+                    display_txt = _truncate(txt.strip(), 50)
+                    draw.text((80, 60), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -1255,7 +1293,7 @@ def GetMenuPanel(inlist, duplicates=False):
 
 def GetMenuTable(inlist, duplicates=False):
     """
-    Table view: columnar display with icons and text in neat columns.
+    Table view: 2-column compact table layout.
     Returns selected label string, or "" on back.
     """
     if not inlist:
@@ -1265,39 +1303,50 @@ def GetMenuTable(inlist, duplicates=False):
 
     total = len(inlist)
     index = 0
-    ROWS = 6
-    START_Y = 20
-    ROW_H = 16
+    COLS = 2
+    ROWS = 4
+    ITEMS_PER_VIEW = COLS * ROWS
+    CELL_W = 60
+    CELL_H = 24
+    START_X = 5
+    START_Y = 16
 
     while True:
-        offset = (index // ROWS) * ROWS
+        offset = (index // ITEMS_PER_VIEW) * ITEMS_PER_VIEW
 
         with draw_lock:
             _draw_toolbar()
             color.DrawMenuBackground()
             color.DrawBorder()
 
-            for i, raw in enumerate(inlist[offset:offset+ROWS]):
+            draw.line([(1, 14), (127, 14)], fill=color.border, width=1)
+
+            for i, raw in enumerate(inlist[offset:offset+ITEMS_PER_VIEW]):
                 if offset + i >= total:
                     break
                 txt = raw if not duplicates else raw.split("#", 1)[1]
-                y = START_Y + i * ROW_H
+                row = i // COLS
+                col = i % COLS
+                x = START_X + col * CELL_W
+                y = START_Y + row * CELL_H
                 sel = (offset + i == index)
 
                 if sel:
-                    draw.rectangle([3, y, 125, y + ROW_H - 1], fill=color.select)
+                    draw.rectangle([x - 2, y, x + CELL_W - 2, y + CELL_H - 1],
+                                 fill=color.select, outline=color.border, width=1)
                     fill = color.selected_text
                 else:
+                    draw.line([(x - 2, y), (x + CELL_W - 2, y)], fill=color.border, width=1)
                     fill = color.text
 
                 icon = _icon_for(txt)
-                if icon:
-                    draw.text((5, y), icon, font=icon_font, fill=fill)
-                    t = _truncate(txt.strip(), 85)
-                    draw.text((20, y), t, font=text_font, fill=fill)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((x, y + 7), icon, font=icon_font, fill=fill)
+                    t = _truncate(txt.strip(), 12)
+                    draw.text((x + 16, y + 7), t, font=small_font, fill=fill)
                 else:
-                    t = _truncate(txt.strip(), 108)
-                    draw.text((5, y), t, font=text_font, fill=fill)
+                    t = _truncate(txt.strip(), 14)
+                    draw.text((x + 5, y + 7), t, font=small_font, fill=fill)
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -1360,13 +1409,13 @@ def GetMenuPaged(inlist, duplicates=False):
                     fill = color.text
 
                 icon = _icon_for(txt)
-                if icon:
-                    draw.text((8, y + 8), icon, font=icon_font, fill=fill)
-                    t = _truncate(txt.strip(), 75)
-                    draw.text((25, y + 8), t, font=text_font, fill=fill)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((12, y + 17), icon, font=icon_font, fill=fill)
+                    t = _truncate(txt.strip(), 70)
+                    draw.text((30, y + 17), t, font=text_font, fill=fill)
                 else:
                     t = _truncate(txt.strip(), 100)
-                    draw.text((8, y + 8), t, font=text_font, fill=fill)
+                    draw.text((64, y + 17), t, font=text_font, fill=fill, anchor="mm")
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -1442,13 +1491,13 @@ def GetMenuThumbnail(inlist, duplicates=False):
                     text_fill = color.text
 
                 icon = _icon_for(txt)
-                if icon:
-                    draw.text((x + 8, y + 5), icon, font=icon_font, fill=icon_fill)
-                    label = _truncate(txt.strip(), 30)
-                    draw.text((x + 3, y + 32), label, font=small_font, fill=text_fill)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((x + 31, y + 12), icon, font=medium_icon_font, fill=icon_fill, anchor="mm")
+                    label = _truncate(txt.strip(), 15)
+                    draw.text((x + 31, y + 38), label, font=small_font, fill=text_fill, anchor="mm")
                 else:
-                    label = _truncate(txt.strip(), 25)
-                    draw.text((x + 3, y + 20), label, font=small_font, fill=text_fill)
+                    label = _truncate(txt.strip(), 20)
+                    draw.text((x + 31, y + 25), label, font=text_font, fill=text_fill, anchor="mm")
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -1497,13 +1546,13 @@ def GetMenuVerticalCarousel(inlist, duplicates=False):
             txt = raw if not duplicates else raw.split("#", 1)[1]
 
             icon = _icon_for(txt)
-            if icon:
-                draw.text((30, 35), icon, font=icon_font, fill=color.selected_text)
+            if icon and _ui_ux.get("show_icons", True):
+                draw.text((64, 50), icon, font=large_icon_font, fill=color.selected_text, anchor="mm")
                 display_txt = _truncate(txt.strip(), 80)
-                draw.text((8, 95), display_txt, font=text_font, fill=color.text)
+                draw.text((64, 100), display_txt, font=text_font, fill=color.text, anchor="mm")
             else:
                 display_txt = _truncate(txt.strip(), 100)
-                draw.text((8, 60), display_txt, font=icon_font, fill=color.selected_text)
+                draw.text((64, 60), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
 
             if total > 1:
                 if index > 0:
@@ -2076,9 +2125,9 @@ def _enter_pin(title, prompt, allow_cancel=True) -> "str | None":
             elif btn == "KEY1_PIN":
                 if entered: entered.pop()
                 hint = prompt
-            elif btn == "KEY3_PIN":
+            elif btn in ("KEY2_PIN", "KEY3_PIN"):
                 if allow_cancel: return None
-            elif btn in ("KEY2_PIN", "KEY_PRESS_PIN"):
+            elif btn == "KEY_PRESS_PIN":
                 key = _KEYPAD[row][col]
                 if key == "C":
                     if entered: entered.pop()
@@ -2136,7 +2185,7 @@ def _enter_sequence(title, prompt, allow_cancel=True, mask=False) -> "list | Non
                 time.sleep(0.005)
                 continue
             _last_seq_input = time.monotonic()
-            if btn == "KEY3_PIN":
+            if btn in ("KEY2_PIN", "KEY3_PIN"):
                 if allow_cancel: return None
                 continue
             if btn == "KEY_PRESS_PIN":
@@ -4722,26 +4771,22 @@ class KTOxMenu:
             print(f"[UI] save view mode failed: {e}")
 
     def _wallpaper_menu(self):
-        """Select wallpaper from loot directory."""
+        """Select wallpaper from wallpaper directory."""
         menu_items = [" No Wallpaper"]
         wallpaper_files = []
 
-        # Check for default logo in install path
-        logo_path = INSTALL_PATH + "ktox_logo.bmp"
-        if os.path.isfile(logo_path):
-            menu_items.insert(0, f" ⭐ Default Logo")
-            wallpaper_files.insert(0, logo_path)
-
-        # Scan loot directory for image files
-        loot_dir = Path(LOOT_DIR)
-        if loot_dir.exists():
+        # Scan wallpaper directory for image files
+        wp_dir = Path(WALLPAPER_DIR)
+        if wp_dir.exists():
             for ext in ['*.bmp', '*.png', '*.jpg', '*.jpeg', '*.gif']:
-                for img_file in loot_dir.glob(ext.lower()):
-                    menu_items.append(f" {img_file.name}")
+                for img_file in sorted(wp_dir.glob(ext.lower())):
+                    label = f" ⭐ {img_file.name}" if img_file.name == "ktox_logo.bmp" else f" {img_file.name}"
+                    menu_items.append(label)
                     wallpaper_files.append(str(img_file))
-                for img_file in loot_dir.glob(ext.upper()):
+                for img_file in sorted(wp_dir.glob(ext.upper())):
                     if img_file not in wallpaper_files:
-                        menu_items.append(f" {img_file.name}")
+                        label = f" ⭐ {img_file.name}" if img_file.name == "ktox_logo.bmp" else f" {img_file.name}"
+                        menu_items.append(label)
                         wallpaper_files.append(str(img_file))
 
         sel = GetMenuString(menu_items, duplicates=True)
