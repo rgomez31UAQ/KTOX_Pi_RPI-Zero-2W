@@ -1262,15 +1262,16 @@ def GetMenuPanel(inlist, duplicates=False):
             if total > 0:
                 raw = inlist[index]
                 txt = raw if not duplicates else raw.split("#", 1)[1]
-                draw.rectangle([36, 15, 125, 125], outline=color.border, width=1, fill=color.background)
+                draw.rectangle([36, 15, 125, 125], outline=color.border, width=2, fill=color.background)
+
                 icon = _icon_for(txt)
                 if icon and _ui_ux.get("show_icons", True):
-                    draw.text((65, 35), icon, font=large_icon_font, fill=color.selected_text, anchor="mm")
-                    display_txt = _truncate(txt.strip(), 60)
-                    draw.text((65, 85), display_txt, font=text_font, fill=color.text, anchor="mm")
+                    draw.text((80, 40), icon, font=large_icon_font, fill=color.selected_text, anchor="mm")
+                    display_txt = _truncate(txt.strip(), 45)
+                    draw.text((80, 105), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
                 else:
-                    display_txt = _truncate(txt.strip(), 65)
-                    draw.text((65, 55), display_txt, font=text_font, fill=color.text, anchor="mm")
+                    display_txt = _truncate(txt.strip(), 50)
+                    draw.text((80, 60), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
