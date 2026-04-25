@@ -866,15 +866,13 @@ def _draw_row_selection(row_y, row_h):
         draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
 
 
-def GetMenu(inlist, duplicates=False, force_list=False):
+def GetMenu(inlist, duplicates=False):
     """
     Dispatcher function that routes to the correct view mode rendering function.
-    force_list=True disables view modes for critical menus (System, Settings, etc).
+    Used ONLY for Home menu. All other menus use GetMenuString directly.
     """
-    if force_list or _view_mode == "list":
-        return GetMenuString(inlist, duplicates=duplicates)
-
     mode_map = {
+        "list": GetMenuString,
         "grid": GetMenuGrid,
         "carousel": GetMenuCarousel,
         "panel": GetMenuPanel,
@@ -3937,9 +3935,11 @@ class KTOxMenu:
             return
 
         labels = [item[0] for item in items]
-        # Force list view for critical system menus
-        force_list = key in ("sys", "home")
-        sel_result = GetMenu(labels, duplicates=True, force_list=force_list)
+        # View modes ONLY for Home menu, everything else uses List view
+        if key == "home":
+            sel_result = GetMenu(labels, duplicates=True)
+        else:
+            sel_result = GetMenuString(labels, duplicates=True)
 
         if not sel_result:
             return
@@ -4571,9 +4571,11 @@ class KTOxMenu:
             return
 
         labels = [item[0] for item in items]
-        # Force list view for critical system menus
-        force_list = key in ("sys", "home")
-        sel_result = GetMenu(labels, duplicates=True, force_list=force_list)
+        # View modes ONLY for Home menu, everything else uses List view
+        if key == "home":
+            sel_result = GetMenu(labels, duplicates=True)
+        else:
+            sel_result = GetMenuString(labels, duplicates=True)
 
         if not sel_result:
             return
