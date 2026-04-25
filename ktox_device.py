@@ -253,7 +253,7 @@ class ColorScheme:
 
             # Load view mode preference
             view_mode = str(data.get("UI", {}).get("VIEW_MODE", "list")).strip()
-            if view_mode in ("list", "grid", "carousel"):
+            if view_mode in ("list", "grid", "carousel", "panel", "table", "paged", "thumbnail", "vcarousel"):
                 _view_mode = view_mode
 
             # Load lock config and screensaver path
@@ -291,7 +291,7 @@ UI_THEMES = {
         "GAMEPAD": "#4A2B86", "GAMEPAD_FILL": "#EFE8FF",
         "TITLE_BG": "#1A1030", "PANEL_BG": "#151028",
         "UX_WINDOW_ROWS": 8, "UX_ROW_H": 11, "UX_START_Y": 25,
-        "UX_SHOW_ICONS": False, "UX_SELECT_STYLE": "fill",
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "fill",
     },
     "terminal_green": {
         "label": "Terminal Focus",
@@ -382,7 +382,7 @@ UI_THEMES = {
         "GAMEPAD": "#004466", "GAMEPAD_FILL": "#d9f7ff",
         "TITLE_BG": "#0a1820", "PANEL_BG": "#08141f",
         "UX_WINDOW_ROWS": 8, "UX_ROW_H": 11, "UX_START_Y": 25,
-        "UX_SHOW_ICONS": False, "UX_SELECT_STYLE": "outline",
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "outline",
     },
     "midnight_noir": {
         "label": "Midnight Noir",
@@ -1137,6 +1137,341 @@ def RenderMenuCarouselOnce(inlist, selected=0):
                 draw.text((120, 105), "►", font=text_font, fill=color.text)
 
         draw.text((55, 105), f"{idx+1}/{total}", font=small_font, fill=color.text)
+
+
+def GetMenuPanel(inlist, duplicates=False):
+    """
+    Panel view: sidebar with icons on left, scrollable list on right.
+    Returns selected label string, or "" on back.
+    """
+    if not inlist:
+        inlist = ["(empty)"]
+    if duplicates:
+        inlist = [f"{i}#{t}" for i, t in enumerate(inlist)]
+
+    total = len(inlist)
+    index = 0
+
+    while True:
+        with draw_lock:
+            _draw_toolbar()
+            color.DrawMenuBackground()
+            color.DrawBorder()
+
+            draw.rectangle([3, 14, 30, 127], fill=color.panel_bg, outline=color.border, width=1)
+
+            for i in range(min(7, total)):
+                icon = _icon_for(inlist[i] if not duplicates else inlist[i].split("#", 1)[1])
+                y = 18 + i * 15
+                if icon:
+                    fill = color.selected_text if i == index else color.text
+                    draw.text((8, y), icon, font=icon_font, fill=fill)
+
+            if total > 0:
+                raw = inlist[index]
+                txt = raw if not duplicates else raw.split("#", 1)[1]
+                draw.rectangle([32, 15, 125, 125], outline=color.border, width=1, fill=color.background)
+                display_txt = _truncate(txt.strip(), 85)
+                draw.text((35, 50), display_txt, font=text_font, fill=color.text)
+
+        time.sleep(0.08)
+        btn = getButton(timeout=0.5)
+        if btn is None:
+            continue
+        elif btn == "KEY_DOWN_PIN":
+            index = (index + 1) % total
+        elif btn == "KEY_UP_PIN":
+            index = (index - 1) % total
+        elif btn == "KEY_PRESS_PIN":
+            raw = inlist[index]
+            if duplicates:
+                idx, txt = raw.split("#", 1)
+                return int(idx), txt
+            return raw
+        elif btn in ("KEY1_PIN", "KEY2_PIN", "KEY3_PIN", "KEY_LEFT_PIN"):
+            return (-1, "") if duplicates else ""
+
+
+def GetMenuTable(inlist, duplicates=False):
+    """
+    Table view: columnar display with icons and text in neat columns.
+    Returns selected label string, or "" on back.
+    """
+    if not inlist:
+        inlist = ["(empty)"]
+    if duplicates:
+        inlist = [f"{i}#{t}" for i, t in enumerate(inlist)]
+
+    total = len(inlist)
+    index = 0
+    ROWS = 6
+    START_Y = 20
+    ROW_H = 16
+
+    while True:
+        offset = (index // ROWS) * ROWS
+
+        with draw_lock:
+            _draw_toolbar()
+            color.DrawMenuBackground()
+            color.DrawBorder()
+
+            for i, raw in enumerate(inlist[offset:offset+ROWS]):
+                if offset + i >= total:
+                    break
+                txt = raw if not duplicates else raw.split("#", 1)[1]
+                y = START_Y + i * ROW_H
+                sel = (offset + i == index)
+
+                if sel:
+                    draw.rectangle([3, y, 125, y + ROW_H - 1], fill=color.select)
+                    fill = color.selected_text
+                else:
+                    fill = color.text
+
+                icon = _icon_for(txt)
+                if icon:
+                    draw.text((5, y), icon, font=icon_font, fill=fill)
+                    t = _truncate(txt.strip(), 85)
+                    draw.text((20, y), t, font=text_font, fill=fill)
+                else:
+                    t = _truncate(txt.strip(), 108)
+                    draw.text((5, y), t, font=text_font, fill=fill)
+
+        time.sleep(0.08)
+        btn = getButton(timeout=0.5)
+        if btn is None:
+            continue
+        elif btn == "KEY_DOWN_PIN":
+            index = min(index + 1, total - 1)
+        elif btn == "KEY_UP_PIN":
+            index = max(index - 1, 0)
+        elif btn == "KEY_PRESS_PIN":
+            raw = inlist[index]
+            if duplicates:
+                idx, txt = raw.split("#", 1)
+                return int(idx), txt
+            return raw
+        elif btn in ("KEY1_PIN", "KEY2_PIN", "KEY3_PIN", "KEY_LEFT_PIN"):
+            return (-1, "") if duplicates else ""
+
+
+def GetMenuPaged(inlist, duplicates=False):
+    """
+    Paged view: fixed 3-item display per page with navigation.
+    Returns selected label string, or "" on back.
+    """
+    if not inlist:
+        inlist = ["(empty)"]
+    if duplicates:
+        inlist = [f"{i}#{t}" for i, t in enumerate(inlist)]
+
+    total = len(inlist)
+    index = 0
+    ITEMS_PER_PAGE = 3
+    ITEM_H = 35
+    START_Y = 25
+
+    while True:
+        page = index // ITEMS_PER_PAGE
+        page_items = inlist[page * ITEMS_PER_PAGE:(page + 1) * ITEMS_PER_PAGE]
+
+        with draw_lock:
+            _draw_toolbar()
+            color.DrawMenuBackground()
+            color.DrawBorder()
+
+            draw.rectangle([3, 13, 125, 24], fill=color.title_bg)
+            page_text = f"Page {page + 1}/{(total + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE}"
+            _centered(page_text, 13, font=small_font, fill=color.border)
+            draw.line([(3, 24), (125, 24)], fill=color.border, width=1)
+
+            for i, raw in enumerate(page_items):
+                txt = raw if not duplicates else raw.split("#", 1)[1]
+                y = START_Y + i * ITEM_H
+                sel = (page * ITEMS_PER_PAGE + i == index)
+
+                if sel:
+                    draw.rectangle([3, y, 125, y + ITEM_H - 2], fill=color.select, outline=color.border, width=1)
+                    fill = color.selected_text
+                else:
+                    draw.rectangle([3, y, 125, y + ITEM_H - 2], outline=color.border, width=1)
+                    fill = color.text
+
+                icon = _icon_for(txt)
+                if icon:
+                    draw.text((8, y + 8), icon, font=icon_font, fill=fill)
+                    t = _truncate(txt.strip(), 75)
+                    draw.text((25, y + 8), t, font=text_font, fill=fill)
+                else:
+                    t = _truncate(txt.strip(), 100)
+                    draw.text((8, y + 8), t, font=text_font, fill=fill)
+
+        time.sleep(0.08)
+        btn = getButton(timeout=0.5)
+        if btn is None:
+            continue
+        elif btn == "KEY_DOWN_PIN":
+            index = min(index + 1, total - 1)
+        elif btn == "KEY_UP_PIN":
+            index = max(index - 1, 0)
+        elif btn == "KEY_RIGHT_PIN":
+            if (index + 1) % ITEMS_PER_PAGE != 0 and index + 1 < total:
+                index += 1
+        elif btn == "KEY_LEFT_PIN":
+            if index % ITEMS_PER_PAGE != 0:
+                index -= 1
+        elif btn == "KEY_PRESS_PIN":
+            raw = inlist[index]
+            if duplicates:
+                idx, txt = raw.split("#", 1)
+                return int(idx), txt
+            return raw
+        elif btn in ("KEY1_PIN", "KEY2_PIN", "KEY3_PIN"):
+            return (-1, "") if duplicates else ""
+
+
+def GetMenuThumbnail(inlist, duplicates=False):
+    """
+    Thumbnail view: large icons with labels in a 2x2 grid.
+    Returns selected label string, or "" on back.
+    """
+    if not inlist:
+        inlist = ["(empty)"]
+    if duplicates:
+        inlist = [f"{i}#{t}" for i, t in enumerate(inlist)]
+
+    total = len(inlist)
+    index = 0
+    COLS = 2
+    ROWS = 2
+    ITEMS_PER_VIEW = COLS * ROWS
+    CELL_W = 62
+    CELL_H = 50
+    START_X = 4
+    START_Y = 18
+
+    while True:
+        offset = (index // ITEMS_PER_VIEW) * ITEMS_PER_VIEW
+
+        with draw_lock:
+            _draw_toolbar()
+            color.DrawMenuBackground()
+            color.DrawBorder()
+
+            for i, raw in enumerate(inlist[offset:offset+ITEMS_PER_VIEW]):
+                if offset + i >= total:
+                    break
+                txt = raw if not duplicates else raw.split("#", 1)[1]
+                row = i // COLS
+                col = i % COLS
+                x = START_X + col * CELL_W
+                y = START_Y + row * CELL_H
+                sel = (offset + i == index)
+
+                if sel:
+                    draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
+                                 fill=color.select, outline=color.border, width=2)
+                    icon_fill = color.selected_text
+                    text_fill = color.selected_text
+                else:
+                    draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
+                                 outline=color.border, width=1)
+                    icon_fill = color.text
+                    text_fill = color.text
+
+                icon = _icon_for(txt)
+                if icon:
+                    draw.text((x + 8, y + 5), icon, font=icon_font, fill=icon_fill)
+                    label = _truncate(txt.strip(), 30)
+                    draw.text((x + 3, y + 32), label, font=small_font, fill=text_fill)
+                else:
+                    label = _truncate(txt.strip(), 25)
+                    draw.text((x + 3, y + 20), label, font=small_font, fill=text_fill)
+
+        time.sleep(0.08)
+        btn = getButton(timeout=0.5)
+        if btn is None:
+            continue
+        elif btn == "KEY_DOWN_PIN":
+            index = min(index + COLS, total - 1)
+        elif btn == "KEY_UP_PIN":
+            index = max(index - COLS, 0)
+        elif btn == "KEY_RIGHT_PIN":
+            index = min(index + 1, total - 1)
+        elif btn == "KEY_LEFT_PIN":
+            index = max(index - 1, 0) if index % COLS != 0 else index
+        elif btn == "KEY_PRESS_PIN":
+            raw = inlist[index]
+            if duplicates:
+                idx, txt = raw.split("#", 1)
+                return int(idx), txt
+            return raw
+        elif btn in ("KEY1_PIN", "KEY2_PIN", "KEY3_PIN"):
+            return (-1, "") if duplicates else ""
+
+
+def GetMenuVerticalCarousel(inlist, duplicates=False):
+    """
+    Vertical carousel: single item focus with up/down navigation.
+    Returns selected label string, or "" on back.
+    """
+    if not inlist:
+        inlist = ["(empty)"]
+    if duplicates:
+        inlist = [f"{i}#{t}" for i, t in enumerate(inlist)]
+
+    total = len(inlist)
+    index = 0
+
+    while True:
+        with draw_lock:
+            _draw_toolbar()
+            color.DrawMenuBackground()
+            color.DrawBorder()
+
+            draw.rectangle([3, 20, 124, 115], outline=color.border, width=1)
+
+            raw = inlist[index]
+            txt = raw if not duplicates else raw.split("#", 1)[1]
+
+            icon = _icon_for(txt)
+            if icon:
+                draw.text((30, 35), icon, font=icon_font, fill=color.selected_text)
+                display_txt = _truncate(txt.strip(), 80)
+                draw.text((8, 95), display_txt, font=text_font, fill=color.text)
+            else:
+                display_txt = _truncate(txt.strip(), 100)
+                draw.text((8, 60), display_txt, font=icon_font, fill=color.selected_text)
+
+            if total > 1:
+                if index > 0:
+                    draw.text((45, 25), "▲", font=text_font, fill=color.text)
+                if index < total - 1:
+                    draw.text((45, 110), "▼", font=text_font, fill=color.text)
+
+            draw.text((55, 105), f"{index+1}/{total}", font=small_font, fill=color.text)
+
+        time.sleep(0.08)
+        btn = getButton(timeout=0.5)
+        if btn is None:
+            continue
+        elif btn == "KEY_UP_PIN":
+            index = (index - 1) % total
+        elif btn == "KEY_DOWN_PIN":
+            index = (index + 1) % total
+        elif btn == "KEY_LEFT_PIN":
+            index = (index - 1) % total
+        elif btn == "KEY_RIGHT_PIN":
+            index = (index + 1) % total
+        elif btn == "KEY_PRESS_PIN":
+            raw = inlist[index]
+            if duplicates:
+                idx, txt = raw.split("#", 1)
+                return int(idx), txt
+            return raw
+        elif btn in ("KEY1_PIN", "KEY2_PIN", "KEY3_PIN"):
+            return (-1, "") if duplicates else ""
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Payload engine ─────────────────────────────────────────────────────────────
@@ -3365,6 +3700,9 @@ _FA_ICONS: dict = {
     "Discord Status":   "\uf392",   # fa-discord
     "Reboot":           "\uf2f9",   # fa-redo
     "Shutdown":         "\uf011",   # fa-power-off
+    # ── Payload categories (continued) ────────────────────────────────────
+    "Media":            "",   # fa-image
+    "Testing":          "",   # fa-flask
     # ── Universal ─────────────────────────────────────────────────────────
     "Back":             "\uf060",   # fa-arrow-left
     "Home":             "\uf015",   # fa-home
@@ -4389,21 +4727,29 @@ class KTOxMenu:
             Dialog_info("Theme apply\nfailed.", wait=True)
 
     def _view_mode_menu(self):
-        """Switch between list, grid, and carousel view modes."""
+        """Switch between 8 different view modes."""
         global _view_mode
-        modes = ["list", "grid", "carousel"]
+        modes = ["list", "grid", "carousel", "panel", "table", "paged", "thumbnail", "vcarousel"]
+        mode_names = {
+            "list": "List",
+            "grid": "Grid",
+            "carousel": "Carousel",
+            "panel": "Panel",
+            "table": "Table",
+            "paged": "Paged",
+            "thumbnail": "Thumbnail",
+            "vcarousel": "V-Carousel"
+        }
         labels = []
         for mode in modes:
             mark = "✔" if mode == _view_mode else " "
-            mode_label = mode.capitalize()
-            labels.append(f" {mark} {mode_label}")
+            labels.append(f" {mark} {mode_names[mode]}")
         sel = GetMenuString(labels, duplicates=True)
         if not sel:
             return
         idx, _ = sel
         _view_mode = modes[idx]
         self._save_view_mode(_view_mode)
-        mode_names = {"list": "List", "grid": "Grid", "carousel": "Carousel"}
         Dialog_info(f"View Mode:\n{mode_names[_view_mode]}",
                    wait=False, timeout=1)
 
