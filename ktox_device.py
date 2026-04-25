@@ -4747,6 +4747,7 @@ class KTOxMenu:
 
     def _nav_status(self):
         nav_candidates = [
+            f"{default.payload_path}recon/navarro_engine.py",
             f"{KTOX_DIR}/Navarro/navarro.py",
             "/home/ktox/Navarro/navarro.py",
             "/root/Navarro/navarro.py",
@@ -4764,7 +4765,8 @@ class KTOxMenu:
             f" engine:  {'OK' if nav_found else 'MISSING'}",
             f" requests:{'OK' if requests_ok else 'MISSING'}",
             f" rich:    {'OK' if rich_ok else 'OPTIONAL'}",
-            " Install path:",
+            " Engine paths:",
+            f" {default.payload_path}recon/navarro_engine.py",
             " /root/KTOx/Navarro/navarro.py",
             " Reports: /root/KTOx/loot/OSINT",
         ])
