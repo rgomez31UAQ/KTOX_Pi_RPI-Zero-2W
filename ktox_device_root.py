@@ -1762,14 +1762,6 @@ finally:
                     ktox_state["running"] = None
                     Dialog_info("Stopped.", wait=False, timeout=1)
 
-    def home_loop(self):
-        while True:
-            req = _check_payload_request()
-            if req:
-                exec_payload(req)
-                continue
-            self.navigate("home")
-
     # ── System actions ─────────────────────────────────────────────────────────
 
     def _webui_status(self):
