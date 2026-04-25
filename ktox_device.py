@@ -1010,7 +1010,7 @@ def RenderMenuWindowOnce(inlist, selected=0):
 
 def GetMenuGrid(inlist, duplicates=False):
     """
-    2-column grid layout with large centered icons and labels.
+    2-column grid with spacious, well-separated cells.
     Returns selected label string, or "" on back.
     """
     if not inlist:
@@ -1021,12 +1021,13 @@ def GetMenuGrid(inlist, duplicates=False):
     total = len(inlist)
     index = 0
     COLS = 2
-    ROWS = 4
+    ROWS = 3
     ITEMS_PER_VIEW = COLS * ROWS
-    CELL_W = 64
-    CELL_H = 27
-    START_X = 0
-    START_Y = 14
+    CELL_W = 55
+    CELL_H = 32
+    GAP = 3
+    START_X = 2
+    START_Y = 16
 
     while True:
         offset = (index // ITEMS_PER_VIEW) * ITEMS_PER_VIEW
@@ -1042,8 +1043,8 @@ def GetMenuGrid(inlist, duplicates=False):
                 txt = raw if not duplicates else raw.split("#", 1)[1]
                 row = i // COLS
                 col = i % COLS
-                x = START_X + col * CELL_W
-                y = START_Y + row * CELL_H
+                x = START_X + col * (CELL_W + GAP)
+                y = START_Y + row * (CELL_H + GAP)
                 sel = (offset + i == index)
 
                 if sel:
@@ -1057,11 +1058,11 @@ def GetMenuGrid(inlist, duplicates=False):
                 icon = _icon_for(txt)
                 if icon and _ui_ux.get("show_icons", True):
                     draw.text((x + CELL_W // 2, y + 8), icon, font=medium_icon_font, fill=fill, anchor="mm")
-                    t = _truncate(txt.strip(), 10)
-                    draw.text((x + CELL_W // 2, y + 20), t, font=small_font, fill=fill, anchor="mm")
+                    t = _truncate(txt.strip(), 9)
+                    draw.text((x + CELL_W // 2, y + 24), t, font=small_font, fill=fill, anchor="mm")
                 else:
-                    t = _truncate(txt.strip(), 12)
-                    draw.text((x + CELL_W // 2, y + 13), t, font=text_font, fill=fill, anchor="mm")
+                    t = _truncate(txt.strip(), 11)
+                    draw.text((x + CELL_W // 2, y + 16), t, font=text_font, fill=fill, anchor="mm")
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -1224,7 +1225,7 @@ def RenderMenuCarouselOnce(inlist, selected=0):
 
 def GetMenuPanel(inlist, duplicates=False):
     """
-    Panel view: sidebar with icons on left, scrollable list on right.
+    Panel view: scrolling sidebar with big icons on left, content on right.
     Returns selected label string, or "" on back.
     """
     if not inlist:
@@ -1234,6 +1235,8 @@ def GetMenuPanel(inlist, duplicates=False):
 
     total = len(inlist)
     index = 0
+    SIDEBAR_ITEMS = 5
+    ICON_H = 20
 
     while True:
         with draw_lock:
@@ -1241,21 +1244,33 @@ def GetMenuPanel(inlist, duplicates=False):
             color.DrawMenuBackground()
             color.DrawBorder()
 
-            draw.rectangle([3, 14, 30, 127], fill=color.panel_bg, outline=color.border, width=1)
+            draw.rectangle([3, 14, 34, 127], fill=color.panel_bg, outline=color.border, width=1)
 
-            for i in range(min(7, total)):
-                icon = _icon_for(inlist[i] if not duplicates else inlist[i].split("#", 1)[1])
-                y = 18 + i * 15
-                if icon:
-                    fill = color.selected_text if i == index else color.text
-                    draw.text((8, y), icon, font=icon_font, fill=fill)
+            offset = max(0, min(index - SIDEBAR_ITEMS // 2, total - SIDEBAR_ITEMS))
+            for i in range(SIDEBAR_ITEMS):
+                item_idx = offset + i
+                if item_idx >= total:
+                    break
+                label = inlist[item_idx] if not duplicates else inlist[item_idx].split("#", 1)[1]
+                y = 18 + i * ICON_H
+                fill = color.selected_text if item_idx == index else color.text
+
+                icon = _icon_for(label)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((18, y + 8), icon, font=medium_icon_font, fill=fill, anchor="mm")
 
             if total > 0:
                 raw = inlist[index]
                 txt = raw if not duplicates else raw.split("#", 1)[1]
-                draw.rectangle([32, 15, 125, 125], outline=color.border, width=1, fill=color.background)
-                display_txt = _truncate(txt.strip(), 85)
-                draw.text((35, 50), display_txt, font=text_font, fill=color.text)
+                draw.rectangle([36, 15, 125, 125], outline=color.border, width=1, fill=color.background)
+                icon = _icon_for(txt)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((65, 35), icon, font=large_icon_font, fill=color.selected_text, anchor="mm")
+                    display_txt = _truncate(txt.strip(), 60)
+                    draw.text((65, 85), display_txt, font=text_font, fill=color.text, anchor="mm")
+                else:
+                    display_txt = _truncate(txt.strip(), 65)
+                    draw.text((65, 55), display_txt, font=text_font, fill=color.text, anchor="mm")
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -1277,7 +1292,7 @@ def GetMenuPanel(inlist, duplicates=False):
 
 def GetMenuTable(inlist, duplicates=False):
     """
-    Table view: columnar display with icons and text in neat columns.
+    Table view: 2-column compact table layout.
     Returns selected label string, or "" on back.
     """
     if not inlist:
@@ -1287,39 +1302,50 @@ def GetMenuTable(inlist, duplicates=False):
 
     total = len(inlist)
     index = 0
-    ROWS = 6
-    START_Y = 20
-    ROW_H = 16
+    COLS = 2
+    ROWS = 4
+    ITEMS_PER_VIEW = COLS * ROWS
+    CELL_W = 60
+    CELL_H = 24
+    START_X = 5
+    START_Y = 16
 
     while True:
-        offset = (index // ROWS) * ROWS
+        offset = (index // ITEMS_PER_VIEW) * ITEMS_PER_VIEW
 
         with draw_lock:
             _draw_toolbar()
             color.DrawMenuBackground()
             color.DrawBorder()
 
-            for i, raw in enumerate(inlist[offset:offset+ROWS]):
+            draw.line([(1, 14), (127, 14)], fill=color.border, width=1)
+
+            for i, raw in enumerate(inlist[offset:offset+ITEMS_PER_VIEW]):
                 if offset + i >= total:
                     break
                 txt = raw if not duplicates else raw.split("#", 1)[1]
-                y = START_Y + i * ROW_H
+                row = i // COLS
+                col = i % COLS
+                x = START_X + col * CELL_W
+                y = START_Y + row * CELL_H
                 sel = (offset + i == index)
 
                 if sel:
-                    draw.rectangle([3, y, 125, y + ROW_H - 1], fill=color.select)
+                    draw.rectangle([x - 2, y, x + CELL_W - 2, y + CELL_H - 1],
+                                 fill=color.select, outline=color.border, width=1)
                     fill = color.selected_text
                 else:
+                    draw.line([(x - 2, y), (x + CELL_W - 2, y)], fill=color.border, width=1)
                     fill = color.text
 
                 icon = _icon_for(txt)
-                if icon:
-                    draw.text((5, y), icon, font=icon_font, fill=fill)
-                    t = _truncate(txt.strip(), 85)
-                    draw.text((20, y), t, font=text_font, fill=fill)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((x, y + 7), icon, font=icon_font, fill=fill)
+                    t = _truncate(txt.strip(), 12)
+                    draw.text((x + 16, y + 7), t, font=small_font, fill=fill)
                 else:
-                    t = _truncate(txt.strip(), 108)
-                    draw.text((5, y), t, font=text_font, fill=fill)
+                    t = _truncate(txt.strip(), 14)
+                    draw.text((x + 5, y + 7), t, font=small_font, fill=fill)
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -1382,13 +1408,13 @@ def GetMenuPaged(inlist, duplicates=False):
                     fill = color.text
 
                 icon = _icon_for(txt)
-                if icon:
-                    draw.text((8, y + 8), icon, font=icon_font, fill=fill)
-                    t = _truncate(txt.strip(), 75)
-                    draw.text((25, y + 8), t, font=text_font, fill=fill)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((12, y + 17), icon, font=icon_font, fill=fill)
+                    t = _truncate(txt.strip(), 70)
+                    draw.text((30, y + 17), t, font=text_font, fill=fill)
                 else:
                     t = _truncate(txt.strip(), 100)
-                    draw.text((8, y + 8), t, font=text_font, fill=fill)
+                    draw.text((64, y + 17), t, font=text_font, fill=fill, anchor="mm")
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
