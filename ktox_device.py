@@ -324,6 +324,87 @@ UI_THEMES = {
         "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "pulse",
         "UX_CYBER_BARS": True,
     },
+    "obsidian_red": {
+        "label": "Obsidian Red",
+        "BORDER": "#CC0000", "BACKGROUND": "#0a0a0a", "TEXT": "#d4a574",
+        "SELECTED_TEXT": "#FFFFFF", "SELECTED_TEXT_BACKGROUND": "#801414",
+        "GAMEPAD": "#8B0000", "GAMEPAD_FILL": "#F5E6D3",
+        "TITLE_BG": "#220000", "PANEL_BG": "#1a0a0a",
+        "UX_WINDOW_ROWS": 7, "UX_ROW_H": 13, "UX_START_Y": 26,
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "outline",
+    },
+    "slate_blue": {
+        "label": "Slate Blue",
+        "BORDER": "#4A5BB7", "BACKGROUND": "#0d0e15", "TEXT": "#c9d1e0",
+        "SELECTED_TEXT": "#FFFFFF", "SELECTED_TEXT_BACKGROUND": "#2e3a7a",
+        "GAMEPAD": "#1f2954", "GAMEPAD_FILL": "#e8edf8",
+        "TITLE_BG": "#15172a", "PANEL_BG": "#0f1320",
+        "UX_WINDOW_ROWS": 7, "UX_ROW_H": 13, "UX_START_Y": 26,
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "fill",
+    },
+    "forest_green": {
+        "label": "Forest Green",
+        "BORDER": "#3BA655", "BACKGROUND": "#080f09", "TEXT": "#b8d4ba",
+        "SELECTED_TEXT": "#FFFFFF", "SELECTED_TEXT_BACKGROUND": "#2d5c3a",
+        "GAMEPAD": "#1a4028", "GAMEPAD_FILL": "#dce8dd",
+        "TITLE_BG": "#0f2416", "PANEL_BG": "#0c1a0e",
+        "UX_WINDOW_ROWS": 6, "UX_ROW_H": 14, "UX_START_Y": 28,
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "fill",
+    },
+    "sunburst_orange": {
+        "label": "Sunburst Orange",
+        "BORDER": "#FF8C00", "BACKGROUND": "#0f0804", "TEXT": "#ffc89a",
+        "SELECTED_TEXT": "#1a0a03", "SELECTED_TEXT_BACKGROUND": "#FF8C00",
+        "GAMEPAD": "#cc5500", "GAMEPAD_FILL": "#ffe4d6",
+        "TITLE_BG": "#3d2207", "PANEL_BG": "#1f1207",
+        "UX_WINDOW_ROWS": 7, "UX_ROW_H": 13, "UX_START_Y": 26,
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "fill",
+    },
+    "plasma_purple": {
+        "label": "Plasma Purple",
+        "BORDER": "#B833FF", "BACKGROUND": "#0a0515", "TEXT": "#dfc8ff",
+        "SELECTED_TEXT": "#FFFFFF", "SELECTED_TEXT_BACKGROUND": "#6b2d8f",
+        "GAMEPAD": "#4a1a66", "GAMEPAD_FILL": "#e8d4ff",
+        "TITLE_BG": "#1a0a2a", "PANEL_BG": "#0d0518",
+        "UX_WINDOW_ROWS": 6, "UX_ROW_H": 15, "UX_START_Y": 27,
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "fill",
+    },
+    "ice_blue": {
+        "label": "Ice Blue",
+        "BORDER": "#00D4FF", "BACKGROUND": "#050a12", "TEXT": "#b3e5ff",
+        "SELECTED_TEXT": "#041c2e", "SELECTED_TEXT_BACKGROUND": "#00A8CC",
+        "GAMEPAD": "#004466", "GAMEPAD_FILL": "#d9f7ff",
+        "TITLE_BG": "#0a1820", "PANEL_BG": "#08141f",
+        "UX_WINDOW_ROWS": 8, "UX_ROW_H": 11, "UX_START_Y": 25,
+        "UX_SHOW_ICONS": False, "UX_SELECT_STYLE": "outline",
+    },
+    "midnight_noir": {
+        "label": "Midnight Noir",
+        "BORDER": "#505050", "BACKGROUND": "#050505", "TEXT": "#e0e0e0",
+        "SELECTED_TEXT": "#FFFFFF", "SELECTED_TEXT_BACKGROUND": "#2a2a2a",
+        "GAMEPAD": "#1a1a1a", "GAMEPAD_FILL": "#f5f5f5",
+        "TITLE_BG": "#0a0a0a", "PANEL_BG": "#0f0f0f",
+        "UX_WINDOW_ROWS": 7, "UX_ROW_H": 13, "UX_START_Y": 26,
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "fill",
+    },
+    "neon_cyan": {
+        "label": "Neon Cyan",
+        "BORDER": "#00FFFF", "BACKGROUND": "#080808", "TEXT": "#00FFFF",
+        "SELECTED_TEXT": "#000000", "SELECTED_TEXT_BACKGROUND": "#00FFFF",
+        "GAMEPAD": "#008080", "GAMEPAD_FILL": "#E0FFFF",
+        "TITLE_BG": "#0a1818", "PANEL_BG": "#0a0f0f",
+        "UX_WINDOW_ROWS": 6, "UX_ROW_H": 15, "UX_START_Y": 27,
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "scanline",
+    },
+    "synthetic_rose": {
+        "label": "Synthetic Rose",
+        "BORDER": "#FF1493", "BACKGROUND": "#0f080d", "TEXT": "#ffb3d9",
+        "SELECTED_TEXT": "#FFFFFF", "SELECTED_TEXT_BACKGROUND": "#991166",
+        "GAMEPAD": "#660044", "GAMEPAD_FILL": "#ffe0f0",
+        "TITLE_BG": "#330033", "PANEL_BG": "#1a0d1a",
+        "UX_WINDOW_ROWS": 6, "UX_ROW_H": 14, "UX_START_Y": 28,
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "fill",
+    },
 }
 
 _ui_ux = {
@@ -334,6 +415,8 @@ _ui_ux = {
     "select_style": "fill",
     "cyber_bars": False,
 }
+
+_view_mode = "list"  # list, grid, or carousel
 
 def _apply_ux_from_theme(preset: dict):
     _ui_ux["window_rows"] = int(preset.get("UX_WINDOW_ROWS", 7))
@@ -840,6 +923,223 @@ def RenderMenuWindowOnce(inlist, selected=0):
                 x = 4 + ((i + offs) % 120)
                 draw.line([(x, y0), (min(123, x + 8), y0)], fill=color.border, width=1)
             draw.line([(4, y1), (123, y1)], fill=color.title_bg, width=1)
+
+
+def toggle_view_mode():
+    """Cycle through view modes: list -> grid -> carousel -> list."""
+    global _view_mode
+    modes = ["list", "grid", "carousel"]
+    current_idx = modes.index(_view_mode) if _view_mode in modes else 0
+    _view_mode = modes[(current_idx + 1) % len(modes)]
+    return _view_mode
+
+
+def GetMenuGrid(inlist, duplicates=False):
+    """
+    2-column grid layout (8 items visible: 4 rows × 2 cols).
+    Returns selected label string, or "" on back.
+    """
+    if not inlist:
+        inlist = ["(empty)"]
+    if duplicates:
+        inlist = [f"{i}#{t}" for i, t in enumerate(inlist)]
+
+    total = len(inlist)
+    index = 0
+    COLS = 2
+    ROWS = 4
+    ITEMS_PER_VIEW = COLS * ROWS
+    CELL_W = 60
+    CELL_H = 25
+    START_X = 8
+    START_Y = 20
+
+    while True:
+        offset = (index // ITEMS_PER_VIEW) * ITEMS_PER_VIEW
+
+        with draw_lock:
+            _draw_toolbar()
+            color.DrawMenuBackground()
+            color.DrawBorder()
+
+            for i, raw in enumerate(inlist[offset:offset+ITEMS_PER_VIEW]):
+                if offset + i >= total:
+                    break
+                txt = raw if not duplicates else raw.split("#", 1)[1]
+                row = i // COLS
+                col = i % COLS
+                x = START_X + col * CELL_W
+                y = START_Y + row * CELL_H
+                sel = (offset + i == index)
+
+                if sel:
+                    draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
+                                 fill=color.select, outline=color.border, width=1)
+                else:
+                    draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
+                                 outline=color.border, width=1)
+
+                fill = color.selected_text if sel else color.text
+                t = _truncate(txt.strip(), 40)
+                draw.text((x + 3, y + 7), t, font=small_font, fill=fill)
+
+        time.sleep(0.08)
+        btn = getButton(timeout=0.5)
+        if btn is None:
+            continue
+        elif btn == "KEY_DOWN_PIN":
+            index = min(index + COLS, total - 1)
+        elif btn == "KEY_UP_PIN":
+            index = max(index - COLS, 0)
+        elif btn == "KEY_RIGHT_PIN":
+            index = min(index + 1, total - 1)
+        elif btn == "KEY_LEFT_PIN":
+            index = max(index - 1, 0) if index % COLS != 0 else index
+        elif btn == "KEY_PRESS_PIN":
+            raw = inlist[index]
+            if duplicates:
+                idx, txt = raw.split("#", 1)
+                return int(idx), txt
+            return raw
+        elif btn in ("KEY1_PIN", "KEY2_PIN", "KEY3_PIN"):
+            return (-1, "") if duplicates else ""
+
+
+def GetMenuCarousel(inlist, duplicates=False):
+    """
+    Carousel mode: single item focus with left/right navigation.
+    Returns selected label string, or "" on back.
+    """
+    if not inlist:
+        inlist = ["(empty)"]
+    if duplicates:
+        inlist = [f"{i}#{t}" for i, t in enumerate(inlist)]
+
+    total = len(inlist)
+    index = 0
+
+    while True:
+        with draw_lock:
+            _draw_toolbar()
+            color.DrawMenuBackground()
+            color.DrawBorder()
+
+            raw = inlist[index]
+            txt = raw if not duplicates else raw.split("#", 1)[1]
+
+            draw.rectangle([3, 20, 124, 115], outline=color.border, width=1)
+
+            icon = _icon_for(txt)
+            if icon and _ui_ux.get("show_icons", True):
+                draw.text((30, 35), icon, font=icon_font, fill=color.selected_text)
+                display_txt = _truncate(txt.strip(), 80)
+                draw.text((8, 95), display_txt, font=text_font, fill=color.text)
+            else:
+                display_txt = _truncate(txt.strip(), 100)
+                draw.text((8, 60), display_txt, font=icon_font, fill=color.selected_text)
+
+            if total > 1:
+                if index > 0:
+                    draw.text((5, 105), "◄", font=text_font, fill=color.text)
+                if index < total - 1:
+                    draw.text((120, 105), "►", font=text_font, fill=color.text)
+
+            draw.text((55, 105), f"{index+1}/{total}", font=small_font, fill=color.text)
+
+        time.sleep(0.08)
+        btn = getButton(timeout=0.5)
+        if btn is None:
+            continue
+        elif btn == "KEY_LEFT_PIN":
+            index = (index - 1) % total
+        elif btn == "KEY_RIGHT_PIN":
+            index = (index + 1) % total
+        elif btn == "KEY_UP_PIN":
+            index = (index - 1) % total
+        elif btn == "KEY_DOWN_PIN":
+            index = (index + 1) % total
+        elif btn == "KEY_PRESS_PIN":
+            raw = inlist[index]
+            if duplicates:
+                idx, txt = raw.split("#", 1)
+                return int(idx), txt
+            return raw
+        elif btn in ("KEY1_PIN", "KEY2_PIN", "KEY3_PIN"):
+            return (-1, "") if duplicates else ""
+
+
+def RenderMenuGridOnce(inlist, selected=0):
+    """Non-interactive grid snapshot."""
+    if not inlist:
+        inlist = ["(empty)"]
+
+    total = len(inlist)
+    idx = max(0, min(selected, total - 1))
+    COLS = 2
+    ROWS = 4
+    CELL_W = 60
+    CELL_H = 25
+    START_X = 8
+    START_Y = 20
+
+    with draw_lock:
+        _draw_toolbar()
+        color.DrawMenuBackground()
+        color.DrawBorder()
+
+        for i, txt in enumerate(inlist[:COLS * ROWS]):
+            if i >= total:
+                break
+            row = i // COLS
+            col = i % COLS
+            x = START_X + col * CELL_W
+            y = START_Y + row * CELL_H
+            sel = (i == idx)
+
+            if sel:
+                draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
+                             fill=color.select, outline=color.border, width=1)
+            else:
+                draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
+                             outline=color.border, width=1)
+
+            fill = color.selected_text if sel else color.text
+            t = _truncate(txt.strip(), 40)
+            draw.text((x + 3, y + 7), t, font=small_font, fill=fill)
+
+
+def RenderMenuCarouselOnce(inlist, selected=0):
+    """Non-interactive carousel snapshot."""
+    if not inlist:
+        inlist = ["(empty)"]
+
+    total = len(inlist)
+    idx = max(0, min(selected, total - 1))
+    txt = inlist[idx]
+
+    with draw_lock:
+        _draw_toolbar()
+        color.DrawMenuBackground()
+        color.DrawBorder()
+
+        draw.rectangle([3, 20, 124, 115], outline=color.border, width=1)
+
+        icon = _icon_for(txt)
+        if icon and _ui_ux.get("show_icons", True):
+            draw.text((30, 35), icon, font=icon_font, fill=color.selected_text)
+            display_txt = _truncate(txt.strip(), 80)
+            draw.text((8, 95), display_txt, font=text_font, fill=color.text)
+        else:
+            display_txt = _truncate(txt.strip(), 100)
+            draw.text((8, 60), display_txt, font=icon_font, fill=color.selected_text)
+
+        if total > 1:
+            if idx > 0:
+                draw.text((5, 105), "◄", font=text_font, fill=color.text)
+            if idx < total - 1:
+                draw.text((120, 105), "►", font=text_font, fill=color.text)
+
+        draw.text((55, 105), f"{idx+1}/{total}", font=small_font, fill=color.text)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Payload engine ─────────────────────────────────────────────────────────────
