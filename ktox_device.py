@@ -869,7 +869,7 @@ def _draw_row_selection(row_y, row_h):
 def GetMenu(inlist, duplicates=False):
     """
     Dispatcher function that routes to the correct view mode rendering function.
-    All menu calls should use this instead of GetMenuString directly.
+    Used ONLY for Home menu. All other menus use GetMenuString directly.
     """
     mode_map = {
         "list": GetMenuString,
@@ -1032,8 +1032,14 @@ def GetMenuGrid(inlist, duplicates=False):
                                  outline=color.border, width=1)
 
                 fill = color.selected_text if sel else color.text
-                t = _truncate(txt.strip(), 40)
-                draw.text((x + 3, y + 7), t, font=small_font, fill=fill)
+                icon = _icon_for(txt)
+                if icon:
+                    draw.text((x + 3, y + 3), icon, font=icon_font, fill=fill)
+                    t = _truncate(txt.strip(), 25)
+                    draw.text((x + 3, y + 15), t, font=small_font, fill=fill)
+                else:
+                    t = _truncate(txt.strip(), 30)
+                    draw.text((x + 3, y + 8), t, font=small_font, fill=fill)
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -3929,7 +3935,11 @@ class KTOxMenu:
             return
 
         labels = [item[0] for item in items]
-        sel_result = GetMenu(labels, duplicates=True)
+        # View modes ONLY for Home menu, everything else uses List view
+        if key == "home":
+            sel_result = GetMenu(labels, duplicates=True)
+        else:
+            sel_result = GetMenuString(labels, duplicates=True)
 
         if not sel_result:
             return
@@ -4561,7 +4571,11 @@ class KTOxMenu:
             return
 
         labels = [item[0] for item in items]
-        sel_result = GetMenu(labels, duplicates=True)
+        # View modes ONLY for Home menu, everything else uses List view
+        if key == "home":
+            sel_result = GetMenu(labels, duplicates=True)
+        else:
+            sel_result = GetMenuString(labels, duplicates=True)
 
         if not sel_result:
             return
