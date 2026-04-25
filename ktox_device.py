@@ -192,6 +192,8 @@ class ColorScheme:
         draw.line([(0,12),(128,12)],    fill=self.border, width=5)
 
     def DrawMenuBackground(self):
+        if _wallpaper_image:
+            _draw_wallpaper_background()
         draw.rectangle((3, 14, 124, 124), fill=self.background)
 
     def apply_theme(self, name, persist=True):
@@ -255,6 +257,11 @@ class ColorScheme:
             view_mode = str(data.get("UI", {}).get("VIEW_MODE", "list")).strip()
             if view_mode in ("list", "grid", "carousel", "panel", "table", "paged", "thumbnail", "vcarousel"):
                 _view_mode = view_mode
+
+            # Load wallpaper preference
+            wallpaper = data.get("UI", {}).get("WALLPAPER", "")
+            if wallpaper:
+                _load_wallpaper(wallpaper)
 
             # Load lock config and screensaver path
             _lock_load_from_config(data)
@@ -423,6 +430,35 @@ _ui_ux = {
 }
 
 _view_mode = "list"  # list, grid, or carousel
+_wallpaper_path = None  # current wallpaper image path
+_wallpaper_image = None  # cached PIL Image object
+
+def _load_wallpaper(path: str):
+    """Load and cache wallpaper image, resize to 128x128."""
+    global _wallpaper_image, _wallpaper_path
+    if not path or not os.path.isfile(path):
+        _wallpaper_image = None
+        _wallpaper_path = None
+        return False
+    try:
+        img = Image.open(path)
+        img = img.resize((128, 128), Image.Resampling.LANCZOS)
+        _wallpaper_image = img
+        _wallpaper_path = path
+        return True
+    except Exception as e:
+        print(f"[UI] Failed to load wallpaper: {e}")
+        _wallpaper_image = None
+        _wallpaper_path = None
+        return False
+
+def _draw_wallpaper_background():
+    """Draw wallpaper as background if loaded."""
+    if _wallpaper_image:
+        try:
+            image.paste(_wallpaper_image, (0, 0))
+        except Exception:
+            pass
 
 def _apply_ux_from_theme(preset: dict):
     _ui_ux["window_rows"] = int(preset.get("UX_WINDOW_ROWS", 7))
@@ -828,6 +864,25 @@ def _draw_row_selection(row_y, row_h):
         draw.line([(4, line_y), (123, line_y)], fill=color.selected_text, width=1)
     else:
         draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
+
+
+def GetMenu(inlist, duplicates=False):
+    """
+    Dispatcher function that routes to the correct view mode rendering function.
+    All menu calls should use this instead of GetMenuString directly.
+    """
+    mode_map = {
+        "list": GetMenuString,
+        "grid": GetMenuGrid,
+        "carousel": GetMenuCarousel,
+        "panel": GetMenuPanel,
+        "table": GetMenuTable,
+        "paged": GetMenuPaged,
+        "thumbnail": GetMenuThumbnail,
+        "vcarousel": GetMenuVerticalCarousel,
+    }
+    func = mode_map.get(_view_mode, GetMenuString)
+    return func(inlist, duplicates=duplicates)
 
 
 def GetMenuString(inlist, duplicates=False):
@@ -2250,7 +2305,7 @@ def OpenLockMenu() -> None:
             " Screensaver GIF",
             f" Random screensaver: {rand_lbl}",
         ]
-        sel = GetMenuString(opts)
+        sel = GetMenu(opts)
         if not sel: return
         s = sel.strip()
         if s == "Lock now":
@@ -2266,7 +2321,7 @@ def OpenLockMenu() -> None:
         elif s.startswith("Lock type"):
             prev = _lock_mode()
             labels = [" PIN", " Sequence"]
-            choice = GetMenuString(labels)
+            choice = GetMenu(labels)
             if not choice: continue
             new_mode = LOCK_MODE_SEQUENCE if "Sequence" in choice else LOCK_MODE_PIN
             if new_mode == prev: continue
@@ -2280,7 +2335,7 @@ def OpenLockMenu() -> None:
             _set_active_secret(require_current=_lock_has_secret())
         elif s.startswith("Auto-lock"):
             labels = [f" {lbl}" for _, lbl in LOCK_TIMEOUT_OPTIONS]
-            choice = GetMenuString(labels)
+            choice = GetMenu(labels)
             if not choice: continue
             for v, lbl in LOCK_TIMEOUT_OPTIONS:
                 if lbl in choice:
@@ -2860,7 +2915,7 @@ def do_network_scan():
     lines = [f"✔ {len(hosts)} host(s) found", f"  Net: {net}"]
     for h in hosts[:4]: lines.append(f"  {h['ip']}")
     if len(hosts)>4: lines.append(f"  +{len(hosts)-4} more")
-    GetMenuString(lines)
+    GetMenu(lines)
 
 
 # ── ARP helpers ────────────────────────────────────────────────────────────────
@@ -3337,7 +3392,7 @@ def do_dns_spoofing():
         Dialog_info("No phishing sites\nfound.", wait=True)
         return
     items = [f" {s}" for s in sites]
-    sel   = GetMenuString(items)
+    sel   = GetMenu(items)
     if not sel: return
     site  = sel.strip()
     if not YNDialog("DNS SPOOF", y="Yes", n="No", b=f"Spoof {site}?"):
@@ -3421,7 +3476,7 @@ def do_deauth_targeted():
         Dialog_info("No APs found.\nTry again.", wait=True)
         return
     items = [f" {e}  ch{c}" for b,c,e in aps]
-    sel   = GetMenuString(items)
+    sel   = GetMenu(items)
     if not sel: return
     bssid, ch, essid = aps[items.index(sel)]
     if not YNDialog("DEAUTH", y="Yes", n="No", b=f"{essid}\nch{ch}?"):
@@ -3469,7 +3524,7 @@ def do_handshake_targeted():
         Dialog_info("No APs found.", wait=True)
         return
     items = [f" {e}  ch{c}" for b,c,e in aps]
-    sel   = GetMenuString(items)
+    sel   = GetMenu(items)
     if not sel: return
     bssid, ch, essid = aps[items.index(sel)]
     if not YNDialog("HANDSHAKE", y="Yes", n="No", b=f"{essid}\nch{ch}?"):
@@ -3522,7 +3577,7 @@ def do_wifi_handshake_engine():
 
     networks = engine.get_networks_list()
     items = [f" {e[:20]:20} {b} ch{c}" for b, e, c, s in networks]
-    sel = GetMenuString(items)
+    sel = GetMenu(items)
     if not sel:
         engine.disable_monitor_mode()
         return
@@ -3569,7 +3624,7 @@ def do_wifi_pmkid_attack():
 
     networks = engine.get_networks_list()
     items = [f" {e[:20]:20} {b} ch{c}" for b, e, c, s in networks]
-    sel = GetMenuString(items)
+    sel = GetMenu(items)
     if not sel:
         engine.disable_monitor_mode()
         return
@@ -3874,81 +3929,22 @@ class KTOxMenu:
             return
 
         labels = [item[0] for item in items]
-        sel    = 0
-        WINDOW = 7
+        sel_result = GetMenu(labels, duplicates=True)
 
-        while True:
-            total  = len(labels)
-            offset = max(0, min(sel-2, total-WINDOW))
-            window = labels[offset:offset+WINDOW]
+        if not sel_result:
+            return
 
-            with draw_lock:
-                _draw_toolbar()
-                color.DrawMenuBackground()
-                color.DrawBorder()
-                # ── Menu title strip ─────────────────────────────────────
-                _titles = {
-                    "home": "▐ KTOx_Pi ▌", "net":    "Network",
-                    "off":  "Offensive",    "wifi":   "WiFi Engine",
-                    "mitm": "MITM & Spoof", "resp":   "Responder",
-                    "purple":"Purple Team", "sys":    "System",
-                    "pay":  "Payloads",
-                }
-                _t = _titles.get(key, key.upper())
-                draw.rectangle([3, 13, 125, 24], fill=color.title_bg)
-                _centered(_t[:18], 13, font=small_font, fill=color.border)
-                draw.line([(3, 24), (125, 24)], fill=color.border, width=1)
-                _ST = 26   # items start-y
-                _RH = 13   # row height
-                for i, label in enumerate(window):
-                    is_sel = (i == sel - offset)
-                    row_y  = _ST + _RH * i
-                    if is_sel:
-                        draw.rectangle([3, row_y, 124, row_y + 12],
-                                       fill=color.select)
-                    fill = color.selected_text if is_sel else color.text
-                    icon = _icon_for(label)
-                    if icon:
-                        draw.text((5,  row_y + 1), icon, font=icon_font, fill=fill)
-                        t = _truncate(label.strip(), 92)
-                        draw.text((23, row_y + 1), t,    font=text_font, fill=fill)
-                    else:
-                        t = _truncate(label.strip(), 108)
-                        draw.text((6,  row_y + 1), t,    font=text_font, fill=fill)
-                # ── Scroll pip ───────────────────────────────────────────
-                if len(labels) > WINDOW:
-                    avail = _RH * WINDOW
-                    pip_h = max(6, int(WINDOW / len(labels) * avail))
-                    pip_y = _ST + int(offset / max(1, len(labels) - WINDOW) * (avail - pip_h))
-                    draw.rectangle([125, pip_y, 127, pip_y + pip_h],
-                                   fill=color.border)
+        sel, _ = sel_result
+        self.select = sel
+        action = items[sel][1]
 
-            time.sleep(0.08)
-            btn = getButton(timeout=0.5)
-
-            if btn is None:                                continue
-            elif btn == "KEY_DOWN_PIN":                    sel = (sel + 1) % len(labels)
-            elif btn == "KEY_UP_PIN":                      sel = (sel - 1) % len(labels)
-            elif btn in ("KEY_PRESS_PIN", "KEY_RIGHT_PIN"):
-                self.select = sel
-                action = items[sel][1]
-                if isinstance(action, str):
-                    saved = self.which
-                    self.which = action
-                    self.navigate(action)
-                    self.which = saved
-                elif callable(action):
-                    action()
-            elif btn in ("KEY_LEFT_PIN", "KEY1_PIN"):      return
-            elif btn == "KEY2_PIN":
-                self.which = "home"
-                return
-            elif btn == "KEY3_PIN":
-                if ktox_state.get("running"):
-                    ktox_state["running"] = None
-                    Dialog_info("Stopped.", wait=False, timeout=1)
-
-    
+        if isinstance(action, str):
+            saved      = self.which
+            self.which = action
+            self.navigate(action)
+            self.which = saved
+        elif callable(action):
+            action()
     def _nav_scan(self):
         exec_payload("Navarro/navarro_scan.py")
     def _nav_ports(self):
@@ -4026,13 +4022,13 @@ class KTOxMenu:
             return
         rc, out = _run(["ping","-c","4","-W","1",gw], timeout=10)
         lines = [f" GW: {gw}"] + [f" {l}" for l in out.splitlines()[-4:]]
-        GetMenuString(lines)
+        GetMenu(lines)
 
     def _net_info(self):
         ip  = get_ip()
         gw  = ktox_state["gateway"]
         ifc = ktox_state["iface"]
-        GetMenuString([
+        GetMenu([
             f" IP:    {ip}",
             f" GW:    {gw}",
             f" IF:    {ifc}",
@@ -4407,7 +4403,7 @@ class KTOxMenu:
         if not ifaces:
             Dialog_info("No WiFi adapters!", wait=True)
             return
-        sel = GetMenuString([f" {i}" for i in ifaces])
+        sel = GetMenu([f" {i}" for i in ifaces])
         if sel:
             ktox_state["wifi_iface"] = sel.strip()
             Dialog_info(f"Adapter:\n{sel.strip()}", wait=True)
@@ -4423,13 +4419,13 @@ class KTOxMenu:
         if not files:
             Dialog_info("No log files yet.", wait=True)
             return
-        sel = GetMenuString([f" {f.name[:22]}" for f in files])
+        sel = GetMenu([f" {f.name[:22]}" for f in files])
         if not sel: return
         fname = sel.strip()
         match = [f for f in files if f.name == fname]
         if match:
             lines = match[0].read_text(errors="ignore").splitlines()
-            GetMenuString([f" {l[:24]}" for l in lines[:50]])
+            GetMenu([f" {l[:24]}" for l in lines[:50]])
 
     # ── Purple Team ───────────────────────────────────────────────────────────
 
@@ -4448,7 +4444,7 @@ class KTOxMenu:
                 ip  = h.get("ip",h[0])  if isinstance(h,dict) else h[0]
                 if mac and mac not in known:     issues.append(f"! ROGUE {ip}")
                 elif mac and known.get(mac) != ip: issues.append(f"! MOVED {mac[:11]}")
-            if issues: GetMenuString(issues)
+            if issues: GetMenu(issues)
             else:      Dialog_info(f"✔ Clean!\n{len(current)} hosts match.", wait=True)
         except Exception as e:
             Dialog_info(f"Error:\n{str(e)[:28]}", wait=True)
@@ -4660,7 +4656,7 @@ class KTOxMenu:
 
     def _webui_status(self):
         ip = get_ip()
-        GetMenuString([
+        GetMenu([
             f" WebUI:  http://{ip}:8080",
             f" WS:     ws://{ip}:8765",
             f" Frame:  /dev/shm/ktox_last.jpg",
@@ -4676,7 +4672,7 @@ class KTOxMenu:
     def _sysinfo(self):
         rc, kern = _run(["uname","-r"])
         rc2, up  = _run(["uptime","-p"])
-        GetMenuString([
+        GetMenu([
             f" KTOx_Pi v{VERSION}",
             f" Kernel: {kern.strip()[:18]}",
             f" {up.strip()[:22]}",
@@ -4691,9 +4687,10 @@ class KTOxMenu:
                 " Theme Presets",
                 " Custom Colors",
                 " View Mode",
+                " Wallpaper",
                 " Return to Default",
             ]
-            choice = GetMenuString(menu)
+            choice = GetMenu(menu)
             if not choice:
                 return
             s = choice.strip()
@@ -4703,6 +4700,8 @@ class KTOxMenu:
                 self._custom_color_picker_menu()
             elif s == "View Mode":
                 self._view_mode_menu()
+            elif s == "Wallpaper":
+                self._wallpaper_menu()
             elif s == "Return to Default":
                 if YNDialog("RESET THEME", y="Yes", n="No",
                            b="Reset to\nKTOx_Pi\nClassic?"):
@@ -4715,7 +4714,7 @@ class KTOxMenu:
         for key in keys:
             mark = "✔" if key == color.current_theme else " "
             labels.append(f" {mark} {UI_THEMES[key]['label']}")
-        sel = GetMenuString(labels, duplicates=True)
+        sel = GetMenu(labels, duplicates=True)
         if not sel:
             return
         idx, _ = sel
@@ -4744,7 +4743,7 @@ class KTOxMenu:
         for mode in modes:
             mark = "✔" if mode == _view_mode else " "
             labels.append(f" {mark} {mode_names[mode]}")
-        sel = GetMenuString(labels, duplicates=True)
+        sel = GetMenu(labels, duplicates=True)
         if not sel:
             return
         idx, _ = sel
@@ -4765,6 +4764,67 @@ class KTOxMenu:
             Path(path).write_text(json.dumps(data, indent=2))
         except Exception as e:
             print(f"[UI] save view mode failed: {e}")
+
+    def _wallpaper_menu(self):
+        """Select wallpaper from loot directory."""
+        menu_items = [" No Wallpaper"]
+        wallpaper_files = []
+
+        # Check for default logo in install path
+        logo_path = INSTALL_PATH + "ktox_logo.bmp"
+        if os.path.isfile(logo_path):
+            menu_items.insert(0, f" ⭐ Default Logo")
+            wallpaper_files.insert(0, logo_path)
+
+        # Scan loot directory for image files
+        loot_dir = Path(LOOT_DIR)
+        if loot_dir.exists():
+            for ext in ['*.bmp', '*.png', '*.jpg', '*.jpeg', '*.gif']:
+                for img_file in loot_dir.glob(ext.lower()):
+                    menu_items.append(f" {img_file.name}")
+                    wallpaper_files.append(str(img_file))
+                for img_file in loot_dir.glob(ext.upper()):
+                    if img_file not in wallpaper_files:
+                        menu_items.append(f" {img_file.name}")
+                        wallpaper_files.append(str(img_file))
+
+        sel = GetMenu(menu_items, duplicates=True)
+        if not sel:
+            return
+
+        idx, _ = sel
+
+        if idx == 0 and "No Wallpaper" in menu_items[0]:
+            # Clear wallpaper
+            global _wallpaper_image, _wallpaper_path
+            _wallpaper_image = None
+            _wallpaper_path = None
+            self._save_wallpaper(None)
+            Dialog_info("Wallpaper\nremoved.", wait=False, timeout=1)
+        elif wallpaper_files and idx < len(wallpaper_files):
+            # Load selected wallpaper
+            wp_path = wallpaper_files[idx] if idx < len(wallpaper_files) else wallpaper_files[0]
+            if _load_wallpaper(wp_path):
+                self._save_wallpaper(wp_path)
+                Dialog_info("Wallpaper\nloaded.", wait=False, timeout=1)
+            else:
+                Dialog_info("Failed to\nload image.", wait=True)
+
+    def _save_wallpaper(self, path: str):
+        """Persist wallpaper path to config file."""
+        try:
+            config_path = default.config_file
+            try:
+                data = json.loads(Path(config_path).read_text())
+            except Exception:
+                data = {}
+            if path:
+                data.setdefault("UI", {})["WALLPAPER"] = path
+            else:
+                data.setdefault("UI", {}).pop("WALLPAPER", None)
+            Path(config_path).write_text(json.dumps(data, indent=2))
+        except Exception as e:
+            print(f"[UI] save wallpaper failed: {e}")
 
     def _pick_color(self, initial: str, title: str):
         """Interactive RGB color picker. Returns hex string or None."""
@@ -4848,7 +4908,7 @@ class KTOxMenu:
             items += [" Save & Apply"]
             items += [" Back"]
 
-            sel = GetMenuString(items, duplicates=True)
+            sel = GetMenu(items, duplicates=True)
             if not sel:
                 return
 
@@ -4899,7 +4959,7 @@ class KTOxMenu:
         else:
             lines = [" Discord: not set.",
                      " Edit:", " discord_webhook.txt"]
-        GetMenuString(lines)
+        GetMenu(lines)
 
     def _reboot(self):
         if YNDialog("REBOOT", y="Yes", n="No", b="Reboot device?"):
@@ -4922,14 +4982,14 @@ class KTOxMenu:
             Dialog_info("No loot yet!", wait=True)
             return
         items = [f" {f.name[:22]}" for f in files[:30]]
-        sel   = GetMenuString(items)
+        sel   = GetMenu(items)
         if not sel: return
         fname = sel.strip()
         match = [f for f in files if f.name == fname]
         if not match: return
         try:
             lines = match[0].read_text(errors="ignore").splitlines()
-            GetMenuString([f" {l[:24]}" for l in lines[:60]])
+            GetMenu([f" {l[:24]}" for l in lines[:60]])
         except Exception:
             Dialog_info("Can't read file.", wait=True)
 
