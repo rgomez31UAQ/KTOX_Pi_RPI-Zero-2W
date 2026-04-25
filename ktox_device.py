@@ -114,9 +114,11 @@ draw  = None
 text_font  = None
 small_font = None
 icon_font  = None
+medium_icon_font = None
+large_icon_font = None
 
 def _load_fonts():
-    global text_font, small_font, icon_font
+    global text_font, small_font, icon_font, medium_icon_font, large_icon_font
     MONO_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
     MONO      = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
     FA        = "/usr/share/fonts/truetype/fontawesome/fa-solid-900.ttf"
@@ -126,6 +128,8 @@ def _load_fonts():
     text_font  = _f(MONO_BOLD, 9)
     small_font = _f(MONO,      8)
     icon_font  = _f(FA,       12) if os.path.exists(FA) else None
+    medium_icon_font = _f(FA,  20) if os.path.exists(FA) else None
+    large_icon_font = _f(FA,   32) if os.path.exists(FA) else None
 
 # ── Runtime state ──────────────────────────────────────────────────────────────
 
@@ -470,7 +474,7 @@ def _apply_ux_from_theme(preset: dict):
     _ui_ux["cyber_bars"] = bool(preset.get("UX_CYBER_BARS", False))
 
 def _ux_window_rows():
-    return max(5, min(8, int(_ui_ux.get("window_rows", 7))))
+    return max(5, min(8, int(_ui_ux.get("window_rows", 8))))
 
 
 def _save_ui_theme(theme_name: str):
@@ -1006,7 +1010,7 @@ def RenderMenuWindowOnce(inlist, selected=0):
 
 def GetMenuGrid(inlist, duplicates=False):
     """
-    2-column grid layout (8 items visible: 4 rows × 2 cols).
+    2-column grid layout with large centered icons and labels.
     Returns selected label string, or "" on back.
     """
     if not inlist:
@@ -1019,10 +1023,10 @@ def GetMenuGrid(inlist, duplicates=False):
     COLS = 2
     ROWS = 4
     ITEMS_PER_VIEW = COLS * ROWS
-    CELL_W = 60
-    CELL_H = 25
-    START_X = 8
-    START_Y = 20
+    CELL_W = 64
+    CELL_H = 27
+    START_X = 0
+    START_Y = 14
 
     while True:
         offset = (index // ITEMS_PER_VIEW) * ITEMS_PER_VIEW
@@ -1043,21 +1047,21 @@ def GetMenuGrid(inlist, duplicates=False):
                 sel = (offset + i == index)
 
                 if sel:
-                    draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
-                                 fill=color.select, outline=color.border, width=1)
+                    draw.rectangle([x, y, x + CELL_W, y + CELL_H],
+                                 fill=color.select, outline=color.border, width=2)
                 else:
-                    draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
+                    draw.rectangle([x, y, x + CELL_W, y + CELL_H],
                                  outline=color.border, width=1)
 
                 fill = color.selected_text if sel else color.text
                 icon = _icon_for(txt)
-                if icon:
-                    draw.text((x + 3, y + 3), icon, font=icon_font, fill=fill)
-                    t = _truncate(txt.strip(), 25)
-                    draw.text((x + 3, y + 15), t, font=small_font, fill=fill)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((x + CELL_W // 2, y + 8), icon, font=medium_icon_font, fill=fill, anchor="mm")
+                    t = _truncate(txt.strip(), 10)
+                    draw.text((x + CELL_W // 2, y + 20), t, font=small_font, fill=fill, anchor="mm")
                 else:
-                    t = _truncate(txt.strip(), 30)
-                    draw.text((x + 3, y + 8), t, font=small_font, fill=fill)
+                    t = _truncate(txt.strip(), 12)
+                    draw.text((x + CELL_W // 2, y + 13), t, font=text_font, fill=fill, anchor="mm")
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -1107,12 +1111,12 @@ def GetMenuCarousel(inlist, duplicates=False):
 
             icon = _icon_for(txt)
             if icon and _ui_ux.get("show_icons", True):
-                draw.text((30, 35), icon, font=icon_font, fill=color.selected_text)
+                draw.text((64, 50), icon, font=large_icon_font, fill=color.selected_text, anchor="mm")
                 display_txt = _truncate(txt.strip(), 80)
-                draw.text((8, 95), display_txt, font=text_font, fill=color.text)
+                draw.text((64, 100), display_txt, font=text_font, fill=color.text, anchor="mm")
             else:
                 display_txt = _truncate(txt.strip(), 100)
-                draw.text((8, 60), display_txt, font=icon_font, fill=color.selected_text)
+                draw.text((64, 60), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
 
             if total > 1:
                 if index > 0:
@@ -1460,13 +1464,13 @@ def GetMenuThumbnail(inlist, duplicates=False):
                     text_fill = color.text
 
                 icon = _icon_for(txt)
-                if icon:
-                    draw.text((x + 8, y + 5), icon, font=icon_font, fill=icon_fill)
-                    label = _truncate(txt.strip(), 30)
-                    draw.text((x + 3, y + 32), label, font=small_font, fill=text_fill)
+                if icon and _ui_ux.get("show_icons", True):
+                    draw.text((x + 31, y + 12), icon, font=medium_icon_font, fill=icon_fill, anchor="mm")
+                    label = _truncate(txt.strip(), 15)
+                    draw.text((x + 31, y + 38), label, font=small_font, fill=text_fill, anchor="mm")
                 else:
-                    label = _truncate(txt.strip(), 25)
-                    draw.text((x + 3, y + 20), label, font=small_font, fill=text_fill)
+                    label = _truncate(txt.strip(), 20)
+                    draw.text((x + 31, y + 25), label, font=text_font, fill=text_fill, anchor="mm")
 
         time.sleep(0.08)
         btn = getButton(timeout=0.5)
@@ -1515,13 +1519,13 @@ def GetMenuVerticalCarousel(inlist, duplicates=False):
             txt = raw if not duplicates else raw.split("#", 1)[1]
 
             icon = _icon_for(txt)
-            if icon:
-                draw.text((30, 35), icon, font=icon_font, fill=color.selected_text)
+            if icon and _ui_ux.get("show_icons", True):
+                draw.text((64, 50), icon, font=large_icon_font, fill=color.selected_text, anchor="mm")
                 display_txt = _truncate(txt.strip(), 80)
-                draw.text((8, 95), display_txt, font=text_font, fill=color.text)
+                draw.text((64, 100), display_txt, font=text_font, fill=color.text, anchor="mm")
             else:
                 display_txt = _truncate(txt.strip(), 100)
-                draw.text((8, 60), display_txt, font=icon_font, fill=color.selected_text)
+                draw.text((64, 60), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
 
             if total > 1:
                 if index > 0:
