@@ -7,6 +7,7 @@ Checks:
 2) `partial(exec_payload, "...")` and `exec_payload("...")` literal paths exist.
 3) `self.<method>` menu call targets exist on the owning class.
 4) Bare function-name menu targets exist in module scope (defined or imported).
+5) Files do not contain unresolved merge conflict markers.
 """
 
 from __future__ import annotations
@@ -89,6 +90,11 @@ def _payload_refs_by_regex(text: str) -> set[str]:
 def validate_file(path: Path) -> list[str]:
     errors: list[str] = []
     src = path.read_text(errors="ignore")
+
+    # Catch unresolved merge conflict markers early.
+    for i, line in enumerate(src.splitlines(), start=1):
+        if line.startswith(("<<<<<<<", "=======", ">>>>>>>")):
+            errors.append(f"{path}:{i}: unresolved merge conflict marker found")
     tree = ast.parse(src, filename=str(path))
     symbols = _defined_symbols(tree)
     class_methods = _class_methods(tree)
