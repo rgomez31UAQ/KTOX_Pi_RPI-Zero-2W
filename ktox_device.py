@@ -4690,7 +4690,7 @@ class KTOxMenu:
                 " Wallpaper",
                 " Return to Default",
             ]
-            choice = GetMenu(menu)
+            choice = GetMenuString(menu)
             if not choice:
                 return
             s = choice.strip()
@@ -4714,7 +4714,7 @@ class KTOxMenu:
         for key in keys:
             mark = "✔" if key == color.current_theme else " "
             labels.append(f" {mark} {UI_THEMES[key]['label']}")
-        sel = GetMenu(labels, duplicates=True)
+        sel = GetMenuString(labels, duplicates=True)
         if not sel:
             return
         idx, _ = sel
@@ -4743,7 +4743,7 @@ class KTOxMenu:
         for mode in modes:
             mark = "✔" if mode == _view_mode else " "
             labels.append(f" {mark} {mode_names[mode]}")
-        sel = GetMenu(labels, duplicates=True)
+        sel = GetMenuString(labels, duplicates=True)
         if not sel:
             return
         idx, _ = sel
@@ -4788,7 +4788,7 @@ class KTOxMenu:
                         menu_items.append(f" {img_file.name}")
                         wallpaper_files.append(str(img_file))
 
-        sel = GetMenu(menu_items, duplicates=True)
+        sel = GetMenuString(menu_items, duplicates=True)
         if not sel:
             return
 
@@ -4908,7 +4908,7 @@ class KTOxMenu:
             items += [" Save & Apply"]
             items += [" Back"]
 
-            sel = GetMenu(items, duplicates=True)
+            sel = GetMenuString(items, duplicates=True)
             if not sel:
                 return
 
