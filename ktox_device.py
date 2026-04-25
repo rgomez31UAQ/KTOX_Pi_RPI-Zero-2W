@@ -214,6 +214,7 @@ class ColorScheme:
         return True
 
     def load_from_file(self):
+        global _view_mode
         try:
             data = json.loads(Path(default.config_file).read_text())
             requested = str(data.get("UI", {}).get("THEME", "")).strip()
@@ -249,6 +250,11 @@ class ColorScheme:
             else:
                 # Fallback to ktox_red
                 self.apply_theme("ktox_red", persist=False)
+
+            # Load view mode preference
+            view_mode = str(data.get("UI", {}).get("VIEW_MODE", "list")).strip()
+            if view_mode in ("list", "grid", "carousel"):
+                _view_mode = view_mode
 
             # Load lock config and screensaver path
             _lock_load_from_config(data)
@@ -4405,9 +4411,23 @@ class KTOxMenu:
             return
         idx, _ = sel
         _view_mode = modes[idx]
+        self._save_view_mode(_view_mode)
         mode_names = {"list": "List", "grid": "Grid", "carousel": "Carousel"}
         Dialog_info(f"View Mode:\n{mode_names[_view_mode]}",
                    wait=False, timeout=1)
+
+    def _save_view_mode(self, mode: str):
+        """Persist view mode to config file."""
+        try:
+            path = default.config_file
+            try:
+                data = json.loads(Path(path).read_text())
+            except Exception:
+                data = {}
+            data.setdefault("UI", {})["VIEW_MODE"] = mode
+            Path(path).write_text(json.dumps(data, indent=2))
+        except Exception as e:
+            print(f"[UI] save view mode failed: {e}")
 
     def _pick_color(self, initial: str, title: str):
         """Interactive RGB color picker. Returns hex string or None."""
