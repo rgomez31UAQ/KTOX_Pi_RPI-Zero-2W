@@ -192,6 +192,8 @@ class ColorScheme:
         draw.line([(0,12),(128,12)],    fill=self.border, width=5)
 
     def DrawMenuBackground(self):
+        if _wallpaper_image:
+            _draw_wallpaper_background()
         draw.rectangle((3, 14, 124, 124), fill=self.background)
 
     def apply_theme(self, name, persist=True):
