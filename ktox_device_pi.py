@@ -1099,9 +1099,11 @@ def _enter_pin(title, prompt, allow_cancel=True) -> "str | None":
             elif btn == "KEY1_PIN":
                 if entered: entered.pop()
                 hint = prompt
+            elif btn == "KEY2_PIN":
+                if allow_cancel: return None
             elif btn == "KEY3_PIN":
                 if allow_cancel: return None
-            elif btn in ("KEY2_PIN", "KEY_PRESS_PIN"):
+            elif btn == "KEY_PRESS_PIN":
                 key = _KEYPAD[row][col]
                 if key == "C":
                     if entered: entered.pop()
