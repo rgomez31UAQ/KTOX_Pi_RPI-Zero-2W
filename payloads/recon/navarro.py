@@ -57,6 +57,7 @@ FONT_SMALL_SIZE = 9
 FONT_BIG_SIZE = 11
 
 NAVARRO_PATHS = [
+    os.path.join(os.path.dirname(__file__), "navarro_engine.py"),
     "/root/KTOx/Navarro/navarro.py",
     "/home/ktox/Navarro/navarro.py",
     "/root/Navarro/navarro.py",
@@ -627,7 +628,11 @@ KB_PAGES = [
 
 
 def keyboard_input(initial: str) -> str:
-    kb = DarkSecKeyboard(width=W, height=H, lcd=LCD, gpio_pins=PINS, gpio_module=GPIO)
+    """
+    Use the shared DarkSec virtual keyboard used across KTOx payloads.
+    Falls back to the previous value when the keyboard is cancelled.
+    """
+    kb = DarkSecKeyboard(width=WIDTH, height=HEIGHT, lcd=LCD, gpio_pins=PINS, gpio_module=GPIO)
     result = kb.run()
     if result is None:
         return initial
