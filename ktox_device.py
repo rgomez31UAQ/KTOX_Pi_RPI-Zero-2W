@@ -256,6 +256,11 @@ class ColorScheme:
             if view_mode in ("list", "grid", "carousel", "panel", "table", "paged", "thumbnail", "vcarousel"):
                 _view_mode = view_mode
 
+            # Load wallpaper preference
+            wallpaper = data.get("UI", {}).get("WALLPAPER", "")
+            if wallpaper:
+                _load_wallpaper(wallpaper)
+
             # Load lock config and screensaver path
             _lock_load_from_config(data)
             p = data.get("PATHS", {}).get("SCREENSAVER_GIF", "")
@@ -423,6 +428,35 @@ _ui_ux = {
 }
 
 _view_mode = "list"  # list, grid, or carousel
+_wallpaper_path = None  # current wallpaper image path
+_wallpaper_image = None  # cached PIL Image object
+
+def _load_wallpaper(path: str):
+    """Load and cache wallpaper image, resize to 128x128."""
+    global _wallpaper_image, _wallpaper_path
+    if not path or not os.path.isfile(path):
+        _wallpaper_image = None
+        _wallpaper_path = None
+        return False
+    try:
+        img = Image.open(path)
+        img = img.resize((128, 128), Image.Resampling.LANCZOS)
+        _wallpaper_image = img
+        _wallpaper_path = path
+        return True
+    except Exception as e:
+        print(f"[UI] Failed to load wallpaper: {e}")
+        _wallpaper_image = None
+        _wallpaper_path = None
+        return False
+
+def _draw_wallpaper_background():
+    """Draw wallpaper as background if loaded."""
+    if _wallpaper_image:
+        try:
+            image.paste(_wallpaper_image, (0, 0))
+        except Exception:
+            pass
 
 def _apply_ux_from_theme(preset: dict):
     _ui_ux["window_rows"] = int(preset.get("UX_WINDOW_ROWS", 7))
@@ -4651,6 +4685,7 @@ class KTOxMenu:
                 " Theme Presets",
                 " Custom Colors",
                 " View Mode",
+                " Wallpaper",
                 " Return to Default",
             ]
             choice = GetMenu(menu)
@@ -4663,6 +4698,8 @@ class KTOxMenu:
                 self._custom_color_picker_menu()
             elif s == "View Mode":
                 self._view_mode_menu()
+            elif s == "Wallpaper":
+                self._wallpaper_menu()
             elif s == "Return to Default":
                 if YNDialog("RESET THEME", y="Yes", n="No",
                            b="Reset to\nKTOx_Pi\nClassic?"):
@@ -4725,6 +4762,67 @@ class KTOxMenu:
             Path(path).write_text(json.dumps(data, indent=2))
         except Exception as e:
             print(f"[UI] save view mode failed: {e}")
+
+    def _wallpaper_menu(self):
+        """Select wallpaper from loot directory."""
+        menu_items = [" No Wallpaper"]
+        wallpaper_files = []
+
+        # Check for default logo in install path
+        logo_path = INSTALL_PATH + "ktox_logo.bmp"
+        if os.path.isfile(logo_path):
+            menu_items.insert(0, f" ⭐ Default Logo")
+            wallpaper_files.insert(0, logo_path)
+
+        # Scan loot directory for image files
+        loot_dir = Path(LOOT_DIR)
+        if loot_dir.exists():
+            for ext in ['*.bmp', '*.png', '*.jpg', '*.jpeg', '*.gif']:
+                for img_file in loot_dir.glob(ext.lower()):
+                    menu_items.append(f" {img_file.name}")
+                    wallpaper_files.append(str(img_file))
+                for img_file in loot_dir.glob(ext.upper()):
+                    if img_file not in wallpaper_files:
+                        menu_items.append(f" {img_file.name}")
+                        wallpaper_files.append(str(img_file))
+
+        sel = GetMenu(menu_items, duplicates=True)
+        if not sel:
+            return
+
+        idx, _ = sel
+
+        if idx == 0 and "No Wallpaper" in menu_items[0]:
+            # Clear wallpaper
+            global _wallpaper_image, _wallpaper_path
+            _wallpaper_image = None
+            _wallpaper_path = None
+            self._save_wallpaper(None)
+            Dialog_info("Wallpaper\nremoved.", wait=False, timeout=1)
+        elif wallpaper_files and idx < len(wallpaper_files):
+            # Load selected wallpaper
+            wp_path = wallpaper_files[idx] if idx < len(wallpaper_files) else wallpaper_files[0]
+            if _load_wallpaper(wp_path):
+                self._save_wallpaper(wp_path)
+                Dialog_info("Wallpaper\nloaded.", wait=False, timeout=1)
+            else:
+                Dialog_info("Failed to\nload image.", wait=True)
+
+    def _save_wallpaper(self, path: str):
+        """Persist wallpaper path to config file."""
+        try:
+            config_path = default.config_file
+            try:
+                data = json.loads(Path(config_path).read_text())
+            except Exception:
+                data = {}
+            if path:
+                data.setdefault("UI", {})["WALLPAPER"] = path
+            else:
+                data.setdefault("UI", {}).pop("WALLPAPER", None)
+            Path(config_path).write_text(json.dumps(data, indent=2))
+        except Exception as e:
+            print(f"[UI] save wallpaper failed: {e}")
 
     def _pick_color(self, initial: str, title: str):
         """Interactive RGB color picker. Returns hex string or None."""
