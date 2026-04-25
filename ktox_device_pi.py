@@ -504,7 +504,8 @@ def YNDialog(a="Are you sure?", y="Yes", n="No", b=""):
         btn = getButton()
         if   btn in ("KEY_LEFT_PIN","KEY1_PIN"):    answer = True
         elif btn in ("KEY_RIGHT_PIN","KEY3_PIN"):   answer = False
-        elif btn in ("KEY_PRESS_PIN","KEY2_PIN"):   return answer
+        elif btn == "KEY_PRESS_PIN":                return answer
+        elif btn == "KEY2_PIN":                     return False
 
 
 def GetMenuString(inlist, duplicates=False):
@@ -1098,9 +1099,11 @@ def _enter_pin(title, prompt, allow_cancel=True) -> "str | None":
             elif btn == "KEY1_PIN":
                 if entered: entered.pop()
                 hint = prompt
+            elif btn == "KEY2_PIN":
+                if allow_cancel: return None
             elif btn == "KEY3_PIN":
                 if allow_cancel: return None
-            elif btn in ("KEY2_PIN", "KEY_PRESS_PIN"):
+            elif btn == "KEY_PRESS_PIN":
                 key = _KEYPAD[row][col]
                 if key == "C":
                     if entered: entered.pop()
@@ -2693,9 +2696,7 @@ class KTOxMenu:
                 elif callable(action):
                     action()
             elif btn in ("KEY_LEFT_PIN","KEY1_PIN"):       return
-            elif btn == "KEY2_PIN":
-                self.which = "home"
-                return
+            elif btn == "KEY2_PIN":                         return
             elif btn == "KEY3_PIN":
                 if ktox_state.get("running"):
                     ktox_state["running"] = None
@@ -2998,8 +2999,7 @@ class KTOxMenu:
                 elif btn in ("KEY_PRESS_PIN","KEY_RIGHT_PIN"):
                     items[sel][1]()
                 elif btn in ("KEY_LEFT_PIN","KEY1_PIN"):       return
-                elif btn == "KEY2_PIN":
-                    self.which = "home"; return
+                elif btn == "KEY2_PIN":                        return
             return
 
         # Standard navigate
@@ -3068,8 +3068,7 @@ class KTOxMenu:
                 elif callable(action):
                     action()
             elif btn in ("KEY_LEFT_PIN","KEY1_PIN"):       return
-            elif btn == "KEY2_PIN":
-                self.which = "home"; return
+            elif btn == "KEY2_PIN":                         return
             elif btn == "KEY3_PIN":
                 if ktox_state.get("running"):
                     ktox_state["running"] = None

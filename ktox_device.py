@@ -1547,18 +1547,18 @@ def GetMenuVerticalCarousel(inlist, duplicates=False):
 
             icon = _icon_for(txt)
             if icon and _ui_ux.get("show_icons", True):
-                draw.text((64, 50), icon, font=large_icon_font, fill=color.selected_text, anchor="mm")
+                draw.text((64, 45), icon, font=large_icon_font, fill=color.selected_text, anchor="mm")
                 display_txt = _truncate(txt.strip(), 80)
-                draw.text((64, 100), display_txt, font=text_font, fill=color.text, anchor="mm")
+                draw.text((64, 105), display_txt, font=text_font, fill=color.text, anchor="mm")
             else:
                 display_txt = _truncate(txt.strip(), 100)
                 draw.text((64, 60), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
 
             if total > 1:
                 if index > 0:
-                    draw.text((45, 25), "▲", font=text_font, fill=color.text)
+                    draw.text((5, 20), "▲", font=text_font, fill=color.border)
                 if index < total - 1:
-                    draw.text((45, 110), "▼", font=text_font, fill=color.text)
+                    draw.text((123, 115), "▼", font=text_font, fill=color.border)
 
             draw.text((55, 105), f"{index+1}/{total}", font=small_font, fill=color.text)
 
@@ -4873,9 +4873,9 @@ class KTOxMenu:
                 rgb[chan] = min(255, rgb[chan] + 1)
             elif btn == "KEY3_PIN":
                 rgb[chan] = max(0, rgb[chan] - 1)
-            elif btn in ("KEY_PRESS_PIN", "KEY2_PIN"):
+            elif btn == "KEY_PRESS_PIN":
                 return f"#{rgb[0]:02X}{rgb[1]:02X}{rgb[2]:02X}"
-            elif btn == "KEY_LEFT_PIN" and chan == 0:
+            elif btn in ("KEY2_PIN", "KEY_LEFT_PIN") and chan == 0:
                 return None
 
     def _custom_color_picker_menu(self):
