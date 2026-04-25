@@ -100,9 +100,11 @@ draw  = None
 text_font  = None
 small_font = None
 icon_font  = None
+medium_icon_font = None
+large_icon_font = None
 
 def _load_fonts():
-    global text_font, small_font, icon_font
+    global text_font, small_font, icon_font, medium_icon_font, large_icon_font
     MONO_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
     MONO      = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
     FA        = "/usr/share/fonts/truetype/fontawesome/fa-solid-900.ttf"
@@ -111,7 +113,9 @@ def _load_fonts():
         except: return ImageFont.load_default()
     text_font  = _f(MONO_BOLD, 9)
     small_font = _f(MONO,      8)
-    icon_font  = _f(FA,       11) if os.path.exists(FA) else _f(MONO, 9)
+    icon_font  = _f(FA,       12) if os.path.exists(FA) else None
+    medium_icon_font = _f(FA,  20) if os.path.exists(FA) else None
+    large_icon_font = _f(FA,   32) if os.path.exists(FA) else None
 
 # ── Runtime state ──────────────────────────────────────────────────────────────
 
@@ -2696,7 +2700,8 @@ class KTOxMenu:
                 elif callable(action):
                     action()
             elif btn in ("KEY_LEFT_PIN","KEY1_PIN"):       return
-            elif btn == "KEY2_PIN":                         return
+            elif btn == "KEY2_PIN":
+                self.which = "home"; return
             elif btn == "KEY3_PIN":
                 if ktox_state.get("running"):
                     ktox_state["running"] = None
@@ -3000,6 +3005,7 @@ class KTOxMenu:
                     items[sel][1]()
                 elif btn in ("KEY_LEFT_PIN","KEY1_PIN"):       return
                 elif btn == "KEY2_PIN":                        return
+                elif btn == "KEY3_PIN":                        return
             return
 
         # Standard navigate
@@ -3068,7 +3074,8 @@ class KTOxMenu:
                 elif callable(action):
                     action()
             elif btn in ("KEY_LEFT_PIN","KEY1_PIN"):       return
-            elif btn == "KEY2_PIN":                         return
+            elif btn == "KEY2_PIN":
+                self.which = "home"; return
             elif btn == "KEY3_PIN":
                 if ktox_state.get("running"):
                     ktox_state["running"] = None
