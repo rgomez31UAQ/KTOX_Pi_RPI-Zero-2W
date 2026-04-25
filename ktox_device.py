@@ -4355,6 +4355,7 @@ class KTOxMenu:
             menu = [
                 " Theme Presets",
                 " Custom Colors",
+                " View Mode",
                 " Return to Default",
             ]
             choice = GetMenuString(menu)
@@ -4365,6 +4366,8 @@ class KTOxMenu:
                 self._theme_presets_menu()
             elif s == "Custom Colors":
                 self._custom_color_picker_menu()
+            elif s == "View Mode":
+                self._view_mode_menu()
             elif s == "Return to Default":
                 if YNDialog("RESET THEME", y="Yes", n="No",
                            b="Reset to\nKTOx_Pi\nClassic?"):
@@ -4387,6 +4390,24 @@ class KTOxMenu:
                        wait=False, timeout=1)
         else:
             Dialog_info("Theme apply\nfailed.", wait=True)
+
+    def _view_mode_menu(self):
+        """Switch between list, grid, and carousel view modes."""
+        global _view_mode
+        modes = ["list", "grid", "carousel"]
+        labels = []
+        for mode in modes:
+            mark = "✔" if mode == _view_mode else " "
+            mode_label = mode.capitalize()
+            labels.append(f" {mark} {mode_label}")
+        sel = GetMenuString(labels, duplicates=True)
+        if not sel:
+            return
+        idx, _ = sel
+        _view_mode = modes[idx]
+        mode_names = {"list": "List", "grid": "Grid", "carousel": "Carousel"}
+        Dialog_info(f"View Mode:\n{mode_names[_view_mode]}",
+                   wait=False, timeout=1)
 
     def _pick_color(self, initial: str, title: str):
         """Interactive RGB color picker. Returns hex string or None."""
