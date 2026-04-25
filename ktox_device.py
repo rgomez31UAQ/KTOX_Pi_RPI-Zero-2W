@@ -4817,6 +4817,34 @@ class KTOxMenu:
         rc, out = _run(["bluetoothctl", *args], timeout=timeout)
         return rc, (out or "").strip()
 
+    def _bt_prepare_controller(self):
+        _run(["rfkill", "unblock", "bluetooth"], timeout=4)
+        _run(["systemctl", "start", "bluetooth"], timeout=6)
+        self._btctl("power", "on", timeout=8)
+        self._btctl("agent", "on", timeout=8)
+        self._btctl("default-agent", timeout=8)
+        self._btctl("pairable", "on", timeout=8)
+
+    def _bt_is_audio_device(self, mac: str) -> bool:
+        _, info = self._btctl("info", mac, timeout=10)
+        info_l = info.lower()
+        markers = (
+            "audio sink", "audio source", "headset", "headphones",
+            "a2dp", "avrcp", "handsfree",
+        )
+        return any(m in info_l for m in markers)
+
+    def _bt_scan_devices(self, seconds: int = 15, audio_only: bool = False):
+        self._bt_prepare_controller()
+        Dialog_info(f"Scanning BT...\n~{seconds}s", wait=False, timeout=1)
+        self._btctl("scan", "on", timeout=max(6, seconds + 1))
+        self._btctl("scan", "off", timeout=6)
+        _, out = self._btctl("devices", timeout=8)
+        devices = self._bt_parse_devices(out)
+        if audio_only and devices:
+            devices = [(m, n) for m, n in devices if self._bt_is_audio_device(m)]
+        return devices
+
     def _bt_device_action_menu(self, mac: str, name: str):
         while True:
             choice = GetMenuString([
@@ -4824,6 +4852,7 @@ class KTOxMenu:
                 f" {mac}",
                 " Pair + Trust + Connect",
                 " Connect",
+                " Trust Device",
                 " Disconnect",
                 " Forget Device",
                 " Device Info",
@@ -4838,8 +4867,12 @@ class KTOxMenu:
                 self._btctl("connect", mac, timeout=20)
                 Dialog_info(f"Pair/connect\nsent:\n{name[:18]}", wait=False, timeout=1)
             elif picked == "Connect":
+                self._btctl("trust", mac, timeout=10)
                 self._btctl("connect", mac, timeout=20)
                 Dialog_info(f"Connect sent:\n{name[:18]}", wait=False, timeout=1)
+            elif picked == "Trust Device":
+                self._btctl("trust", mac, timeout=10)
+                Dialog_info(f"Trusted:\n{name[:18]}", wait=False, timeout=1)
             elif picked == "Disconnect":
                 self._btctl("disconnect", mac, timeout=15)
                 Dialog_info(f"Disconnect:\n{name[:18]}", wait=False, timeout=1)
@@ -4855,29 +4888,41 @@ class KTOxMenu:
                 return
 
     def _bluetooth_manager(self):
-        _run(["rfkill", "unblock", "bluetooth"], timeout=4)
-        _run(["systemctl", "start", "bluetooth"], timeout=6)
+        self._bt_prepare_controller()
         while True:
             choice = GetMenuString([
                 " Scan Devices",
+                " Scan Audio Devices",
                 " Paired Devices",
                 " Connected Devices",
                 " Make Discoverable",
+                " Discoverable Off",
+                " Reset BT Stack",
+                " Controller Status",
                 " Back",
             ], title="Bluetooth")
             if not choice:
                 return
             picked = choice.strip()
             if picked == "Scan Devices":
-                Dialog_info("Scanning BT...\n~8 seconds", wait=False, timeout=1)
-                self._btctl("scan", "on", timeout=9)
-                _, out = self._btctl("devices", timeout=6)
-                devices = self._bt_parse_devices(out)
+                devices = self._bt_scan_devices(seconds=15, audio_only=False)
                 if not devices:
-                    Dialog_info("No BT devices\nfound.", wait=True)
+                    Dialog_info("No BT devices\nfound.\n(put device in\npair mode)", wait=True)
                     continue
                 labels = [f" {n[:14]} {m}" for m, n in devices]
                 sel = GetMenuString(labels, duplicates=True, title="BT Scan")
+                if not sel:
+                    continue
+                idx, _ = sel
+                mac, name = devices[idx]
+                self._bt_device_action_menu(mac, name)
+            elif picked == "Scan Audio Devices":
+                devices = self._bt_scan_devices(seconds=18, audio_only=True)
+                if not devices:
+                    Dialog_info("No audio BT\nfound.\nHeadphones must\nbe in pair mode.", wait=True)
+                    continue
+                labels = [f" {n[:14]} {m}" for m, n in devices]
+                sel = GetMenuString(labels, duplicates=True, title="BT Audio")
                 if not sel:
                     continue
                 idx, _ = sel
@@ -4913,6 +4958,17 @@ class KTOxMenu:
                 self._btctl("discoverable", "on", timeout=8)
                 self._btctl("pairable", "on", timeout=8)
                 Dialog_info("Bluetooth set:\nDiscoverable\nPairable", wait=False, timeout=1)
+            elif picked == "Discoverable Off":
+                self._btctl("discoverable", "off", timeout=8)
+                Dialog_info("Bluetooth:\nDiscoverable OFF", wait=False, timeout=1)
+            elif picked == "Reset BT Stack":
+                _run(["systemctl", "restart", "bluetooth"], timeout=10)
+                self._bt_prepare_controller()
+                Dialog_info("Bluetooth stack\nrestarted.", wait=False, timeout=1)
+            elif picked == "Controller Status":
+                _, show = self._btctl("show", timeout=8)
+                lines = [f" {ln[:22]}" for ln in show.splitlines()[:12]] or [" No controller info"]
+                GetMenu(lines)
             elif picked == "Back":
                 return
 
