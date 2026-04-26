@@ -1514,25 +1514,52 @@ def GetMenuPanel(inlist, duplicates=False):
             if total > 0:
                 raw = inlist[index]
                 txt = raw if not duplicates else raw.split("#", 1)[1]
-                # Draw main panel with animated border
+                # Draw main panel with animated border/fill
                 style = str(_ui_ux.get("select_style", "fill"))
-                draw.rectangle([36, 15, 125, 125], fill=color.background)
+                ts = time.time()
+
                 if style == "neon":
-                    ts = time.time()
                     phase = (math.sin(ts * 10.0) + 1.0) * 0.5
                     neon_width = max(1, int(1 + phase * 2))
+                    draw.rectangle([36, 15, 125, 125], fill=color.background)
                     draw.rectangle([36, 15, 125, 125], outline=color.border, width=neon_width)
                 elif style == "glow":
-                    ts = time.time()
                     phase = (math.sin(ts * 8.0) + 1.0) * 0.5
                     glow_intensity = int(150 * phase)
                     r = int(color.border[1:3], 16) + glow_intensity
                     g = int(color.border[3:5], 16) + glow_intensity
                     b = int(color.border[5:7], 16) + glow_intensity
                     glow_col = f"#{min(255, r):02X}{min(255, g):02X}{min(255, b):02X}"
+                    draw.rectangle([36, 15, 125, 125], fill=color.background)
+                    # Glow layers
+                    for i in range(3, 0, -1):
+                        alpha = int(80 * phase * (1 - i / 3.0))
+                        gx1 = max(35, 36 - i)
+                        gy1 = max(14, 15 - i)
+                        gx2 = min(128, 125 + i)
+                        gy2 = min(127, 125 + i)
+                        if gx1 < gx2 and gy1 < gy2:
+                            glow_outline = f"#{alpha:02X}{alpha:02X}{alpha:02X}"
+                            draw.rectangle([gx1, gy1, gx2, gy2], outline=glow_outline, width=1)
                     draw.rectangle([36, 15, 125, 125], outline=glow_col, width=2)
-                else:
-                    draw.rectangle([36, 15, 125, 125], outline=color.border, width=2)
+                elif style == "pulse":
+                    phase = _easing_smooth(ts * 2.5)
+                    blend_r = int(color.border[1:3], 16)
+                    blend_g = int(color.border[3:5], 16)
+                    blend_b = int(color.border[5:7], 16)
+                    bg_r = int(color.background[1:3], 16)
+                    bg_g = int(color.background[3:5], 16)
+                    bg_b = int(color.background[5:7], 16)
+                    strength = math.sin(ts * 5.0)
+                    factor = abs(strength)
+                    r = int(blend_r + (bg_r - blend_r) * factor)
+                    g = int(blend_g + (bg_g - blend_g) * factor)
+                    b = int(blend_b + (bg_b - blend_b) * factor)
+                    blend_col = f"#{r:02X}{g:02X}{b:02X}"
+                    draw.rectangle([36, 15, 125, 125], fill=color.background)
+                    draw.rectangle([36, 15, 125, 125], outline=blend_col, width=2)
+                else:  # fill or default
+                    draw.rectangle([36, 15, 125, 125], fill=color.background, outline=color.border, width=2)
 
                 icon = _icon_for(txt)
                 if icon and _ui_ux.get("show_icons", True):
