@@ -18,6 +18,10 @@ try:
         ecodes.KEY_DOWN:   "KEY_DOWN_PIN",
         ecodes.KEY_LEFT:   "KEY_LEFT_PIN",
         ecodes.KEY_RIGHT:  "KEY_RIGHT_PIN",
+        ecodes.KEY_SEMICOLON: "KEY_UP_PIN",      # M5Stack arrow up
+        ecodes.KEY_DOT:    "KEY_DOWN_PIN",       # M5Stack arrow down
+        ecodes.KEY_COMMA:  "KEY_LEFT_PIN",       # M5Stack arrow left
+        ecodes.KEY_SLASH:  "KEY_RIGHT_PIN",      # M5Stack arrow right
         ecodes.KEY_ENTER:  "KEY_PRESS_PIN",
         ecodes.KEY_SPACE:  "KEY_PRESS_PIN",
         ecodes.KEY_ESC:    "KEY1_PIN",
