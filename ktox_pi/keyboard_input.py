@@ -168,16 +168,16 @@ def _monitor_keyboards():
             time.sleep(0.05)
 
 
-def get_keyboard_button(timeout: float = 0.05) -> Optional[str]:
+def get_keyboard_button() -> Optional[str]:
     """
     Return next keyboard button name (e.g. 'KEY_UP_PIN') or None.
-    Blocks briefly to allow background thread to queue keyboard events.
-    timeout: seconds to wait (default 0.05 = 50ms, matches hardware debounce)
+    Non-blocking - just checks if there are queued events from the background thread.
+    (Matches the non-blocking behavior of rj_input.get_virtual_button())
     """
     if not HAS_EVDEV:
         return None
     try:
-        return _q.get(timeout=timeout)
+        return _q.get_nowait()
     except queue.Empty:
         return None
 
