@@ -193,34 +193,13 @@ def start_websocket_server():
         print(f"Failed to start WebSocket server: {e}")
         return False
 
-def start_ktox_device():
-    """Start ktox_device.py."""
-    global device_process
-
-    if device_process and is_process_running(device_process.pid):
-        return True
-
-    draw_screen("KTOx Device", ["Starting device...", "", "Please wait..."])
-
-    try:
-        device_process = subprocess.Popen(
-            ["python3", str(KTOX_DEVICE)],
-            cwd=KTOX_DIR,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            preexec_fn=os.setsid,
-        )
-
-        # Wait for device to start
-        for i in range(10):
-            time.sleep(0.5)
-            if is_process_running(device_process.pid):
-                return True
-
-        return False
-    except Exception as e:
-        print(f"Failed to start KTOx device: {e}")
-        return False
+def verify_frame_buffer():
+    """Verify KTOx device is writing frames."""
+    for i in range(10):
+        if FRAME_PATH.exists() and FRAME_PATH.stat().st_size > 1000:
+            return True
+        time.sleep(0.5)
+    return False
 
 def show_connection_info():
     """Display connection info on LCD."""
@@ -312,18 +291,14 @@ def monitor_loop():
 
     draw_screen("Setup", ["Initializing...", "", "Please wait..."])
 
-    # Start processes
+    # Start WebSocket server only
+    # KTOx device is already running (this payload is launched from it)
     if not start_websocket_server():
-        draw_screen("Error", ["WebSocket failed", "Check logs:"])
+        draw_screen("Error", ["WebSocket failed", "Check logs"])
         time.sleep(3)
         return
 
-    time.sleep(1)
-
-    if not start_ktox_device():
-        draw_screen("Error", ["KTOx Device failed", "Check logs"])
-        time.sleep(3)
-        return
+    time.sleep(2)
 
     # Show connection info
     save_pids()
