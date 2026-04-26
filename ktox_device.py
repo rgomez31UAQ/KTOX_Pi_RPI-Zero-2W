@@ -1505,11 +1505,31 @@ def GetMenuPanel(inlist, duplicates=False):
                 if sel_item:
                     _draw_row_selection(y - 1, 18, x1=5, x2=32, min_y=15, max_y=127)
 
+                # Animate selected icon on sidebar
                 icon = _icon_for(label)
+                icon_fill = fill
+                if sel_item:
+                    ts = time.time()
+                    style = str(_ui_ux.get("select_style", "fill"))
+                    if style == "glow":
+                        phase = (math.sin(ts * 8.0) + 1.0) * 0.5
+                        glow_intensity = int(80 * phase)
+                        r = int(icon_fill[1:3], 16) + glow_intensity
+                        g = int(icon_fill[3:5], 16) + glow_intensity
+                        b = int(icon_fill[5:7], 16) + glow_intensity
+                        icon_fill = f"#{min(255, r):02X}{min(255, g):02X}{min(255, b):02X}"
+                    elif style == "pulse":
+                        strength = math.sin(ts * 5.0)
+                        factor = abs(strength) * 0.4
+                        r = int(int(icon_fill[1:3], 16) * (1 - factor * 0.3))
+                        g = int(int(icon_fill[3:5], 16) * (1 - factor * 0.3))
+                        b = int(int(icon_fill[5:7], 16) * (1 - factor * 0.3))
+                        icon_fill = f"#{r:02X}{g:02X}{b:02X}"
+
                 if icon and _ui_ux.get("show_icons", True):
-                    draw.text((18, y + 8), icon, font=icon_font or small_font, fill=fill, anchor="mm")
+                    draw.text((18, y + 8), icon, font=icon_font or small_font, fill=icon_fill, anchor="mm")
                 else:
-                    draw.text((18, y + 8), (label.strip()[:1] or "•"), font=small_font, fill=fill, anchor="mm")
+                    draw.text((18, y + 8), (label.strip()[:1] or "•"), font=small_font, fill=icon_fill, anchor="mm")
 
             if total > 0:
                 raw = inlist[index]
@@ -1525,22 +1545,12 @@ def GetMenuPanel(inlist, duplicates=False):
                     draw.rectangle([36, 15, 125, 125], outline=color.border, width=neon_width)
                 elif style == "glow":
                     phase = (math.sin(ts * 8.0) + 1.0) * 0.5
+                    draw.rectangle([36, 15, 125, 125], fill=color.background)
                     glow_intensity = int(150 * phase)
                     r = int(color.border[1:3], 16) + glow_intensity
                     g = int(color.border[3:5], 16) + glow_intensity
                     b = int(color.border[5:7], 16) + glow_intensity
                     glow_col = f"#{min(255, r):02X}{min(255, g):02X}{min(255, b):02X}"
-                    draw.rectangle([36, 15, 125, 125], fill=color.background)
-                    # Glow layers
-                    for i in range(3, 0, -1):
-                        alpha = int(80 * phase * (1 - i / 3.0))
-                        gx1 = max(35, 36 - i)
-                        gy1 = max(14, 15 - i)
-                        gx2 = min(128, 125 + i)
-                        gy2 = min(127, 125 + i)
-                        if gx1 < gx2 and gy1 < gy2:
-                            glow_outline = f"#{alpha:02X}{alpha:02X}{alpha:02X}"
-                            draw.rectangle([gx1, gy1, gx2, gy2], outline=glow_outline, width=1)
                     draw.rectangle([36, 15, 125, 125], outline=glow_col, width=2)
                 elif style == "pulse":
                     phase = _easing_smooth(ts * 2.5)
@@ -1561,9 +1571,27 @@ def GetMenuPanel(inlist, duplicates=False):
                 else:  # fill or default
                     draw.rectangle([36, 15, 125, 125], fill=color.background, outline=color.border, width=2)
 
+                # Draw icons with animation
                 icon = _icon_for(txt)
                 if icon and _ui_ux.get("show_icons", True):
-                    draw.text((80, 66), icon, font=xlarge_icon_font or large_icon_font, fill=color.selected_text, anchor="mm")
+                    # Animate the large right icon
+                    icon_color = color.selected_text
+                    if style == "glow":
+                        phase = (math.sin(ts * 8.0) + 1.0) * 0.5
+                        glow_intensity = int(100 * phase)
+                        r = int(icon_color[1:3], 16) + glow_intensity
+                        g = int(icon_color[3:5], 16) + glow_intensity
+                        b = int(icon_color[5:7], 16) + glow_intensity
+                        icon_color = f"#{min(255, r):02X}{min(255, g):02X}{min(255, b):02X}"
+                    elif style == "pulse":
+                        strength = math.sin(ts * 5.0)
+                        factor = abs(strength) * 0.5
+                        r = int(int(color.selected_text[1:3], 16) * (1 - factor * 0.3))
+                        g = int(int(color.selected_text[3:5], 16) * (1 - factor * 0.3))
+                        b = int(int(color.selected_text[5:7], 16) * (1 - factor * 0.3))
+                        icon_color = f"#{r:02X}{g:02X}{b:02X}"
+
+                    draw.text((80, 66), icon, font=xlarge_icon_font or large_icon_font, fill=icon_color, anchor="mm")
                     display_txt = _truncate(txt.strip(), 82, font=text_font)
                     draw.text((80, 109), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
                 else:
