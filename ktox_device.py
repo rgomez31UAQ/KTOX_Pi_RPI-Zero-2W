@@ -988,7 +988,7 @@ def YNDialog(a="Are you sure?", y="Yes", n="No", b=""):
 
 
 def _easing_smooth(t):
-    """Smooth easing function (cubic ease-in-out)."""
+    """Fast, smooth easing function for prominent animations."""
     t = t % 1.0
     if t < 0.5:
         return 4 * t * t * t
@@ -997,76 +997,98 @@ def _easing_smooth(t):
         return 1 - 4 * t * t * t
 
 
-def _draw_row_selection(row_y, row_h):
-    """Draw menu row selection with enhanced animations matching theme style."""
+def _draw_row_selection(row_y, row_h, x1=3, x2=124, min_y=0, max_y=128):
+    """Draw menu row selection with PROMINENT, DYNAMIC animations.
+
+    Args:
+        row_y: Y position of the row
+        row_h: Height of the row
+        x1, x2: Left and right boundaries (default: 3, 124)
+        min_y: Minimum Y for glow expansion (prevents overlap with title)
+        max_y: Maximum Y boundary for clipping
+    """
     style = str(_ui_ux.get("select_style", "fill"))
     ts = time.time()
 
     if style == "outline":
-        # Pulsing outline effect
-        phase = (math.sin(ts * 4.0) + 1.0) * 0.5
-        outline_w = max(1, int(1 + phase * 1))
-        draw.rectangle([3, row_y, 124, row_y + row_h - 1], outline=color.select, width=outline_w)
+        # Pulsing outline - more prominent
+        phase = (math.sin(ts * 8.0) + 1.0) * 0.5  # Faster
+        outline_w = max(1, int(1 + phase * 3))    # Thicker pulse
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], outline=color.select, width=outline_w)
 
     elif style == "pulse":
-        # Enhanced smooth pulse with better easing
-        phase = _easing_smooth(ts * 1.2)  # Slower, smoother pulse
+        # PROMINENT color pulse effect
+        phase = _easing_smooth(ts * 2.5)  # Much faster
         blend_r = int(color.select[1:3], 16)
         blend_g = int(color.select[3:5], 16)
         blend_b = int(color.select[5:7], 16)
         bg_r = int(color.background[1:3], 16)
         bg_g = int(color.background[3:5], 16)
         bg_b = int(color.background[5:7], 16)
-        r = int(blend_r + (bg_r - blend_r) * (1 - phase))
-        g = int(blend_g + (bg_g - blend_g) * (1 - phase))
-        b = int(blend_b + (bg_b - blend_b) * (1 - phase))
+        # Inverted phase for stronger color variation
+        strength = math.sin(ts * 5.0)  # -1 to 1
+        factor = abs(strength)  # 0 to 1
+        r = int(blend_r + (bg_r - blend_r) * factor)
+        g = int(blend_g + (bg_g - blend_g) * factor)
+        b = int(blend_b + (bg_b - blend_b) * factor)
         blend_col = f"#{r:02X}{g:02X}{b:02X}"
-        draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=blend_col)
-        draw.rectangle([3, row_y, 124, row_y + row_h - 1], outline=color.border, width=1)
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], fill=blend_col)
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], outline=color.border, width=2)
 
     elif style == "scanline":
-        # Animated scanline sweep
-        draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
-        line_y = row_y + int((ts * 50) % max(1, row_h - 1))
-        draw.line([(4, line_y), (123, line_y)], fill=color.selected_text, width=1)
+        # Fast animated scanline sweep
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], fill=color.select)
+        line_y = row_y + int((ts * 120) % max(1, row_h - 1))  # Much faster
+        draw.line([(x1 + 1, line_y), (x2 - 1, line_y)], fill=color.selected_text, width=2)
 
     elif style == "glow":
-        # Glowing aura effect
-        phase = (math.sin(ts * 5.0) + 1.0) * 0.5
-        glow_intensity = int(100 + phase * 155)
+        # DRAMATIC glowing aura effect - with boundary safety
+        phase = (math.sin(ts * 8.0) + 1.0) * 0.5  # Faster
+        # Much more intense glow
+        glow_intensity = int(200 * phase)  # 0-200 intensity
         r = int(color.select[1:3], 16)
         g = int(color.select[3:5], 16)
         b = int(color.select[5:7], 16)
-        glow_col = f"#{min(255, r + glow_intensity // 2):02X}{min(255, g + glow_intensity // 2):02X}{min(255, b + glow_intensity // 2):02X}"
-        # Draw multiple layers for glow effect
-        for i in range(3, 0, -1):
-            alpha = int(255 * (1 - i / 3.0) * phase * 0.3)
-            draw.rectangle([3 - i, row_y - i, 124 + i, row_y + row_h - 1 + i],
-                         outline=f"#{alpha:02X}{alpha:02X}{alpha:02X}", width=1)
-        draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
-        draw.rectangle([3, row_y, 124, row_y + row_h - 1], outline=glow_col, width=2)
+        glow_col = f"#{min(255, r + glow_intensity):02X}{min(255, g + glow_intensity):02X}{min(255, b + glow_intensity):02X}"
+
+        # Draw expanding glow layers (respecting boundaries)
+        for i in range(4, 0, -1):
+            alpha_val = int(100 * phase * (1 - i / 4.0))
+            glow_rect_outline = f"#{alpha_val:02X}{alpha_val:02X}{alpha_val:02X}"
+            # Clip to screen boundaries AND respect min_y
+            gx1 = max(0, x1 - i * 2)
+            gy1 = max(min_y, row_y - i * 2)
+            gx2 = min(128, x2 + i * 2)
+            gy2 = min(max_y, row_y + row_h - 1 + i * 2)
+            if gx1 < gx2 and gy1 < gy2:
+                draw.rectangle([gx1, gy1, gx2, gy2], outline=glow_rect_outline, width=1)
+
+        # Core selection
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], fill=color.select)
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], outline=glow_col, width=3)
 
     elif style == "wave":
-        # Ripple wave effect
-        draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
-        wave_pos = int((ts * 60) % 122)
+        # DRAMATIC ripple wave effect
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], fill=color.select)
+        wave_pos = int((ts * 180) % (x2 - x1 - 2))  # Much faster
         for i in range(max(1, row_h - 2)):
-            offset = int(2 * math.sin((wave_pos + i * 5) / 20.0))
+            # Bigger wave amplitude
+            offset = int(4 * math.sin((wave_pos + i * 8) / 20.0))
             y = row_y + i + 1 + offset
             if 0 <= y < 128:
-                draw.point((wave_pos + 3, y), fill=color.selected_text)
+                draw.line([(x1 + 1, y), (x2 - 1, y)], fill=color.selected_text, width=1)
 
     elif style == "neon":
-        # Neon border pulse
-        phase = (math.sin(ts * 7.0) + 1.0) * 0.5
-        neon_width = max(1, int(1 + phase * 2))
-        draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
+        # DRAMATIC neon glow pulse
+        phase = (math.sin(ts * 10.0) + 1.0) * 0.5  # Very fast
+        neon_width = max(1, int(1 + phase * 4))     # Thicker pulse
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], fill=color.select)
         for i in range(neon_width):
-            draw.rectangle([3 + i, row_y + i, 124 - i, row_y + row_h - 1 - i],
+            draw.rectangle([x1 + i, row_y + i, x2 - i, row_y + row_h - 1 - i],
                          outline=color.border, width=1)
 
     else:  # "fill" or default
-        draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], fill=color.select)
 
 
 def _handle_menu_key3():
@@ -1132,7 +1154,7 @@ def GetMenuString(inlist, duplicates=False, title="Menu"):
                 sel   = (i == index - offset)
                 row_y = start_y + row_h * i
                 if sel:
-                    _draw_row_selection(row_y, row_h)
+                    _draw_row_selection(row_y, row_h, min_y=25)
                 fill = color.selected_text if sel else color.text
                 icon = _icon_for(txt)
                 if icon and _ui_ux.get("show_icons", True):
@@ -1241,7 +1263,7 @@ def GetMenuGrid(inlist, duplicates=False):
                 sel = (offset + i == index)
 
                 if sel:
-                    draw.rectangle([x, y, x + CELL_W, y + CELL_H], fill=color.select, outline=color.border, width=2)
+                    _draw_row_selection(y, CELL_H, x1=x, x2=x + CELL_W, min_y=15, max_y=127)
                 else:
                     draw.rectangle([x, y, x + CELL_W, y + CELL_H], fill=color.panel_bg, outline=color.border, width=1)
 
@@ -1308,7 +1330,25 @@ def GetMenuCarousel(inlist, duplicates=False):
             raw = inlist[index]
             txt = raw if not duplicates else raw.split("#", 1)[1]
 
-            draw.rectangle([3, 20, 124, 115], fill=color.panel_bg, outline=color.border, width=1)
+            # Draw carousel box with animated border
+            draw.rectangle([3, 20, 124, 115], fill=color.panel_bg)
+            style = str(_ui_ux.get("select_style", "fill"))
+            if style == "neon":
+                ts = time.time()
+                phase = (math.sin(ts * 10.0) + 1.0) * 0.5
+                neon_width = max(1, int(1 + phase * 2))
+                draw.rectangle([3, 20, 124, 115], outline=color.border, width=neon_width)
+            elif style == "glow":
+                ts = time.time()
+                phase = (math.sin(ts * 8.0) + 1.0) * 0.5
+                glow_intensity = int(150 * phase)
+                r = int(color.border[1:3], 16) + glow_intensity
+                g = int(color.border[3:5], 16) + glow_intensity
+                b = int(color.border[5:7], 16) + glow_intensity
+                glow_col = f"#{min(255, r):02X}{min(255, g):02X}{min(255, b):02X}"
+                draw.rectangle([3, 20, 124, 115], outline=glow_col, width=2)
+            else:
+                draw.rectangle([3, 20, 124, 115], outline=color.border, width=1)
 
             icon = _icon_for(txt)
             if icon and _ui_ux.get("show_icons", True):
@@ -1463,7 +1503,7 @@ def GetMenuPanel(inlist, duplicates=False):
                 sel_item = (item_idx == index)
                 fill = color.selected_text if sel_item else color.text
                 if sel_item:
-                    draw.rectangle([5, y - 1, 32, y + 17], fill=color.select, outline=color.border, width=1)
+                    _draw_row_selection(y - 1, 18, x1=5, x2=32, min_y=15, max_y=127)
 
                 icon = _icon_for(label)
                 if icon and _ui_ux.get("show_icons", True):
@@ -1474,7 +1514,52 @@ def GetMenuPanel(inlist, duplicates=False):
             if total > 0:
                 raw = inlist[index]
                 txt = raw if not duplicates else raw.split("#", 1)[1]
-                draw.rectangle([36, 15, 125, 125], outline=color.border, width=2, fill=color.background)
+                # Draw main panel with animated border/fill
+                style = str(_ui_ux.get("select_style", "fill"))
+                ts = time.time()
+
+                if style == "neon":
+                    phase = (math.sin(ts * 10.0) + 1.0) * 0.5
+                    neon_width = max(1, int(1 + phase * 2))
+                    draw.rectangle([36, 15, 125, 125], fill=color.background)
+                    draw.rectangle([36, 15, 125, 125], outline=color.border, width=neon_width)
+                elif style == "glow":
+                    phase = (math.sin(ts * 8.0) + 1.0) * 0.5
+                    glow_intensity = int(150 * phase)
+                    r = int(color.border[1:3], 16) + glow_intensity
+                    g = int(color.border[3:5], 16) + glow_intensity
+                    b = int(color.border[5:7], 16) + glow_intensity
+                    glow_col = f"#{min(255, r):02X}{min(255, g):02X}{min(255, b):02X}"
+                    draw.rectangle([36, 15, 125, 125], fill=color.background)
+                    # Glow layers
+                    for i in range(3, 0, -1):
+                        alpha = int(80 * phase * (1 - i / 3.0))
+                        gx1 = max(35, 36 - i)
+                        gy1 = max(14, 15 - i)
+                        gx2 = min(128, 125 + i)
+                        gy2 = min(127, 125 + i)
+                        if gx1 < gx2 and gy1 < gy2:
+                            glow_outline = f"#{alpha:02X}{alpha:02X}{alpha:02X}"
+                            draw.rectangle([gx1, gy1, gx2, gy2], outline=glow_outline, width=1)
+                    draw.rectangle([36, 15, 125, 125], outline=glow_col, width=2)
+                elif style == "pulse":
+                    phase = _easing_smooth(ts * 2.5)
+                    blend_r = int(color.border[1:3], 16)
+                    blend_g = int(color.border[3:5], 16)
+                    blend_b = int(color.border[5:7], 16)
+                    bg_r = int(color.background[1:3], 16)
+                    bg_g = int(color.background[3:5], 16)
+                    bg_b = int(color.background[5:7], 16)
+                    strength = math.sin(ts * 5.0)
+                    factor = abs(strength)
+                    r = int(blend_r + (bg_r - blend_r) * factor)
+                    g = int(blend_g + (bg_g - blend_g) * factor)
+                    b = int(blend_b + (bg_b - blend_b) * factor)
+                    blend_col = f"#{r:02X}{g:02X}{b:02X}"
+                    draw.rectangle([36, 15, 125, 125], fill=color.background)
+                    draw.rectangle([36, 15, 125, 125], outline=blend_col, width=2)
+                else:  # fill or default
+                    draw.rectangle([36, 15, 125, 125], fill=color.background, outline=color.border, width=2)
 
                 icon = _icon_for(txt)
                 if icon and _ui_ux.get("show_icons", True):
@@ -1543,7 +1628,7 @@ def GetMenuTable(inlist, duplicates=False):
                 sel = (offset + i == index)
 
                 if sel:
-                    draw.rectangle([x, y, 123, y + CELL_H - 2], fill=color.select, outline=color.border, width=1)
+                    _draw_row_selection(y, CELL_H - 2, x1=x, x2=123, min_y=15, max_y=127)
                     fill = color.selected_text
                 else:
                     draw.rectangle([x, y, 123, y + CELL_H - 2], outline=color.border, width=1)
@@ -1620,7 +1705,7 @@ def GetMenuPaged(inlist, duplicates=False):
                 sel = (page * ITEMS_PER_PAGE + i == index)
 
                 if sel:
-                    draw.rectangle([3, y, 125, y + ITEM_H - 2], fill=color.select, outline=color.border, width=1)
+                    _draw_row_selection(y, ITEM_H - 2, x1=3, x2=125, min_y=25, max_y=127)
                     fill = color.selected_text
                 else:
                     draw.rectangle([3, y, 125, y + ITEM_H - 2], outline=color.border, width=1)
@@ -1695,8 +1780,7 @@ def GetMenuThumbnail(inlist, duplicates=False):
                 sel = (offset + i == index)
 
                 if sel:
-                    draw.rectangle([x, y, x + CELL_W - 2, y + CELL_H - 2],
-                                 fill=color.select, outline=color.border, width=2)
+                    _draw_row_selection(y, CELL_H - 2, x1=x, x2=x + CELL_W - 2, min_y=15, max_y=127)
                     icon_fill = color.selected_text
                     text_fill = color.selected_text
                 else:
@@ -1758,7 +1842,25 @@ def GetMenuVerticalCarousel(inlist, duplicates=False):
             color.DrawMenuBackground()
             color.DrawBorder()
 
-            draw.rectangle([3, 20, 124, 115], fill=color.panel_bg, outline=color.border, width=1)
+            # Draw carousel box with animated border
+            draw.rectangle([3, 20, 124, 115], fill=color.panel_bg)
+            style = str(_ui_ux.get("select_style", "fill"))
+            if style == "neon":
+                ts = time.time()
+                phase = (math.sin(ts * 10.0) + 1.0) * 0.5
+                neon_width = max(1, int(1 + phase * 2))
+                draw.rectangle([3, 20, 124, 115], outline=color.border, width=neon_width)
+            elif style == "glow":
+                ts = time.time()
+                phase = (math.sin(ts * 8.0) + 1.0) * 0.5
+                glow_intensity = int(150 * phase)
+                r = int(color.border[1:3], 16) + glow_intensity
+                g = int(color.border[3:5], 16) + glow_intensity
+                b = int(color.border[5:7], 16) + glow_intensity
+                glow_col = f"#{min(255, r):02X}{min(255, g):02X}{min(255, b):02X}"
+                draw.rectangle([3, 20, 124, 115], outline=glow_col, width=2)
+            else:
+                draw.rectangle([3, 20, 124, 115], outline=color.border, width=1)
 
             raw = inlist[index]
             txt = raw if not duplicates else raw.split("#", 1)[1]
