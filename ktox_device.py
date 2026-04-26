@@ -3943,16 +3943,18 @@ _FA_ICONS: dict = {
     "Network Mgr":      "\uf6ff",   # fa-network-wired
     "Bluetooth Mgr":    "\uf294",   # fa-bluetooth-b
     "UI Theme":         "\uf53f",   # fa-palette
+    "Theme Presets":    "\uf53f",   # fa-palette
+    "User Themes":      "\uf0c0",   # fa-users
+    "Custom Colors":    "\uf576",   # fa-paint-brush
+    "Save as User Theme": "\uf0c7", # fa-save
+    "View Mode":        "\uf03a",   # fa-th
+    "Wallpaper":        "\uf03e",   # fa-image
+    "Return to Default": "\uf01e",  # fa-reply
     "Discord Status":   "\uf392",   # fa-discord
     "Discord Webhook":  "\uf392",   # fa-discord
     "Lock":             "\uf023",   # fa-lock
     "OTA Update":       "\uf021",   # fa-sync
-    "Theme Presets":    "\uf53f",   # fa-palette
-    "Custom Colors":    "\uf1fb",   # fa-paint-brush
-    "View Mode":        "\uf00a",   # fa-th
-    "Wallpaper":        "\uf03e",   # fa-image
     "No Wallpaper":     "\uf070",   # fa-eye-slash
-    "Return to Default":"\uf2ea",   # fa-undo
     "Save & Apply":     "\uf0c7",   # fa-save
     "Reboot":           "\uf2f9",   # fa-redo
     "Shutdown":         "\uf011",   # fa-power-off
@@ -5368,6 +5370,45 @@ class KTOxMenu:
                 return f"#{rgb[0]:02X}{rgb[1]:02X}{rgb[2]:02X}"
             elif btn in ("KEY2_PIN", "KEY_LEFT_PIN") and chan == 0:
                 return None
+
+    def _get_text_input(self, title="Enter Text", max_len=20, initial=""):
+        """Interactive text input using DarkSecKeyboard."""
+        if not HAS_HW or not LCD or not GPIO:
+            return None
+
+        try:
+            from payloads._darksec_keyboard import DarkSecKeyboard
+
+            # Map our PINS format to DarkSecKeyboard format
+            kb_pins = {
+                "UP": PINS["KEY_UP_PIN"],
+                "DOWN": PINS["KEY_DOWN_PIN"],
+                "LEFT": PINS["KEY_LEFT_PIN"],
+                "RIGHT": PINS["KEY_RIGHT_PIN"],
+                "OK": PINS["KEY_PRESS_PIN"],
+                "KEY1": PINS["KEY1_PIN"],
+                "KEY2": PINS["KEY2_PIN"],
+                "KEY3": PINS["KEY3_PIN"],
+            }
+
+            # Freeze background display threads while keyboard runs
+            screen_lock.set()
+            try:
+                kb = DarkSecKeyboard(
+                    width=128,
+                    height=128,
+                    lcd=LCD,
+                    gpio_pins=kb_pins,
+                    gpio_module=GPIO
+                )
+                result = kb.run()
+                return result
+            finally:
+                # Resume background threads
+                screen_lock.clear()
+        except Exception as e:
+            print(f"[UI] text input failed: {e}")
+            return None
 
     def _custom_color_picker_menu(self):
         """Menu to pick custom colors for each field and persist."""
