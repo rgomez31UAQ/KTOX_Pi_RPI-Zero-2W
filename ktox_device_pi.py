@@ -1739,11 +1739,35 @@ def exec_payload(filename, *args):
             ["python3", full] + list(args),
             cwd=INSTALL_PATH,
             env=env,
-            stdout=log_fh,
-            stderr=subprocess.STDOUT,
+            capture_output=True,
         )
+        if result.stdout:
+            log_fh.write(result.stdout)
+        if result.stderr:
+            log_fh.write(result.stderr)
         if result.returncode != 0:
             print(f"[PAYLOAD] exit code {result.returncode}")
+            combined = b""
+            if result.stdout:
+                combined += result.stdout
+            if result.stderr:
+                combined += b"\n" + result.stderr
+            last_line = ""
+            try:
+                lines = combined.decode("utf-8", errors="replace").splitlines()
+                for line in reversed(lines):
+                    if line.strip():
+                        last_line = line.strip()
+                        break
+            except Exception:
+                pass
+            hint = _truncate(last_line or "See payload.log", 18)
+            Dialog_info(
+                "Payload crashed:\n"
+                f"{os.path.basename(full)[:18]}\n"
+                f"{hint}",
+                wait=True,
+            )
     except Exception as exc:
         print(f"[PAYLOAD] ERROR: {exc!r}")
     finally:
@@ -3904,6 +3928,8 @@ _FA_ICONS: dict = {
     "WebUI Status":     "\uf0e0",   # fa-envelope
     "Refresh State":    "\uf021",   # fa-sync
     "System Info":      "\uf129",
+    "Network Mgr":      "\uf6ff",   # fa-network-wired
+    "Bluetooth Mgr":    "\uf294",   # fa-bluetooth-b
     "UI Theme":         "\uf53f",   # fa-palette
     "Discord Status":   "\uf392",   # fa-discord
     "Discord Webhook":  "\uf392",   # fa-discord
@@ -4031,9 +4057,9 @@ class KTOxMenu:
             (" Start MITM Suite",   do_start_mitm_suite),
             (" DNS Spoofing ON",    do_dns_spoofing),
             (" DNS Spoofing OFF",   do_dns_spoof_stop),
-            (" Rogue DHCP/WPAD",    partial(exec_payload,"interception/rogue_dhcp_wpad")),
-            (" Silent Bridge",      partial(exec_payload,"interception/silent_bridge")),
-            (" Evil Portal",        partial(exec_payload,"evil_portal/honeypot")),
+            (" Rogue DHCP/WPAD",    partial(exec_payload,"intercept/rogue_dhcp_wpad")),
+            (" Silent Bridge",      partial(exec_payload,"intercept/silent_bridge")),
+            (" Evil Portal",        partial(exec_payload,"recon/honeypot")),
         ),
 
         # ── RESPONDER ─────────────────────────────────────────────────────────
@@ -4052,7 +4078,7 @@ class KTOxMenu:
             (" ARP Harden",       do_arp_harden),
             (" Baseline Export",  do_baseline_export),
             (" Verify Baseline",  self._verify_baseline),
-            (" SMB Probe",        partial(exec_payload,"reconnaissance/smb_probe")),
+            (" SMB Probe",        partial(exec_payload,"recon/smb_probe")),
         ),
 
         # ── PAYLOADS ──────────────────────────────────────────────────────────
@@ -4066,6 +4092,8 @@ class KTOxMenu:
             (" WebUI Status",    self._webui_status),
             (" Refresh State",   self._refresh),
             (" System Info",     self._sysinfo),
+            (" Network Mgr",     self._network_manager),
+            (" Bluetooth Mgr",   self._bluetooth_manager),
             (" UI Theme",        self._ui_theme_menu),
             (" OTA Update",      partial(exec_payload,"general/auto_update")),
             (" Discord Webhook", self._discord_status),
@@ -4717,11 +4745,12 @@ class KTOxMenu:
 
     
     def _nav_scan(self):
-        exec_payload("Navarro/navarro_scan.py")
+        exec_payload("recon/navarro.py")
     def _nav_ports(self):
-        exec_payload("Navarro/navarro_ports.py")
+        exec_payload("recon/navarro.py")
     def _nav_reports(self):
-        self._browse_dir(KTOX_DIR + "/Navarro/reports", "Navarro Reports")
+        os.makedirs(f"{KTOX_DIR}/loot/OSINT", exist_ok=True)
+        self._browse_dir(f"{KTOX_DIR}/loot/OSINT", "Navarro Reports")
 
     def home_loop(self):
         while True:
@@ -4747,6 +4776,391 @@ class KTOxMenu:
         Dialog_info("Refreshing…", wait=False, timeout=1)
         refresh_state()
         Dialog_info(f"IF: {ktox_state['iface']}\nGW: {ktox_state['gateway']}", wait=True)
+
+    def _nmcli_available(self) -> bool:
+        rc, _ = _run(["which", "nmcli"], timeout=4)
+        return rc == 0
+
+    def _nmcli(self, *args, timeout=12):
+        return _run(["nmcli", *args], timeout=timeout)
+
+    def _network_interfaces_menu(self):
+        rc, out = _run(["ip", "-o", "link", "show"], timeout=8)
+        if rc != 0:
+            Dialog_info("Failed to read\ninterfaces.", wait=True)
+            return
+        import re
+        ifaces = [i for i in re.findall(r"\d+:\s+([A-Za-z0-9_.:-]+):", out) if i != "lo"]
+        if not ifaces:
+            Dialog_info("No interfaces\nfound.", wait=True)
+            return
+        labels = [f" {i}" for i in ifaces]
+        sel = GetMenuString(labels, duplicates=True, title="Interfaces")
+        if not sel:
+            return
+        idx, _ = sel
+        iface = ifaces[idx]
+        while True:
+            pick = GetMenuString([
+                f" {iface}",
+                " Bring Up",
+                " Bring Down",
+                " Renew DHCP",
+                " Back",
+            ], title="IF Action")
+            if not pick:
+                return
+            s = pick.strip()
+            if s == "Bring Up":
+                _run(["ip", "link", "set", iface, "up"], timeout=8)
+                Dialog_info(f"{iface}\nset UP", wait=False, timeout=1)
+            elif s == "Bring Down":
+                _run(["ip", "link", "set", iface, "down"], timeout=8)
+                Dialog_info(f"{iface}\nset DOWN", wait=False, timeout=1)
+            elif s == "Renew DHCP":
+                _run(["dhclient", "-r", iface], timeout=10)
+                _run(["dhclient", iface], timeout=12)
+                Dialog_info(f"DHCP renewed\n{iface}", wait=False, timeout=1)
+            elif s == "Back":
+                return
+
+    def _network_wifi_scan_menu(self):
+        iface = ktox_state.get("wifi_iface", "wlan0")
+        if not self._nmcli_available():
+            Dialog_info("nmcli missing.\nInstall Network\nManager.", wait=True)
+            return
+        Dialog_info(f"Scanning WiFi\non {iface}...", wait=False, timeout=1)
+        rc, out = self._nmcli("-t", "--escape", "no", "-f", "IN-USE,SSID,SIGNAL,SECURITY",
+                              "dev", "wifi", "list", "ifname", iface, timeout=15)
+        rows = []
+        for ln in out.splitlines():
+            parts = ln.split(":", 3)
+            if len(parts) < 4:
+                continue
+            in_use, ssid, signal, sec = parts
+            ssid = ssid or "<hidden>"
+            rows.append((in_use == "*", ssid, signal or "?", sec or "open"))
+        if not rows:
+            Dialog_info("No WiFi APs\nfound.", wait=True)
+            return
+        labels = [
+            f" {'*' if use else ' '} {ssid[:12]:12} {sig:>3}% {sec[:6]}"
+            for use, ssid, sig, sec in rows
+        ]
+        sel = GetMenuString(labels, duplicates=True, title="WiFi Scan")
+        if not sel:
+            return
+        idx, _ = sel
+        _in_use, ssid, _sig, sec = rows[idx]
+
+        while True:
+            pick = GetMenuString([
+                f" {ssid[:20]}",
+                " Connect",
+                " Connect w/ Password",
+                " Back",
+            ], title="WiFi Join")
+            if not pick:
+                return
+            s = pick.strip()
+            if s == "Connect":
+                if sec.lower() not in ("", "open", "--"):
+                    Dialog_info("Secured AP.\nUse password\noption.", wait=True)
+                    continue
+                self._nmcli("dev", "wifi", "connect", ssid, "ifname", iface, timeout=25)
+                Dialog_info(f"Connect req:\n{ssid[:18]}", wait=False, timeout=1)
+                return
+            elif s == "Connect w/ Password":
+                psk = self._network_text_input(f"WiFi PSK:\n{ssid[:16]}", secret=True)
+                if not psk:
+                    Dialog_info("Cancelled.", wait=False, timeout=1)
+                    continue
+                self._nmcli("dev", "wifi", "connect", ssid, "password", psk, "ifname", iface, timeout=30)
+                Dialog_info(f"Join sent:\n{ssid[:18]}", wait=False, timeout=1)
+                return
+            elif s == "Back":
+                return
+
+    def _network_text_input(self, prompt="Enter text", secret=False):
+        try:
+            from payloads._darksec_keyboard import DarkSecKeyboard
+            pin_map = {
+                "UP": PINS["KEY_UP_PIN"],
+                "DOWN": PINS["KEY_DOWN_PIN"],
+                "LEFT": PINS["KEY_LEFT_PIN"],
+                "RIGHT": PINS["KEY_RIGHT_PIN"],
+                "OK": PINS["KEY_PRESS_PIN"],
+                "KEY1": PINS["KEY1_PIN"],
+                "KEY2": PINS["KEY2_PIN"],
+                "KEY3": PINS["KEY3_PIN"],
+            }
+            Dialog_info(prompt[:48], wait=False, timeout=1)
+            kb = DarkSecKeyboard(width=128, height=128, lcd=LCD, gpio_pins=pin_map, gpio_module=GPIO)
+            value = kb.run() or ""
+            return value.strip()
+        except Exception:
+            Dialog_info("Keyboard not\navailable.", wait=True)
+            return ""
+
+    def _network_saved_profiles_menu(self):
+        if not self._nmcli_available():
+            Dialog_info("nmcli missing.\nNo profile mgr.", wait=True)
+            return
+        rc, out = self._nmcli("-t", "--escape", "no", "-f", "NAME,TYPE", "connection", "show", timeout=10)
+        profiles = []
+        for ln in out.splitlines():
+            if ":" not in ln:
+                continue
+            name, typ = ln.split(":", 1)
+            if typ in ("wifi", "ethernet", "802-11-wireless", "802-3-ethernet"):
+                profiles.append((name, typ))
+        if not profiles:
+            Dialog_info("No saved\nprofiles.", wait=True)
+            return
+        labels = [f" {n[:18]} ({t})" for n, t in profiles]
+        sel = GetMenuString(labels, duplicates=True, title="Profiles")
+        if not sel:
+            return
+        idx, _ = sel
+        name, _typ = profiles[idx]
+        while True:
+            pick = GetMenuString([
+                f" {name[:20]}",
+                " Connect",
+                " Disconnect",
+                " Forget Profile",
+                " Back",
+            ], title="Profile")
+            if not pick:
+                return
+            s = pick.strip()
+            if s == "Connect":
+                self._nmcli("connection", "up", name, timeout=20)
+                Dialog_info(f"Connect req:\n{name[:20]}", wait=False, timeout=1)
+            elif s == "Disconnect":
+                self._nmcli("connection", "down", name, timeout=20)
+                Dialog_info(f"Disconnect:\n{name[:20]}", wait=False, timeout=1)
+            elif s == "Forget Profile":
+                self._nmcli("connection", "delete", name, timeout=20)
+                Dialog_info(f"Deleted:\n{name[:20]}", wait=False, timeout=1)
+                return
+            elif s == "Back":
+                return
+
+    def _network_status_screen(self):
+        rc_ip, ip_br = _run(["ip", "-br", "addr"], timeout=8)
+        rc_rt, route = _run(["ip", "route", "show", "default"], timeout=8)
+        dns = []
+        try:
+            for ln in Path("/etc/resolv.conf").read_text(errors="ignore").splitlines():
+                if ln.startswith("nameserver"):
+                    dns.append(ln.split()[1])
+        except Exception:
+            pass
+        lines = [
+            f" IF: {ktox_state.get('iface','?')}",
+            f" WiFi: {ktox_state.get('wifi_iface','?')}",
+            f" GW: {(route.strip() or 'none')[:18]}",
+            f" DNS: {(dns[0] if dns else 'none')[:18]}",
+        ]
+        if rc_ip == 0:
+            lines += [f" {ln[:22]}" for ln in ip_br.splitlines()[:6]]
+        GetMenuString(lines, title="Net Status")
+
+    def _network_manager(self):
+        while True:
+            choice = GetMenuString([
+                " Status",
+                " Interfaces",
+                " WiFi Scan",
+                " Saved Profiles",
+                " Refresh State",
+                " Back",
+            ], title="Network Mgr")
+            if not choice:
+                return
+            s = choice.strip()
+            if s == "Status":
+                self._network_status_screen()
+            elif s == "Interfaces":
+                self._network_interfaces_menu()
+            elif s == "WiFi Scan":
+                self._network_wifi_scan_menu()
+            elif s == "Saved Profiles":
+                self._network_saved_profiles_menu()
+            elif s == "Refresh State":
+                self._refresh()
+            elif s == "Back":
+                return
+
+    def _bt_parse_devices(self, output: str):
+        import re
+        devices = []
+        for line in output.splitlines():
+            m = re.match(r"Device\s+([0-9A-Fa-f:]{17})\s+(.+)$", line.strip())
+            if m:
+                mac = m.group(1).upper()
+                name = m.group(2).strip() or "Unknown"
+                devices.append((mac, name))
+        return devices
+
+    def _btctl(self, *args, timeout=12):
+        rc, out = _run(["bluetoothctl", *args], timeout=timeout)
+        return rc, (out or "").strip()
+
+    def _bt_prepare_controller(self):
+        _run(["rfkill", "unblock", "bluetooth"], timeout=4)
+        _run(["systemctl", "start", "bluetooth"], timeout=6)
+        self._btctl("power", "on", timeout=8)
+        self._btctl("agent", "on", timeout=8)
+        self._btctl("default-agent", timeout=8)
+        self._btctl("pairable", "on", timeout=8)
+
+    def _bt_is_audio_device(self, mac: str) -> bool:
+        _, info = self._btctl("info", mac, timeout=10)
+        info_l = info.lower()
+        markers = (
+            "audio sink", "audio source", "headset", "headphones",
+            "a2dp", "avrcp", "handsfree",
+        )
+        return any(m in info_l for m in markers)
+
+    def _bt_scan_devices(self, seconds: int = 15, audio_only: bool = False):
+        self._bt_prepare_controller()
+        Dialog_info(f"Scanning BT...\n~{seconds}s", wait=False, timeout=1)
+        self._btctl("scan", "on", timeout=max(6, seconds + 1))
+        self._btctl("scan", "off", timeout=6)
+        _, out = self._btctl("devices", timeout=8)
+        devices = self._bt_parse_devices(out)
+        if audio_only and devices:
+            devices = [(m, n) for m, n in devices if self._bt_is_audio_device(m)]
+        return devices
+    def _bt_device_action_menu(self, mac: str, name: str):
+        while True:
+            choice = GetMenuString([
+                f" {name[:18]}",
+                f" {mac}",
+                " Pair + Trust + Connect",
+                " Connect",
+                " Trust Device",
+                " Disconnect",
+                " Forget Device",
+                " Device Info",
+                " Back",
+            ], title="Bluetooth")
+            if not choice:
+                return
+            picked = choice.strip()
+            if picked == "Pair + Trust + Connect":
+                self._btctl("pair", mac, timeout=30)
+                self._btctl("trust", mac, timeout=10)
+                self._btctl("connect", mac, timeout=20)
+                Dialog_info(f"Pair/connect\nsent:\n{name[:18]}", wait=False, timeout=1)
+            elif picked == "Connect":
+                self._btctl("trust", mac, timeout=10)
+                self._btctl("connect", mac, timeout=20)
+                Dialog_info(f"Connect sent:\n{name[:18]}", wait=False, timeout=1)
+            elif picked == "Trust Device":
+                self._btctl("trust", mac, timeout=10)
+                Dialog_info(f"Trusted:\n{name[:18]}", wait=False, timeout=1)
+            elif picked == "Disconnect":
+                self._btctl("disconnect", mac, timeout=15)
+                Dialog_info(f"Disconnect:\n{name[:18]}", wait=False, timeout=1)
+            elif picked == "Forget Device":
+                self._btctl("remove", mac, timeout=15)
+                Dialog_info(f"Forgot:\n{name[:18]}", wait=False, timeout=1)
+                return
+            elif picked == "Device Info":
+                _, info = self._btctl("info", mac, timeout=10)
+                lines = [f" {name[:18]}", f" {mac}"] + [f" {ln[:22]}" for ln in info.splitlines()[:10]]
+                GetMenu(lines)
+            elif picked == "Back":
+                return
+
+    def _bluetooth_manager(self):
+        self._bt_prepare_controller()
+        while True:
+            choice = GetMenuString([
+                " Scan Devices",
+                " Scan Audio Devices",
+                " Paired Devices",
+                " Connected Devices",
+                " Make Discoverable",
+                " Discoverable Off",
+                " Reset BT Stack",
+                " Controller Status",
+                " Back",
+            ], title="Bluetooth")
+            if not choice:
+                return
+            picked = choice.strip()
+            if picked == "Scan Devices":
+                devices = self._bt_scan_devices(seconds=15, audio_only=False)
+                if not devices:
+                    Dialog_info("No BT devices\nfound.\n(put device in\npair mode)", wait=True)
+                    continue
+                labels = [f" {n[:14]} {m}" for m, n in devices]
+                sel = GetMenuString(labels, duplicates=True, title="BT Scan")
+                if not sel:
+                    continue
+                idx, _ = sel
+                mac, name = devices[idx]
+                self._bt_device_action_menu(mac, name)
+            elif picked == "Scan Audio Devices":
+                devices = self._bt_scan_devices(seconds=18, audio_only=True)
+                if not devices:
+                    Dialog_info("No audio BT\nfound.\nHeadphones must\nbe in pair mode.", wait=True)
+                    continue
+                labels = [f" {n[:14]} {m}" for m, n in devices]
+                sel = GetMenuString(labels, duplicates=True, title="BT Audio")
+                if not sel:
+                    continue
+                idx, _ = sel
+                mac, name = devices[idx]
+                self._bt_device_action_menu(mac, name)
+            elif picked == "Paired Devices":
+                _, out = self._btctl("paired-devices", timeout=8)
+                paired = self._bt_parse_devices(out)
+                if not paired:
+                    Dialog_info("No paired BT\ndevices.", wait=True)
+                    continue
+                labels = [f" {n[:14]} {m}" for m, n in paired]
+                sel = GetMenuString(labels, duplicates=True, title="Paired BT")
+                if not sel:
+                    continue
+                idx, _ = sel
+                mac, name = paired[idx]
+                self._bt_device_action_menu(mac, name)
+            elif picked == "Connected Devices":
+                _, out = self._btctl("devices", "Connected", timeout=8)
+                connected = self._bt_parse_devices(out)
+                if not connected:
+                    Dialog_info("No connected\nBT devices.", wait=True)
+                    continue
+                labels = [f" {n[:14]} {m}" for m, n in connected]
+                sel = GetMenuString(labels, duplicates=True, title="Connected BT")
+                if not sel:
+                    continue
+                idx, _ = sel
+                mac, name = connected[idx]
+                self._bt_device_action_menu(mac, name)
+            elif picked == "Make Discoverable":
+                self._btctl("discoverable", "on", timeout=8)
+                self._btctl("pairable", "on", timeout=8)
+                Dialog_info("Bluetooth set:\nDiscoverable\nPairable", wait=False, timeout=1)
+            elif picked == "Discoverable Off":
+                self._btctl("discoverable", "off", timeout=8)
+                Dialog_info("Bluetooth:\nDiscoverable OFF", wait=False, timeout=1)
+            elif picked == "Reset BT Stack":
+                _run(["systemctl", "restart", "bluetooth"], timeout=10)
+                self._bt_prepare_controller()
+                Dialog_info("Bluetooth stack\nrestarted.", wait=False, timeout=1)
+            elif picked == "Controller Status":
+                _, show = self._btctl("show", timeout=8)
+                lines = [f" {ln[:22]}" for ln in show.splitlines()[:12]] or [" No controller info"]
+                GetMenu(lines)
+            elif picked == "Back":
+                return
 
     def _sysinfo(self):
         rc, kern = _run(["uname","-r"])
