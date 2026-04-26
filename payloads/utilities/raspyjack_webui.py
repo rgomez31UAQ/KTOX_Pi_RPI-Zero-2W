@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# NAME: RaspyJack WebUI
-# DESC: Remote control KTOx via RaspyJack Cardputer app
+# NAME: KTOx Hijack
+# DESC: Enable remote WebSocket control for Cardputer apps
 """
 RaspyJack WebUI Setup
 =====================
