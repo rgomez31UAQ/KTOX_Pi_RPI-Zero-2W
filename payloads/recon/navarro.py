@@ -31,8 +31,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 import RPi.GPIO as GPIO
 import LCD_1in44
 from PIL import Image, ImageDraw, ImageFont
-from payloads._input_helper import get_button
-from payloads._darksec_keyboard import DarkSecKeyboard
+from _input_helper import get_button
+from _darksec_keyboard import DarkSecKeyboard
 try:
     import qrcode 
 except Exception:
@@ -57,7 +57,8 @@ FONT_SMALL_SIZE = 9
 FONT_BIG_SIZE = 11
 
 NAVARRO_PATHS = [
-    os.path.join(os.path.dirname(__file__), "navarro_engine.py"),
+    os.path.join(os.path.dirname(__file__), "..", "..", "navarro_engine.py"),
+    "/root/KTOx/navarro_engine.py",
     "/root/KTOx/Navarro/navarro.py",
     "/home/ktox/Navarro/navarro.py",
     "/root/Navarro/navarro.py",
