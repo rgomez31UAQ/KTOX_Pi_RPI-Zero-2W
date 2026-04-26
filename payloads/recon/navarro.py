@@ -63,7 +63,7 @@ NAVARRO_PATHS = [
     "/home/ktox/Navarro/navarro.py",
     "/root/Navarro/navarro.py",
 ]
-NAVARRO_PATH = next((p for p in NAVARRO_PATHS if os.path.exists(p)), None)
+NAVARRO_PATH = next((os.path.abspath(p) for p in NAVARRO_PATHS if os.path.exists(p)), None)
 LOOT_BASE = "/root/KTOx/loot/OSINT"
 os.makedirs(LOOT_BASE, exist_ok=True)
 APP_RUNNING = True
