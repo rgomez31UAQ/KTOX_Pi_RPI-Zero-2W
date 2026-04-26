@@ -5376,55 +5376,25 @@ class KTOxMenu:
                 return None
 
     def _get_text_input(self, title="Enter Text", max_len=20, initial=""):
-        """Interactive text input. Returns string or None on cancel."""
-        CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-        text = list(initial.upper()[:max_len])
-        char_idx = 0
-        cursor_pos = len(text)
+        """Interactive text input using DarkSecKeyboard."""
+        try:
+            sys.path.insert(0, KTOX_DIR + "/payloads")
+            from _darksec_keyboard import DarkSecKeyboard
 
-        while True:
-            with draw_lock:
-                _draw_toolbar()
-                color.DrawMenuBackground()
-                color.DrawBorder()
-                draw.rectangle([3, 13, 125, 24], fill=color.title_bg)
-                _centered(_truncate(title, 108), 13, font=small_font, fill=color.border)
-                draw.line([(3, 24), (125, 24)], fill=color.border, width=1)
-
-                draw.rectangle([8, 30, 120, 100], fill=color.background, outline=color.border, width=1)
-                text_str = "".join(text)
-                draw.text((10, 35), f"Text: {text_str}", font=text_font, fill=color.text)
-                draw.text((10, 50), f"Pos: {cursor_pos}/{max_len}", font=small_font, fill=color.text_muted)
-
-                draw.text((10, 70), f"Char: {CHARS[char_idx]}", font=text_font,
-                         fill=color.selected_text)
-                draw.text((10, 85), "U/D=char  L/R=pos", font=small_font, fill=color.text)
-                draw.text((10, 97), "K1=add K3=del OK=save", font=small_font, fill=color.text)
-
-            btn = getButton(timeout=0.5)
-            if btn is None:
-                continue
-            if btn == "KEY_UP_PIN":
-                char_idx = (char_idx - 1) % len(CHARS)
-            elif btn == "KEY_DOWN_PIN":
-                char_idx = (char_idx + 1) % len(CHARS)
-            elif btn == "KEY_LEFT_PIN":
-                cursor_pos = max(0, cursor_pos - 1)
-            elif btn == "KEY_RIGHT_PIN":
-                cursor_pos = min(len(text), cursor_pos + 1)
-            elif btn == "KEY1_PIN":
-                if cursor_pos <= max_len and len(text) < max_len:
-                    text.insert(cursor_pos, CHARS[char_idx])
-                    cursor_pos += 1
-            elif btn == "KEY3_PIN":
-                if cursor_pos > 0:
-                    text.pop(cursor_pos - 1)
-                    cursor_pos -= 1
-            elif btn == "KEY_PRESS_PIN":
-                result = "".join(text).strip()
-                return result if result else None
-            elif btn in ("KEY2_PIN",):
+            if not HAS_HW or not LCD:
                 return None
+
+            kb = DarkSecKeyboard(
+                width=128,
+                height=128,
+                lcd=LCD,
+                gpio_pins=PINS
+            )
+            result = kb.run()
+            return result
+        except Exception as e:
+            print(f"[UI] text input failed: {e}")
+            return None
 
     def _custom_color_picker_menu(self):
         """Menu to pick custom colors for each field and persist."""
