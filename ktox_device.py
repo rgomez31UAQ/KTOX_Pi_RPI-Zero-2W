@@ -1042,30 +1042,17 @@ def _draw_row_selection(row_y, row_h, x1=3, x2=124, min_y=0, max_y=128):
         draw.line([(x1 + 1, line_y), (x2 - 1, line_y)], fill=color.selected_text, width=2)
 
     elif style == "glow":
-        # DRAMATIC glowing aura effect - with boundary safety
-        phase = (math.sin(ts * 8.0) + 1.0) * 0.5  # Faster
-        # Much more intense glow
-        glow_intensity = int(200 * phase)  # 0-200 intensity
+        # Clean glowing border effect - no dark layers
+        phase = (math.sin(ts * 8.0) + 1.0) * 0.5
+        glow_intensity = int(200 * phase)
         r = int(color.select[1:3], 16)
         g = int(color.select[3:5], 16)
         b = int(color.select[5:7], 16)
         glow_col = f"#{min(255, r + glow_intensity):02X}{min(255, g + glow_intensity):02X}{min(255, b + glow_intensity):02X}"
 
-        # Draw expanding glow layers (respecting boundaries)
-        for i in range(4, 0, -1):
-            alpha_val = int(100 * phase * (1 - i / 4.0))
-            glow_rect_outline = f"#{alpha_val:02X}{alpha_val:02X}{alpha_val:02X}"
-            # Clip to screen boundaries AND respect min_y
-            gx1 = max(0, x1 - i * 2)
-            gy1 = max(min_y, row_y - i * 2)
-            gx2 = min(128, x2 + i * 2)
-            gy2 = min(max_y, row_y + row_h - 1 + i * 2)
-            if gx1 < gx2 and gy1 < gy2:
-                draw.rectangle([gx1, gy1, gx2, gy2], outline=glow_rect_outline, width=1)
-
-        # Core selection
+        # Core selection with animated glow border
         draw.rectangle([x1, row_y, x2, row_y + row_h - 1], fill=color.select)
-        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], outline=glow_col, width=3)
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], outline=glow_col, width=2)
 
     elif style == "wave":
         # DRAMATIC ripple wave effect
@@ -1574,8 +1561,9 @@ def GetMenuPanel(inlist, duplicates=False):
                 # Draw icons with animation
                 icon = _icon_for(txt)
                 if icon and _ui_ux.get("show_icons", True):
-                    # Animate the large right icon
+                    # Animate both icon and text colors
                     icon_color = color.selected_text
+                    text_color = color.selected_text
                     if style == "glow":
                         phase = (math.sin(ts * 8.0) + 1.0) * 0.5
                         glow_intensity = int(100 * phase)
@@ -1583,6 +1571,7 @@ def GetMenuPanel(inlist, duplicates=False):
                         g = int(icon_color[3:5], 16) + glow_intensity
                         b = int(icon_color[5:7], 16) + glow_intensity
                         icon_color = f"#{min(255, r):02X}{min(255, g):02X}{min(255, b):02X}"
+                        text_color = icon_color
                     elif style == "pulse":
                         strength = math.sin(ts * 5.0)
                         factor = abs(strength) * 0.5
@@ -1590,10 +1579,11 @@ def GetMenuPanel(inlist, duplicates=False):
                         g = int(int(color.selected_text[3:5], 16) * (1 - factor * 0.3))
                         b = int(int(color.selected_text[5:7], 16) * (1 - factor * 0.3))
                         icon_color = f"#{r:02X}{g:02X}{b:02X}"
+                        text_color = icon_color
 
                     draw.text((80, 66), icon, font=xlarge_icon_font or large_icon_font, fill=icon_color, anchor="mm")
                     display_txt = _truncate(txt.strip(), 82, font=text_font)
-                    draw.text((80, 109), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
+                    draw.text((80, 109), display_txt, font=text_font, fill=text_color, anchor="mm")
                 else:
                     display_txt = _truncate(txt.strip(), 50)
                     draw.text((80, 60), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
