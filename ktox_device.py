@@ -368,7 +368,7 @@ UI_THEMES = {
         "TITLE_BG": "#0B2033", "PANEL_BG": "#0B1422",
         "TOPBAR_BG": "#051219", "TOPBAR_TEXT": "#005A88", "TOPBAR_ACCENT": "#003D66",
         "UX_WINDOW_ROWS": 6, "UX_ROW_H": 15, "UX_START_Y": 27,
-        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "pulse",
+        "UX_SHOW_ICONS": True, "UX_SELECT_STYLE": "glow",
         "UX_CYBER_BARS": True,
     },
     "obsidian_red": {
@@ -546,8 +546,30 @@ def _draw_menu_title(title):
     icon = _icon_for(title)
     text = (icon + " " if icon else "") + title
     draw.rectangle([3, 13, 125, 24], fill=color.title_bg)
-    _centered(_truncate(text, 112, font=small_font), 14, font=small_font, fill=color.border)
-    draw.line([(3, 24), (125, 24)], fill=color.border, width=1)
+
+    # Animated title text with glow if theme uses animations
+    style = str(_ui_ux.get("select_style", "fill"))
+    if style in ("glow", "pulse", "neon"):
+        ts = time.time()
+        phase = (math.sin(ts * 3.0) + 1.0) * 0.5
+        # Subtle glow effect on title
+        glow_intensity = int(phase * 30)
+        r = int(color.border[1:3], 16) + glow_intensity
+        g = int(color.border[3:5], 16) + glow_intensity
+        b = int(color.border[5:7], 16) + glow_intensity
+        glow_col = f"#{min(255, r):02X}{min(255, g):02X}{min(255, b):02X}"
+        _centered(_truncate(text, 112, font=small_font), 14, font=small_font, fill=glow_col)
+    else:
+        _centered(_truncate(text, 112, font=small_font), 14, font=small_font, fill=color.border)
+
+    # Animated bottom border
+    if style == "neon":
+        ts = time.time()
+        phase = (math.sin(ts * 5.0) + 1.0) * 0.5
+        border_w = max(1, int(1 + phase))
+        draw.line([(3, 24), (125, 24)], fill=color.border, width=border_w)
+    else:
+        draw.line([(3, 24), (125, 24)], fill=color.border, width=1)
 
 
 def _draw_scroll_pip(total, offset, rows, start_y, row_h):
@@ -578,6 +600,18 @@ def _save_ui_theme(theme_name: str):
             "GAMEPAD_FILL": preset["GAMEPAD_FILL"],
             "TITLE_BG": preset["TITLE_BG"],
             "PANEL_BG": preset["PANEL_BG"],
+            "TOPBAR_BG": preset.get("TOPBAR_BG", ""),
+            "TOPBAR_TEXT": preset.get("TOPBAR_TEXT", ""),
+            "TOPBAR_ACCENT": preset.get("TOPBAR_ACCENT", ""),
+        }
+        # Persist animation and UX settings when theme is applied
+        data["UX"] = {
+            "WINDOW_ROWS": preset.get("UX_WINDOW_ROWS", 7),
+            "ROW_H": preset.get("UX_ROW_H", 13),
+            "START_Y": preset.get("UX_START_Y", 26),
+            "SHOW_ICONS": preset.get("UX_SHOW_ICONS", True),
+            "SELECT_STYLE": preset.get("UX_SELECT_STYLE", "fill"),
+            "CYBER_BARS": preset.get("UX_CYBER_BARS", False),
         }
         Path(path).write_text(json.dumps(data, indent=2))
     except Exception as e:
@@ -953,30 +987,85 @@ def YNDialog(a="Are you sure?", y="Yes", n="No", b=""):
         elif btn in ("KEY_PRESS_PIN","KEY2_PIN"):   return answer
 
 
+def _easing_smooth(t):
+    """Smooth easing function (cubic ease-in-out)."""
+    t = t % 1.0
+    if t < 0.5:
+        return 4 * t * t * t
+    else:
+        t = 1 - t
+        return 1 - 4 * t * t * t
+
+
 def _draw_row_selection(row_y, row_h):
-    """Draw menu row selection with style from theme."""
+    """Draw menu row selection with enhanced animations matching theme style."""
     style = str(_ui_ux.get("select_style", "fill"))
+    ts = time.time()
+
     if style == "outline":
-        draw.rectangle([3, row_y, 124, row_y + row_h - 1], outline=color.select, width=2)
+        # Pulsing outline effect
+        phase = (math.sin(ts * 4.0) + 1.0) * 0.5
+        outline_w = max(1, int(1 + phase * 1))
+        draw.rectangle([3, row_y, 124, row_y + row_h - 1], outline=color.select, width=outline_w)
+
     elif style == "pulse":
-        phase = (math.sin(time.time() * 6.0) + 1.0) * 0.5
+        # Enhanced smooth pulse with better easing
+        phase = _easing_smooth(ts * 1.2)  # Slower, smoother pulse
         blend_r = int(color.select[1:3], 16)
         blend_g = int(color.select[3:5], 16)
         blend_b = int(color.select[5:7], 16)
         bg_r = int(color.background[1:3], 16)
         bg_g = int(color.background[3:5], 16)
         bg_b = int(color.background[5:7], 16)
-        r = int(blend_r + (bg_r - blend_r) * phase)
-        g = int(blend_g + (bg_g - blend_g) * phase)
-        b = int(blend_b + (bg_b - blend_b) * phase)
+        r = int(blend_r + (bg_r - blend_r) * (1 - phase))
+        g = int(blend_g + (bg_g - blend_g) * (1 - phase))
+        b = int(blend_b + (bg_b - blend_b) * (1 - phase))
         blend_col = f"#{r:02X}{g:02X}{b:02X}"
         draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=blend_col)
         draw.rectangle([3, row_y, 124, row_y + row_h - 1], outline=color.border, width=1)
+
     elif style == "scanline":
+        # Animated scanline sweep
         draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
-        line_y = row_y + int((time.time() * 35) % max(1, row_h - 1))
+        line_y = row_y + int((ts * 50) % max(1, row_h - 1))
         draw.line([(4, line_y), (123, line_y)], fill=color.selected_text, width=1)
-    else:
+
+    elif style == "glow":
+        # Glowing aura effect
+        phase = (math.sin(ts * 5.0) + 1.0) * 0.5
+        glow_intensity = int(100 + phase * 155)
+        r = int(color.select[1:3], 16)
+        g = int(color.select[3:5], 16)
+        b = int(color.select[5:7], 16)
+        glow_col = f"#{min(255, r + glow_intensity // 2):02X}{min(255, g + glow_intensity // 2):02X}{min(255, b + glow_intensity // 2):02X}"
+        # Draw multiple layers for glow effect
+        for i in range(3, 0, -1):
+            alpha = int(255 * (1 - i / 3.0) * phase * 0.3)
+            draw.rectangle([3 - i, row_y - i, 124 + i, row_y + row_h - 1 + i],
+                         outline=f"#{alpha:02X}{alpha:02X}{alpha:02X}", width=1)
+        draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
+        draw.rectangle([3, row_y, 124, row_y + row_h - 1], outline=glow_col, width=2)
+
+    elif style == "wave":
+        # Ripple wave effect
+        draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
+        wave_pos = int((ts * 60) % 122)
+        for i in range(max(1, row_h - 2)):
+            offset = int(2 * math.sin((wave_pos + i * 5) / 20.0))
+            y = row_y + i + 1 + offset
+            if 0 <= y < 128:
+                draw.point((wave_pos + 3, y), fill=color.selected_text)
+
+    elif style == "neon":
+        # Neon border pulse
+        phase = (math.sin(ts * 7.0) + 1.0) * 0.5
+        neon_width = max(1, int(1 + phase * 2))
+        draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
+        for i in range(neon_width):
+            draw.rectangle([3 + i, row_y + i, 124 - i, row_y + row_h - 1 - i],
+                         outline=color.border, width=1)
+
+    else:  # "fill" or default
         draw.rectangle([3, row_y, 124, row_y + row_h - 1], fill=color.select)
 
 
@@ -5586,7 +5675,7 @@ class KTOxMenu:
             print(f"[UI] save custom colors failed: {e}")
 
     def _save_as_user_theme(self):
-        """Save current colors as a new user theme with custom name."""
+        """Save current colors and animations as a new user theme with custom name."""
         theme_name = self._get_text_input("Theme Name:", max_len=15)
         if not theme_name:
             Dialog_info("Cancelled.", wait=False, timeout=1)
@@ -5607,13 +5696,24 @@ class KTOxMenu:
             "TOPBAR_ACCENT": color.topbar_accent,
         }
 
+        # Save animation and UX settings with the theme
+        theme_data = {
+            **colors,
+            "UX_WINDOW_ROWS": _ui_ux.get("window_rows", 7),
+            "UX_ROW_H": _ui_ux.get("row_h", 13),
+            "UX_START_Y": _ui_ux.get("start_y", 26),
+            "UX_SHOW_ICONS": _ui_ux.get("show_icons", True),
+            "UX_SELECT_STYLE": _ui_ux.get("select_style", "fill"),
+            "UX_CYBER_BARS": _ui_ux.get("cyber_bars", False),
+        }
+
         try:
             path = default.config_file
             try:
                 data = json.loads(Path(path).read_text())
             except Exception:
                 data = {}
-            data.setdefault("USER_THEMES", {})[theme_name] = colors
+            data.setdefault("USER_THEMES", {})[theme_name] = theme_data
             Path(path).write_text(json.dumps(data, indent=2))
             Dialog_info(f"Theme saved:\n{theme_name}", wait=False, timeout=1)
         except Exception as e:
@@ -5666,21 +5766,31 @@ class KTOxMenu:
                 else:
                     Dialog_info("Theme apply\nfailed.", wait=True)
 
-    def _apply_user_theme(self, name: str, colors: dict) -> bool:
-        """Apply a user theme by name and persist selection."""
+    def _apply_user_theme(self, name: str, theme_data: dict) -> bool:
+        """Apply a user theme by name and persist selection (including animations)."""
         try:
-            color.border = colors.get("BORDER", color.border)
-            color.background = colors.get("BACKGROUND", color.background)
-            color.text = colors.get("TEXT", color.text)
-            color.selected_text = colors.get("SELECTED_TEXT", color.selected_text)
-            color.select = colors.get("SELECTED_TEXT_BACKGROUND", color.select)
-            color.title_bg = colors.get("TITLE_BG", color.title_bg)
-            color.panel_bg = colors.get("PANEL_BG", color.panel_bg)
-            color.gamepad = colors.get("GAMEPAD", color.gamepad)
-            color.gamepad_fill = colors.get("GAMEPAD_FILL", color.gamepad_fill)
-            color.topbar_bg = colors.get("TOPBAR_BG", color.topbar_bg)
-            color.topbar_text = colors.get("TOPBAR_TEXT", color.topbar_text)
-            color.topbar_accent = colors.get("TOPBAR_ACCENT", color.topbar_accent)
+            # Apply colors
+            color.border = theme_data.get("BORDER", color.border)
+            color.background = theme_data.get("BACKGROUND", color.background)
+            color.text = theme_data.get("TEXT", color.text)
+            color.selected_text = theme_data.get("SELECTED_TEXT", color.selected_text)
+            color.select = theme_data.get("SELECTED_TEXT_BACKGROUND", color.select)
+            color.title_bg = theme_data.get("TITLE_BG", color.title_bg)
+            color.panel_bg = theme_data.get("PANEL_BG", color.panel_bg)
+            color.gamepad = theme_data.get("GAMEPAD", color.gamepad)
+            color.gamepad_fill = theme_data.get("GAMEPAD_FILL", color.gamepad_fill)
+            color.topbar_bg = theme_data.get("TOPBAR_BG", color.topbar_bg)
+            color.topbar_text = theme_data.get("TOPBAR_TEXT", color.topbar_text)
+            color.topbar_accent = theme_data.get("TOPBAR_ACCENT", color.topbar_accent)
+
+            # Apply UX/animation settings from theme
+            _ui_ux["window_rows"] = int(theme_data.get("UX_WINDOW_ROWS", _ui_ux.get("window_rows", 7)))
+            _ui_ux["row_h"] = int(theme_data.get("UX_ROW_H", _ui_ux.get("row_h", 13)))
+            _ui_ux["start_y"] = int(theme_data.get("UX_START_Y", _ui_ux.get("start_y", 26)))
+            _ui_ux["show_icons"] = bool(theme_data.get("UX_SHOW_ICONS", _ui_ux.get("show_icons", True)))
+            _ui_ux["select_style"] = str(theme_data.get("UX_SELECT_STYLE", _ui_ux.get("select_style", "fill")))
+            _ui_ux["cyber_bars"] = bool(theme_data.get("UX_CYBER_BARS", _ui_ux.get("cyber_bars", False)))
+
             color.current_theme = name
             _save_ui_theme(name)
             return True
