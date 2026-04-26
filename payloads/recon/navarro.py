@@ -319,8 +319,12 @@ def _parse_json_results(json_path: str) -> list:
     try:
         with open(json_path, "r", encoding="utf-8") as jf:
             data = json.load(jf)
+    except FileNotFoundError:
+        return []  # JSON file not created - subprocess may not have completed
+    except json.JSONDecodeError:
+        return []  # JSON file is malformed
     except Exception:
-        return []
+        return []  # Other file read error
 
     items = []
 
@@ -459,15 +463,19 @@ def run_navarro(username: str) -> tuple:
                     bounce_dir *= -1
                 draw_running(username, bounce_pos)
 
-                # Check for KEY3 abort (direct GPIO read, not full get_button)
-                if GPIO.input(PINS["KEY3"]) == 0:
-                    try:
-                        proc.terminate()
-                        time.sleep(0.3)
-                        proc.kill()
-                    except Exception:
-                        pass
-                    break
+                # Check for KEY3 abort (debounced - require 0.2s hold to abort)
+                key3_pressed = GPIO.input(PINS["KEY3"]) == 0
+                if key3_pressed:
+                    # Verify it's still pressed after a brief delay (debounce)
+                    time.sleep(0.05)
+                    if GPIO.input(PINS["KEY3"]) == 0:
+                        try:
+                            proc.terminate()
+                            time.sleep(0.3)
+                            proc.kill()
+                        except Exception:
+                            pass
+                        break
 
                 time.sleep(0.05)
         finally:
@@ -575,7 +583,20 @@ def main():
             results, run_dir = run_navarro(username.strip())
             page = 1
             if not results:
-                draw_center(["No results found", "(log saved)", "K3 Back"], small=True)
+                # Show scanning stats from log even if no profiles found
+                try:
+                    with open(os.path.join(run_dir, "log.txt"), "r") as f:
+                        log = f.read()
+                    # Try to extract found count from summary line
+                    found_match = re.search(r"Found:\s*(\d+)/(\d+)", log, re.IGNORECASE)
+                    if found_match:
+                        found = found_match.group(1)
+                        total = found_match.group(2)
+                        draw_center([f"Scan complete!", f"Found: {found}/{total}", "", "K3 Back"], small=True)
+                    else:
+                        draw_center(["Scan completed", "0 profiles found", "(log saved)", "K3 Back"], small=True)
+                except Exception:
+                    draw_center(["No profiles found", "(log saved)", "K3 Back"], small=True)
                 wait_release(btn)
             else:
                 cursor = 1

@@ -97,6 +97,23 @@ def wait_btn(timeout=0.1):
     return None
 
 def osk_input(prompt="Enter:", initial=""):
+    """Display prompt, wait for OK button, then show keyboard."""
+    # Show prompt screen first
+    draw_screen(
+        [prompt, "", "(Press OK to", "start typing)"],
+        title="INPUT"
+    )
+
+    # Wait for user to press OK to bring up keyboard
+    while True:
+        btn = wait_btn(0.2)
+        if btn == "OK":
+            break
+        elif btn == "KEY3":
+            return None
+        time.sleep(0.05)
+
+    # Now show the keyboard
     flush_input()
     time.sleep(0.1)
     kb = DarkSecKeyboard(width=W, height=H, lcd=LCD, gpio_pins=PINS, gpio_module=GPIO)
