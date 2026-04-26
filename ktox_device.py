@@ -1561,8 +1561,9 @@ def GetMenuPanel(inlist, duplicates=False):
                 # Draw icons with animation
                 icon = _icon_for(txt)
                 if icon and _ui_ux.get("show_icons", True):
-                    # Animate the large right icon
+                    # Animate both icon and text colors
                     icon_color = color.selected_text
+                    text_color = color.selected_text
                     if style == "glow":
                         phase = (math.sin(ts * 8.0) + 1.0) * 0.5
                         glow_intensity = int(100 * phase)
@@ -1570,6 +1571,7 @@ def GetMenuPanel(inlist, duplicates=False):
                         g = int(icon_color[3:5], 16) + glow_intensity
                         b = int(icon_color[5:7], 16) + glow_intensity
                         icon_color = f"#{min(255, r):02X}{min(255, g):02X}{min(255, b):02X}"
+                        text_color = icon_color
                     elif style == "pulse":
                         strength = math.sin(ts * 5.0)
                         factor = abs(strength) * 0.5
@@ -1577,10 +1579,11 @@ def GetMenuPanel(inlist, duplicates=False):
                         g = int(int(color.selected_text[3:5], 16) * (1 - factor * 0.3))
                         b = int(int(color.selected_text[5:7], 16) * (1 - factor * 0.3))
                         icon_color = f"#{r:02X}{g:02X}{b:02X}"
+                        text_color = icon_color
 
                     draw.text((80, 66), icon, font=xlarge_icon_font or large_icon_font, fill=icon_color, anchor="mm")
                     display_txt = _truncate(txt.strip(), 82, font=text_font)
-                    draw.text((80, 109), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
+                    draw.text((80, 109), display_txt, font=text_font, fill=text_color, anchor="mm")
                 else:
                     display_txt = _truncate(txt.strip(), 50)
                     draw.text((80, 60), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
