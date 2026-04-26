@@ -280,6 +280,22 @@ class ColorScheme:
                 # Fallback to ktox_red
                 self.apply_theme("ktox_red", persist=False)
 
+            # Load UX settings (animations, icons, etc.) from config
+            ux_config = data.get("UX", {})
+            if ux_config:
+                if "WINDOW_ROWS" in ux_config:
+                    _ui_ux["window_rows"] = int(ux_config.get("WINDOW_ROWS", 7))
+                if "ROW_H" in ux_config:
+                    _ui_ux["row_h"] = int(ux_config.get("ROW_H", 13))
+                if "START_Y" in ux_config:
+                    _ui_ux["start_y"] = int(ux_config.get("START_Y", 26))
+                if "SHOW_ICONS" in ux_config:
+                    _ui_ux["show_icons"] = bool(ux_config.get("SHOW_ICONS", True))
+                if "SELECT_STYLE" in ux_config:
+                    _ui_ux["select_style"] = str(ux_config.get("SELECT_STYLE", "fill"))
+                if "CYBER_BARS" in ux_config:
+                    _ui_ux["cyber_bars"] = bool(ux_config.get("CYBER_BARS", False))
+
             # Load view mode preference
             view_mode = str(data.get("UI", {}).get("VIEW_MODE", "list")).strip()
             if view_mode in ("list", "grid", "carousel", "panel", "table", "paged", "thumbnail", "vcarousel", "docked"):
@@ -1986,7 +2002,7 @@ def GetMenuDocked(inlist, duplicates=False):
                         icon_fill = f"#{r:02X}{g:02X}{b:02X}"
 
                 if icon and _ui_ux.get("show_icons", True):
-                    draw.text((x + ITEM_W // 2, 116), icon, font=small_font, fill=icon_fill, anchor="mm")
+                    draw.text((x + ITEM_W // 2, 116), icon, font=icon_font or small_font, fill=icon_fill, anchor="mm")
                 else:
                     draw.text((x + ITEM_W // 2, 116), (label.strip()[:1] or "•"), font=small_font, fill=icon_fill, anchor="mm")
 
@@ -2053,9 +2069,9 @@ def GetMenuDocked(inlist, duplicates=False):
                         icon_color = f"#{r:02X}{g:02X}{b:02X}"
                         text_color = icon_color
 
-                    draw.text((64, 45), icon, font=large_icon_font or medium_icon_font, fill=icon_color, anchor="mm")
-                    display_txt = _truncate(txt.strip(), 90, font=small_font)
-                    draw.text((64, 85), display_txt, font=small_font, fill=text_color, anchor="mm")
+                    draw.text((64, 45), icon, font=xlarge_icon_font or large_icon_font, fill=icon_color, anchor="mm")
+                    display_txt = _truncate(txt.strip(), 90, font=text_font)
+                    draw.text((64, 85), display_txt, font=text_font, fill=text_color, anchor="mm")
                 else:
                     display_txt = _truncate(txt.strip(), 50)
                     draw.text((64, 55), display_txt, font=text_font, fill=color.selected_text, anchor="mm")
@@ -4353,6 +4369,7 @@ _FA_ICONS: dict = {
     "Paged":            "\uf15b",   # fa-file
     "Thumbnail":        "\uf03e",   # fa-image
     "V-Carousel":       "\uf338",   # fa-arrows-alt-v
+    "Docked":           "\uf338",   # fa-arrows-alt-v
     # ── Universal ─────────────────────────────────────────────────────────
     "Back":             "\uf060",   # fa-arrow-left
     "Home":             "\uf015",   # fa-home
