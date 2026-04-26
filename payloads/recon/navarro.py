@@ -459,15 +459,19 @@ def run_navarro(username: str) -> tuple:
                     bounce_dir *= -1
                 draw_running(username, bounce_pos)
 
-                # Check for KEY3 abort (direct GPIO read, not full get_button)
-                if GPIO.input(PINS["KEY3"]) == 0:
-                    try:
-                        proc.terminate()
-                        time.sleep(0.3)
-                        proc.kill()
-                    except Exception:
-                        pass
-                    break
+                # Check for KEY3 abort (debounced - require 0.2s hold to abort)
+                key3_pressed = GPIO.input(PINS["KEY3"]) == 0
+                if key3_pressed:
+                    # Verify it's still pressed after a brief delay (debounce)
+                    time.sleep(0.05)
+                    if GPIO.input(PINS["KEY3"]) == 0:
+                        try:
+                            proc.terminate()
+                            time.sleep(0.3)
+                            proc.kill()
+                        except Exception:
+                            pass
+                        break
 
                 time.sleep(0.05)
         finally:
