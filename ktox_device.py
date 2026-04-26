@@ -2002,7 +2002,7 @@ def GetMenuDocked(inlist, duplicates=False):
                         icon_fill = f"#{r:02X}{g:02X}{b:02X}"
 
                 if icon and _ui_ux.get("show_icons", True):
-                    draw.text((x + ITEM_W // 2, 116), icon, font=small_font, fill=icon_fill, anchor="mm")
+                    draw.text((x + ITEM_W // 2, 116), icon, font=icon_font or small_font, fill=icon_fill, anchor="mm")
                 else:
                     draw.text((x + ITEM_W // 2, 116), (label.strip()[:1] or "•"), font=small_font, fill=icon_fill, anchor="mm")
 
@@ -4369,6 +4369,7 @@ _FA_ICONS: dict = {
     "Paged":            "\uf15b",   # fa-file
     "Thumbnail":        "\uf03e",   # fa-image
     "V-Carousel":       "\uf338",   # fa-arrows-alt-v
+    "Docked":           "\uf338",   # fa-arrows-alt-v
     # ── Universal ─────────────────────────────────────────────────────────
     "Back":             "\uf060",   # fa-arrow-left
     "Home":             "\uf015",   # fa-home
