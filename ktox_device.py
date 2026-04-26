@@ -788,17 +788,6 @@ def getButton(timeout=120):
             except Exception:
                 pass
 
-        # Keyboard input from USB/Bluetooth keyboards
-        if HAS_KEYBOARD:
-            try:
-                k = keyboard_input.get_keyboard_button()
-                if k:
-                    _mark_user_activity()
-                    _last_button = None
-                    return k
-            except Exception:
-                pass
-
         if not HAS_HW:
             time.sleep(0.1)
             continue
