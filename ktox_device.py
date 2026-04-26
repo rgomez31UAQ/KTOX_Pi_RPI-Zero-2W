@@ -5049,15 +5049,83 @@ class KTOxMenu:
         return any(m in info_l for m in markers)
 
     def _bt_scan_devices(self, seconds: int = 15, audio_only: bool = False):
+        """Scan for Bluetooth devices using interactive bluetoothctl."""
+        import re
+        import select
+
         self._bt_prepare_controller()
         Dialog_info(f"Scanning BT...\n~{seconds}s", wait=False, timeout=1)
-        self._btctl("scan", "on", timeout=max(6, seconds + 1))
-        self._btctl("scan", "off", timeout=6)
-        _, out = self._btctl("devices", timeout=8)
-        devices = self._bt_parse_devices(out)
-        if audio_only and devices:
-            devices = [(m, n) for m, n in devices if self._bt_is_audio_device(m)]
-        return devices
+
+        # Use interactive stdin/stdout like bt_keyboard_picker for better device discovery
+        try:
+            proc = subprocess.Popen(
+                ["bluetoothctl"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+
+            if not proc.stdin or not proc.stdout:
+                return []
+
+            proc.stdin.write("scan on\n")
+            proc.stdin.flush()
+
+            devices = {}
+            start = time.time()
+
+            # Continuously read output during scan
+            try:
+                while (time.time() - start) < seconds:
+                    ready, _, _ = select.select([proc.stdout], [], [], 0.2)
+                    if ready:
+                        line = proc.stdout.readline()
+                        # Match "Device XX:XX:XX:XX:XX:XX Name"
+                        m = re.search(r"Device ([0-9A-F:]{17}) (.+)", line)
+                        if m:
+                            mac = m.group(1)
+                            name = m.group(2).strip()
+                            devices[mac] = name
+            finally:
+                # Stop scan and drain remaining output
+                proc.stdin.write("scan off\n")
+                proc.stdin.flush()
+
+                # Drain for 1 more second to capture any trailing devices
+                end = time.time() + 1.0
+                while time.time() < end:
+                    ready, _, _ = select.select([proc.stdout], [], [], 0.1)
+                    if ready:
+                        line = proc.stdout.readline()
+                        m = re.search(r"Device ([0-9A-F:]{17}) (.+)", line)
+                        if m:
+                            mac = m.group(1)
+                            name = m.group(2).strip()
+                            devices[mac] = name
+
+                proc.terminate()
+
+            # Convert to list of (MAC, name) tuples, sorted by name
+            result = [(mac, devices[mac]) for mac in sorted(devices.keys(), key=lambda m: devices[m].lower())]
+
+            # Filter audio devices if requested
+            if audio_only and result:
+                result = [(m, n) for m, n in result if self._bt_is_audio_device(m)]
+
+            return result
+
+        except Exception as e:
+            print(f"BT scan error: {e}")
+            # Fallback to old method
+            self._btctl("scan", "on", timeout=max(6, seconds + 1))
+            self._btctl("scan", "off", timeout=6)
+            _, out = self._btctl("devices", timeout=8)
+            devices = self._bt_parse_devices(out)
+            if audio_only and devices:
+                devices = [(m, n) for m, n in devices if self._bt_is_audio_device(m)]
+            return devices
 
     def _bt_device_action_menu(self, mac: str, name: str):
         while True:
