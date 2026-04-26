@@ -354,6 +354,11 @@ class DarkSecKeyboard:
         self.col = 0
         self.history_idx = None
 
+        # Prime button state to handle case where button is already pressed
+        if self.GPIO:
+            for name, pin in self.gpio_pins.items():
+                self._last_pressed_state[name] = (self.GPIO.input(pin) == 0)
+
         while True:
             self._normalize_cursor()
             self._draw_keyboard(compose)
