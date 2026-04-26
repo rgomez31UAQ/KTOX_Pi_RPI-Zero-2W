@@ -1042,30 +1042,17 @@ def _draw_row_selection(row_y, row_h, x1=3, x2=124, min_y=0, max_y=128):
         draw.line([(x1 + 1, line_y), (x2 - 1, line_y)], fill=color.selected_text, width=2)
 
     elif style == "glow":
-        # DRAMATIC glowing aura effect - with boundary safety
-        phase = (math.sin(ts * 8.0) + 1.0) * 0.5  # Faster
-        # Much more intense glow
-        glow_intensity = int(200 * phase)  # 0-200 intensity
+        # Clean glowing border effect - no dark layers
+        phase = (math.sin(ts * 8.0) + 1.0) * 0.5
+        glow_intensity = int(200 * phase)
         r = int(color.select[1:3], 16)
         g = int(color.select[3:5], 16)
         b = int(color.select[5:7], 16)
         glow_col = f"#{min(255, r + glow_intensity):02X}{min(255, g + glow_intensity):02X}{min(255, b + glow_intensity):02X}"
 
-        # Draw expanding glow layers (respecting boundaries)
-        for i in range(4, 0, -1):
-            alpha_val = int(100 * phase * (1 - i / 4.0))
-            glow_rect_outline = f"#{alpha_val:02X}{alpha_val:02X}{alpha_val:02X}"
-            # Clip to screen boundaries AND respect min_y
-            gx1 = max(0, x1 - i * 2)
-            gy1 = max(min_y, row_y - i * 2)
-            gx2 = min(128, x2 + i * 2)
-            gy2 = min(max_y, row_y + row_h - 1 + i * 2)
-            if gx1 < gx2 and gy1 < gy2:
-                draw.rectangle([gx1, gy1, gx2, gy2], outline=glow_rect_outline, width=1)
-
-        # Core selection
+        # Core selection with animated glow border
         draw.rectangle([x1, row_y, x2, row_y + row_h - 1], fill=color.select)
-        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], outline=glow_col, width=3)
+        draw.rectangle([x1, row_y, x2, row_y + row_h - 1], outline=glow_col, width=2)
 
     elif style == "wave":
         # DRAMATIC ripple wave effect
