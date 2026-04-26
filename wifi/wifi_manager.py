@@ -95,66 +95,109 @@ class WiFiManager:
         return interfaces
     
     def scan_networks(self, interface=None):
-        """Scan for available WiFi networks."""
+        """Scan for available WiFi networks using nmcli (modern) or iwlist (fallback)."""
         if not interface:
             interface = self.wifi_interfaces[0] if self.wifi_interfaces else None
-        
+
         if not interface:
             self.log("No WiFi interface available for scanning")
             return []
-        
+
         try:
             self.log(f"Scanning networks on {interface}...")
-            
+
             # Bring interface up if needed
-            subprocess.run(['ip', 'link', 'set', interface, 'up'], 
-                         capture_output=True, check=False)
-            
-            # Scan for networks
-            result = subprocess.run(['iwlist', interface, 'scan'], 
-                                  capture_output=True, text=True, check=False)
-            
+            subprocess.run(['ip', 'link', 'set', interface, 'up'],
+                         capture_output=True, check=False, timeout=5)
+
+            # Try nmcli first (modern, reliable)
+            try:
+                result = subprocess.run(
+                    ['nmcli', '-t', '--escape', 'no', '-f',
+                     'BSSID,SSID,SIGNAL,SECURITY', 'dev', 'wifi',
+                     'list', 'ifname', interface],
+                    capture_output=True, text=True, timeout=15, check=False
+                )
+
+                if result.returncode == 0 and result.stdout:
+                    networks = []
+                    seen_ssids = set()
+
+                    for line in result.stdout.strip().split('\n'):
+                        if not line or ':' not in line:
+                            continue
+                        parts = line.split(':', 3)
+                        if len(parts) < 4:
+                            continue
+
+                        bssid, ssid, signal, security = parts
+                        ssid = ssid.strip() if ssid else '<hidden>'
+
+                        # Skip hidden and duplicate SSIDs
+                        if ssid == '<hidden>' or ssid in seen_ssids:
+                            continue
+
+                        seen_ssids.add(ssid)
+                        networks.append({
+                            'bssid': bssid.strip(),
+                            'ssid': ssid,
+                            'signal': signal.strip() or '?',
+                            'security': security.strip() or 'open',
+                            'encrypted': 'WPA' in security or 'WEP' in security
+                        })
+
+                    self.log(f"Found {len(networks)} networks via nmcli")
+                    return networks
+            except Exception as e:
+                self.log(f"nmcli scan failed ({e}), falling back to iwlist")
+
+            # Fallback to iwlist (older but more compatible)
+            result = subprocess.run(['iwlist', interface, 'scan'],
+                                  capture_output=True, text=True,
+                                  timeout=15, check=False)
+
             networks = []
             current_network = {}
-            
+
             for line in result.stdout.split('\n'):
                 line = line.strip()
-                
+
                 if 'Cell' in line and 'Address:' in line:
-                    if current_network:
+                    if current_network and 'ssid' in current_network:
                         networks.append(current_network)
-                    current_network = {'bssid': line.split('Address: ')[1]}
-                
+                    current_network = {'bssid': line.split('Address: ')[1] if 'Address: ' in line else ''}
+
                 elif 'ESSID:' in line:
-                    essid = line.split('ESSID:')[1].strip('"')
+                    essid = line.split('ESSID:')[1].strip().strip('"') if 'ESSID:' in line else ''
                     if essid and essid != '\\x00':
                         current_network['ssid'] = essid
-                
+
                 elif 'Quality=' in line:
                     try:
                         quality = line.split('Quality=')[1].split()[0]
-                        current_network['quality'] = quality
+                        current_network['signal'] = quality
                     except:
                         pass
-                
+
                 elif 'Encryption key:' in line:
                     current_network['encrypted'] = 'on' in line
-            
-            if current_network:
+                    current_network['security'] = 'WPA' if 'on' in line else 'open'
+
+            if current_network and 'ssid' in current_network:
                 networks.append(current_network)
-            
-            # Filter out empty SSIDs and duplicates
+
+            # Filter out duplicates
             unique_networks = []
             seen_ssids = set()
-            
+
             for network in networks:
-                if 'ssid' in network and network['ssid'] not in seen_ssids:
+                if network.get('ssid') and network['ssid'] not in seen_ssids:
                     seen_ssids.add(network['ssid'])
                     unique_networks.append(network)
-            
-            self.log(f"Found {len(unique_networks)} unique networks")
+
+            self.log(f"Found {len(unique_networks)} networks via iwlist")
             return unique_networks
-            
+
         except Exception as e:
             self.log(f"Error scanning networks: {e}")
             return []
