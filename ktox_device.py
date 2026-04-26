@@ -282,7 +282,7 @@ class ColorScheme:
 
             # Load view mode preference
             view_mode = str(data.get("UI", {}).get("VIEW_MODE", "list")).strip()
-            if view_mode in ("list", "grid", "carousel", "panel", "table", "paged", "thumbnail", "vcarousel"):
+            if view_mode in ("list", "grid", "carousel", "panel", "table", "paged", "thumbnail", "vcarousel", "docked"):
                 _view_mode = view_mode
 
             # Load wallpaper preference
