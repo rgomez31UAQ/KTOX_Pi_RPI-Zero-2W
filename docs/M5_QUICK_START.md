@@ -13,13 +13,26 @@ That's it. Frame capture and WebSocket server start automatically.
 
 ### On M5Cardputer:
 
-Use KTOXM5 firmware and set:
-```cpp
-const char* KTOX_HOST = "YOUR_KTOX_IP";  // e.g. "192.168.1.100"
-const int KTOX_WS_PORT = 8765;
+Build and flash the M5Cardputer application:
+
+```bash
+# Navigate to M5Cardputer firmware
+cd /home/user/KTOX_Pi/m5cardputer
+
+# Build and upload (requires USB connection to M5Cardputer)
+platformio run -e m5stack-cardputer --target upload
+
+# Monitor serial output during setup
+platformio run -e m5stack-cardputer --target monitor
 ```
 
-Flash and connect. Done.
+Follow the on-device setup wizard to enter:
+- WiFi SSID
+- WiFi password  
+- KTOX_Pi IP address (e.g., 192.168.0.50)
+- Port (default 8765)
+
+Device connects and streams automatically.
 
 ---
 
@@ -101,4 +114,6 @@ LCD Display → Saved as JPEG every 160ms → device_server reads → sends to M
 
 ## Full Documentation
 
-See `M5_CARDPUTER_SETUP.md` for complete details.
+- **M5Cardputer Build & Deploy**: See `../m5cardputer/README.md` for complete build, upload, and troubleshooting guide
+- **Frame Capture Setup**: See `M5_CARDPUTER_SETUP.md` for server-side configuration details
+- **Integration Overview**: See `M5_INTEGRATION_VERIFICATION.md` for architecture and verification steps
