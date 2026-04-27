@@ -18,7 +18,6 @@ import termios
 import fcntl
 import struct
 import pty
-from http.cookies import SimpleCookie
 from pathlib import Path
 from typing import Set, Optional
 from urllib.parse import urlparse, parse_qs
@@ -526,8 +525,32 @@ def _session_token_ok(token: str) -> bool:
         return False
 
 
+def _parse_cookie_value(header_val: str, cookie_name: str) -> Optional[str]:
+    """Parse a single cookie value from Cookie header (lenient, handles M5 format)."""
+    if not header_val:
+        return None
+
+    # Split by semicolon to get individual cookies
+    for cookie_part in header_val.split(';'):
+        cookie_part = cookie_part.strip()
+        if '=' not in cookie_part:
+            continue
+        name, _, value = cookie_part.partition('=')
+        name = name.strip()
+        value = value.strip()
+
+        # Handle quoted values (remove quotes if present)
+        if value.startswith('"') and value.endswith('"'):
+            value = value[1:-1]
+
+        if name == cookie_name:
+            return value if value else None
+
+    return None
+
+
 def _cookie_session_ok(ws) -> bool:
-    """Check if WebSocket has valid session cookie. Gracefully handles malformed cookies."""
+    """Check if WebSocket has valid session cookie. Gracefully handles M5 format."""
     header_val = ""
     try:
         req_headers = getattr(ws, "request_headers", None)
@@ -548,45 +571,39 @@ def _cookie_session_ok(ws) -> bool:
     if not header_val:
         return False
 
-    # Try to parse cookie - if it fails, client doesn't have valid session
-    try:
-        c = SimpleCookie()
-        c.load(header_val)
-        morsel = c.get(SESSION_COOKIE_NAME)
-        if not morsel:
-            return False
-        return _session_token_ok(morsel.value)
-    except Exception as e:
-        # Cookie parsing failed - this is expected for M5/non-browser clients
-        log.debug("Cookie parse failed (expected for non-browser clients like M5): %s", type(e).__name__)
+    # Parse cookie with lenient parser (handles M5 format)
+    cookie_value = _parse_cookie_value(header_val, SESSION_COOKIE_NAME)
+    if not cookie_value:
         return False
+
+    return _session_token_ok(cookie_value)
 
 
 # ----------------------------- WS Handler -------------------------------------
 async def handle_client(ws):
     # websockets v12+ : path is in ws.request.path
     path = getattr(getattr(ws, "request", None), "path", "/")
+
+    # Check authentication status
     if not _auth_initialized():
         # No auth configured - allow all connections
         authenticated = True
     elif TOKEN:
-        # Token configured - require either token or session cookie
-        authenticated = _cookie_session_ok(ws) or authorize(path)
+        # Token configured - check for token in URL or valid session cookie
+        authenticated = authorize(path) or _cookie_session_ok(ws)
     else:
-        # Auth initialized but no TOKEN - allow frame-only clients (M5Cardputer)
-        # that may not have cookies. Full access requires valid session.
+        # Auth initialized but no TOKEN - allow all connections for frame access
         authenticated = True
 
+    # Only add to clients if authenticated (or auth not required)
     if authenticated:
         async with clients_lock:
             clients.add(ws)
-        log.info("Client connected (%d online)", len(clients))
+        log.info("Client connected - authenticated (%d online)", len(clients))
     else:
-        try:
-            await ws.send(json.dumps({"type": "auth_required"}))
-        except Exception:
-            await ws.close(code=4401, reason="Unauthorized")
-            return
+        # Not authenticated - wait for auth message
+        log.info("Client connected - awaiting authentication (%d online)", len(clients))
+
     loop = asyncio.get_running_loop()
     shell = None
 
@@ -597,8 +614,10 @@ async def handle_client(ws):
             except Exception:
                 continue
 
+            msg_type = data.get("type")
+
+            # Unauthenticated clients can only send auth messages
             if not authenticated:
-                msg_type = data.get("type")
                 if msg_type not in ("auth", "auth_session"):
                     continue
                 token_ok = msg_type == "auth" and (
@@ -624,7 +643,8 @@ async def handle_client(ws):
                     break
                 continue
 
-            if data.get("type") == "input":
+            # Authenticated clients can access all operations
+            if msg_type == "input":
                 btn = data.get("button")
                 state = data.get("state")
                 if btn and state in ("press", "release"):
@@ -640,6 +660,9 @@ async def handle_client(ws):
                 continue
 
             if data.get("type") == "stealth_exit":
+                # Protected operation - require authentication
+                if not authenticated:
+                    continue
                 try:
                     Path("/dev/shm/ktox_stealth.json").write_text(
                         json.dumps({"stealth": False})
@@ -649,6 +672,9 @@ async def handle_client(ws):
                 continue
 
             if data.get("type") == "shell_open":
+                # Protected operation - require authentication
+                if not authenticated:
+                    continue
                 if shell:
                     shell.close()
                 shell = ShellSession(loop, ws)
