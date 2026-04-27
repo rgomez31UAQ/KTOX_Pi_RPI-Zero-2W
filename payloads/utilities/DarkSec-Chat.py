@@ -26,12 +26,6 @@ import requests
 import textwrap
 from datetime import datetime
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
-from _darksec_keyboard import DarkSecKeyboard
-from _input_helper import flush_input
-
 # ----------------------------------------------------------------------
 # Hardware & LCD
 # ----------------------------------------------------------------------
@@ -69,7 +63,6 @@ f9 = font(9)
 # Web API constants
 # ----------------------------------------------------------------------
 WEB_API_URL = "https://darksec.uk/api/chat"
-WEB_API_KEY = os.environ.get("DARKSEC_API_KEY", "")  # Optional API key for authentication
 
 # ----------------------------------------------------------------------
 # LCD helpers
@@ -97,44 +90,73 @@ def wait_btn(timeout=0.1):
         time.sleep(0.02)
     return None
 
+# ----------------------------------------------------------------------
+# On‑Screen Keyboard (QWERTY)
+# ----------------------------------------------------------------------
+KEYBOARD_ROWS = [
+    "qwertyuiop",
+    "asdfghjkl",
+    "zxcvbnm",
+    "1234567890",
+    ".,!?@#$% "
+]
+ROW_Y = [28, 44, 60, 76, 92]
+CELL_W = 11
+START_X = 6
+
+def draw_keyboard(input_text, selected_row, selected_col):
+    img = Image.new("RGB", (W, H), "#0A0000")
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, W, 17), fill="#004466")
+    d.text((4, 3), "KEYBOARD", font=f9, fill=(231, 76, 60))
+    d.rectangle((2, 19, W-2, 27), fill=(10, 0, 0))
+    display_text = input_text[-20:] if len(input_text) > 20 else input_text
+    d.text((4, 20), display_text, font=f9, fill=(212, 172, 13))
+    for r, row in enumerate(KEYBOARD_ROWS):
+        y = ROW_Y[r]
+        for c, ch in enumerate(row):
+            x = START_X + c * CELL_W
+            if r == selected_row and c == selected_col:
+                d.rectangle((x-1, y-1, x+CELL_W-1, y+7), fill="#FF8800")
+                d.text((x, y), ch, font=f9, fill="#000000")
+            else:
+                d.text((x, y), ch, font=f9, fill=(242, 243, 244))
+    d.rectangle((0, H-12, W, H), fill="#220000")
+    d.text((4, H-10), "OK=add  K1=send  K2=del  K3=cancel", font=f9, fill="#FF7777")
+    LCD.LCD_ShowImage(img, 0, 0)
+
 def osk_input(prompt="Enter:", initial=""):
-    """Display prompt, wait for OK button, then show keyboard."""
-    # Show prompt screen first
-    draw_screen(
-        [prompt, "", "(Press OK to", "start typing)"],
-        title="INPUT"
-    )
-
-    # Wait for user to press OK to bring up keyboard
+    input_text = initial
+    selected_row = 0
+    selected_col = 0
     while True:
-        btn = wait_btn(0.2)
-        if btn == "OK":
-            # Wait for button release before opening keyboard
-            while GPIO.input(PINS["OK"]) == 0:
-                time.sleep(0.02)
-            time.sleep(0.1)  # debounce delay
-            break
-        elif btn == "KEY3":
-            # Wait for KEY3 release
-            while GPIO.input(PINS["KEY3"]) == 0:
-                time.sleep(0.02)
+        draw_keyboard(input_text, selected_row, selected_col)
+        btn = wait_btn(0.5)
+        if btn == "KEY3":
             return None
+        elif btn == "KEY1":
+            if input_text.strip():
+                return input_text.strip()
+        elif btn == "KEY2":
+            input_text = input_text[:-1]
+        elif btn == "UP":
+            selected_row = (selected_row - 1) % len(KEYBOARD_ROWS)
+            new_len = len(KEYBOARD_ROWS[selected_row])
+            if selected_col >= new_len:
+                selected_col = new_len - 1
+        elif btn == "DOWN":
+            selected_row = (selected_row + 1) % len(KEYBOARD_ROWS)
+            new_len = len(KEYBOARD_ROWS[selected_row])
+            if selected_col >= new_len:
+                selected_col = new_len - 1
+        elif btn == "LEFT":
+            selected_col = (selected_col - 1) % len(KEYBOARD_ROWS[selected_row])
+        elif btn == "RIGHT":
+            selected_col = (selected_col + 1) % len(KEYBOARD_ROWS[selected_row])
+        elif btn == "OK":
+            ch = KEYBOARD_ROWS[selected_row][selected_col]
+            input_text += ch
         time.sleep(0.05)
-
-    # Clear button state before opening keyboard
-    flush_input()
-    time.sleep(0.1)
-    # Ensure all GPIO buttons are released before keyboard start
-    for pin in PINS.values():
-        while GPIO.input(pin) == 0:
-            time.sleep(0.02)
-
-    kb = DarkSecKeyboard(width=W, height=H, lcd=LCD, gpio_pins=PINS, gpio_module=GPIO)
-    result = kb.run()
-    if result is None:
-        return None
-    result = result.strip()
-    return result or initial
 
 # ----------------------------------------------------------------------
 # Chat storage & viewer
@@ -167,8 +189,8 @@ def draw_chat():
         prefix = f"{sender}:"
         # Calculate wrap width: screen shows 23 chars max, minus prefix length for first line
         max_line_width = 23
-        first_line_width = max(8, max_line_width - len(prefix) - 1)  # -1 for space after colon
-        subsequent_line_width = max_line_width - 3  # -3 for "   " indent
+        first_line_width = max(8, max_line_width - len(prefix) - 1)
+        subsequent_line_width = max_line_width - 3
 
         wrapped = []
         remaining_text = text
@@ -180,12 +202,10 @@ def draw_chat():
             else:
                 wrap_width = subsequent_line_width
 
-            # Manual wrap since textwrap doesn't support varying widths
             if len(remaining_text) <= wrap_width:
                 wrapped.append(remaining_text)
                 break
             else:
-                # Find last space within wrap_width
                 chunk = remaining_text[:wrap_width]
                 last_space = chunk.rfind(' ')
                 if last_space > 0:
@@ -205,7 +225,7 @@ def draw_chat():
     max_scroll = max(0, len(lines) - 6)
     scroll_pos = min(scroll_pos, max_scroll)
     visible = lines[scroll_pos:scroll_pos+6]
-    draw_screen(visible, title="DarkSec-Chat", title_color="#8B0000")
+    draw_screen(visible, title="DarkSec-Chat", title_color="#004466")
 
 def scroll_up():
     global scroll_pos
@@ -341,18 +361,13 @@ last_seen_ids = set()
 
 def fetch_web_messages():
     try:
-        headers = {"Content-Type": "application/json"}
-        if WEB_API_KEY:
-            headers["Authorization"] = f"Bearer {WEB_API_KEY}"
-        r = requests.get(WEB_API_URL, headers=headers, timeout=5, verify=False)
+        r = requests.get(WEB_API_URL, timeout=5)
         if r.status_code == 200:
             data = r.json()
             if isinstance(data, list):
                 return data
             elif isinstance(data, dict) and "messages" in data:
                 return data["messages"]
-        elif r.status_code != 200:
-            print(f"[WEB] GET {r.status_code}: {r.text[:100]}")
         return []
     except Exception as e:
         print(f"[WEB] Fetch error: {e}")
@@ -361,10 +376,7 @@ def fetch_web_messages():
 def post_to_web(message):
     payload = {"username": mesh_username, "message": message}
     try:
-        headers = {"Content-Type": "application/json"}
-        if WEB_API_KEY:
-            headers["Authorization"] = f"Bearer {WEB_API_KEY}"
-        r = requests.post(WEB_API_URL, json=payload, headers=headers, timeout=5, verify=False)
+        r = requests.post(WEB_API_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=5)
         if r.status_code not in (200, 201):
             print(f"[WEB] POST failed: {r.status_code} - {r.text[:100]}")
         return r.status_code in (200, 201)
@@ -390,7 +402,6 @@ def web_poll_thread():
                 if text:
                     print(f"[WEB] New message from {sender}: {text[:50]}")
                     add_message(sender, text, "web")
-                    # Forward to mesh peers
                     mesh_send_message(f"[Web] {sender}: {text}")
             elif msg.get("username") == mesh_username:
                 print(f"[WEB] Skipping own message from {msg.get('username')}")
@@ -460,7 +471,7 @@ def main():
         with chat_lock:
             for sender, text, ts, src in chat_messages:
                 f.write(f"[{datetime.fromtimestamp(ts).strftime('%H:%M:%S')}] {sender}: {text}\n")
-    draw_screen([f"Session saved", log_file[-25:], "KEY3 to exit"], title="DarkSec-Chat", title_color="#8B0000")
+    draw_screen([f"Session saved", log_file[-25:], "KEY3 to exit"], title="DarkSec-Chat", title_color="#00AA00")
     while wait_btn(0.5) != "KEY3":
         pass
     mesh_running = False
