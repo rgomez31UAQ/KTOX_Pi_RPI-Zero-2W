@@ -6,7 +6,7 @@
 
 ```bash
 cd /root/KTOX_Pi
-sudo ./run_with_m5_support.sh
+sudo ./scripts/run_with_m5_support.sh
 ```
 
 That's it. Frame capture and WebSocket server start automatically.
@@ -93,9 +93,9 @@ LCD Display → Saved as JPEG every 160ms → device_server reads → sends to M
 **Key files:**
 - `LCD_1in44.py` — Does the frame capture (lines 328-334)
 - `device_server.py` — Streams frames to M5
-- `run_with_m5_support.sh` — Startup with proper config
+- `scripts/run_with_m5_support.sh` — Startup with proper config
 - `.env.frame_capture` — Environment variables
-- `test_m5_setup.py` — Verify everything works
+- `scripts/test_m5_setup.py` — Verify everything works
 
 ---
 
