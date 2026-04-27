@@ -30,12 +30,14 @@ These are regular Python functions—no special payload language or parser layer
 ### Gates (Workflow Control)
 
 #### WAIT_FOR_PRESENT
-Wait until a BLE device becomes present.
+Wait until a monitored signal (Bluetooth, Wi-Fi, or GPIO) becomes present.
 
 **Signature:**
 ```python
 def WAIT_FOR_PRESENT(
     *,
+    signal_type: str = "bluetooth",
+    identifier: str = "",
     name: str = "",
     mac: str = "",
     service_uuid: str = "",
@@ -47,43 +49,74 @@ def WAIT_FOR_PRESENT(
 ```
 
 **Parameters:**
-- `name` (str): Advertised device name to match (partial, case-insensitive)
-- `mac` (str): MAC address to match (e.g., "AA:BB:CC:DD:EE:FF")
-- `service_uuid` (str): Service UUID to match
+- `signal_type` (str): One of `"bluetooth"`, `"wifi"`, or `"gpio"` (default: bluetooth)
+- `identifier` (str): Device name/MAC (bluetooth), SSID (wifi), or GPIO label/path (gpio)
+- `name` (str): Device advertised name to match (bluetooth only, partial, case-insensitive)
+- `mac` (str): MAC address to match (bluetooth only, e.g., "AA:BB:CC:DD:EE:FF")
+- `service_uuid` (str): Service UUID to match (bluetooth only)
 - `timeout_seconds` (int): Max wait time in seconds (0 = infinite)
-- `scan_window_seconds` (int): Duration of each BLE scan window
+- `scan_window_seconds` (int): Duration of each scan window
 - `poll_interval_seconds` (int): Interval between scans
 - `fail_closed` (bool): If True, raise on timeout; if False, return False
 
-**Returns:** True if device found
+**Returns:** True if signal found
 
 **Raises:**
 - `TimeoutError`: If timeout and fail_closed=True
-- `RuntimeError`: If BLE unavailable and fail_closed=True
+- `RuntimeError`: If scan unavailable and fail_closed=True
+- `ValueError`: If invalid signal_type or missing identifier
 
-**Example:**
+**Examples:**
+
+Wait for Bluetooth device by name:
 ```python
 from EXTENSIONS.api import WAIT_FOR_PRESENT
 
 try:
     found = WAIT_FOR_PRESENT(
-        name="MyDevice",
+        signal_type="bluetooth",
+        identifier="M5Cardputer",
         timeout_seconds=30,
-        scan_window_seconds=4,
     )
     if found:
-        print("Device found!")
+        print("M5Cardputer connected!")
 except TimeoutError:
-    print("Device not found within 30 seconds")
+    print("M5Cardputer not found within 30 seconds")
+```
+
+Wait for Wi-Fi network:
+```python
+found = WAIT_FOR_PRESENT(
+    signal_type="wifi",
+    identifier="MySSID",
+    timeout_seconds=60,
+    fail_closed=False,
+)
+if found:
+    print("WiFi network available")
+else:
+    print("WiFi network not available")
+```
+
+Wait for GPIO pin high:
+```python
+high = WAIT_FOR_PRESENT(
+    signal_type="gpio",
+    identifier="21",  # GPIO pin 21
+    poll_interval_seconds=0.5,
+)
+print("GPIO pin 21 went high")
 ```
 
 #### WAIT_FOR_NOTPRESENT
-Wait until a BLE device is no longer present.
+Wait until a monitored signal is no longer present.
 
 **Signature:**
 ```python
 def WAIT_FOR_NOTPRESENT(
     *,
+    signal_type: str = "bluetooth",
+    identifier: str = "",
     name: str = "",
     mac: str = "",
     service_uuid: str = "",
@@ -96,7 +129,7 @@ def WAIT_FOR_NOTPRESENT(
 
 Same parameters as WAIT_FOR_PRESENT.
 
-**Returns:** True if device disappeared
+**Returns:** True if signal disappeared
 
 ---
 
@@ -236,14 +269,15 @@ print("All dependencies available!")
 
 ### Conditional Execution
 
-Chain payloads based on detection:
+Chain payloads based on signal detection:
 
 ```python
 from EXTENSIONS.api import WAIT_FOR_PRESENT, RUN_PAYLOAD
 
-# Wait for M5Cardputer to appear
+# Wait for M5Cardputer Bluetooth device
 found = WAIT_FOR_PRESENT(
-    name="M5Cardputer",
+    signal_type="bluetooth",
+    identifier="M5Cardputer",
     timeout_seconds=60,
     fail_closed=False,
 )
@@ -252,6 +286,36 @@ if found:
     exit_code = RUN_PAYLOAD("attacks/m5_attack.py")
 else:
     exit_code = RUN_PAYLOAD("attacks/wifi_scan.py")
+```
+
+Multi-signal detection pattern:
+
+```python
+from EXTENSIONS.api import WAIT_FOR_PRESENT, RUN_PAYLOAD
+
+# Check for target Wi-Fi first
+wifi_found = WAIT_FOR_PRESENT(
+    signal_type="wifi",
+    identifier="TargetSSID",
+    timeout_seconds=15,
+    fail_closed=False,
+)
+
+if wifi_found:
+    # Then check for Bluetooth beacon
+    ble_found = WAIT_FOR_PRESENT(
+        signal_type="bluetooth",
+        identifier="BLE_Beacon",
+        timeout_seconds=30,
+        fail_closed=False,
+    )
+    if ble_found:
+        exit_code = RUN_PAYLOAD("attacks/combined_attack.py")
+    else:
+        exit_code = RUN_PAYLOAD("attacks/wifi_only.py")
+else:
+    print("Target network not available")
+    exit(1)
 ```
 
 ### Cooldown Pattern
