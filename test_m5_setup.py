@@ -47,13 +47,13 @@ def main():
 
     all_pass &= test(f"Frame mirror enabled", frame_mirror in ["1", "true", "True"],
                      f"RJ_FRAME_MIRROR={frame_mirror}")
-    all_pass &= test(f"Frame path set", frame_path,
+    all_pass &= test(f"Frame path set", bool(frame_path),
                      f"RJ_FRAME_PATH={frame_path}")
-    all_pass &= test(f"Frame FPS configured", frame_fps,
+    all_pass &= test(f"Frame FPS configured", bool(frame_fps),
                      f"RJ_FRAME_FPS={frame_fps} FPS")
-    all_pass &= test(f"WebSocket host configured", ws_host,
+    all_pass &= test(f"WebSocket host configured", bool(ws_host),
                      f"RJ_WS_HOST={ws_host}")
-    all_pass &= test(f"WebSocket port configured", ws_port,
+    all_pass &= test(f"WebSocket port configured", bool(ws_port),
                      f"RJ_WS_PORT={ws_port}")
 
     # 2. System resources
