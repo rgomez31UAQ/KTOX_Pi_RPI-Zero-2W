@@ -6,30 +6,22 @@ Includes RaspyJack-compatible flip detection and remote text input.
 
 import os, sys, json, time, uuid
 
+# Add ktox_pi to path once
+_ktox_pi = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "ktox_pi")
+if _ktox_pi not in sys.path:
+    sys.path.insert(0, _ktox_pi)
+
 try:
     import ktox_input
 except Exception:
-    try:
-        _ktox_pi = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "ktox_pi")
-        if _ktox_pi not in sys.path:
-            sys.path.insert(0, _ktox_pi)
-        import ktox_input
-    except Exception:
-        ktox_input = None
+    ktox_input = None
 
 try:
     import keyboard_input
     HAS_KEYBOARD = keyboard_input.HAS_EVDEV
 except Exception:
-    try:
-        _ktox_pi = os.path.join(os.environ.get("KTOX_DIR", "/root/KTOx"), "ktox_pi")
-        if _ktox_pi not in sys.path:
-            sys.path.insert(0, _ktox_pi)
-        import keyboard_input
-        HAS_KEYBOARD = keyboard_input.HAS_EVDEV
-    except Exception:
-        HAS_KEYBOARD = False
-        keyboard_input = None
+    HAS_KEYBOARD = False
+    keyboard_input = None
 
 _VIRTUAL_TO_BTN = {
     "KEY_UP_PIN": "UP",
