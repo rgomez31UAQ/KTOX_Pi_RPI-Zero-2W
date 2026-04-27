@@ -465,6 +465,26 @@ def send_input_event(button, state):
         pass
 
 
+def send_text_event(session_id, key=None, special=None):
+    """Send text input event to the input bridge."""
+    try:
+        payload_dict = {
+            "type": "text_key",
+            "session_id": session_id,
+        }
+        if special:
+            payload_dict["special"] = special
+        elif key:
+            payload_dict["key"] = key
+
+        payload = json.dumps(payload_dict).encode()
+        with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as s:
+            s.connect(INPUT_SOCK)
+            s.send(payload)
+    except Exception:
+        pass
+
+
 # ----------------------------- Auth -------------------------------------------
 def authorize(path: str) -> bool:
     if not TOKEN:
@@ -609,6 +629,14 @@ async def handle_client(ws):
                 state = data.get("state")
                 if btn and state in ("press", "release"):
                     send_input_event(btn, state)
+                continue
+
+            if data.get("type") == "text_key":
+                session_id = str(data.get("session_id") or "")
+                key = str(data.get("key") or "")
+                special = str(data.get("special") or "")
+                if session_id and (key or special):
+                    send_text_event(session_id, key=key or None, special=special or None)
                 continue
 
             if data.get("type") == "stealth_exit":
