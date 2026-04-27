@@ -197,8 +197,12 @@ def _load_or_create_auth_secret() -> str:
 
 HOST = os.environ.get("RJ_WEB_HOST", "0.0.0.0")
 PORT = int(os.environ.get("RJ_WEB_PORT", "8080"))
-TOKEN = _load_shared_token()
 AUTH_SECRET = _load_or_create_auth_secret()
+
+
+def _get_token() -> str | None:
+    """Get current token (dynamically loaded to allow updates without restart)."""
+    return _load_shared_token()
 
 # WebUI only listens on these interfaces — wlan1+ are for attacks/monitor mode
 WEBUI_INTERFACES = ["eth0", "wlan0", "tailscale0"]
@@ -822,7 +826,8 @@ def _auth_context(handler: SimpleHTTPRequestHandler, query: dict) -> dict | None
         return {"method": "session", "user": str(sess.get("usr")), "claims": sess}
     bearer = _bearer_token_from_request(handler, query)
     # Check shared static token first
-    if TOKEN and bearer and hmac.compare_digest(bearer, TOKEN):
+    current_token = _get_token()
+    if current_token and bearer and hmac.compare_digest(bearer, current_token):
         return {"method": "token", "user": "token-admin", "claims": None}
     # Also accept a signed session token delivered as a Bearer header
     # (fallback for browsers/clients that drop the Set-Cookie header)
@@ -1837,7 +1842,7 @@ class KTOxHandler(SimpleHTTPRequestHandler):
 
 
 def main() -> None:
-    if TOKEN:
+    if _get_token():
         print("[WebUI] Token auth enabled")
     else:
         print("[WebUI] WARNING: Token auth disabled (set RJ_WS_TOKEN or token file)")
