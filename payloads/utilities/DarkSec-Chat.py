@@ -69,6 +69,7 @@ f9 = font(9)
 # Web API constants
 # ----------------------------------------------------------------------
 WEB_API_URL = "https://darksec.uk/api/chat"
+WEB_API_KEY = os.environ.get("DARKSEC_API_KEY", "")  # Optional API key for authentication
 
 # ----------------------------------------------------------------------
 # LCD helpers
@@ -108,14 +109,26 @@ def osk_input(prompt="Enter:", initial=""):
     while True:
         btn = wait_btn(0.2)
         if btn == "OK":
+            # Wait for button release before opening keyboard
+            while GPIO.input(PINS["OK"]) == 0:
+                time.sleep(0.02)
+            time.sleep(0.1)  # debounce delay
             break
         elif btn == "KEY3":
+            # Wait for KEY3 release
+            while GPIO.input(PINS["KEY3"]) == 0:
+                time.sleep(0.02)
             return None
         time.sleep(0.05)
 
-    # Now show the keyboard
+    # Clear button state before opening keyboard
     flush_input()
     time.sleep(0.1)
+    # Ensure all GPIO buttons are released before keyboard start
+    for pin in PINS.values():
+        while GPIO.input(pin) == 0:
+            time.sleep(0.02)
+
     kb = DarkSecKeyboard(width=W, height=H, lcd=LCD, gpio_pins=PINS, gpio_module=GPIO)
     result = kb.run()
     if result is None:
@@ -139,9 +152,11 @@ def add_message(sender, text, source):
             chat_messages.pop(0)
 
 def draw_chat():
+    global scroll_pos
     with chat_lock:
         msgs = chat_messages[-50:]
     if not msgs:
+        scroll_pos = 0
         draw_screen(["No messages yet", "Press K1 to send"], title="DarkSec-Chat")
         return
     # Build display lines (reverse order, newest at bottom, but we show top = newest)
@@ -150,13 +165,45 @@ def draw_chat():
     for sender, text, ts, src in reversed(msgs[-20:]):
         time_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S")
         prefix = f"{sender}:"
-        wrapped = textwrap.wrap(text, width=18)
+        # Calculate wrap width: screen shows 23 chars max, minus prefix length for first line
+        max_line_width = 23
+        first_line_width = max(8, max_line_width - len(prefix) - 1)  # -1 for space after colon
+        subsequent_line_width = max_line_width - 3  # -3 for "   " indent
+
+        wrapped = []
+        remaining_text = text
+        first_line = True
+        while remaining_text:
+            if first_line:
+                wrap_width = first_line_width
+                first_line = False
+            else:
+                wrap_width = subsequent_line_width
+
+            # Manual wrap since textwrap doesn't support varying widths
+            if len(remaining_text) <= wrap_width:
+                wrapped.append(remaining_text)
+                break
+            else:
+                # Find last space within wrap_width
+                chunk = remaining_text[:wrap_width]
+                last_space = chunk.rfind(' ')
+                if last_space > 0:
+                    wrapped.append(remaining_text[:last_space])
+                    remaining_text = remaining_text[last_space+1:]
+                else:
+                    wrapped.append(chunk)
+                    remaining_text = remaining_text[wrap_width:]
+
         for i, line in enumerate(wrapped):
             if i == 0:
                 lines.append(f"{prefix} {line}")
             else:
                 lines.append(f"   {line}")
         lines.append("")
+    # Constrain scroll_pos to valid range based on actual line count
+    max_scroll = max(0, len(lines) - 6)
+    scroll_pos = min(scroll_pos, max_scroll)
     visible = lines[scroll_pos:scroll_pos+6]
     draw_screen(visible, title="DarkSec-Chat", title_color="#8B0000")
 
@@ -168,11 +215,8 @@ def scroll_up():
 
 def scroll_down():
     global scroll_pos
-    with chat_lock:
-        max_scroll = max(0, len(chat_messages) - 6)
-    if scroll_pos < max_scroll:
-        scroll_pos += 1
-        draw_chat()
+    scroll_pos += 1
+    draw_chat()
 
 # ----------------------------------------------------------------------
 # Mesh networking
@@ -297,30 +341,46 @@ last_seen_ids = set()
 
 def fetch_web_messages():
     try:
-        r = requests.get(WEB_API_URL, timeout=5)
+        headers = {"Content-Type": "application/json"}
+        if WEB_API_KEY:
+            headers["Authorization"] = f"Bearer {WEB_API_KEY}"
+        r = requests.get(WEB_API_URL, headers=headers, timeout=5, verify=False)
         if r.status_code == 200:
             data = r.json()
             if isinstance(data, list):
                 return data
             elif isinstance(data, dict) and "messages" in data:
                 return data["messages"]
+        elif r.status_code != 200:
+            print(f"[WEB] GET {r.status_code}: {r.text[:100]}")
         return []
-    except:
+    except Exception as e:
+        print(f"[WEB] Fetch error: {e}")
         return []
 
 def post_to_web(message):
     payload = {"username": mesh_username, "message": message}
     try:
-        r = requests.post(WEB_API_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=5)
+        headers = {"Content-Type": "application/json"}
+        if WEB_API_KEY:
+            headers["Authorization"] = f"Bearer {WEB_API_KEY}"
+        r = requests.post(WEB_API_URL, json=payload, headers=headers, timeout=5, verify=False)
+        if r.status_code not in (200, 201):
+            print(f"[WEB] POST failed: {r.status_code} - {r.text[:100]}")
         return r.status_code in (200, 201)
-    except:
+    except Exception as e:
+        print(f"[WEB] POST error: {e}")
         return False
 
 def web_poll_thread():
     global last_seen_ids
+    poll_count = 0
     while mesh_running:
         time.sleep(web_poll_interval)
         msgs = fetch_web_messages()
+        poll_count += 1
+        if msgs:
+            print(f"[WEB] Poll #{poll_count}: got {len(msgs)} messages")
         for msg in msgs:
             msg_id = f"{msg.get('username', '')}|{msg.get('message', '')}|{msg.get('timestamp', '')}"
             if msg_id not in last_seen_ids and msg.get("username") != mesh_username:
@@ -328,9 +388,12 @@ def web_poll_thread():
                 sender = msg.get("username", "WebUser")
                 text = msg.get("message", "")
                 if text:
+                    print(f"[WEB] New message from {sender}: {text[:50]}")
                     add_message(sender, text, "web")
                     # Forward to mesh peers
                     mesh_send_message(f"[Web] {sender}: {text}")
+            elif msg.get("username") == mesh_username:
+                print(f"[WEB] Skipping own message from {msg.get('username')}")
 
 # ----------------------------------------------------------------------
 # Main
@@ -348,6 +411,8 @@ def main():
         return
     mesh_username = username
     add_message("System", f"{mesh_username} joined", "system")
+    print(f"[STARTUP] User: {mesh_username}")
+    print(f"[STARTUP] Web API: {WEB_API_URL}")
 
     # Step 2: Start mesh networking threads
     threading.Thread(target=mesh_broadcast_presence, daemon=True).start()
@@ -356,6 +421,7 @@ def main():
     # Step 3: Start web polling thread
     threading.Thread(target=web_poll_thread, daemon=True).start()
     time.sleep(1)  # allow threads to initialise
+    print("[STARTUP] Threads started")
 
     add_message("System", "Connected to mesh and web", "system")
     draw_chat()
