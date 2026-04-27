@@ -340,7 +340,7 @@ last_seen_ids = set()
 
 def fetch_web_messages():
     try:
-        r = requests.get(WEB_API_URL, timeout=5)
+        r = requests.get(WEB_API_URL, timeout=5, verify=False)
         if r.status_code == 200:
             data = r.json()
             if isinstance(data, list):
@@ -348,22 +348,30 @@ def fetch_web_messages():
             elif isinstance(data, dict) and "messages" in data:
                 return data["messages"]
         return []
-    except:
+    except Exception as e:
+        print(f"[WEB] Fetch error: {e}")
         return []
 
 def post_to_web(message):
     payload = {"username": mesh_username, "message": message}
     try:
-        r = requests.post(WEB_API_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=5)
+        r = requests.post(WEB_API_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=5, verify=False)
+        if r.status_code not in (200, 201):
+            print(f"[WEB] POST failed: {r.status_code} - {r.text[:100]}")
         return r.status_code in (200, 201)
-    except:
+    except Exception as e:
+        print(f"[WEB] POST error: {e}")
         return False
 
 def web_poll_thread():
     global last_seen_ids
+    poll_count = 0
     while mesh_running:
         time.sleep(web_poll_interval)
         msgs = fetch_web_messages()
+        poll_count += 1
+        if msgs:
+            print(f"[WEB] Poll #{poll_count}: got {len(msgs)} messages")
         for msg in msgs:
             msg_id = f"{msg.get('username', '')}|{msg.get('message', '')}|{msg.get('timestamp', '')}"
             if msg_id not in last_seen_ids and msg.get("username") != mesh_username:
@@ -371,9 +379,12 @@ def web_poll_thread():
                 sender = msg.get("username", "WebUser")
                 text = msg.get("message", "")
                 if text:
+                    print(f"[WEB] New message from {sender}: {text[:50]}")
                     add_message(sender, text, "web")
                     # Forward to mesh peers
                     mesh_send_message(f"[Web] {sender}: {text}")
+            elif msg.get("username") == mesh_username:
+                print(f"[WEB] Skipping own message from {msg.get('username')}")
 
 # ----------------------------------------------------------------------
 # Main
@@ -391,6 +402,8 @@ def main():
         return
     mesh_username = username
     add_message("System", f"{mesh_username} joined", "system")
+    print(f"[STARTUP] User: {mesh_username}")
+    print(f"[STARTUP] Web API: {WEB_API_URL}")
 
     # Step 2: Start mesh networking threads
     threading.Thread(target=mesh_broadcast_presence, daemon=True).start()
@@ -399,6 +412,7 @@ def main():
     # Step 3: Start web polling thread
     threading.Thread(target=web_poll_thread, daemon=True).start()
     time.sleep(1)  # allow threads to initialise
+    print("[STARTUP] Threads started")
 
     add_message("System", "Connected to mesh and web", "system")
     draw_chat()
