@@ -108,14 +108,26 @@ def osk_input(prompt="Enter:", initial=""):
     while True:
         btn = wait_btn(0.2)
         if btn == "OK":
+            # Wait for button release before opening keyboard
+            while GPIO.input(PINS["OK"]) == 0:
+                time.sleep(0.02)
+            time.sleep(0.1)  # debounce delay
             break
         elif btn == "KEY3":
+            # Wait for KEY3 release
+            while GPIO.input(PINS["KEY3"]) == 0:
+                time.sleep(0.02)
             return None
         time.sleep(0.05)
 
-    # Now show the keyboard
+    # Clear button state before opening keyboard
     flush_input()
     time.sleep(0.1)
+    # Ensure all GPIO buttons are released before keyboard start
+    for pin in PINS.values():
+        while GPIO.input(pin) == 0:
+            time.sleep(0.02)
+
     kb = DarkSecKeyboard(width=W, height=H, lcd=LCD, gpio_pins=PINS, gpio_module=GPIO)
     result = kb.run()
     if result is None:
@@ -139,9 +151,11 @@ def add_message(sender, text, source):
             chat_messages.pop(0)
 
 def draw_chat():
+    global scroll_pos
     with chat_lock:
         msgs = chat_messages[-50:]
     if not msgs:
+        scroll_pos = 0
         draw_screen(["No messages yet", "Press K1 to send"], title="DarkSec-Chat")
         return
     # Build display lines (reverse order, newest at bottom, but we show top = newest)
@@ -150,13 +164,45 @@ def draw_chat():
     for sender, text, ts, src in reversed(msgs[-20:]):
         time_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S")
         prefix = f"{sender}:"
-        wrapped = textwrap.wrap(text, width=18)
+        # Calculate wrap width: screen shows 23 chars max, minus prefix length for first line
+        max_line_width = 23
+        first_line_width = max(8, max_line_width - len(prefix) - 1)  # -1 for space after colon
+        subsequent_line_width = max_line_width - 3  # -3 for "   " indent
+
+        wrapped = []
+        remaining_text = text
+        first_line = True
+        while remaining_text:
+            if first_line:
+                wrap_width = first_line_width
+                first_line = False
+            else:
+                wrap_width = subsequent_line_width
+
+            # Manual wrap since textwrap doesn't support varying widths
+            if len(remaining_text) <= wrap_width:
+                wrapped.append(remaining_text)
+                break
+            else:
+                # Find last space within wrap_width
+                chunk = remaining_text[:wrap_width]
+                last_space = chunk.rfind(' ')
+                if last_space > 0:
+                    wrapped.append(remaining_text[:last_space])
+                    remaining_text = remaining_text[last_space+1:]
+                else:
+                    wrapped.append(chunk)
+                    remaining_text = remaining_text[wrap_width:]
+
         for i, line in enumerate(wrapped):
             if i == 0:
                 lines.append(f"{prefix} {line}")
             else:
                 lines.append(f"   {line}")
         lines.append("")
+    # Constrain scroll_pos to valid range based on actual line count
+    max_scroll = max(0, len(lines) - 6)
+    scroll_pos = min(scroll_pos, max_scroll)
     visible = lines[scroll_pos:scroll_pos+6]
     draw_screen(visible, title="DarkSec-Chat", title_color="#8B0000")
 
@@ -168,11 +214,8 @@ def scroll_up():
 
 def scroll_down():
     global scroll_pos
-    with chat_lock:
-        max_scroll = max(0, len(chat_messages) - 6)
-    if scroll_pos < max_scroll:
-        scroll_pos += 1
-        draw_chat()
+    scroll_pos += 1
+    draw_chat()
 
 # ----------------------------------------------------------------------
 # Mesh networking
