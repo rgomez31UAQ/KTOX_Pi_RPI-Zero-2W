@@ -535,6 +535,8 @@
 
   let ws = null;
   let reconnectTimer = null;
+  let reconnectAttempts = 0;
+  let lastServerMessage = Date.now();
   const pressed = new Set(); // keyboard pressed state
   let activeTab = 'device';
   let lootState = { path: '', parent: '' };
@@ -547,6 +549,12 @@
   let shellWanted = false;
   let systemOpen = false;
   let wsAuthenticated = true;
+
+  // iOS reconnection parameters
+  const RECONNECT_BASE_DELAY = 1000; // 1 second
+  const RECONNECT_MAX_DELAY = 30000; // 30 seconds
+  const MAX_RECONNECT_ATTEMPTS = 50;
+  const SERVER_HEARTBEAT_TIMEOUT = 60000; // 60 seconds
 
   function applyStatusTone(el, txt){
     if (!el) return;
@@ -755,7 +763,10 @@
 
     ws.onopen = () => {
       setStatus('Connected');
+      reconnectAttempts = 0; // Reset backoff on successful connection
+      lastServerMessage = Date.now(); // Reset heartbeat timer
       wsAuthenticated = true;
+      console.log('[iOS] WebSocket connected - resetting reconnect backoff');
       if (wsTicket){
         try{
           ws.send(JSON.stringify({ type: 'auth_session', ticket: wsTicket }));
@@ -772,6 +783,7 @@
 
     ws.onmessage = (ev) => {
       try{
+        lastServerMessage = Date.now(); // Track heartbeat
         const msg = JSON.parse(ev.data);
         if (msg.type === 'frame' && msg.data){
           const img = new Image();
@@ -865,12 +877,33 @@
     };
   }
 
-  function scheduleReconnect(){
+  function scheduleReconnect(reason = ''){
     if (reconnectTimer) return;
+
+    // Exponential backoff with jitter for iOS resilience
+    const exponentialDelay = Math.min(
+      RECONNECT_BASE_DELAY * Math.pow(2, reconnectAttempts),
+      RECONNECT_MAX_DELAY
+    );
+    const jitter = exponentialDelay * 0.1 * Math.random();
+    const delay = exponentialDelay + jitter;
+
+    reconnectAttempts++;
+
+    if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+      setStatus('Max reconnection attempts exceeded');
+      console.error('[iOS] Max reconnect attempts reached');
+      return;
+    }
+
+    const delayMs = Math.round(delay);
+    console.log(`[iOS] Reconnect attempt ${reconnectAttempts} in ${delayMs}ms${reason ? ' (' + reason + ')' : ''}`);
+    setStatus(`Reconnecting (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})…`);
+
     reconnectTimer = setTimeout(()=>{
       reconnectTimer = null;
       connect();
-    }, 1000);
+    }, delay);
   }
 
   function ensureSocketLive(reason = ''){
@@ -2099,12 +2132,27 @@
     setActiveTab(activeTab);
   });
 
+  // iOS heartbeat monitor - detect silent connection drops
+  function startHeartbeatMonitor(){
+    setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const timeSinceLastMessage = Date.now() - lastServerMessage;
+        if (timeSinceLastMessage > SERVER_HEARTBEAT_TIMEOUT) {
+          console.warn('[iOS] Server heartbeat timeout - connection is likely dead');
+          try { ws.close(); } catch(e) {}
+          scheduleReconnect('heartbeat timeout');
+        }
+      }
+    }, 10000); // Check every 10 seconds
+  }
+
   const startAfterAuth = () => {
     ensureAuthenticated('Log in to access KTOx WebUI.').then((ok) => {
       if (!ok){
         setTimeout(startAfterAuth, 0);
         return;
       }
+      startHeartbeatMonitor();
       connect();
       loadPayloads();
       schedulePayloadPoll();
