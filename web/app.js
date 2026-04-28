@@ -1048,13 +1048,15 @@
       console.log('[SystemMonitor] Fetching from:', url);
       const res = await apiFetch(url, { cache: 'no-store' });
       console.log('[SystemMonitor] Response status:', res.status);
+
+      if (!res.ok){
+        const data = await res.json();
+        console.error('[SystemMonitor] API error:', data);
+        throw new Error(data && data.error ? data.error : `HTTP ${res.status}`);
+      }
+
       const data = await res.json();
       console.log('[SystemMonitor] Response data:', data);
-      if (!res.ok){
-        console.error('System status error:', res.status, data);
-        throw new Error(data && data.error ? data.error : 'system_failed');
-      }
-      console.log('System status data:', data);
 
       const cpu = Number(data.cpu_percent || 0);
       const memUsed = Number(data.mem_used || 0);
@@ -2021,19 +2023,29 @@
   });
   const payloadsMobRefresh = document.getElementById('payloadsMobRefresh');
   if (payloadsMobRefresh) payloadsMobRefresh.addEventListener('click', () => loadPayloads());
+
+  // Settings button in header (mobile and desktop)
+  const settingsToggle = document.getElementById('settingsToggle');
+  if (settingsToggle) {
+    settingsToggle.addEventListener('click', () => {
+      setActiveTab('settings');
+      loadDiscordWebhook();
+      loadTailscaleSettings();
+    });
+  }
+
   // ── Mobile bottom nav ──────────────────────────────────────────────────────
   document.querySelectorAll('[data-mobnav]').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.mobnav;
       if (tab === 'system'){
-        setSystemOpen(!systemOpen);
+        setActiveTab('device');
+        setSidebarOpen(true);
+        setSystemOpen(true);
+        loadSystemStatus();
       } else if (tab === 'loot'){
         setActiveTab('loot');
         if (lootList && !lootList.dataset.loaded){ loadLoot(''); lootList.dataset.loaded = '1'; }
-      } else if (tab === 'settings'){
-        setActiveTab('settings');
-        loadDiscordWebhook();
-        loadTailscaleSettings();
       } else {
         setActiveTab(tab);
       }
