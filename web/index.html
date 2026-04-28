@@ -471,19 +471,20 @@
     </aside>
 
     <main class="flex-1 px-4 py-6 md:px-8">
-      <div class="flex items-center justify-between mb-4 md:mb-6 px-3 py-2 border border-slate-800/70 bg-slate-950/45 backdrop-blur rounded-xl">
+      <div class="sticky top-0 z-20 mb-4 md:mb-6 -mx-4 px-4 md:mx-0 md:px-0 md:relative flex items-center justify-between py-2 md:py-4 px-3 md:px-0 border border-slate-800/70 md:border-slate-800/70 bg-slate-950/95 md:bg-slate-950/45 backdrop-blur rounded-none md:rounded-xl">
         <div class="flex items-center gap-2 text-[11px] text-slate-300">
           <i class="fa-solid fa-terminal text-red-400"></i>
           <span class="tracking-wide">WEBUI CONTROL DECK</span>
         </div>
         <div class="flex items-center gap-2">
           <button id="menuToggle" type="button" class="md:hidden px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-600/40 text-slate-200"><i class="fa-solid fa-bars"></i></button>
+          <button id="settingsToggle" type="button" class="hidden md:inline px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-600/40 text-slate-200 hover:bg-slate-700/80 transition"><i class="fa-solid fa-sliders mr-1"></i>Settings</button>
           <button id="logoutBtn" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-600/40 text-slate-200 hover:bg-slate-700/80 transition"><i class="fa-solid fa-right-from-bracket mr-1"></i>Logout</button>
         </div>
       </div>
 
       <!-- Device card -->
-      <div id="deviceTab" class="block">
+      <div id="deviceTab" class="block overflow-y-hidden"
         <div class="flex flex-col md:flex-row md:items-start md:gap-6">
           <div class="terminal-col md:order-1 order-2 flex-1 min-w-0">
             <div class="terminal-wrap terminal-divider md:pr-6">
@@ -827,10 +828,6 @@
     <button class="mob-nav-btn" data-mobnav="loot" aria-label="Loot">
       <i class="fa-solid fa-vault"></i>
       <span>Loot</span>
-    </button>
-    <button class="mob-nav-btn" data-mobnav="settings" aria-label="Settings">
-      <i class="fa-solid fa-sliders"></i>
-      <span>Settings</span>
     </button>
   </nav>
 

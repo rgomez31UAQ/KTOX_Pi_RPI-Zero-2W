@@ -1998,6 +1998,17 @@
   });
   const payloadsMobRefresh = document.getElementById('payloadsMobRefresh');
   if (payloadsMobRefresh) payloadsMobRefresh.addEventListener('click', () => loadPayloads());
+
+  // Settings button in header (mobile and desktop)
+  const settingsToggle = document.getElementById('settingsToggle');
+  if (settingsToggle) {
+    settingsToggle.addEventListener('click', () => {
+      setActiveTab('settings');
+      loadDiscordWebhook();
+      loadTailscaleSettings();
+    });
+  }
+
   // ── Mobile bottom nav ──────────────────────────────────────────────────────
   document.querySelectorAll('[data-mobnav]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2005,10 +2016,6 @@
       if (tab === 'loot'){
         setActiveTab('loot');
         if (lootList && !lootList.dataset.loaded){ loadLoot(''); lootList.dataset.loaded = '1'; }
-      } else if (tab === 'settings'){
-        setActiveTab('settings');
-        loadDiscordWebhook();
-        loadTailscaleSettings();
       } else {
         setActiveTab(tab);
       }
