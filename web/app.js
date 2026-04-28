@@ -2034,17 +2034,78 @@
     });
   }
 
+  // ── Mobile system stats loader ────────────────────────────────────────────
+  window.loadMobileSystemStatus = async function(){
+    const status = document.getElementById('mobileSystemStatus');
+    if (status) status.textContent = 'Loading...';
+    try{
+      const url = getApiUrl('/api/system/status');
+      const res = await apiFetch(url, { cache: 'no-store' });
+      if (!res.ok){
+        const data = await res.json();
+        throw new Error(data && data.error ? data.error : `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+
+      const cpu = Number(data.cpu_percent || 0);
+      const memUsed = Number(data.mem_used || 0);
+      const memTotal = Number(data.mem_total || 0);
+      const diskUsed = Number(data.disk_used || 0);
+      const diskTotal = Number(data.disk_total || 0);
+      const memPct = pct(memUsed, memTotal);
+      const diskPct = pct(diskUsed, diskTotal);
+
+      const mobCpuVal = document.getElementById('mobSysCpuValue');
+      const mobTempVal = document.getElementById('mobSysTempValue');
+      const mobMemVal = document.getElementById('mobSysMemValue');
+      const mobMemMeta = document.getElementById('mobSysMemMeta');
+      const mobDiskVal = document.getElementById('mobSysDiskValue');
+      const mobDiskMeta = document.getElementById('mobSysDiskMeta');
+      const mobUptime = document.getElementById('mobSysUptime');
+      const mobLoad = document.getElementById('mobSysLoad');
+      const mobPayload = document.getElementById('mobSysPayload');
+      const mobInterfaces = document.getElementById('mobSysInterfaces');
+
+      if (mobCpuVal) mobCpuVal.textContent = `${cpu.toFixed(1)}%`;
+      if (mobTempVal) mobTempVal.textContent = data.temp_c === null || data.temp_c === undefined ? '--.- C' : `${Number(data.temp_c).toFixed(1)} C`;
+      if (mobMemVal) mobMemVal.textContent = `${memPct.toFixed(1)}%`;
+      if (mobMemMeta) mobMemMeta.textContent = `${formatBytes(memUsed)} / ${formatBytes(memTotal)}`;
+      if (mobDiskVal) mobDiskVal.textContent = `${diskPct.toFixed(1)}%`;
+      if (mobDiskMeta) mobDiskMeta.textContent = `${formatBytes(diskUsed)} / ${formatBytes(diskTotal)}`;
+      if (mobUptime) mobUptime.textContent = formatDuration(data.uptime_s);
+      if (mobLoad) mobLoad.textContent = Array.isArray(data.load) ? data.load.map(v => v.toFixed(2)).join(', ') : '-';
+      if (mobPayload) mobPayload.textContent = data.payload_running ? (data.payload_path || 'running') : 'none';
+
+      if (mobInterfaces){
+        const ifaces = Array.isArray(data.interfaces) ? data.interfaces : [];
+        if (!ifaces.length){
+          mobInterfaces.innerHTML = '<div class="text-slate-500">No active interfaces</div>';
+        } else {
+          mobInterfaces.innerHTML = ifaces.map(i => `<div><span class="text-red-400">${escapeHtml(String(i.name || '-'))}</span>: ${escapeHtml(String(i.ipv4 || '-'))}</div>`).join('');
+        }
+      }
+
+      document.getElementById('mobSysCpuBar').style.width = `${Math.max(0, Math.min(100, cpu)).toFixed(1)}%`;
+      document.getElementById('mobSysMemBar').style.width = `${Math.max(0, Math.min(100, memPct)).toFixed(1)}%`;
+      document.getElementById('mobSysDiskBar').style.width = `${Math.max(0, Math.min(100, diskPct)).toFixed(1)}%`;
+
+      if (status) status.textContent = 'Live';
+    } catch (e){
+      if (status) status.textContent = 'Unavailable';
+    }
+  };
+
   // ── Mobile bottom nav ──────────────────────────────────────────────────────
   document.querySelectorAll('[data-mobnav]').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.mobnav;
       if (tab === 'system'){
-        setActiveTab('device');
-        setSidebarOpen(true);
-        setSystemOpen(true);
-        loadSystemStatus();
-      } else if (tab === 'terminal'){
-        setActiveTab('device');
+        setActiveTab('system');
+        loadMobileSystemStatus();
+      } else if (tab === 'settings'){
+        setActiveTab('settings');
+        loadDiscordWebhook();
+        loadTailscaleSettings();
       } else if (tab === 'loot'){
         setActiveTab('loot');
         if (lootList && !lootList.dataset.loaded){ loadLoot(''); lootList.dataset.loaded = '1'; }
