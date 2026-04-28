@@ -73,16 +73,23 @@ def get_payloads(category):
     """
     Return list of (name, path, meta) for all .py files in a category.
     Reads optional metadata from first 5 lines of the payload file.
-    Excludes helper files (starting with _ or .)
+    Excludes helper files (starting with _ or .) and known utility modules.
     """
     cat_dir = Path(f"{PAYLOAD_DIR}/{category}")
     if not cat_dir.exists():
         return []
 
+    # Helper files that shouldn't be shown in menu
+    HIDDEN_FILES = {
+        "__init__.py", "__pycache__",
+        "hid_helper.py", "debug_keyboard.py", "monitor_mode_helper.py",
+        "payload_compat.py", "navarro_engine.py",
+    }
+
     payloads = []
     for f in sorted(cat_dir.glob("*.py")):
         # Skip helper files and internal modules
-        if f.name.startswith("_") or f.name.startswith("."):
+        if f.name.startswith("_") or f.name.startswith(".") or f.name in HIDDEN_FILES:
             continue
         name = f.stem.replace("_", " ").title()
         desc = ""
