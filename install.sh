@@ -59,7 +59,8 @@ apt-get install -y --no-install-recommends \
     fonts-dejavu-core \
     nmap ncat tcpdump arp-scan dsniff ettercap-text-only php procps \
     aircrack-ng wireless-tools wpasupplicant iw \
-    hashcat john hostapd dnsmasq \
+    hcxtools hcxdumptool hostapd dnsmasq mdk4 \
+    hashcat john \
     openssh-server openssh-client autossh \
     net-tools ethtool git i2c-tools libglib2.0-dev 2>/dev/null || warn "Some packages failed"
 
