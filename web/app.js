@@ -2101,7 +2101,7 @@
       const tab = btn.dataset.mobnav;
       if (tab === 'system'){
         setActiveTab('system');
-        loadMobileSystemStatus();
+        setTimeout(() => loadMobileSystemStatus(), 50);
       } else if (tab === 'settings'){
         setActiveTab('settings');
         loadDiscordWebhook();
