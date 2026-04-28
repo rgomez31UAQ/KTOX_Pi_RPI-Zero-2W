@@ -50,10 +50,21 @@ INSTALL_OUTPUT_LINES = ["Press OK to start..."]
 
 # --- Dependencies ---
 APT_PACKAGES = [
-    "bluez", "hostapd", "dnsmasq",
+    # Bluetooth & Hardware
+    "bluez", "bluez-tools",
+    # WiFi & Network Core
     "aircrack-ng", "hcxtools", "hcxdumptool", "mdk4",
-    "wireless-tools", "wpasupplicant",
-    "wifite", "impacket-scripts", "w3m"
+    "wireless-tools", "wpasupplicant", "iw", "arp-scan",
+    "nmap", "tcpdump", "net-tools",
+    # MITM & Interception
+    "mitmproxy", "responder", "dnsmasq", "hostapd",
+    # Credential & Exploitation
+    "hashcat", "john", "hydra", "sshpass",
+    "enum4linux", "impacket-scripts", "smbclient",
+    # Reconnaissance
+    "snmp", "snmpd", "snmpwalk",
+    # Utilities
+    "wifite", "w3m"
 ]
 PIP_PACKAGES = [
     "impacket"

@@ -60,7 +60,10 @@ apt-get install -y --no-install-recommends \
     nmap ncat tcpdump arp-scan dsniff ettercap-text-only php procps \
     aircrack-ng wireless-tools wpasupplicant iw \
     hcxtools hcxdumptool hostapd dnsmasq mdk4 \
-    hashcat john \
+    hashcat john hydra sshpass enum4linux \
+    impacket-scripts smbclient snmp snmpd snmpwalk \
+    responder mitmproxy \
+    bluez bluez-tools \
     openssh-server openssh-client autossh \
     net-tools ethtool git i2c-tools libglib2.0-dev 2>/dev/null || warn "Some packages failed"
 
