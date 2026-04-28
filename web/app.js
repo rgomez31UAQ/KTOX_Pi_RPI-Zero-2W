@@ -1015,8 +1015,10 @@
       const res = await apiFetch(url, { cache: 'no-store' });
       const data = await res.json();
       if (!res.ok){
+        console.error('System status error:', res.status, data);
         throw new Error(data && data.error ? data.error : 'system_failed');
       }
+      console.log('System status data:', data);
 
       const cpu = Number(data.cpu_percent || 0);
       const memUsed = Number(data.mem_used || 0);
