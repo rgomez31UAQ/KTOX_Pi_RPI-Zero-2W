@@ -933,54 +933,15 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
     justify-content: center;
   }
 
-  /* Expand device shell and screen on mobile */
+  /* Expand device shell and screen on mobile - keep all buttons/design */
   #deviceShell {
     padding: 10px 8px !important;
     max-width: 90vw;
     width: 90vw;
   }
 
-  #deviceShell .layout-default {
-    gap: 0.5rem !important;
-    grid-template-columns: 1fr !important;
-  }
-
-  #deviceShell .layout-default > div:nth-child(1),
-  #deviceShell .layout-default > div:nth-child(3) {
-    display: none;
-  }
-
-  #deviceShell .layout-default > div:nth-child(2) {
-    grid-column: 1 / -1;
-  }
-
   #deviceShell .screen-frame {
     padding: 1px !important;
-    border-radius: 1rem;
-  }
-
-  #deviceShell .pager-text {
-    font-size: 0.65rem !important;
-    margin-top: 0.5rem !important;
-  }
-
-  #deviceShell .status-text {
-    font-size: 0.65rem !important;
-    margin-top: 0.25rem !important;
-  }
-
-  #deviceShell .layout-gameboy {
-    flex-direction: column;
-  }
-
-  #deviceShell .layout-gameboy .screen-frame {
-    order: 1;
-  }
-
-  #deviceShell .layout-gameboy .flex.justify-between {
-    order: 2;
-    flex-direction: column;
-    gap: 0.5rem;
   }
 
   /* Mobile UX improvement:
