@@ -2013,7 +2013,12 @@
   document.querySelectorAll('[data-mobnav]').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.mobnav;
-      if (tab === 'loot'){
+      if (tab === 'system'){
+        setActiveTab('device');
+        setSidebarOpen(true);
+        setSystemOpen(true);
+        loadSystemStatus();
+      } else if (tab === 'loot'){
         setActiveTab('loot');
         if (lootList && !lootList.dataset.loaded){ loadLoot(''); lootList.dataset.loaded = '1'; }
       } else {
