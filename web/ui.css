@@ -182,12 +182,126 @@ header .text-\[10px\],
 
 @media (max-width: 768px) {
   main {
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
   }
+
   #menuToggle,
   #logoutBtn {
     min-height: 2.25rem;
+  }
+
+  /* Tighter spacing for header */
+  main > .flex.items-center.justify-between {
+    margin-bottom: 0.5rem !important;
+    padding: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Reduce section margins */
+  main > section {
+    margin-bottom: 0.4rem !important;
+  }
+
+  /* Compact device tab sections */
+  #deviceTab > .flex {
+    gap: 0.5rem !important;
+  }
+
+  .terminal-divider {
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Tighter card padding */
+  #settingsTab > div,
+  #lootTab > div {
+    padding: 0.75rem !important;
+  }
+
+  /* Reduce modal padding */
+  #lootPreview > div,
+  #nmapVizModal > div,
+  #tailscaleModal > div,
+  [id$="Modal"] > div {
+    margin-top: 0 !important;
+  }
+
+  #lootPreview > div > div,
+  #nmapVizModal > div > div,
+  #tailscaleModal > div > div,
+  [id$="Modal"] > div > div {
+    border-radius: 0 !important;
+  }
+
+  /* Compact modal body */
+  #lootPreviewBody,
+  #nmapVizBody {
+    max-height: calc(100dvh - 100px) !important;
+  }
+
+  /* Tighter sidebar padding */
+  #sidebar nav {
+    padding: 0.5rem !important;
+  }
+
+  #sidebar nav > button,
+  #sidebar nav > a {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    min-height: 40px;
+    font-size: 0.875rem !important;
+  }
+
+  /* Compact payload categories */
+  #payloadSidebar details > summary {
+    padding: 0.375rem 0.375rem !important;
+    font-size: 0.75rem !important;
+    min-height: 36px;
+  }
+
+  #payloadSidebar details button {
+    padding-top: 0.375rem !important;
+    padding-bottom: 0.375rem !important;
+    min-height: 34px;
+    font-size: 0.8125rem !important;
+  }
+
+  /* Tighter loot list */
+  #lootList > div, #lootList > button, #lootList [role="button"] {
+    min-height: 40px;
+    padding: 0.5rem !important;
+  }
+
+  /* Reduce gap in flex containers */
+  .flex.items-center.gap-3 {
+    gap: 0.5rem !important;
+  }
+
+  .flex.items-center.gap-2 {
+    gap: 0.375rem !important;
+  }
+
+  /* Compact system status */
+  #systemDropdown {
+    padding: 0.5rem !important;
+    gap: 0.4rem !important;
+  }
+
+  #systemDropdown > div {
+    padding: 0.5rem !important;
+  }
+
+  /* Tighter text spacing */
+  body {
+    line-height: 1.35;
+  }
+
+  h1, h2, h3,
+  .text-lg,
+  .text-sm.font-black {
+    line-height: 1.15;
   }
 }
 
@@ -460,7 +574,13 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
 
   /* Terminal: shorter on mobile so buttons are visible without scrolling */
   .terminal-body {
-    height: min(50vh, 320px) !important;
+    height: min(48vh, 280px) !important;
+  }
+
+  /* Terminal wrap header compact */
+  #deviceTab .terminal-wrap > .flex.items-center.justify-between {
+    padding: 0.5rem !important;
+    gap: 0.5rem !important;
   }
 
   /* Device shell: full width, no transform */
@@ -469,7 +589,7 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 auto;
-    padding: 16px 12px !important;
+    padding: 12px 10px !important;
     box-sizing: border-box;
   }
 
@@ -580,8 +700,24 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
 
 /* ── Very small phones (< 400px — older Androids, iPhone SE gen1) ── */
 @media (max-width: 400px) {
+  main {
+    padding-left: 0.375rem !important;
+    padding-right: 0.375rem !important;
+  }
+
   #screen, #screen-gb, #screen-pager {
-    width: min(92vw, 220px) !important;
+    width: 100% !important;
+    min-width: 160px;
+  }
+
+  #deviceShell {
+    padding: 8px 6px !important;
+    width: 95vw !important;
+  }
+
+  .screen-frame {
+    border-radius: 0.75rem;
+    padding: 0 !important;
   }
 
   .key-btn {
@@ -594,12 +730,19 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
     height: 40px !important;
   }
 
-  #deviceShell {
-    padding: 8px !important;
+  .layout-default {
+    gap: 4px !important;
   }
 
-  .layout-default {
-    gap: 6px !important;
+  /* Even more compact on very small screens */
+  #settingsTab > div,
+  #lootTab > div {
+    padding: 0.5rem !important;
+  }
+
+  main > .flex.items-center.justify-between {
+    padding: 0.375rem !important;
+    font-size: 0.8125rem !important;
   }
 }
 
@@ -673,7 +816,11 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
   }
 
   #screen, #screen-gb, #screen-pager {
-    width: min(40vw, 160px) !important;
+    width: min(38vw, 200px) !important;
+  }
+
+  #deviceShell {
+    padding: 8px !important;
   }
 
   #deviceShell {
@@ -698,7 +845,27 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
 #mobileNav { display: none; }
 #mobileTerminalDock { display: none; }
 
+/* System dropdown: desktop positioning (inside sidebar flow) */
+@media (min-width: 769px) {
+  #systemDropdown {
+    position: static !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: auto !important;
+    max-height: none !important;
+    margin-top: 0.5rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: auto !important;
+  }
+}
+
 @media (max-width: 768px) {
+  #terminalQuickBar {
+    display: none !important;
+  }
+
   /* ── Replace hamburger drawer with bottom nav ────────────────── */
   #sidebar,
   #sidebarBackdrop,
@@ -747,6 +914,10 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
     font-size: 12px;
     padding: 0 10px;
     white-space: nowrap;
+  }
+
+  body.mobile-terminal-dock #terminalQuickBar {
+    display: none !important;
   }
 
   .mob-nav-btn {
@@ -847,6 +1018,17 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
     justify-content: center;
   }
 
+  /* Expand device shell and screen on mobile - keep all buttons/design */
+  #deviceShell {
+    padding: 10px 8px !important;
+    max-width: 90vw;
+    width: 90vw;
+  }
+
+  #deviceShell .screen-frame {
+    padding: 1px !important;
+  }
+
   /* Mobile UX improvement:
      - Device tab focuses on virtual device controls (hide terminal panel).
      - Terminal tab focuses on shell only (existing terminal-mode rules still apply). */
@@ -868,6 +1050,19 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
   /* ── Mobile payloads tab ─────────────────────────────────────── */
   #payloadsTab {
     padding-bottom: 1rem;
+  }
+
+  /* ── System dropdown on mobile (fixed overlay) ─────────────────── */
+  #systemDropdown {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    z-index: 50;
+    margin: 0;
+    max-height: 60vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
 }

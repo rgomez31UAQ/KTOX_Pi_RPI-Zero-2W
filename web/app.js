@@ -146,7 +146,7 @@
     const primary = `ws://${host}:${port}/`.replace(/\/\/\//,'//');
     const sameOrigin = `${location.origin.replace(/^https?:/, 'ws:')}/ws`;
     if (!explicitPort && originPort){
-      return Array.from(new Set([sameOrigin, `ws://${host}:8765/`]));
+      return Array.from(new Set([`ws://${host}:8765/`, sameOrigin]));
     }
     return Array.from(new Set([primary, sameOrigin]));
   }
@@ -684,17 +684,26 @@
     btn.classList.toggle('border-slate-400/20', !active);
   }
 
-  function setActiveTab(tab){
-    activeTab = tab;
-    const isDevice = tab === 'device' || tab === 'terminal';
+  function applyResponsiveTabClasses(tab){
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     if (deviceTab) {
-      deviceTab.classList.toggle('hidden', !isDevice);
       deviceTab.classList.toggle('terminal-mode', tab === 'terminal');
       deviceTab.classList.toggle('mobile-device-focus', isMobile && tab === 'device');
       deviceTab.classList.toggle('mobile-terminal-focus', isMobile && tab === 'terminal');
     }
     document.body.classList.toggle('mobile-terminal-dock', isMobile && tab === 'terminal');
+  }
+
+  function setActiveTab(tab){
+    if (systemOpen){
+      setSystemOpen(false);
+    }
+    activeTab = tab;
+    const isDevice = tab === 'device' || tab === 'terminal';
+    if (deviceTab) {
+      deviceTab.classList.toggle('hidden', !isDevice);
+    }
+    applyResponsiveTabClasses(tab);
     if (settingsTab) settingsTab.classList.toggle('hidden', tab !== 'settings');
     if (lootTab) lootTab.classList.toggle('hidden', tab !== 'loot');
     const payloadsTabEl = document.getElementById('payloadsTab');
@@ -727,6 +736,11 @@
       systemDropdown.classList.toggle('hidden', !systemOpen);
     }
     setNavActive(navSystem, systemOpen);
+    document.querySelectorAll('[data-mobnav]').forEach(btn => {
+      if (btn.dataset.mobnav === 'system'){
+        btn.classList.toggle('mob-nav-active', systemOpen);
+      }
+    });
     if (systemOpen){
       loadSystemStatus();
     }
@@ -751,6 +765,7 @@
     }
     if (wsCandidateIndex >= wsCandidates.length) wsCandidateIndex = 0;
     const url = wsCandidates[wsCandidateIndex];
+    let opened = false;
     try{
       ws = new WebSocket(url);
       setStatus(`Connecting (${wsCandidateIndex + 1}/${wsCandidates.length})…`);
@@ -762,6 +777,7 @@
     }
 
     ws.onopen = () => {
+      opened = true;
       setStatus('Connected');
       reconnectAttempts = 0; // Reset backoff on successful connection
       lastServerMessage = Date.now(); // Reset heartbeat timer
@@ -863,11 +879,16 @@
     };
 
     ws.onclose = () => {
+      const hadOpened = opened;
       setStatus('Disconnected – reconnecting…');
       setShellStatus('Disconnected');
       shellOpen = false;
       if (wsCandidates.length > 1){
         wsCandidateIndex = (wsCandidateIndex + 1) % wsCandidates.length;
+        if (!hadOpened){
+          scheduleReconnect();
+          return;
+        }
       }
       scheduleReconnect();
     };
@@ -2145,7 +2166,10 @@
 
   window.addEventListener('resize', () => {
     // Re-apply responsive tab classes when crossing mobile/desktop breakpoints.
-    setActiveTab(activeTab);
+    applyResponsiveTabClasses(activeTab);
+    if (activeTab === 'terminal' && fitAddon) {
+      requestAnimationFrame(() => { try { fitAddon.fit(); } catch{} });
+    }
   });
 
   // iOS heartbeat monitor - detect silent connection drops
