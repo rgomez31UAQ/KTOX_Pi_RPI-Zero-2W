@@ -60,6 +60,7 @@ apt-get install -y --no-install-recommends \
     nmap ncat tcpdump arp-scan dsniff ettercap-text-only php procps \
     aircrack-ng wireless-tools wpasupplicant iw \
     hashcat john hostapd dnsmasq \
+    openssh-server openssh-client autossh \
     net-tools ethtool git i2c-tools libglib2.0-dev 2>/dev/null || warn "Some packages failed"
 
 apt-get install -y brcmfmac-nexmon-dkms firmware-nexmon 2>/dev/null \
@@ -181,6 +182,24 @@ systemctl is-active --quiet NetworkManager 2>/dev/null && {
         > /etc/NetworkManager/conf.d/99-ktox.conf
     systemctl restart NetworkManager 2>/dev/null || true
 }
+
+# ── SSH Configuration ──────────────────────────────────────────────────────────
+step "Configuring SSH..."
+mkdir -p /root/.ssh
+chmod 700 /root/.ssh
+
+# Enable root SSH login
+sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^#\?KbdInteractiveAuthentication.*/KbdInteractiveAuthentication yes/' /etc/ssh/sshd_config
+
+grep -q '^PermitRootLogin' /etc/ssh/sshd_config || echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
+grep -q '^PasswordAuthentication' /etc/ssh/sshd_config || echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
+grep -q '^KbdInteractiveAuthentication' /etc/ssh/sshd_config || echo 'KbdInteractiveAuthentication yes' >> /etc/ssh/sshd_config
+
+systemctl enable ssh 2>/dev/null || true
+systemctl restart ssh 2>/dev/null || true
+info "SSH configured and enabled"
 
 # ── Systemd services ──────────────────────────────────────────────────────────
 step "Creating systemd services..."
