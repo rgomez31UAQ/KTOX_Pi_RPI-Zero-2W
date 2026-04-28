@@ -417,55 +417,74 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
   border-radius: 10px;
 }
 
-/* Syndicate Theme: Mini Cyberdeck Design */
+/* Syndicate Theme: Industrial Cyberpunk Mini-Deck */
 #deviceShell.theme-neon,
 #deviceShell[data-theme="neon"],
 #deviceShell.theme-syndicate,
 #deviceShell[data-theme="syndicate"] {
   background:
-    /* Subtle scan-line effect */
+    /* Circuit board pattern overlay */
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(255, 140, 0, 0.08) 2px,
+      rgba(255, 140, 0, 0.08) 4px
+    ),
     repeating-linear-gradient(
       0deg,
-      rgba(0, 0, 0, 0.15) 0px,
+      transparent 0px,
+      transparent 2px,
+      rgba(255, 140, 0, 0.08) 2px,
+      rgba(255, 140, 0, 0.08) 4px
+    ),
+    /* Gritty noise texture */
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 140, 0, 0.03) 0px,
       transparent 1px,
       transparent 2px,
-      rgba(0, 0, 0, 0.15) 3px
+      rgba(255, 140, 0, 0.03) 2px
     ),
-    /* Base gradient */
-    linear-gradient(135deg, rgba(5, 8, 15, 0.98), rgba(2, 5, 12, 0.95));
+    /* Base gradient - dark with warm industrial feel */
+    linear-gradient(135deg, rgba(25, 15, 5, 0.98), rgba(10, 8, 3, 0.95));
 
-  border: 3px solid rgba(15, 35, 55, 0.8);
-  border-radius: 16px;
+  border: 4px solid rgba(255, 140, 0, 0.6);
+  border-radius: 4px;
   position: relative;
   overflow: hidden;
 
   box-shadow:
-    /* Outer glow */
-    0 0 40px rgba(0, 150, 200, 0.25),
-    /* Inner depth */
-    inset 0 1px 1px rgba(100, 150, 200, 0.3),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.6),
-    /* Hard drop shadow */
-    0 15px 35px rgba(0, 0, 0, 0.5);
+    /* Outer industrial glow */
+    0 0 60px rgba(255, 140, 0, 0.35),
+    /* Inner harsh edge highlight */
+    inset 0 2px 8px rgba(255, 160, 40, 0.4),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.8),
+    /* Heavy shadow for depth */
+    0 20px 60px rgba(0, 0, 0, 0.7),
+    /* Accent glow */
+    0 0 20px rgba(200, 100, 0, 0.3);
 
-  /* Bezel effect - pseudo-3D edges */
-  outline: 1px solid rgba(50, 100, 150, 0.4) inset;
-  outline-offset: -2px;
+  /* Sharp beveled edge - industrial look */
+  outline: 2px solid rgba(255, 100, 0, 0.3) inset;
+  outline-offset: -1px;
 }
 
-/* Syndicate: Glow animation for active state */
+/* Syndicate: Aggressive glow on hover - industrial power */
 #deviceShell.theme-neon:hover,
 #deviceShell[data-theme="neon"]:hover,
 #deviceShell.theme-syndicate:hover,
 #deviceShell[data-theme="syndicate"]:hover {
+  border-color: rgba(255, 160, 40, 0.9);
   box-shadow:
-    0 0 50px rgba(0, 150, 200, 0.4),
-    inset 0 1px 1px rgba(100, 150, 200, 0.4),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.6),
-    0 15px 35px rgba(0, 0, 0, 0.5);
+    0 0 80px rgba(255, 140, 0, 0.5),
+    inset 0 2px 8px rgba(255, 180, 60, 0.5),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.8),
+    0 20px 60px rgba(0, 0, 0, 0.7),
+    0 0 30px rgba(200, 100, 0, 0.5);
 }
 
-/* Syndicate: Button styling for cyberdeck aesthetic */
+/* Syndicate: Industrial button design - aggressive cyberpunk */
 #deviceShell.theme-neon .dpad-btn,
 #deviceShell[data-theme="neon"] .dpad-btn,
 #deviceShell.theme-syndicate .dpad-btn,
@@ -474,14 +493,19 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
 #deviceShell[data-theme="neon"] .key-btn,
 #deviceShell.theme-syndicate .key-btn,
 #deviceShell[data-theme="syndicate"] .key-btn {
-  background: linear-gradient(135deg, rgba(20, 40, 60, 0.9), rgba(10, 25, 40, 0.9));
-  border: 1.5px solid rgba(0, 150, 200, 0.6);
-  color: rgba(200, 220, 240, 0.95);
+  background: linear-gradient(135deg, rgba(80, 40, 10, 0.95), rgba(50, 25, 5, 0.95));
+  border: 2px solid rgba(255, 140, 0, 0.8);
+  color: rgba(255, 180, 100, 0.98);
+  font-weight: 700;
   box-shadow:
-    inset 0 1px 2px rgba(100, 180, 220, 0.2),
-    0 4px 12px rgba(0, 0, 0, 0.4),
-    0 0 8px rgba(0, 150, 200, 0.15);
-  transition: all 150ms ease;
+    inset 0 2px 4px rgba(255, 160, 50, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.6),
+    0 6px 16px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(255, 140, 0, 0.25),
+    /* Inner grit texture */
+    inset 0 0 8px rgba(0, 0, 0, 0.4);
+  transition: all 120ms ease;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 
 #deviceShell.theme-neon .dpad-btn:active,
@@ -492,13 +516,15 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
 #deviceShell[data-theme="neon"] .key-btn:active,
 #deviceShell.theme-syndicate .key-btn:active,
 #deviceShell[data-theme="syndicate"] .key-btn:active {
-  background: linear-gradient(135deg, rgba(30, 60, 90, 0.95), rgba(20, 40, 60, 0.95));
+  background: linear-gradient(135deg, rgba(100, 50, 10, 0.98), rgba(60, 30, 5, 0.98));
+  border-color: rgba(255, 180, 60, 0.95);
   box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.4),
-    inset 0 -1px 2px rgba(100, 180, 220, 0.2),
-    0 2px 6px rgba(0, 0, 0, 0.3),
-    0 0 12px rgba(0, 150, 200, 0.25);
-  transform: scale(0.95);
+    inset 0 3px 6px rgba(0, 0, 0, 0.6),
+    inset 0 -1px 2px rgba(255, 160, 50, 0.3),
+    0 3px 8px rgba(0, 0, 0, 0.4),
+    0 0 16px rgba(255, 140, 0, 0.35),
+    inset 0 0 8px rgba(0, 0, 0, 0.4);
+  transform: scale(0.92);
 }
 
 /* ═══════════════════════════════════════════════════════════════

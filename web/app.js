@@ -2043,6 +2043,8 @@
         setSidebarOpen(true);
         setSystemOpen(true);
         loadSystemStatus();
+      } else if (tab === 'terminal'){
+        setActiveTab('device');
       } else if (tab === 'loot'){
         setActiveTab('loot');
         if (lootList && !lootList.dataset.loaded){ loadLoot(''); lootList.dataset.loaded = '1'; }
