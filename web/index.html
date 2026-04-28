@@ -571,6 +571,9 @@
       <div class="pager-speaker" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span>
       </div>
+      <div class="syndicate-bezel" aria-hidden="true"></div>
+      <div class="syndicate-accent-top" aria-hidden="true"></div>
+      <div class="syndicate-accent-bottom" aria-hidden="true"></div>
       <!-- Default layout (Syndicate / Dark Cyberdeck) -->
       <div class="layout-default">
         <div class="screen-frame">
@@ -654,6 +657,65 @@
         </div>
       </div>
       </div>
+      </div>
+
+      <!-- System Stats (mobile-optimized) -->
+      <div id="systemTab" class="hidden">
+        <div class="rounded-3xl border border-slate-700/60 bg-slate-900/40 backdrop-blur p-4 md:p-5 max-w-3xl mx-auto shadow-[0_0_30px_rgba(15,23,42,0.35)] space-y-3">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-sm font-semibold text-red-400">System Monitor</div>
+            <div id="mobileSystemStatus" class="text-[11px] text-slate-400">Ready</div>
+          </div>
+
+          <div class="rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+            <div class="text-xs text-slate-400 mb-1.5">CPU Usage</div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-lg font-bold text-red-400" id="mobSysCpuValue">0%</span>
+              <span class="text-xs text-slate-500" id="mobSysTempValue">--.- C</span>
+            </div>
+            <div class="h-2 rounded bg-slate-800 overflow-hidden">
+              <div id="mobSysCpuBar" class="h-2 bg-red-800/80" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+            <div class="text-xs text-slate-400 mb-1.5">Memory</div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-lg font-bold text-cyan-400" id="mobSysMemValue">0%</span>
+              <span class="text-xs text-slate-500" id="mobSysMemMeta">0 / 0</span>
+            </div>
+            <div class="h-2 rounded bg-slate-800 overflow-hidden">
+              <div id="mobSysMemBar" class="h-2 bg-cyan-500/80" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+            <div class="text-xs text-slate-400 mb-1.5">Disk (/)</div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-lg font-bold text-fuchsia-400" id="mobSysDiskValue">0%</span>
+              <span class="text-xs text-slate-500" id="mobSysDiskMeta">0 / 0</span>
+            </div>
+            <div class="h-2 rounded bg-slate-800 overflow-hidden">
+              <div id="mobSysDiskBar" class="h-2 bg-fuchsia-500/80" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-800/80 bg-slate-950/40 p-3 space-y-1.5">
+            <div class="text-xs text-slate-400">System Info</div>
+            <div class="text-xs text-slate-300">Uptime: <span id="mobSysUptime">-</span></div>
+            <div class="text-xs text-slate-300">Load Avg: <span id="mobSysLoad">-</span></div>
+            <div class="text-xs text-slate-300">Payload: <span id="mobSysPayload">none</span></div>
+          </div>
+
+          <div class="rounded-xl border border-slate-800/80 bg-slate-950/40 p-3">
+            <div class="text-xs text-slate-400 mb-2">Network Interfaces</div>
+            <div id="mobSysInterfaces" class="text-xs text-slate-300 space-y-1.5">
+              <div class="text-slate-500">No data yet</div>
+            </div>
+          </div>
+
+          <button type="button" class="w-full px-4 py-2 rounded-lg bg-red-900/80 border border-red-300/30 text-white hover:bg-red-800/80 transition text-sm font-semibold" onclick="loadMobileSystemStatus()">Refresh</button>
+        </div>
       </div>
 
       <!-- Settings -->
@@ -868,10 +930,6 @@
       <i class="fa-solid fa-gamepad"></i>
       <span>Device</span>
     </button>
-    <button class="mob-nav-btn" data-mobnav="terminal" aria-label="Terminal">
-      <i class="fa-solid fa-terminal"></i>
-      <span>Terminal</span>
-    </button>
     <button class="mob-nav-btn" data-mobnav="system" aria-label="System">
       <i class="fa-solid fa-microchip"></i>
       <span>System</span>
@@ -883,6 +941,10 @@
     <button class="mob-nav-btn" data-mobnav="loot" aria-label="Loot">
       <i class="fa-solid fa-vault"></i>
       <span>Loot</span>
+    </button>
+    <button class="mob-nav-btn" data-mobnav="settings" aria-label="Settings">
+      <i class="fa-solid fa-sliders"></i>
+      <span>Settings</span>
     </button>
   </nav>
 

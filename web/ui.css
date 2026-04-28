@@ -417,74 +417,96 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
   border-radius: 10px;
 }
 
-/* Syndicate Theme: Industrial Cyberpunk Mini-Deck */
+/* Syndicate Theme: Professional Cyberpunk Device (Arasaka-inspired) */
 #deviceShell.theme-neon,
 #deviceShell[data-theme="neon"],
 #deviceShell.theme-syndicate,
 #deviceShell[data-theme="syndicate"] {
-  background:
-    /* Circuit board pattern overlay */
-    repeating-linear-gradient(
-      90deg,
-      transparent 0px,
-      transparent 2px,
-      rgba(255, 140, 0, 0.08) 2px,
-      rgba(255, 140, 0, 0.08) 4px
-    ),
-    repeating-linear-gradient(
-      0deg,
-      transparent 0px,
-      transparent 2px,
-      rgba(255, 140, 0, 0.08) 2px,
-      rgba(255, 140, 0, 0.08) 4px
-    ),
-    /* Gritty noise texture */
-    repeating-linear-gradient(
-      45deg,
-      rgba(255, 140, 0, 0.03) 0px,
-      transparent 1px,
-      transparent 2px,
-      rgba(255, 140, 0, 0.03) 2px
-    ),
-    /* Base gradient - dark with warm industrial feel */
-    linear-gradient(135deg, rgba(25, 15, 5, 0.98), rgba(10, 8, 3, 0.95));
-
-  border: 4px solid rgba(255, 140, 0, 0.6);
-  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(20, 20, 25, 0.99), rgba(10, 10, 15, 0.99));
+  border: 2px solid rgba(139, 0, 0, 0.8);
+  border-radius: 8px;
   position: relative;
   overflow: hidden;
 
   box-shadow:
-    /* Outer industrial glow */
-    0 0 60px rgba(255, 140, 0, 0.35),
-    /* Inner harsh edge highlight */
-    inset 0 2px 8px rgba(255, 160, 40, 0.4),
-    inset 0 -3px 8px rgba(0, 0, 0, 0.8),
-    /* Heavy shadow for depth */
-    0 20px 60px rgba(0, 0, 0, 0.7),
-    /* Accent glow */
-    0 0 20px rgba(200, 100, 0, 0.3);
-
-  /* Sharp beveled edge - industrial look */
-  outline: 2px solid rgba(255, 100, 0, 0.3) inset;
-  outline-offset: -1px;
+    /* Metallic edge highlight */
+    inset 0 1px 2px rgba(80, 80, 90, 0.3),
+    /* Dark shadow */
+    inset 0 -2px 4px rgba(0, 0, 0, 0.8),
+    /* Outer shadow */
+    0 10px 30px rgba(0, 0, 0, 0.6),
+    /* Red accent glow */
+    0 0 20px rgba(139, 0, 0, 0.2);
 }
 
-/* Syndicate: Aggressive glow on hover - industrial power */
 #deviceShell.theme-neon:hover,
 #deviceShell[data-theme="neon"]:hover,
 #deviceShell.theme-syndicate:hover,
 #deviceShell[data-theme="syndicate"]:hover {
-  border-color: rgba(255, 160, 40, 0.9);
   box-shadow:
-    0 0 80px rgba(255, 140, 0, 0.5),
-    inset 0 2px 8px rgba(255, 180, 60, 0.5),
-    inset 0 -3px 8px rgba(0, 0, 0, 0.8),
-    0 20px 60px rgba(0, 0, 0, 0.7),
-    0 0 30px rgba(200, 100, 0, 0.5);
+    inset 0 1px 2px rgba(80, 80, 90, 0.4),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.8),
+    0 10px 30px rgba(0, 0, 0, 0.6),
+    0 0 30px rgba(139, 0, 0, 0.3);
 }
 
-/* Syndicate: Industrial button design - aggressive cyberpunk */
+/* Syndicate bezel - professional metallic edge */
+.syndicate-bezel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid rgba(100, 100, 110, 0.3);
+  border-radius: 8px;
+  pointer-events: none;
+  display: none;
+}
+
+.device-shell.theme-neon .syndicate-bezel,
+.device-shell[data-theme="neon"] .syndicate-bezel,
+.device-shell.theme-syndicate .syndicate-bezel,
+.device-shell[data-theme="syndicate"] .syndicate-bezel {
+  display: block;
+}
+
+/* Top red accent bar - corporate branding */
+.syndicate-accent-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(139, 0, 0, 0.9), rgba(200, 0, 0, 0.7));
+  display: none;
+}
+
+.device-shell.theme-neon .syndicate-accent-top,
+.device-shell[data-theme="neon"] .syndicate-accent-top,
+.device-shell.theme-syndicate .syndicate-accent-top,
+.device-shell[data-theme="syndicate"] .syndicate-accent-top {
+  display: block;
+}
+
+/* Bottom grey accent bar */
+.syndicate-accent-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(80, 80, 90, 0.6), rgba(100, 100, 110, 0.4));
+  display: none;
+}
+
+.device-shell.theme-neon .syndicate-accent-bottom,
+.device-shell[data-theme="neon"] .syndicate-accent-bottom,
+.device-shell.theme-syndicate .syndicate-accent-bottom,
+.device-shell[data-theme="syndicate"] .syndicate-accent-bottom {
+  display: block;
+}
+
+/* Syndicate: Professional button styling - corporate cyberpunk */
 #deviceShell.theme-neon .dpad-btn,
 #deviceShell[data-theme="neon"] .dpad-btn,
 #deviceShell.theme-syndicate .dpad-btn,
@@ -493,19 +515,15 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
 #deviceShell[data-theme="neon"] .key-btn,
 #deviceShell.theme-syndicate .key-btn,
 #deviceShell[data-theme="syndicate"] .key-btn {
-  background: linear-gradient(135deg, rgba(80, 40, 10, 0.95), rgba(50, 25, 5, 0.95));
-  border: 2px solid rgba(255, 140, 0, 0.8);
-  color: rgba(255, 180, 100, 0.98);
-  font-weight: 700;
+  background: linear-gradient(135deg, rgba(40, 40, 50, 0.95), rgba(25, 25, 35, 0.95));
+  border: 1.5px solid rgba(139, 0, 0, 0.6);
+  color: rgba(220, 220, 230, 0.95);
+  font-weight: 600;
   box-shadow:
-    inset 0 2px 4px rgba(255, 160, 50, 0.3),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.6),
-    0 6px 16px rgba(0, 0, 0, 0.5),
-    0 0 12px rgba(255, 140, 0, 0.25),
-    /* Inner grit texture */
-    inset 0 0 8px rgba(0, 0, 0, 0.4);
-  transition: all 120ms ease;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+    inset 0 1px 2px rgba(100, 100, 110, 0.2),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.6),
+    0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 100ms ease;
 }
 
 #deviceShell.theme-neon .dpad-btn:active,
@@ -516,15 +534,15 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
 #deviceShell[data-theme="neon"] .key-btn:active,
 #deviceShell.theme-syndicate .key-btn:active,
 #deviceShell[data-theme="syndicate"] .key-btn:active {
-  background: linear-gradient(135deg, rgba(100, 50, 10, 0.98), rgba(60, 30, 5, 0.98));
-  border-color: rgba(255, 180, 60, 0.95);
+  background: linear-gradient(135deg, rgba(60, 30, 30, 0.95), rgba(40, 20, 20, 0.95));
+  border-color: rgba(200, 0, 0, 0.8);
+  color: rgba(240, 100, 100, 0.95);
   box-shadow:
-    inset 0 3px 6px rgba(0, 0, 0, 0.6),
-    inset 0 -1px 2px rgba(255, 160, 50, 0.3),
-    0 3px 8px rgba(0, 0, 0, 0.4),
-    0 0 16px rgba(255, 140, 0, 0.35),
-    inset 0 0 8px rgba(0, 0, 0, 0.4);
-  transform: scale(0.92);
+    inset 0 2px 4px rgba(0, 0, 0, 0.7),
+    inset 0 -1px 2px rgba(139, 0, 0, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(139, 0, 0, 0.2);
+  transform: scale(0.94);
 }
 
 /* ═══════════════════════════════════════════════════════════════
