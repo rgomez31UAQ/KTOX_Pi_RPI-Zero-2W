@@ -963,12 +963,13 @@ class KTOxHandler(SimpleHTTPRequestHandler):
             if parsed.path == "/api/auth/me":
                 self._handle_auth_me(query)
                 return
-            if parsed.path == "/api/system/status":
-                self._handle_system_status()
-                return
 
             if not _auth_ok(self, query):
                 _json_response(self, {"error": "unauthorized"}, status=HTTPStatus.UNAUTHORIZED)
+                return
+
+            if parsed.path == "/api/system/status":
+                self._handle_system_status()
                 return
 
             if parsed.path == "/api/stealth/status":
