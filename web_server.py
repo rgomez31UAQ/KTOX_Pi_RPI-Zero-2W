@@ -968,6 +968,10 @@ class KTOxHandler(SimpleHTTPRequestHandler):
                 _json_response(self, {"error": "unauthorized"}, status=HTTPStatus.UNAUTHORIZED)
                 return
 
+            if parsed.path == "/api/system/status":
+                self._handle_system_status()
+                return
+
             if parsed.path == "/api/stealth/status":
                 state_path = Path("/dev/shm/ktox_device_stealth.txt")
                 try:
@@ -1001,9 +1005,6 @@ class KTOxHandler(SimpleHTTPRequestHandler):
                 return
             if parsed.path == "/api/loot/nmap":
                 self._handle_loot_nmap(query)
-                return
-            if parsed.path == "/api/system/status":
-                self._handle_system_status()
                 return
             if parsed.path == "/api/settings/discord_webhook":
                 self._handle_settings_webhook_get()
