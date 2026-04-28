@@ -991,8 +991,11 @@
     setSystemStatus('Loading...');
     try{
       const url = getApiUrl('/api/system/status');
+      console.log('[SystemMonitor] Fetching from:', url);
       const res = await apiFetch(url, { cache: 'no-store' });
+      console.log('[SystemMonitor] Response status:', res.status);
       const data = await res.json();
+      console.log('[SystemMonitor] Response data:', data);
       if (!res.ok){
         throw new Error(data && data.error ? data.error : 'system_failed');
       }
@@ -1040,6 +1043,7 @@
 
       setSystemStatus('Live');
     } catch (e){
+      console.error('[SystemMonitor] Failed to load system status:', e);
       setSystemStatus('Unavailable');
     }
   }
