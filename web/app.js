@@ -2404,12 +2404,12 @@
   applyTheme();
   setActiveTab('device');
 
-  // Register service worker for iOS PWA persistence (iOS 17.4+)
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-      console.log('[Mobile] Service Worker registered:', reg);
-    }).catch(err => console.warn('[Mobile] Service Worker registration failed:', err));
-  }
+  // TEMP: Disabled service worker to test if it's causing PWA issues
+  // if ('serviceWorker' in navigator) {
+  //   navigator.serviceWorker.register('./sw.js').then(reg => {
+  //     console.log('[Mobile] Service Worker registered:', reg);
+  //   }).catch(err => console.warn('[Mobile] Service Worker registration failed:', err));
+  // }
 
   let payloadPollTimer = null;
   let systemPollTimer = null;
