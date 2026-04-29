@@ -154,9 +154,9 @@
     const primary = `ws://${host}:${port}/`.replace(/\/\/\//,'//');
     const sameOrigin = `${location.origin.replace(/^https?:/, 'ws:')}/ws`;
     if (!explicitPort && originPort){
-      return Array.from(new Set([`ws://${host}:8765/`, sameOrigin]));
+      return Array.from(new Set([sameOrigin, `ws://${host}:8765/`]));
     }
-    return Array.from(new Set([primary, sameOrigin]));
+    return Array.from(new Set([sameOrigin, primary]));
   }
 
   function getApiUrl(path, params = {}){
@@ -545,6 +545,7 @@
   let reconnectTimer = null;
   let reconnectAttempts = 0;
   let lastServerMessage = Date.now();
+  let connectTimeoutTimer = null;
   const pressed = new Set(); // keyboard pressed state
   let activeTab = 'device';
   let lootState = { path: '', parent: '' };
@@ -563,6 +564,7 @@
   const RECONNECT_MAX_DELAY = 30000; // 30 seconds
   const MAX_RECONNECT_ATTEMPTS = 50;
   const SERVER_HEARTBEAT_TIMEOUT = 60000; // 60 seconds
+  const WS_CONNECT_TIMEOUT = 3500;
 
   function applyStatusTone(el, txt){
     if (!el) return;
@@ -578,13 +580,27 @@
   }
 
   function setStatus(txt){
+    const raw = String(txt || '');
+    const lower = raw.toLowerCase();
+    let state = 'bad';
+    if (/connected|authenticated|ready|live/.test(lower)) {
+      state = 'ok';
+    } else if (/connecting|reconnecting|opening|loading/.test(lower)) {
+      state = 'connecting';
+    }
     if (statusEl) {
-      statusEl.textContent = txt;
+      statusEl.textContent = '';
+      statusEl.dataset.state = state;
+      statusEl.title = raw;
+      statusEl.setAttribute('aria-label', raw);
       applyStatusTone(statusEl, txt);
     }
     if (statusEls && statusEls.length) {
       statusEls.forEach(el => {
-        el.textContent = txt;
+        el.textContent = '';
+        el.dataset.state = state;
+        el.title = raw;
+        el.setAttribute('aria-label', raw);
         applyStatusTone(el, txt);
       });
     }
@@ -831,6 +847,13 @@
     try{
       ws = new WebSocket(url);
       setStatus(`Connecting WS ${wsCandidateIndex + 1}/${wsCandidates.length}: ${url}`);
+      if (connectTimeoutTimer) clearTimeout(connectTimeoutTimer);
+      connectTimeoutTimer = setTimeout(() => {
+        if (ws && ws.readyState === WebSocket.CONNECTING){
+          console.warn('[iOS] WebSocket connect timeout - trying next candidate');
+          try { ws.close(); } catch {}
+        }
+      }, WS_CONNECT_TIMEOUT);
     } catch(e){
       setStatus('WebSocket failed to construct');
       wsCandidateIndex = (wsCandidateIndex + 1) % wsCandidates.length;
@@ -840,6 +863,10 @@
 
     ws.onopen = () => {
       opened = true;
+      if (connectTimeoutTimer) {
+        clearTimeout(connectTimeoutTimer);
+        connectTimeoutTimer = null;
+      }
       setStatus('Connected');
       reconnectAttempts = 0; // Reset backoff on successful connection
       lastServerMessage = Date.now(); // Reset heartbeat timer
@@ -945,6 +972,10 @@
     };
 
     ws.onclose = () => {
+      if (connectTimeoutTimer) {
+        clearTimeout(connectTimeoutTimer);
+        connectTimeoutTimer = null;
+      }
       const hadOpened = opened;
       setStatus('Disconnected – reconnecting…');
       setShellStatus('Disconnected');
@@ -995,6 +1026,10 @@
 
   function ensureSocketLive(reason = ''){
     if (ws && ws.readyState === WebSocket.OPEN) return;
+    if (reconnectTimer){
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
     if (reason){
       setStatus(`Reconnecting (${reason})…`);
     }

@@ -33,11 +33,19 @@ def main() -> None:
     require("getWsUrlCandidates" in shared or "getWsUrlCandidates" in app, "WebSocket candidates are missing")
     require("pageshow" in app and "online" in app and "visibilitychange" in app, "iOS reconnect hooks are missing")
     require("SERVER_HEARTBEAT_TIMEOUT" in app, "silent WebSocket drop detection is missing")
+    require("WS_CONNECT_TIMEOUT" in app, "iOS WebSocket connect timeout is missing")
+    require("return [\n          sameOriginWs," in shared, "same-origin WebSocket must be tried first on ported web UI")
 
-    require("layout-syndicate" in css and "grid-template-columns" in css, "Syndicate layout CSS is missing")
+    require("layout-syndicate" in css and "display: block !important" in css, "Syndicate layout must match vertical handheld layouts")
+    require("grid-template-columns: minmax(260px, 1fr) minmax(232px, auto)" not in css, "Syndicate controls must not be a right-side grid column")
     require("#screen-syndicate" in css and "box-shadow: none !important" in css, "Syndicate screen must stay clean")
     require("inset 0 2px 8px rgba(0, 0, 0, 0.95)" not in css, "removed inner screen shadow returned")
     require("0 0 12px rgba(139, 0, 0, 0.15)" not in css, "removed red screen reflection returned")
+    require('id="mobileTopBar"' in index, "mobile top bar must be addressable for safe-area positioning")
+    require("body.mobile-system-overlay #systemTab" in css and "top: calc(58px" in css, "mobile system overlay must start below the top bar")
+    require("#deviceTab.mobile-device-focus" in css and "overflow: hidden !important" in css, "mobile device tab must not scroll the virtual device")
+    require(".status-text[data-state=\"connecting\"]" in css and "ktoxStatusBlink" in css, "WebSocket status must be a blinking LED")
+    require("statusEl.textContent = ''" in app and "dataset.state" in app, "WebSocket status text/IP must be hidden behind LED state")
 
     print("WebUI Syndicate/PWA validation passed")
 

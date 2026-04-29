@@ -29,13 +29,13 @@
       }
       if (!explicitPort && originPort){
         return [
-          `ws://${host}:8765/`.replace(/\/\/\//, '//'),
           sameOriginWs,
+          `ws://${host}:8765/`.replace(/\/\/\//, '//'),
         ];
       }
       return [
-        `ws://${host}:${port}/`.replace(/\/\/\//, '//'),
         sameOriginWs,
+        `ws://${host}:${port}/`.replace(/\/\/\//, '//'),
       ];
     },
 
@@ -62,8 +62,10 @@
       try{
         if (value){
           sessionStorage.setItem(storageKey, value);
+          localStorage.setItem(storageKey, value);
         } else {
           sessionStorage.removeItem(storageKey);
+          localStorage.removeItem(storageKey);
         }
       }catch{}
       return value;
@@ -71,9 +73,13 @@
 
     loadToken(storageKey){
       try{
-        return String(sessionStorage.getItem(storageKey) || '').trim();
+        return String(sessionStorage.getItem(storageKey) || localStorage.getItem(storageKey) || '').trim();
       }catch{
-        return '';
+        try{
+          return String(localStorage.getItem(storageKey) || '').trim();
+        }catch{
+          return '';
+        }
       }
     },
 
