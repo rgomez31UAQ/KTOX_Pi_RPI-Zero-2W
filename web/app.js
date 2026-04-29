@@ -836,6 +836,11 @@
   }
 
   function connect(){
+    // Clean up any lingering WebSocket in bad state (common in PWA)
+    if (ws && ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CONNECTING) {
+      try { ws.close(); } catch(e) {}
+      ws = null;
+    }
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
     wsCandidates = getWsCandidates();
     if (!wsCandidates.length){
@@ -2348,20 +2353,52 @@
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden){
-      if (systemOpen) loadSystemStatus();
-      pollPayloadStatus();
-      ensureSocketLive('visible');
+      console.log('[Mobile] App became visible - forcing reconnect');
+      if (ws) {
+        try { ws.close(); } catch(e) {}
+      }
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      setTimeout(() => {
+        if (systemOpen) loadSystemStatus();
+        pollPayloadStatus();
+        ensureSocketLive('app-visible');
+      }, 100);
     }
     schedulePayloadPoll();
     scheduleSystemPoll();
   });
 
   window.addEventListener('pageshow', () => {
-    ensureSocketLive('pageshow');
+    console.log('[Mobile] pageshow fired - forcing reconnect');
+    if (ws) {
+      try { ws.close(); } catch(e) {}
+    }
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+    setTimeout(() => ensureSocketLive('pageshow'), 100);
   });
 
-  window.addEventListener('online', () => {
-    ensureSocketLive('online');
+  window.addEventListener('pagehide', () => {
+    console.log('[Mobile] pagehide fired - closing connection');
+    if (ws) {
+      try { ws.close(); } catch(e) {}
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    console.log('[Mobile] Window focus regained - checking connection');
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      ensureSocketLive('window-focus');
+    }
+  });
+
+  window.addEventListener('blur', () => {
+    console.log('[Mobile] Window lost focus');
   });
 
   window.addEventListener('resize', () => {
@@ -2382,6 +2419,10 @@
           try { ws.close(); } catch(e) {}
           scheduleReconnect('heartbeat timeout');
         }
+      } else if (!document.hidden && (!ws || ws.readyState !== WebSocket.OPEN)) {
+        // PWA fix: if app is visible but no connection, force reconnect
+        console.warn('[Mobile] PWA: App visible but disconnected - reconnecting');
+        ensureSocketLive('heartbeat-check-pwa');
       }
     }, HEARTBEAT_CHECK_INTERVAL);
   }
