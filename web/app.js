@@ -646,6 +646,8 @@
         applyStatusTone(el, txt);
       });
     }
+    // DEBUG: Log to console with visible timestamp
+    console.log('[Status] ' + new Date().toLocaleTimeString() + ': ' + raw);
   }
 
   function setPayloadStatus(txt){
@@ -888,15 +890,16 @@
       return;
     }
     wsCandidates = getWsCandidates();
-    console.log('[Mobile] WS candidates: ' + wsCandidates.length);
+    console.log('[Mobile] WS candidates (' + wsCandidates.length + '):', wsCandidates);
     if (!wsCandidates.length){
-      setStatus('No WebSocket URL candidates');
+      setStatus('ERROR: No WebSocket URL candidates generated!');
+      console.error('[Mobile] No candidates - location.protocol=' + location.protocol + ', hostname=' + location.hostname);
       scheduleReconnect();
       return;
     }
     if (wsCandidateIndex >= wsCandidates.length) wsCandidateIndex = 0;
     const url = wsCandidates[wsCandidateIndex];
-    console.log('[Mobile] Attempting connection to ' + url);
+    console.log('[Mobile] [' + (wsCandidateIndex + 1) + '/' + wsCandidates.length + '] Attempting: ' + url);
 
     // Refresh auth ticket before connection attempt
     if (!authToken && shared.refreshWsTicket){
