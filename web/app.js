@@ -3,9 +3,11 @@
   const canvas = document.getElementById('screen');
   const canvasGb = document.getElementById('screen-gb');
   const canvasPager = document.getElementById('screen-pager');
+  const canvasSyndicate = document.getElementById('screen-syndicate');
   const ctx = canvas.getContext('2d');
   const ctxGb = canvasGb ? canvasGb.getContext('2d') : null;
   const ctxPager = canvasPager ? canvasPager.getContext('2d') : null;
+  const ctxSyndicate = canvasSyndicate ? canvasSyndicate.getContext('2d') : null;
   // Enable high-DPI backing store and high-quality smoothing
   function setupHiDPI(){
     const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
@@ -25,6 +27,12 @@
       canvasPager.height = logical * DPR;
       ctxPager.imageSmoothingEnabled = true;
       try { ctxPager.imageSmoothingQuality = 'high'; } catch {}
+    }
+    if (canvasSyndicate && ctxSyndicate) {
+      canvasSyndicate.width = logical * DPR;
+      canvasSyndicate.height = logical * DPR;
+      ctxSyndicate.imageSmoothingEnabled = true;
+      try { ctxSyndicate.imageSmoothingQuality = 'high'; } catch {}
     }
   }
   setupHiDPI();
@@ -704,6 +712,8 @@
       deviceTab.classList.toggle('hidden', !isDevice);
     }
     applyResponsiveTabClasses(tab);
+    const systemTab = document.getElementById('systemTab');
+    if (systemTab) systemTab.classList.toggle('hidden', tab !== 'system');
     if (settingsTab) settingsTab.classList.toggle('hidden', tab !== 'settings');
     if (lootTab) lootTab.classList.toggle('hidden', tab !== 'loot');
     const payloadsTabEl = document.getElementById('payloadsTab');
@@ -814,6 +824,10 @@
               if (ctxPager && canvasPager) {
                 ctxPager.clearRect(0,0,canvasPager.width,canvasPager.height);
                 ctxPager.drawImage(img, 0, 0, canvasPager.width, canvasPager.height);
+              }
+              if (ctxSyndicate && canvasSyndicate) {
+                ctxSyndicate.clearRect(0,0,canvasSyndicate.width,canvasSyndicate.height);
+                ctxSyndicate.drawImage(img, 0, 0, canvasSyndicate.width, canvasSyndicate.height);
               }
             } catch {}
           };
@@ -2103,7 +2117,7 @@
         setActiveTab('system');
         setTimeout(() => loadMobileSystemStatus(), 50);
       } else if (tab === 'terminal'){
-        setActiveTab('device');
+        setActiveTab('terminal');
       } else if (tab === 'settings'){
         setActiveTab('settings');
         loadDiscordWebhook();
