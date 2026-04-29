@@ -2114,8 +2114,8 @@
     btn.addEventListener('click', () => {
       const tab = btn.dataset.mobnav;
       if (tab === 'system'){
-        setSystemOpen(!systemOpen);
-        if (!systemOpen) loadSystemStatus();
+        setActiveTab('system');
+        setTimeout(() => loadMobileSystemStatus(), 50);
       } else if (tab === 'terminal'){
         setActiveTab('terminal');
       } else if (tab === 'settings'){
