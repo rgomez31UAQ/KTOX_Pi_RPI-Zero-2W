@@ -661,6 +661,33 @@
       </div>
       </div>
 
+      <!-- Syndicate layout (Cyberdeck theme) -->
+      <div class="layout-syndicate hidden">
+        <div class="screen-frame">
+          <canvas id="screen-syndicate" width="128" height="128" class="w-[240px] md:w-[300px] aspect-square"></canvas>
+        </div>
+        <div class="flex justify-between mb-4">
+          <div class="grid grid-cols-3 grid-rows-3 gap-2">
+            <div></div>
+            <button class="rj-btn" data-btn="UP">▲</button>
+            <div></div>
+            <button class="rj-btn" data-btn="LEFT">◄</button>
+            <button class="rj-btn" data-btn="OK" aria-label="OK"></button>
+            <button class="rj-btn" data-btn="RIGHT">►</button>
+            <div></div>
+            <button class="rj-btn" data-btn="DOWN">▼</button>
+            <div></div>
+          </div>
+          <div class="flex flex-col gap-2 side-buttons">
+            <button class="rj-btn key-btn" data-btn="KEY1">KEY1</button>
+            <button class="rj-btn key-btn" data-btn="KEY2">KEY2</button>
+            <button class="rj-btn key-btn" data-btn="KEY3">KEY3</button>
+          </div>
+        </div>
+        <div class="text-center text-xs text-gray-300">OK = Enter · KEY3 = Esc</div>
+        <div id="status-syndicate" class="status-text text-center text-[11px] text-gray-500 mt-1">Connecting…</div>
+      </div>
+
       <!-- System Stats (mobile-optimized) -->
       <div id="systemTab" class="hidden">
         <div class="rounded-3xl border border-slate-700/60 bg-slate-900/40 backdrop-blur p-4 md:p-5 max-w-3xl mx-auto shadow-[0_0_30px_rgba(15,23,42,0.35)] space-y-3">

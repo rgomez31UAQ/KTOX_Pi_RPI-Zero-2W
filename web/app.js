@@ -3,9 +3,11 @@
   const canvas = document.getElementById('screen');
   const canvasGb = document.getElementById('screen-gb');
   const canvasPager = document.getElementById('screen-pager');
+  const canvasSyndicate = document.getElementById('screen-syndicate');
   const ctx = canvas.getContext('2d');
   const ctxGb = canvasGb ? canvasGb.getContext('2d') : null;
   const ctxPager = canvasPager ? canvasPager.getContext('2d') : null;
+  const ctxSyndicate = canvasSyndicate ? canvasSyndicate.getContext('2d') : null;
   // Enable high-DPI backing store and high-quality smoothing
   function setupHiDPI(){
     const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
@@ -25,6 +27,12 @@
       canvasPager.height = logical * DPR;
       ctxPager.imageSmoothingEnabled = true;
       try { ctxPager.imageSmoothingQuality = 'high'; } catch {}
+    }
+    if (canvasSyndicate && ctxSyndicate) {
+      canvasSyndicate.width = logical * DPR;
+      canvasSyndicate.height = logical * DPR;
+      ctxSyndicate.imageSmoothingEnabled = true;
+      try { ctxSyndicate.imageSmoothingQuality = 'high'; } catch {}
     }
   }
   setupHiDPI();
@@ -814,6 +822,10 @@
               if (ctxPager && canvasPager) {
                 ctxPager.clearRect(0,0,canvasPager.width,canvasPager.height);
                 ctxPager.drawImage(img, 0, 0, canvasPager.width, canvasPager.height);
+              }
+              if (ctxSyndicate && canvasSyndicate) {
+                ctxSyndicate.clearRect(0,0,canvasSyndicate.width,canvasSyndicate.height);
+                ctxSyndicate.drawImage(img, 0, 0, canvasSyndicate.width, canvasSyndicate.height);
               }
             } catch {}
           };

@@ -532,6 +532,14 @@ main > .flex.items-center.justify-between.mb-4.md\:mb-6 {
   display: none;
 }
 
+/* Show syndicate layout */
+.device-shell.theme-neon .layout-syndicate,
+.device-shell[data-theme="neon"] .layout-syndicate,
+.device-shell.theme-syndicate .layout-syndicate,
+.device-shell[data-theme="syndicate"] .layout-syndicate {
+  display: flex;
+}
+
 /* Syndicate speaker holes */
 .syndicate-speaker-top {
   display: none;
