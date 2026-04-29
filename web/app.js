@@ -97,6 +97,10 @@
   const discordWebhookInput = document.getElementById('discordWebhookInput');
   const discordWebhookSave = document.getElementById('discordWebhookSave');
   const discordWebhookClear = document.getElementById('discordWebhookClear');
+  const wsUrlOverrideInput = document.getElementById('wsUrlOverrideInput');
+  const wsUrlOverrideSave = document.getElementById('wsUrlOverrideSave');
+  const wsUrlOverrideClear = document.getElementById('wsUrlOverrideClear');
+  const wsUrlStatus = document.getElementById('wsUrlStatus');
   const tailscaleSettingsStatus = document.getElementById('tailscaleSettingsStatus');
   const tailscaleInstallBtn = document.getElementById('tailscaleInstallBtn');
   const tailscaleReauthBtn = document.getElementById('tailscaleReauthBtn');
@@ -129,34 +133,60 @@
   let wsCandidates = [];
   let wsCandidateIndex = 0;
 
+  function getManualWsUrl(){
+    try{
+      const url = String(localStorage.getItem('ktox-ws-url-override') || '').trim();
+      return url || '';
+    }catch{
+      return '';
+    }
+  }
+
   function getWsCandidates(){
+    const candidates = [];
+
+    // iOS PWA fix: try manually configured URL first (highest priority)
+    const manualUrl = getManualWsUrl();
+    if (manualUrl) candidates.push(manualUrl);
+
     if (shared.getWsUrlCandidates){
       const fromShared = shared.getWsUrlCandidates(location);
       if (Array.isArray(fromShared) && fromShared.length){
-        return Array.from(new Set(fromShared.map(v => String(v || '').trim()).filter(Boolean)));
+        candidates.push(...fromShared.map(v => String(v || '').trim()).filter(Boolean));
       }
     }
     // Build WS URL from current page host.
-    if (shared.getWsUrl){
-      const single = String(shared.getWsUrl(location) || '').trim();
-      if (single) return [single];
+    if (candidates.length === 0){
+      if (shared.getWsUrl){
+        const single = String(shared.getWsUrl(location) || '').trim();
+        if (single) candidates.push(single);
+      }
     }
-    if (location.protocol === 'https:'){
-      return [`${location.origin.replace(/^https:/, 'wss:')}/ws`];
+    if (candidates.length === 0 && location.protocol === 'https:'){
+      candidates.push(`${location.origin.replace(/^https:/, 'wss:')}/ws`);
     }
-    const p = new URLSearchParams(location.search);
-    const explicit = String(p.get('ws') || '').trim();
-    if (explicit) return [explicit];
-    const host = location.hostname || 'raspberrypi.local';
-    const explicitPort = String(p.get('port') || p.get('wsport') || '').trim();
-    const originPort = String(location.port || '').trim();
-    const port = explicitPort || originPort || '8765';
-    const primary = `ws://${host}:${port}/`.replace(/\/\/\//,'//');
-    const sameOrigin = `${location.origin.replace(/^https?:/, 'ws:')}/ws`;
-    if (!explicitPort && originPort){
-      return Array.from(new Set([sameOrigin, `ws://${host}:8765/`]));
+    if (candidates.length === 0){
+      const p = new URLSearchParams(location.search);
+      const explicit = String(p.get('ws') || '').trim();
+      if (explicit) candidates.push(explicit);
+      const host = location.hostname || 'raspberrypi.local';
+      const explicitPort = String(p.get('port') || p.get('wsport') || '').trim();
+      const originPort = String(location.port || '').trim();
+      const port = explicitPort || originPort || '8765';
+      const primary = `ws://${host}:${port}/`.replace(/\/\/\//,'//');
+      const sameOrigin = `${location.origin.replace(/^https?:/, 'ws:')}/ws`;
+      if (!explicitPort && originPort){
+        candidates.push(sameOrigin, `ws://${host}:8765/`);
+      } else {
+        candidates.push(sameOrigin, primary);
+      }
     }
-    return Array.from(new Set([sameOrigin, primary]));
+    // iOS PWA fix: filter out insecure ws:// on HTTPS pages (mixed content block)
+    const isHttps = location.protocol === 'https:';
+    if (isHttps){
+      return Array.from(new Set(candidates.filter(url => url.startsWith('wss://'))));
+    }
+    return Array.from(new Set(candidates.filter(Boolean)));
   }
 
   function getApiUrl(path, params = {}){
@@ -559,13 +589,13 @@
   let systemOpen = false;
   let wsAuthenticated = true;
 
-  // iOS reconnection parameters
+  // iOS reconnection parameters (increased for iOS PWA network stack suspension)
   const RECONNECT_BASE_DELAY = 1000; // 1 second
   const RECONNECT_MAX_DELAY = 30000; // 30 seconds
   const MAX_RECONNECT_ATTEMPTS = 50;
   const SERVER_HEARTBEAT_TIMEOUT = 60000; // 60 seconds
-  const WS_CONNECT_TIMEOUT = 3500;
-  const HEARTBEAT_CHECK_INTERVAL = 5000; // 5 seconds on mobile (aggressive)
+  const WS_CONNECT_TIMEOUT = 20000; // 20 seconds (iOS PWA needs more time to wake network stack)
+  const HEARTBEAT_CHECK_INTERVAL = 10000; // 10 seconds (iOS PWA may suspend more aggressively)
   const AUTH_TICKET_REFRESH_INTERVAL = 60000; // Refresh ticket every 60 seconds
 
   function applyStatusTone(el, txt){
@@ -1298,6 +1328,39 @@
     } catch(e){
       setTailscaleStatus('Failed to load Tailscale');
     }
+  }
+
+  function updateWsUrlStatus(){
+    const url = getManualWsUrl();
+    if (wsUrlStatus){
+      if (url){
+        wsUrlStatus.textContent = `Override: ${url.substring(0, 40)}${url.length > 40 ? '...' : ''}`;
+        wsUrlStatus.classList.remove('text-slate-400');
+        wsUrlStatus.classList.add('text-green-400');
+      } else {
+        wsUrlStatus.textContent = 'No override';
+        wsUrlStatus.classList.remove('text-green-400');
+        wsUrlStatus.classList.add('text-slate-400');
+      }
+    }
+    if (wsUrlOverrideInput){
+      wsUrlOverrideInput.value = url;
+    }
+  }
+
+  function saveWsUrlOverride(url){
+    const trimmed = String(url || '').trim();
+    try{
+      if (trimmed){
+        localStorage.setItem('ktox-ws-url-override', trimmed);
+      } else {
+        localStorage.removeItem('ktox-ws-url-override');
+      }
+    } catch{}
+    updateWsUrlStatus();
+    // Reconnect with new URL
+    if (ws) ws.close();
+    setTimeout(() => { ensureSocketLive('ws-url-changed'); }, 500);
   }
 
   async function saveDiscordWebhook(url){
@@ -2259,6 +2322,12 @@
     if (discordWebhookInput) discordWebhookInput.value = '';
     saveDiscordWebhook('');
   });
+  if (wsUrlOverrideSave) wsUrlOverrideSave.addEventListener('click', () => {
+    saveWsUrlOverride(wsUrlOverrideInput ? wsUrlOverrideInput.value : '');
+  });
+  if (wsUrlOverrideClear) wsUrlOverrideClear.addEventListener('click', () => {
+    saveWsUrlOverride('');
+  });
   if (tailscaleInstallBtn) tailscaleInstallBtn.addEventListener('click', () => {
     tailscaleReauthMode = false;
     openTailscaleModal();
@@ -2348,6 +2417,16 @@
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden){
+      console.log('[Mobile] App became visible');
+      // Only force-close stale WebSockets (not freshly connecting ones)
+      if (ws && ws.readyState === WebSocket.CLOSED){
+        console.log('[Mobile] Reconnecting stale WebSocket');
+        ws = null;
+        if (reconnectTimer){
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+      }
       if (systemOpen) loadSystemStatus();
       pollPayloadStatus();
       ensureSocketLive('visible');
@@ -2409,6 +2488,7 @@
         setTimeout(startAfterAuth, 0);
         return;
       }
+      updateWsUrlStatus();
       startHeartbeatMonitor();
       connect();
       loadPayloads();
